@@ -56,7 +56,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       EasyLoading.dismiss();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;   // 🔥 Login success
+        return true;
       } else {
         ToastHelper.showToast(
           context: context,
@@ -65,7 +65,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
           iconColor: Colors.red,
           position: ToastPosition.top,
         );
-        return false;  // ❌ Login failed
+        return false;
       }
     } catch (e) {
       EasyLoading.dismiss();
@@ -76,7 +76,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         iconColor: Colors.red,
         position: ToastPosition.top,
       );
-      return false;      // ❌ Login failed
+      return false;
     }
   }
   Future<ResponseModel?> registerStepOne(BuildContext context, String phone) async {
@@ -104,13 +104,14 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       EasyLoading.dismiss();
 
       if (response.responseSuccessful) {
-        ToastHelper.showToast(
-          context: context,
-          message: response.responseMessage,
-          icon: Icons.check_circle,
-          iconColor: Colors.green,
-          position: ToastPosition.top,
-        );
+        EasyLoading.showToast(response.responseMessage,);
+        // ToastHelper.showToast(
+        //   context: context,
+        //   message: response.responseMessage,
+        //   icon: Icons.check_circle,
+        //   iconColor: Colors.green,
+        //   position: ToastPosition.top,
+        // );
       } else {
         ToastHelper.showToast(
           context: context,
@@ -306,7 +307,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         );
       }
 
-      return response; // ✅ IMPORTANT — return it to the UI
+      return response;
     } catch (e) {
       EasyLoading.dismiss();
       ToastHelper.showToast(

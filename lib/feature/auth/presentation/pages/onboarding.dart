@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import '../../../../app/utils/custom_button.dart';
+import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
 
-import 'create_account.dart';
 
 class OnBoardingScreen extends ConsumerStatefulWidget {
   const OnBoardingScreen({super.key});
 
-  static const String routeName = '/onBoardingScreen';
 
   @override
   ConsumerState<OnBoardingScreen> createState() => _OnBoardingScreenState();
@@ -24,18 +24,16 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
     OnboardingData(
       title: 'Manage Your Transport',
       titleColor: 'with Ease',
-      subtitle:
-      'A fast, cashless way to pay for rides —\nanytime, anywhere.',
-      imagePath: 'assets/svg/slide-one.png',
-      slidePath: 'assets/svg/slide-one.svg',
+      subtitle: 'A fast, cashless way to pay for rides —\nanytime, anywhere.',
+      imagePath: onboardingFirstPng,
+      slidePath: onboardingFirstSvg,
     ),
     OnboardingData(
       title: 'Bia Pay\nKeeps',
       titleColor: 'You Moving',
-      subtitle:
-      'Secure your wallet now and enjoy smooth,\nstress-free trips.',
-      imagePath: 'assets/svg/slide-two.png',
-      slidePath: 'assets/svg/slide-two.svg',
+      subtitle: 'Secure your wallet now and enjoy smooth,\nstress-free trips.',
+      imagePath: onboardingSecondPng,
+      slidePath: onboardingSecondSvg,
     ),
   ];
 
@@ -48,7 +46,7 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.themeContext.backgroundColor,
+      backgroundColor: lightBackground,
       body: PageView.builder(
         controller: _pageController,
         itemCount: onboardingPages.length,
@@ -98,31 +96,26 @@ class _OnboardingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 30.w),
-      color: context.themeContext.backgroundColor,
+      color: lightBackground,
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 300.h),
-
-            /// 🖼️ Image
             Center(
               child: Image.asset(
                 data.imagePath,
                 height: 170.h,
               ),
             ),
-
             SizedBox(height: 60.h),
-
-            /// 📝 Text content
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   data.title,
                   style: context.textTheme.headlineMedium?.copyWith(
-                    color: context.themeContext.primaryTextColor,
+                    color: lightText,
                     fontWeight: FontWeight.w600,
                     fontSize: 35.sp,
                   ),
@@ -130,7 +123,7 @@ class _OnboardingPage extends StatelessWidget {
                 Text(
                   data.titleColor,
                   style: context.textTheme.headlineMedium?.copyWith(
-                    color: context.themeContext.kPrimary,
+                    color: primaryColor,
                     fontWeight: FontWeight.w600,
                     fontSize: 35.sp,
                   ),
@@ -142,7 +135,7 @@ class _OnboardingPage extends StatelessWidget {
                     data.subtitle,
                     textAlign: TextAlign.start,
                     style: context.textTheme.bodySmall?.copyWith(
-                      color: context.themeContext.secondaryTextColor,
+                      color: lightSecondaryText,
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w400,
                     ),
@@ -150,10 +143,7 @@ class _OnboardingPage extends StatelessWidget {
                 ),
               ],
             ),
-
             SizedBox(height: 40.h),
-
-            /// 🔘 Bottom row (dots + button)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -161,14 +151,12 @@ class _OnboardingPage extends StatelessWidget {
                   data.slidePath,
                   height: 6.h,
                 ),
-
-                /// ✅ Using CustomButton instead of AppButton
                 SizedBox(
                   height: 50.h,
                   width: 100.w,
                   child: CustomButton(
-                    buttonColor: context.themeContext.kPrimary,
-                    buttonTextColor: Colors.white,
+                    buttonColor: primaryColor,
+                    buttonTextColor: secondaryColor,
                     buttonName: isLastPage ? 'Done' : 'Skip',
                     onPressed: () {
                       if (isLastPage) {

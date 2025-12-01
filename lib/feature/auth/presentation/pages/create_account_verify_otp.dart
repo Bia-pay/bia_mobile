@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import '../../../../app/utils/image.dart';
 import '../../authcontroller/authcontroller.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
@@ -43,8 +45,6 @@ class _CreateAccountVerifyOtpScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.themeContext;
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -53,7 +53,7 @@ class _CreateAccountVerifyOtpScreenState
             top: -90,
             right: -55,
             child: SvgPicture.asset(
-              'assets/svg/create-account-vector.svg',
+              vector,
               height: 220.h,
             ),
           ),
@@ -61,7 +61,7 @@ class _CreateAccountVerifyOtpScreenState
             bottom: -30,
             left: -25,
             child: SvgPicture.asset(
-              'assets/svg/create-account-vector-one.svg',
+              vectorOne,
               height: 250.h,
             ),
           ),
@@ -90,12 +90,12 @@ class _CreateAccountVerifyOtpScreenState
                       borderRadius: BorderRadius.circular(10.r),
                       fieldHeight: 45.h,
                       fieldWidth: 45.w,
-                      activeColor: theme.disabledBorderColor,
-                      selectedColor: theme.kPrimary,
-                      inactiveColor: theme.disabledBorderColor,
-                      activeFillColor: theme.tertiaryBackgroundColor,
-                      selectedFillColor: theme.kPrimary.withOpacity(0.1),
-                      inactiveFillColor: theme.tertiaryBackgroundColor,
+                      activeColor: borderColor,
+                      selectedColor: primaryColor,
+                      inactiveColor: borderColor,
+                      activeFillColor: lightBackground,
+                      selectedFillColor: primaryColor.withOpacity(0.1),
+                      inactiveFillColor: lightBackground,
                     ),
                     enableActiveFill: true,
                     onChanged: (value) {
@@ -105,7 +105,7 @@ class _CreateAccountVerifyOtpScreenState
                   SizedBox(height: 20.h),
 
                   CustomButton(
-                    buttonColor: theme.kPrimary,
+                    buttonColor: primaryColor,
                     buttonTextColor: Colors.white,
                     buttonName: _isLoading ? 'Verifying...' : 'Verify',
                     buttonBorderColor: Colors.transparent,

@@ -325,5 +325,16 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     await loadWalletBalance();
   }
 
+// In your DashboardController
+  Future<UserResponse?> fetchUserProfile(BuildContext context) async {
+    try {
+      // Call repository
+      final user =  await dashboardRepository.getUserProfile();
 
-}
+      EasyLoading.dismiss();
+      return user;
+    } catch (e) {
+      EasyLoading.dismiss();
+      return null;
+    }
+  }}

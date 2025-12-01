@@ -2,6 +2,9 @@ import 'package:bia/core/__core.dart';
 import 'package:bia/core/constraint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
+import '../../../../../app/utils/colors.dart';
 
 class CableTv extends StatefulWidget {
   const CableTv({super.key});
@@ -15,13 +18,13 @@ class _CableTvState extends State<CableTv> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.themeContext.grayWhiteBg,
+      backgroundColor: lightBackground,
       resizeToAvoidBottomInset: true,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(62.h(context)),
         child: Container(
           padding: padR(context, horizontal: 120.w(context)),
-          color: context.themeContext.grayWhiteBg,
+        //  color: context.themeContext.grayWhiteBg,
           alignment: Alignment.center,
           child: RRow(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,7 +72,7 @@ class _CableTvState extends State<CableTv> {
                   height: 50.h(context),
                   padding: padR(context, horizontal: 42),
                   decoration: BoxDecoration(
-                    color: context.themeContext.offWhiteBg,
+                    //color: context.themeContext.offWhiteBg,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -85,7 +88,7 @@ class _CableTvState extends State<CableTv> {
                             Text(
                               '${Constants.nairaCurrencySymbol}100',
                               style: context.textTheme.bodyMedium?.copyWith(
-                                color: context.themeContext.kPrimary,
+                                //color: primaryColor,
                                 fontSize: 15.sp(context),
                                 fontWeight: FontWeight.w600,
                               ),
@@ -98,14 +101,14 @@ class _CableTvState extends State<CableTv> {
                           Text(
                             '(1)',
                             style: context.textTheme.labelMedium?.copyWith(
-                              color: context.themeContext.secondaryTextColor,
+                              //color: context.themeContext.secondaryTextColor,
                             ),
                           ),
                           10.hSpace(context),
                           Icon(
                             Icons.arrow_forward_ios_outlined,
                             size: 12.sp(context),
-                            color: context.themeContext.secondaryTextColor,
+                           // color: context.themeContext.secondaryTextColor,
                           ),
                         ],
                       ),
@@ -124,7 +127,7 @@ class _CableTvState extends State<CableTv> {
                 Container(
                   padding: padR(context, vertical: 17, horizontal: 35),
                   decoration: BoxDecoration(
-                    color: context.themeContext.tertiaryBackgroundColor,
+                  //  color: context.themeContext.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
@@ -166,7 +169,7 @@ class _CardOneState extends State<CardOne> {
     return Container(
       padding: padR(context, vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-        color: context.themeContext.tertiaryBackgroundColor,
+       // color: context.themeContext.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
@@ -181,7 +184,7 @@ class _CardOneState extends State<CardOne> {
                 setState(() => _smartcardNumber = number);
               },
             ),
-            Divider(color: context.themeContext.lightGray),
+            Divider(color: Colors.grey.shade300),
             CableTvAmountSelector(
               selectedProvider: _selectedProvider,
               phoneNumber: _smartcardNumber,
@@ -310,7 +313,7 @@ class _CableProviderDropdownState extends State<CableProviderDropdown> {
             child: TextField(
               controller: _smartcardController,
               keyboardType: TextInputType.number,
-              cursorColor: context.themeContext.kPrimary,
+              cursorColor: primaryColor,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -342,12 +345,12 @@ class _CableProviderDropdownState extends State<CableProviderDropdown> {
             height: 30.h(context),
             width: 60.w(context),
             decoration: BoxDecoration(
-              color: context.themeContext.kSecondary,
+            //  color: context.themeContext.kSecondary,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
             child: Icon(
               Icons.person_rounded,
-              color: context.themeContext.kPrimary,
+             // color: primaryColor,
               size: 18,
             ),
           ),
@@ -434,9 +437,9 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
         TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: context.themeContext.kPrimary,
+          labelColor: primaryColor,
           unselectedLabelColor: Colors.grey,
-          indicatorColor: context.themeContext.kPrimary,
+          indicatorColor: primaryColor,
           tabs: _tabs.map((e) => Tab(text: e)).toList(),
         ),
 
@@ -471,7 +474,7 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
-                              ? context.themeContext.kPrimary
+                              ? primaryColor
                               : Colors.transparent,
                           width: 1.5,
                         ),
@@ -530,7 +533,7 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                             Text(
                               '₦${plan['price']}',
                               style: TextStyle(
-                                color: context.themeContext.kPrimary,
+                                color: primaryColor,
                                 fontSize: 14.sp(context),
                                 fontWeight: FontWeight.w700,
                               ),

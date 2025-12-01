@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:hive/hive.dart';
 import '../../../../app/utils/custom_button.dart';
+import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../dashboardcontroller/dashboardcontroller.dart';
 
@@ -45,6 +46,12 @@ class _CompleteTransactionBottomSheetState
     _initializeSettings();
   }
 
+  @override
+  void dispose() {
+    pinController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeSettings() async {
     final settingsBox = await Hive.openBox("settingsBox");
 
@@ -57,7 +64,8 @@ class _CompleteTransactionBottomSheetState
       // Then specifically check for fingerprint if available
       final availableBiometrics = await auth.getAvailableBiometrics();
 
-      hasFingerprint = (canCheck && isSupported) &&
+      hasFingerprint =
+          (canCheck && isSupported) &&
           (availableBiometrics.contains(BiometricType.fingerprint) ||
               availableBiometrics.isNotEmpty);
 
@@ -69,7 +77,10 @@ class _CompleteTransactionBottomSheetState
       debugPrint("⚠️ Biometric detection failed: $e");
     }
 
-    final biometricEnabled = settingsBox.get("biometric_enabled", defaultValue: false);
+    final biometricEnabled = settingsBox.get(
+      "biometric_enabled",
+      defaultValue: false,
+    );
     final savedPiin = settingsBox.get("saved_pin");
     print(savedPiin);
     setState(() {
@@ -89,10 +100,13 @@ class _CompleteTransactionBottomSheetState
       debugPrint("🔐 Fingerprint transfer enabled. Launching biometric...");
       Future.delayed(const Duration(milliseconds: 400), _authenticate);
     } else {
-      debugPrint("🧾 Fingerprint available but not enabled. Showing pin field.");
+      debugPrint(
+        "🧾 Fingerprint available but not enabled. Showing pin field.",
+      );
       setState(() => _showPasswordField = true);
     }
   }
+
   Future<void> _authenticate() async {
     try {
       setState(() => _isAuthenticating = true);
@@ -123,7 +137,8 @@ class _CompleteTransactionBottomSheetState
       }
 
       final cleanAmount =
-          double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+          double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+          0.0;
 
       const double fee = 10.00;
       final total = cleanAmount + fee;
@@ -132,10 +147,10 @@ class _CompleteTransactionBottomSheetState
 
       await authController.sendMoney(
         context,
-        widget.recipientAccount,                  // ACCOUNT
-        total.toStringAsFixed(2),                 // AMOUNT
-        narration,                                // NARRATION
-        pin,                                      // PIN (savedPin)
+        widget.recipientAccount, // ACCOUNT
+        total.toStringAsFixed(2), // AMOUNT
+        narration, // NARRATION
+        pin, // PIN (savedPin)
         save: _saveAsBeneficiary,
       );
 
@@ -162,28 +177,27 @@ class _CompleteTransactionBottomSheetState
       if (mounted) setState(() => _isAuthenticating = false);
     }
   }
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
-  }
 
+  void _showError(String msg) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
     final textTheme = Theme.of(context).textTheme;
 
     final amount =
-        double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+        double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+        0.0;
     const double fee = 10.00;
     final total = amount + fee;
 
     return Container(
-      height: 610.h,
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
       decoration: BoxDecoration(
-        color: themeContext.grayWhiteBg,
+        color: offWhite,
         borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
       ),
       child: SingleChildScrollView(
@@ -194,43 +208,44 @@ class _CompleteTransactionBottomSheetState
               alignment: Alignment.topRight,
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
-                child: SvgPicture.asset('assets/svg/cancel.svg'),
+                child: SvgPicture.asset(cancelSvg, height: 10.h),
               ),
             ),
-            SizedBox(height: 10.h),
             Text(
               'Are you sure?',
               style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: themeContext.kPrimary,
+                color: primaryColor,
                 fontSize: 27.sp,
               ),
             ),
-            SizedBox(height: 10.h),
             Text(
               'Please confirm your transfer details.',
               textAlign: TextAlign.center,
               style: textTheme.labelSmall,
             ),
-            SizedBox(height: 40.h),
-
+            SizedBox(height: 20.h),
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(20.w),
+              padding: EdgeInsets.all(15.w),
               decoration: BoxDecoration(
-                color: themeContext.keyColor,
+                color: keyAColor,
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Column(
                 children: [
-                  Text(widget.recipientName,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      )),
-                  Text(widget.recipientAccount,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: themeContext.secondaryTextColor,
-                      )),
+                  Text(
+                    widget.recipientName,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    widget.recipientAccount,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: lightSecondaryText,
+                    ),
+                  ),
                   SizedBox(height: 15.h),
                   Text(
                     '${Constants.nairaCurrencySymbol}${total.toStringAsFixed(2)}',
@@ -238,18 +253,15 @@ class _CompleteTransactionBottomSheetState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Divider(color: themeContext.checkboxBorderColor),
-                  _buildRow('Amount', amount, themeContext, textTheme),
-                  _buildRow('Fee', fee, themeContext, textTheme),
+                  Divider(color: checkboxBorderColor),
+                  _buildRow('Amount', amount, lightSecondaryText, textTheme),
+                  _buildRow('Fee', fee, lightSecondaryText, textTheme),
                 ],
               ),
             ),
-
-            SizedBox(height: 20.h),
-
-            _buildBeneficiaryToggle(themeContext, textTheme),
-
-            SizedBox(height: 20.h),
+            SizedBox(height: 5.h),
+            _buildBeneficiaryToggle(primaryColor, textTheme),
+            SizedBox(height: 10.h),
 
             if (_hasBiometric && _biometricEnabled && !_showPasswordField)
               Column(
@@ -257,9 +269,12 @@ class _CompleteTransactionBottomSheetState
                   GestureDetector(
                     onTap: _isAuthenticating ? null : _authenticate,
                     child: SvgPicture.asset(
-                      'assets/svg/fingerprint.svg',
+                      fingerPrint,
                       height: 100.h,
-                      colorFilter: ColorFilter.mode(themeContext.kPrimary, BlendMode.srcIn),
+                      colorFilter: ColorFilter.mode(
+                        primaryColor,
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
                   SizedBox(height: 15.h),
@@ -267,7 +282,7 @@ class _CompleteTransactionBottomSheetState
                     onPressed: () => setState(() => _showPasswordField = true),
                     child: Text(
                       'Use Pin Instead',
-                      // style: theme.textTheme.bodyMedium?.copyWith(color: themeContext.kPrimary),
+                      // style: theme.textTheme.bodyMedium?.copyWith(color: primaryColor),
                     ),
                   ),
                 ],
@@ -277,13 +292,14 @@ class _CompleteTransactionBottomSheetState
                 children: [
                   SizedBox(
                     width: 250.w,
-                    child: AppPinCodeField(controller: pinController,   length: 4,
+                    child: AppPinCodeField(
+                      controller: pinController,
+                      length: 4,
                       // 👇 Added custom styling
-                      fillColor: themeContext.keyColor,
-                      inactiveColor: themeContext.keyColor,
-                      activeColor: themeContext.kPrimary,
-                      selectedColor: themeContext.kPrimary,
-
+                      fillColor: keyAColor,
+                      inactiveColor: keyAColor,
+                      activeColor: primaryColor,
+                      selectedColor: primaryColor,
                     ),
                   ),
                   SizedBox(height: 20.h),
@@ -291,11 +307,20 @@ class _CompleteTransactionBottomSheetState
                     width: double.infinity,
                     child: CustomButton(
                       buttonName: 'Send Money',
-                      buttonColor: themeContext.kPrimary,
+                      buttonColor: primaryColor,
                       buttonTextColor: Colors.white,
                       onPressed: () async {
-                        final authController = ref.read(dashboardControllerProvider.notifier);
-                        await authController.sendMoney(context, widget.recipientAccount, total.toStringAsFixed(2), 'Transfer', pinController.text, save: _saveAsBeneficiary);
+                        final authController = ref.read(
+                          dashboardControllerProvider.notifier,
+                        );
+                        await authController.sendMoney(
+                          context,
+                          widget.recipientAccount,
+                          total.toStringAsFixed(2),
+                          'Transfer',
+                          pinController.text,
+                          save: _saveAsBeneficiary,
+                        );
 
                         final box = Hive.box("authBox");
                         final token = box.get("token");
@@ -309,7 +334,8 @@ class _CompleteTransactionBottomSheetState
                               "recipientName": widget.recipientName,
                               "recipientAccount": widget.recipientAccount,
                             },
-                          );                        }
+                          );
+                        }
                       },
                     ),
                   ),
@@ -321,21 +347,22 @@ class _CompleteTransactionBottomSheetState
     );
   }
 
-  /// 🧾 Summary Row Widget
   Widget _buildRow(
-      String label, double value, dynamic themeContext, TextTheme textTheme) {
+    String label,
+    double value,
+    dynamic themeContext,
+    TextTheme textTheme,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: textTheme.bodyMedium
-              ?.copyWith(color: themeContext.secondaryTextColor),
+          style: textTheme.bodyMedium?.copyWith(color: lightSecondaryText),
         ),
         Text(
           '${Constants.nairaCurrencySymbol}${value.toStringAsFixed(2)}',
-          style:
-          textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -352,13 +379,13 @@ class _CompleteTransactionBottomSheetState
               'Save as Beneficiary',
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: themeContext.primaryTextColor,
+                color: lightText,
               ),
             ),
           ],
         ),
         Transform.scale(
-          scale: 0.45,    // 👈 reduce size (0.6–0.9 works well)
+          scale: 0.45,
           child: Switch(
             value: _saveAsBeneficiary,
             onChanged: (bool value) {
@@ -366,7 +393,7 @@ class _CompleteTransactionBottomSheetState
                 _saveAsBeneficiary = value;
               });
             },
-            activeColor: themeContext.kPrimary,
+            activeColor: primaryColor,
           ),
         ),
       ],

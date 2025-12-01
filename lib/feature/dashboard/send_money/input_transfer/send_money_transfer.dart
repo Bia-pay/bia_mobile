@@ -2,12 +2,10 @@ import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import '../../../../app/view/widget/app_bar.dart';
 import '../../../../app/view/widget/app_search_field.dart';
 import '../../dashboardcontroller/dashboardcontroller.dart';
 import '../../model/recent_transfer.dart';
-import '../../pages/vtu/airtime/airtime.dart';
 import '../widget/tabs.dart';
 
 class SendMoneyTransfer extends ConsumerStatefulWidget {
@@ -40,7 +38,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
       final fullname = result?.responseBody?.user?.fullname ?? 'Unknown User';
 
       setState(() {
-        isVerified = true;            // SHOW CONTAINER
+        isVerified = true;
         verifiedName = fullname;
         verifiedPhone = accountNumber;
         verifiedAccount = accountNumber;
@@ -58,11 +56,8 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   Future<void> _verifyAccountSilently(BuildContext context, String accountNumber) async {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
     final result = await dashboardCtrl.verifyAccount(context, accountNumber);
-
     if (result?.responseSuccessful == true) {
       final fullname = result?.responseBody?.user?.fullname ?? 'Unknown User';
-
-      // ❌ DO NOT SET isVerified = true
       setState(() {
         verifiedName = fullname;
         verifiedPhone = accountNumber;
@@ -89,14 +84,12 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
-
     return Scaffold(
-      backgroundColor: themeContext.grayWhiteBg,
+      backgroundColor: offWhiteBackground,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,106 +99,96 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                   onBackPressed: () => Navigator.of(context).pop(),
                 ),
                 SizedBox(height: 10.h),
-
                 Text(
                   'Make new transfer',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 10.h),
-                Container(
-                  width: double.infinity,
-                  height: 60.h,
-                  decoration: BoxDecoration(
-                    color: themeContext.pinfieldTextColor,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  alignment: Alignment.center,
-                  child: AppField.transparent(
-                    hintText: 'Enter Account Number',
-                    onChanged: (value) {
-                      if (value.length == 10) {
-                        _verifyAccountFromInput(context, value.trim());
-                      } else {
-                        setState(() => isVerified = false);
-                      }
-                    },
-                  ),
+                SizedBox(height: 20.h),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 12.w),
+                decoration: BoxDecoration(
+                  color: whiteBackground,
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                if (isVerified) ...[
-                  SizedBox(height: 15.h),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    padding: EdgeInsets.all(15.w),
-                    decoration: BoxDecoration(
-                      color: themeContext.offWhiteBg,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Recipient Account',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.verified_rounded,
-                                color: themeContext.kPrimary, size: 22.sp),
-                            SizedBox(width: 8.w),
-                            Text(
-                              "Account Verified",
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: themeContext.kPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10.h),
-                        Text(
-                          "Name: $verifiedName",
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          "Account: $verifiedPhone",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: themeContext.secondaryTextColor,
-                          ),
-                        ),
-                        SizedBox(height: 15.h),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: themeContext.kPrimary,
-                              padding: EdgeInsets.symmetric(vertical: 12.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: () => _goToAmountPage(context),
-                            child: Text(
-                              "Send Money",
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
 
+                    SizedBox(height: 10.h),
+
+                    Container(
+                      height: 55.h,
+                      decoration: BoxDecoration(
+                        color: whiteBackground,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: AppField.transparent(
+                        hintText: 'Enter Account Number',
+                        width: double.infinity,
+                        initialValue: verifiedAccount,
+                        withClearButton: true,
+                        onChanged: (value) {
+                          if (value.length == 10) {
+                            _verifyAccountFromInput(context, value.trim());
+                          } else {
+                            setState(() => isVerified = false);
+                          }
+                        },
+                      ),
+                    ),
+
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: isVerified
+                          ? InkWell(
+                            onTap: () => _goToAmountPage(context),
+                            borderRadius: BorderRadius.circular(15),
+                            child: Container(
+                              width: double.infinity,
+                              key: ValueKey("verified_card"),
+                              padding: EdgeInsets.all(15.w),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(),
+                                  SizedBox(width: 10.w),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Name: $verifiedName",
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: lightText,
+                                        ),
+                                      ),
+                                      Text(
+                                        "Account: $verifiedPhone",
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: lightSecondaryText,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          : SizedBox.shrink(),
+                    )
+                  ],
+                ),
+              ),
                 SizedBox(height: 25.h),
 
                 Text(
@@ -245,18 +228,15 @@ class _CardThreeState extends ConsumerState<CardThree> {
   Future<void> _loadBeneficiaries() async {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
 
-    // Load cached first
     recentBeneficiaries = await dashboardCtrl.getRecentBeneficiary(context);
     setState(() => isLoading = false);
 
-    // Fetch fresh list in background
     final freshList = await dashboardCtrl.getRecentBeneficiary(context);
     setState(() => recentBeneficiaries = freshList);
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
 
     if (isLoading) return const Center(child: CircularProgressIndicator());
     if (recentBeneficiaries.isEmpty) return const Center(child: Text("No recent transfers found"));
@@ -264,7 +244,7 @@ class _CardThreeState extends ConsumerState<CardThree> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
-        color: themeContext.tertiaryBackgroundColor,
+        color: whiteBackground,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: BeneficiaryTabSection(

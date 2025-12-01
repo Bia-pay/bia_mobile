@@ -5,9 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
+import '../../../app/utils/custom_button.dart';
+import '../../../app/utils/image.dart';
+import '../../../app/utils/widgets/pin_field.dart';
 import '../../../core/helper/helper.dart';
+import '../../auth/authrepo/repo.dart';
 import '../dashboardcontroller/provider.dart';
 import '../widgets/transaction.dart';
 import '../dashboard_repo/repo.dart'; // or wherever you put recentTransactionsProvider
@@ -20,10 +25,48 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  // @override
+  // void initState() {
+  //   super.initState();
+  //
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     _maybeShowPinSheet();
+  //   });
+  // }
+  //
+  // void _maybeShowPinSheet() async {
+  //   final box = await Hive.openBox('authBox'); // ensure the box is ready
+  //
+  //   final hasPin = box.get('has_pin', defaultValue: false);
+  //   final savedPin = box.get('saved_pin', defaultValue: '');
+  //
+  //   // Show sheet only for new users who have not set a valid PIN
+  //   if (!hasPin || savedPin.isEmpty) {
+  //     Future.delayed(const Duration(milliseconds: 200), () {
+  //       showModalBottomSheet(
+  //         context: context,
+  //         isDismissible: false,
+  //         enableDrag: false,
+  //         isScrollControlled: true,
+  //         backgroundColor: Colors.white,
+  //         shape: const RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //         ),
+  //         builder: (_) => const _SetPinSheet(),
+  //       );
+  //     });
+  //   }
+  // }
+
+  Future<void> _handleRefresh() async {
+    // show pull-to-refresh spinner until both complete
+    final txFuture = ref.read(recentTransactionsProvider.notifier).refresh();
+    final walletFuture = ref.read(dashboardControllerProvider.notifier).refreshWalletBalance();
+    await Future.wait([txFuture, walletFuture]);
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
 
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'NGN');
@@ -33,12 +76,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         : transactions;
 
     return RefreshIndicator(
-      onRefresh: () async {
-        await ref.read(recentTransactionsProvider.notifier).refresh();
-        await ref.read(dashboardControllerProvider.notifier).refreshWalletBalance();
-      },
+      onRefresh: _handleRefresh,
       child: Scaffold(
-        backgroundColor: themeContext.grayWhiteBg,
+        backgroundColor: offWhiteBackground,
         resizeToAvoidBottomInset: false,
         body: SafeArea(
           child: Padding(
@@ -47,7 +87,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  /// 🔹 Top Header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -58,13 +97,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                             width: 45.w,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: themeContext.kPrimary),
+                              border: Border.all(color: primaryColor),
                             ),
-                            child: Image.asset('assets/svg/logo-two.png'),
+                            child: Image.asset(appLogoPng),
                           ),
                           SizedBox(width: 10.w),
                           Text(
-                            'Hi, ${fullname}',
+                            'Hello, ${fullname}',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
@@ -76,26 +115,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(100),
                         ),
-                        child: SvgPicture.asset('assets/svg/bell.svg'),
+                        child: SvgPicture.asset(bell),
                       ),
                     ],
                   ),
-
                   SizedBox(height: 10.h),
-
-                  /// 💳 Balance Card
                   const BalanceCard(),
-
                   SizedBox(height: 10.h),
-
-                  /// ⚡ Actions Row
                   Container(
                     padding: EdgeInsets.symmetric(
                       vertical: 19.h,
                       horizontal: 5.w,
                     ),
                     decoration: BoxDecoration(
-                      color: themeContext.offWhiteBg,
+                      color: offWhite,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -103,7 +136,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       children: [
                         ActionButton(
                           label: 'Send TP',
-                          icon: SvgPicture.asset('assets/svg/send.svg'),
+                          icon: SvgPicture.asset(send),
                           onTap: () => Navigator.pushNamed(
                             context,
                             RouteList.sendMoneyTransfer,
@@ -113,12 +146,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                           label: 'Bia Trike',
                           icon: Icon(
                             Icons.car_crash_sharp,
-                            color: context.themeContext.kPrimary,
+                            color: primaryColor,
                           ),
                         ),
                         ActionButton(
                           label: 'Other Banks',
-                          icon: Image.asset('assets/svg/atm.png', height: 23.h),
+                          icon: Image.asset(atm, height: 23.h),
                           onTap: () => Navigator.pushNamed(
                             context,
                             RouteList.sendMoneyToBank,
@@ -127,26 +160,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                   ),
-
                   SizedBox(height: 10.h),
-
-                  /// ⚙️ Quick Actions
                   Text(
                     'Quick Actions',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   SizedBox(height: 8.h),
-
                   Container(
                     padding: EdgeInsets.symmetric(
                       vertical: 20.h,
                       horizontal: 25.w,
                     ),
                     decoration: BoxDecoration(
-                      color: themeContext.offWhiteBg,
+                    color: offWhite,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -156,7 +184,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           label: 'Airtime',
                           icon: Icon(
                             Icons.bar_chart,
-                            color: context.themeContext.kPrimary,
+                            color: primaryColor,
                           ),
                           onTap: () => Navigator.pushReplacementNamed(
                             context,
@@ -167,7 +195,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           label: 'Data',
                           icon: Icon(
                             Icons.four_g_plus_mobiledata,
-                            color: context.themeContext.kPrimary,
+                            color: primaryColor,
                           ),
                           onTap: () => Navigator.pushReplacementNamed(
                             context,
@@ -178,7 +206,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           label: 'Cable TV',
                           icon: Icon(
                             Icons.tv,
-                            color: context.themeContext.kPrimary,
+                            color: primaryColor,
                           ),
                           onTap: () => Navigator.pushReplacementNamed(
                             context,
@@ -189,7 +217,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           label: 'Utility Bill',
                           icon: Icon(
                             Icons.accessibility,
-                            color: context.themeContext.kPrimary,
+                            color: primaryColor,
                           ),
                           onTap: () => Navigator.pushNamed(
                             context,
@@ -230,7 +258,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   //             return Container(
                   //               margin: EdgeInsets.only(bottom: 6.h),
                   //               decoration: BoxDecoration(
-                  //                 color: themeContext.offWhiteBg,
+                  //                 //color: themeContext.offWhiteBg,
                   //                 borderRadius: BorderRadius.circular(8.r),
                   //               ),
                   //               child: ListTile(
@@ -263,16 +291,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                   //     );
                   //   },
                   // ),
+              // Usage in HomePage
                   Consumer(
                     builder: (context, ref, _) {
                       final asyncTx = ref.watch(recentTransactionsProvider);
+
                       return asyncTx.when(
                         data: (transactions) {
                           if (transactions.isEmpty) {
-                            return const Center(
-                              child: Text("No recent transactions"),
-                            );
+                            return const Center(child: Text("No recent transactions"));
                           }
+
                           return ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -282,23 +311,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                               return Container(
                                 margin: EdgeInsets.only(bottom: 6.h),
                                 decoration: BoxDecoration(
-                                  color: themeContext.offWhiteBg,
+                                  color: offWhite,
                                   borderRadius: BorderRadius.circular(8.r),
                                 ),
                                 child: ListTile(
                                   leading: Icon(
-                                    tx.isCredit == true
-                                        ? Icons.call_received
-                                        : Icons.call_made,
-                                    color: tx.isCredit == true
-                                        ? Colors.green
-                                        : Colors.red,
+                                    tx.isCredit == true ? Icons.call_received : Icons.call_made,
+                                    color: tx.isCredit == true ? successColor : errorColor,
                                   ),
                                   title: Text(
                                     tx.isCredit == true
                                         ? tx.senderName ?? 'Unknown'
                                         : tx.receiverName ?? 'Unknown',
                                   ),
+
                                   subtitle: Text(
                                     formatTransactionDate(tx.createdAt),
                                     style: theme.textTheme.bodySmall?.copyWith(
@@ -309,9 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     "${tx.isCredit == true ? '+' : '-'}₦${tx.amount}",
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w700,
-                                      color: tx.isCredit == true
-                                          ? Colors.green
-                                          : Colors.red,
+                                      color: tx.isCredit == true ? successColor : errorColor,
                                     ),
                                   ),
                                 ),
@@ -319,13 +343,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                             },
                           );
                         },
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
+                        loading: () => const Center(child: CircularProgressIndicator()),
                         error: (e, _) => Center(child: Text("Error: $e")),
                       );
                     },
-                  ),
-                ],
+                  )                ],
               ),
             ),
           ),
@@ -340,7 +362,7 @@ class BalanceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeContext = context.themeContext;
+
     final theme = Theme.of(context);
 
     // 🔹 Listen to the wallet balance from DashboardController
@@ -368,7 +390,7 @@ class BalanceCard extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 15.w),
       decoration: BoxDecoration(
-        color: themeContext.kPrimary,
+        color: primaryColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -403,7 +425,7 @@ class BalanceCard extends ConsumerWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
               decoration: BoxDecoration(
-                color: themeContext.tertiaryBackgroundColor,
+                color: whiteBackground,
                 borderRadius: BorderRadius.all(Radius.circular(8.r)),
               ),
               child: Row(
@@ -414,7 +436,7 @@ class BalanceCard extends ConsumerWidget {
                   Text(
                     'Add money',
                     style: context.textTheme.bodyMedium?.copyWith(
-                      color: context.themeContext.kPrimary,
+                      color: primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -451,7 +473,7 @@ class ActionButton extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 20.w),
             decoration: BoxDecoration(
-              color: context.themeContext.kSecondary,
+             color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
             child: icon,
@@ -460,7 +482,7 @@ class ActionButton extends StatelessWidget {
           Text(
             label,
             style: context.textTheme.labelSmall?.copyWith(
-              color: context.themeContext.secondaryTextColor,
+              color: lightSecondaryText,
               fontWeight: FontWeight.w600,
               fontSize: 12.sp,
             ),
@@ -495,7 +517,7 @@ class QuickActionButton extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
             decoration: BoxDecoration(
-              color: context.themeContext.kSecondary,
+             color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
             ),
             child: icon,
@@ -504,10 +526,95 @@ class QuickActionButton extends StatelessWidget {
           Text(
             label,
             style: context.textTheme.labelSmall?.copyWith(
-              color: context.themeContext.secondaryTextColor,
+              color: lightSecondaryText,
               fontWeight: FontWeight.w600,
               fontSize: 12.sp,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetPinSheet extends ConsumerStatefulWidget {
+  const _SetPinSheet({super.key});
+
+  @override
+  ConsumerState<_SetPinSheet> createState() => _SetPinSheetState();
+}
+
+class _SetPinSheetState extends ConsumerState<_SetPinSheet> {
+  final pinController = TextEditingController();
+  bool isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 25,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 25,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Set Your Transaction PIN",
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 20),
+          AppPinCodeField(
+            controller: pinController,
+            length: 4,
+            activeColor: primaryColor,
+            selectedColor: primaryColor,
+            fillColor: keyAColor,
+          ),
+          SizedBox(height: 25),
+          CustomButton(
+            buttonName: isLoading ? "Saving..." : "Save PIN",
+            buttonColor: primaryColor,
+            buttonTextColor: Colors.white,
+            onPressed: isLoading ? null : () async {
+              final pin = pinController.text.trim();
+
+              if (pin.length != 4) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("PIN must be 4 digits")),
+                );
+                return;
+              }
+
+              setState(() => isLoading = true);
+
+              final authRepo = ref.read(authRepositoryProvider);
+              final res = await authRepo.setPin(pin, pin); // call backend
+
+              setState(() => isLoading = false);
+
+              if (!res.responseSuccessful) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(res.responseMessage)),
+                );
+                return;
+              }
+
+              // ✅ Save locally
+              final box = Hive.box('authBox');
+              await box.put('saved_pin', pin);
+              await box.put('has_pin', true);
+
+              Navigator.pop(context); // close sheet
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("PIN set successfully")),
+              );
+            },
           ),
         ],
       ),

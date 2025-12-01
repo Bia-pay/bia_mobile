@@ -68,11 +68,10 @@ class _AppSearchFieldState extends State<AppSearchField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
 
     final h = widget.height ?? AppSearchField.defaultHeight.h;
     final fillColor =
-    widget.isBackgroundTransparent ? Colors.transparent : themeContext.lightGray;
+    widget.isBackgroundTransparent ? Colors.transparent : lightgray;
     final textColor = theme.textTheme.bodyMedium?.color ?? Colors.black;
 
     return Container(
@@ -92,19 +91,34 @@ class _AppSearchFieldState extends State<AppSearchField> {
           color: textColor,
         ),
         decoration: InputDecoration(
-          border: InputBorder.none,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide.none, // default
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(
+              color: Colors.transparent, // no border when not focused
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(
+              color: primaryColor,
+              width: 2,
+            ),
+          ),
           hintText: widget.hintText ?? 'Search',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
             fontSize: 14.sp,
-            color: themeContext.secondaryTextColor,
+            color: lightSecondaryText,
           ),
           prefixIcon: Padding(
             padding: EdgeInsets.only(left: 10.w, right: 6.w),
             child: Icon(
               Icons.search,
-              color: widget.readOnly
-                  ? theme.disabledColor
-                  : themeContext.kPrimary,
+              color: widget.readOnly ? theme.disabledColor : primaryColor,
               size: 22.sp,
             ),
           ),
@@ -118,14 +132,13 @@ class _AppSearchFieldState extends State<AppSearchField> {
             },
             icon: Icon(
               Icons.clear,
-              color: themeContext.secondaryTextColor,
+              color: lightSecondaryText,
               size: 20.sp,
             ),
           )
               : null,
           contentPadding: EdgeInsets.symmetric(vertical: 10.h),
-        ),
-      ),
+        ),      ),
     );
   }
 }
@@ -196,11 +209,10 @@ class _AppFieldState extends State<AppField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
 
     final h = widget.height ?? AppField.defaultHeight.h;
     final fillColor =
-    widget.isBackgroundTransparent ? Colors.transparent : themeContext.lightGray;
+    widget.isBackgroundTransparent ? Colors.transparent : lightgray;
     final textColor = theme.textTheme.bodyMedium?.color ?? Colors.black;
 
     return Container(
@@ -221,11 +233,28 @@ class _AppFieldState extends State<AppField> {
           color: textColor,
         ),
         decoration: InputDecoration(
-          border: InputBorder.none,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.r),
+            borderSide: BorderSide(
+              color: borderColor,
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.r),
+            borderSide: BorderSide(
+              color: secondaryColor,
+              width: 2,
+            ),
+          ),
           hintText: widget.hintText ?? 'Enter value',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
             fontSize: 13.sp,
-            color: themeContext.secondaryTextColor,
+            color: lightSecondaryText,
           ),
           suffixIcon: widget.withClearButton
               ? IconButton(
@@ -237,14 +266,13 @@ class _AppFieldState extends State<AppField> {
             },
             icon: Icon(
               Icons.clear,
-              color: themeContext.secondaryTextColor,
+              color: lightSecondaryText,
               size: 20.sp,
             ),
           )
               : null,
           contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-        ),
-      ),
+        ),      ),
     );
   }
 }

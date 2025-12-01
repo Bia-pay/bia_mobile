@@ -238,10 +238,8 @@ class DashboardRepository {
   //  Fetch Recent Transactions
   Future<TransactionResponse> getRecentTransactions() async {
     try {
-      // Open Hive box to get token
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      print("🔑 Using token: $token");
 
       if (token.isEmpty) {
         return TransactionResponse(
@@ -251,41 +249,35 @@ class DashboardRepository {
         );
       }
 
-      // Update API headers
       _apiClient.updateHeaders(token);
 
-      // Fetch transactions from API
       final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=3");
       final jsonResponse = jsonDecode(response.body);
-      print("✅ Transaction Response: $jsonResponse");
 
-      // Ensure transactions exist in response
-      final transactionsList = jsonResponse['transactions'] as List<dynamic>? ?? [];
+      // 🔹 Print out the raw responseBody for debugging
+      debugPrint('📦 Transaction API responseBody: ${jsonResponse['responseBody']}');
 
-      // Take only first 3 items (enforce limit locally)
-      final limitedTransactions = transactionsList
-          .take(3)
-          .map((e) => TransactionItem.fromJson(e))
+      final body = jsonResponse['responseBody'] ?? {};
+      final list = body['transactions'] ?? [];
+
+      final parsedTransactions = list
+          .map<TransactionItem>((e) => TransactionItem.fromJson(e))
           .toList();
 
-      // Build the TransactionResponse
       return TransactionResponse(
         responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
         responseMessage: jsonResponse['responseMessage'] ?? '',
-        transactions: limitedTransactions,
+        transactions: parsedTransactions,
       );
     } catch (e) {
-      print("❌ Error fetching transactions: $e");
+      debugPrint('⚠️ Transaction API error: $e');
       return TransactionResponse(
         responseSuccessful: false,
         responseMessage: "Error: $e",
         transactions: [],
       );
     }
-  }
-
-  //  Fetch Recent Beneficiary
-  Future<RecentBeneficiaryResponse> getRecentBeneficiary() async {
+  }  Future<RecentBeneficiaryResponse> getRecentBeneficiary() async {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
@@ -307,4 +299,38 @@ class DashboardRepository {
         beneficiaries: [],
       );
     }
-  }}
+  }
+  Future<UserResponse?> getUserProfile() async {
+    try {
+      final box = await Hive.openBox('authBox');
+      final token = box.get('token', defaultValue: '');
+      if (token.isEmpty) return null;
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      final response = await http.get(
+        Uri.parse("${ApiConstant.BASE_URL}${ApiConstant.PROFILE_UPDATE}"),
+        headers: headers,
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final user = UserResponse.fromJson(jsonResponse['responseBody']['user']);
+        print(response.body);
+        // Save locally
+        await box.put('saved_user_profile', user.toJson());
+        return user;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      debugPrint("Error fetching user profile: $e");
+      return null;
+    }
+  }
+
+}

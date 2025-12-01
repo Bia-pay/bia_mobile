@@ -10,7 +10,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
-import 'core/themes/theme_controller.dart';
 import 'feature/auth/interceptor/interceptor.dart';
 import 'feature/auth/presentation/pages/splash_screen.dart'; // make sure this exists
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/themes/theme_context.dart';
+import 'package:bia/core/__core.dart';
 import '../../validation/validator.dart';
 
 class AppTextField extends StatelessWidget {
@@ -80,7 +80,6 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = ThemeContext.of(context);
     final textTheme = Theme.of(context).textTheme;
 
     final defaultBorderSide =
@@ -98,27 +97,27 @@ class AppTextField extends StatelessWidget {
         textTheme.displaySmall?.copyWith(
           color: enabled
               ? const Color(0xFF383842)
-              : themeContext.disabledTextColor,
+              : disabledTextColor,
         );
 
     final defaultLabelStyle = textTheme.displaySmall?.copyWith(
       color: enabled
           ? const Color(0xFF383842)
-          : themeContext.disabledTextColor,
+          : disabledTextColor,
       fontSize: 10,
     );
 
     final errorLabelStyle = textTheme.bodySmall?.copyWith(
       color: enabled
           ? const Color(0xFFE83B3B)
-          : themeContext.disabledTextColor,
+          : disabledTextColor,
       fontSize: 13,
     );
 
     final defaultHintStyle = textTheme.bodySmall?.copyWith(
       color: enabled
           ? const Color(0xFFB6B7C3)
-          : themeContext.disabledTextColor,
+          : disabledTextColor,
       fontSize: 12,
     );
 
@@ -137,7 +136,7 @@ class AppTextField extends StatelessWidget {
       fillColor: decoration?.fillColor ??
           (enabled
               ? Colors.white
-              : themeContext.disabledBackgroundColor),
+              : whiteBackground),
       border: decoration?.border ?? InputBorder.none,
       enabledBorder: hasNoBorder
           ? InputBorder.none
@@ -162,7 +161,7 @@ class AppTextField extends StatelessWidget {
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
             borderSide: defaultBorderSide.copyWith(
-              color: themeContext.errorBorderColor,
+              color: errorColor,
             ),
           )),
       focusedErrorBorder: hasNoBorder
@@ -171,7 +170,7 @@ class AppTextField extends StatelessWidget {
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
             borderSide: defaultBorderSide.copyWith(
-              color: themeContext.errorBorderColor,
+              color: errorColor,
               width: 1.5,
             ),
           )),
@@ -181,17 +180,17 @@ class AppTextField extends StatelessWidget {
           OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
             borderSide: defaultBorderSide.copyWith(
-              color: themeContext.disabledBorderColor,
+              color: disabledBorderColor,
             ),
           )),
       suffixIcon: suffixIcon,
       suffixIconColor: enabled
           ? const Color(0xFF5B5D6E)
-          : themeContext.disabledIconColor,
+          : disabledBorderColor,
       prefixIcon: prefixIcon,
       prefixIconColor: enabled
           ? const Color(0xFF5B5D6E)
-          : themeContext.disabledIconColor,
+          : disabledBorderColor,
 
       /// 👇 This controls input alignment and height
       contentPadding: decoration?.contentPadding ??

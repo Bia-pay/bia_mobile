@@ -87,8 +87,20 @@ class UserResponse {
       updatedAt: json['updatedAt'],
     );
   }
-}
-class WalletResponse {
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'fullname': fullname,
+    'email': email,
+    'phone': phone,
+    'status': status,
+    'tier': tier,
+    'roles': roles,
+    'isVerified': isVerified,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+  };
+}class WalletResponse {
   final int? id;
   final int? userId;
   final dynamic balance;

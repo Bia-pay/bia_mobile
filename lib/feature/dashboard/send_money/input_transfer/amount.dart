@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../../app/utils/custom_button.dart';
+import '../../../../app/utils/image.dart';
 import '../../../../app/view/widget/app_textfield.dart';
 import 'complete_transaction.dart';
 
@@ -27,7 +27,6 @@ class AmountPage extends ConsumerStatefulWidget {
     this.onOk,
   });
 
-  static const String routeName = '/amountPage';
 
   @override
   ConsumerState<AmountPage> createState() => _AmountPageState();
@@ -38,7 +37,6 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   int _selectedIndex = -1;
   bool showMinWarning = false;
 
-  /// ✅ Add digit normally
   void addDigit(String value) {
     setState(() {
       String current = amount.replaceAll('₦', '');
@@ -72,14 +70,12 @@ class _AmountPageState extends ConsumerState<AmountPage> {
     });
   }
 
-  /// ✅ Check if amount is below ₦100 and show warning
   void _checkMinLimit() {
     final numericValue =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
     showMinWarning = numericValue < 50 && numericValue != 0;
   }
 
-  /// ✅ Only allow ₦100 and above
   void _showConfirmBottomSheet() {
     final numericAmount =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
@@ -104,10 +100,8 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
-
     return Scaffold(
-      backgroundColor: themeContext.grayWhiteBg,
+      backgroundColor: offWhiteBackground,
       appBar: AppBar(
         title: Text(
           widget.title,
@@ -115,12 +109,12 @@ class _AmountPageState extends ConsumerState<AmountPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: themeContext.grayWhiteBg,
+        backgroundColor: offWhiteBackground,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          color: themeContext.titleTextColor,
+          color: lightText,
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -130,38 +124,36 @@ class _AmountPageState extends ConsumerState<AmountPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recipient',
+              'Recipient Details',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(height: 10.h),
-
-            /// 🔹 Recipient Card
             Container(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
               decoration: BoxDecoration(
-                color: themeContext.offWhiteBg,
+                color: offWhite,
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 25.r,
-                    backgroundColor: themeContext.kSecondary,
+                    radius: 20.r,
+                    backgroundColor: secondaryColor,
                     child: widget.recipientIconPath != null
                         ? SvgPicture.asset(
                       widget.recipientIconPath!,
                       height: 30.h,
                       colorFilter: ColorFilter.mode(
-                        themeContext.kPrimary,
+                        primaryColor,
                         BlendMode.srcIn,
                       ),
                     )
                         : Icon(
                       Icons.person,
                       size: 30.sp,
-                      color: themeContext.kPrimary,
+                      color: primaryColor,
                     ),
                   ),
                   SizedBox(width: 13.w),
@@ -171,26 +163,29 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                       children: [
                         Text(
                           widget.recipientName,
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: themeContext.titleTextColor,
+                            color: lightText,
                           ),
                         ),
                         Text(
                           widget.recipientAccount,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: themeContext.secondaryTextColor,
+                            color: lightSecondaryText,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  SvgPicture.asset('assets/svg/edit.svg', height: 15.h),
+                  GestureDetector(
+                      onTap: (){
+                        Navigator.pop(context);
+                      },
+                      child: SvgPicture.asset(editSvg, height: 15.h)),
                 ],
               ),
             ),
-
-            SizedBox(height: 15.h),
+            SizedBox(height: 35.h),
             Text(
               'Enter Amount',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -198,63 +193,55 @@ class _AmountPageState extends ConsumerState<AmountPage> {
               ),
             ),
             SizedBox(height: 5.h),
-
-            /// 🔹 Amount Field
             AppTextField(
               controller: widget.controller,
               readOnly: true,
-              borderRadius: 8,
+              borderRadius: 8.r,
               hintTextAlign: TextAlign.center,
               textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 hintText: "₦0.00",
                 hintStyle: theme.textTheme.titleLarge?.copyWith(
-                  color: themeContext.secondaryTextColor,
-                  fontSize: 22.sp,
+                  color: lightSecondaryText,
+                  fontSize: 23.sp,
                   fontWeight: FontWeight.w500,
                 ),
                 contentPadding:
                 const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                  BorderSide(color: themeContext.kPrimary, width: 1),
+                  borderSide: BorderSide(color: primaryColor, width: 1.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                  BorderSide(color: themeContext.kPrimary, width: 1.5),
+                  borderSide: BorderSide(color: primaryColor, width: 1.5),
                 ),
               ),
             ),
-
-            /// ⚠️ Minimum Amount Warning
             if (showMinWarning)
               Padding(
                 padding: EdgeInsets.only(top: 6.h, left: 4.w),
                 child: Text(
                   "Minimum amount you can send is ₦50",
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.red,
+                    color: errorColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
 
             SizedBox(height: 20.h),
-
-            /// 🔹 Next Button
-            Center(
-              child: SizedBox(
-                width: 280.w,
-                child: CustomButton(
-                  buttonName: 'Next',
-                  buttonColor: themeContext.kPrimary,
-                  buttonTextColor: Colors.white,
-                  onPressed: _showConfirmBottomSheet,
-                ),
-              ),
-            ),
+            // Center(
+            //   child: SizedBox(
+            //     width: 280.w,
+            //     child: CustomButton(
+            //       buttonName: 'Next',
+            //       buttonColor: primaryColor,
+            //       buttonTextColor: Colors.white,
+            //       onPressed: _showConfirmBottomSheet,
+            //     ),
+            //   ),
+            // ),
 
             SizedBox(height: 25.h),
 
@@ -286,15 +273,15 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                   ];
                   String key = keys[index];
 
-                  Color keyColor = themeContext.keyColor;
-                  Color textColor = themeContext.secondaryTextColor;
+                  Color keyColor = keyAColor;
+                  Color textColor = lightSecondaryText;
 
                   if (key == "x") {
-                    keyColor = themeContext.kPrimary.withOpacity(0.1);
-                    textColor = themeContext.kPrimary;
+                    keyColor = primaryColor.withOpacity(0.1);
+                    textColor = primaryColor;
                   } else if (key == "ok") {
-                    keyColor = themeContext.kPrimary;
-                    textColor = themeContext.tertiaryBackgroundColor;
+                    keyColor = primaryColor;
+                    textColor = whiteBackground;
                   }
 
                   return InkWell(
@@ -319,7 +306,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: _selectedIndex == index
-                              ? themeContext.kPrimary
+                              ? primaryColor
                               : Colors.transparent,
                           width: 2,
                         ),
@@ -327,7 +314,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                             ? [
                           BoxShadow(
                             color:
-                            themeContext.kPrimary.withOpacity(0.25),
+                            primaryColor.withOpacity(0.25),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -340,7 +327,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                         'assets/svg/cancel.svg',
                         height: 20.h,
                         colorFilter: ColorFilter.mode(
-                          themeContext.kPrimary,
+                          primaryColor,
                           BlendMode.srcIn,
                         ),
                       )
@@ -348,7 +335,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                           ? Icon(
                         Icons.arrow_forward,
                         color: _selectedIndex == index
-                            ? themeContext.kPrimary
+                            ? primaryColor
                             : textColor,
                         size: 24.sp,
                       )
@@ -356,8 +343,8 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                         key,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           color: _selectedIndex == index
-                              ? themeContext.kPrimary
-                              : themeContext.titleTextColor,
+                              ? primaryColor
+                              : lightText,
                           fontSize: 24.sp,
                           fontWeight: FontWeight.w500,
                         ),

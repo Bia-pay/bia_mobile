@@ -49,6 +49,8 @@ class AuthRepository {
         await box.put("phone", userJson['phone'] ?? '');
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
+        await box.put("has_pin", false); // assume new user has no PIN
+        await box.put('refreshToken', refreshToken);  // long-lived refresh token
 
         // If this is a manual login, store credentials for biometric login
         if (!fromBiometric && body.containsKey('password')) {
@@ -278,7 +280,7 @@ class AuthRepository {
         final box = Hive.box("authBox");
         await box.put("accessToken", userResponse.responseBody?.accessToken);
         await box.put("fullname", userResponse.responseBody?.user?.fullname);
-
+        await box.put("has_pin", false); // assume new user has no PIN
         return ResponseModel(
           responseMessage: 'Registration Successful',
           responseSuccessful: true,
@@ -302,6 +304,45 @@ class AuthRepository {
       print('❌ Exception during registration: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Please try again.',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+  Future<ResponseModel> setPin(String pin, String confirmPin) async {
+    try {
+      final body = {
+        "pin": pin,
+        "confirmPin": confirmPin,
+      };
+
+      http.Response response = await _apiClient.postData(
+        ApiConstant.SET_PIN, // add this constant
+        body,
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final box = Hive.box("authBox");
+        await box.put("has_pin", true);
+        await box.put("saved_pin", pin);
+
+        return ResponseModel(
+          responseMessage: jsonResponse["responseMessage"] ?? "PIN set successfully",
+          responseSuccessful: true,
+          statusCode: response.statusCode,
+        );
+      }
+
+      return ResponseModel(
+        responseMessage: jsonResponse["responseMessage"] ?? "Failed to set PIN",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: "Something went wrong",
         responseSuccessful: false,
         statusCode: 500,
       );

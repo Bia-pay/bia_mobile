@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../../core/extensions/theme_extension.dart';
+import '../../../../app/utils/colors.dart';
 
 class BeneficiaryTabSection extends ConsumerStatefulWidget {
   final List<Map<String, String>> favorites;
   final List<Map<String, String>> recents;
   final void Function(String name, String account)? onSelectBeneficiary;
   final VoidCallback? onSearchTap;
-  final bool showProgress; // optional progress circle
-  final bool showLogo; // optional logo
-  final Widget? customLogo; // allows custom logo widget
-  final double progressValue; // dynamic percentage (if enabled)
+  final bool showProgress;
+  final bool showLogo;
+  final Widget? customLogo;
+  final double progressValue;
 
   const BeneficiaryTabSection({
     super.key,
@@ -32,7 +31,7 @@ class BeneficiaryTabSection extends ConsumerStatefulWidget {
 }
 
 class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
-  String selectedTab = "Recent"; // 🔹 Default selected tab changed to Recent
+  String selectedTab = "Recent";
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +46,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: context.themeContext.pinfieldTextColor,
+           // color: context.themeContext.pinfieldTextColor,
             borderRadius: BorderRadius.circular(15.r),
           ),
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
@@ -56,19 +55,18 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
             children: [
               Row(
                 children: [
-                  _buildTab(context, "Recent"), // 🔹 Recent first
+                  _buildTab(context, "Recent"),
                   SizedBox(width: 10.w),
                   _buildTab(context, "Favorites"),
                 ],
               ),
               GestureDetector(
                 onTap: widget.onSearchTap,
-                child: Icon(Icons.search, color: context.themeContext.kPrimary),
+                child: Icon(Icons.search, color: primaryColor),
               ),
             ],
           ),
         ),
-
         SizedBox(height: 20.h),
 
         // Beneficiaries List
@@ -83,7 +81,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 13.h, horizontal: 15.w),
                 decoration: BoxDecoration(
-                  color: context.themeContext.offWhiteBg,
+                  color: lightSurface,
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Row(
@@ -91,12 +89,11 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
                   children: [
                     Row(
                       children: [
-                        // optional progress ring
                         if (widget.showProgress)
                           CircularPercentageIndicator(
                             percentage: widget.progressValue,
                             size: 50.h,
-                            color: context.themeContext.kPrimary,
+                            color: primaryColor,
                           ),
                         if (widget.showProgress) SizedBox(width: 20.w),
                         Column(
@@ -105,27 +102,25 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
                             Text(
                               name,
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: context.themeContext.titleTextColor,
+                                color: lightText,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               account,
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.grey,
+                                color: lightSecondaryText,
                               ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    // optional logo
                     if (widget.showLogo)
                       widget.customLogo ??
                           CircleAvatar(
                             radius: 18.r,
-                            backgroundColor:
-                            context.themeContext.kPrimary.withOpacity(0.1),
+                            backgroundColor: primaryColor.withOpacity(0.1),
                             child: Image.asset(
                               'assets/svg/logo-two.png',
                               height: 25.h,
@@ -156,7 +151,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: isSelected ? context.themeContext.kPrimary : Colors.grey,
+            color: isSelected ? primaryColor : lightSecondaryText,
           ),
         ),
       ),
@@ -164,9 +159,8 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
   }
 }
 
-// Reusable Circular Progress Widget
 class CircularPercentageIndicator extends StatelessWidget {
-  final double percentage; // 0–100
+  final double percentage;
   final double size;
   final Color color;
   final double strokeWidth;
@@ -175,7 +169,7 @@ class CircularPercentageIndicator extends StatelessWidget {
     super.key,
     required this.percentage,
     this.size = 50,
-    this.color = Colors.green,
+    this.color = primaryColor,
     this.strokeWidth = 5,
   });
 
@@ -193,7 +187,7 @@ class CircularPercentageIndicator extends StatelessWidget {
             value: 1.0,
             strokeWidth: strokeWidth,
             valueColor:
-            AlwaysStoppedAnimation<Color>(Colors.grey.withOpacity(0.2)),
+            AlwaysStoppedAnimation<Color>(kGray.withOpacity(0.2)),
           ),
           CircularProgressIndicator(
             value: progress,
@@ -206,7 +200,7 @@ class CircularPercentageIndicator extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.bold,
               fontSize: size * 0.25,
-              color: context.themeContext.titleTextColor,
+              color: lightText,
             ),
           ),
         ],

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../../app/utils/custom_button.dart';
+import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
 class SuccessScreen extends StatelessWidget {
   final String amount;
@@ -19,11 +20,10 @@ class SuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: themeContext.grayWhiteBg,
+      backgroundColor: lightBackground,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
@@ -33,7 +33,7 @@ class SuccessScreen extends StatelessWidget {
             children: [
               SizedBox(height: 30.h),
               SvgPicture.asset(
-                'assets/svg/success-transfer.svg',
+                successSvg,
                 fit: BoxFit.contain,
                 height: 100.h,
               ),
@@ -42,7 +42,7 @@ class SuccessScreen extends StatelessWidget {
                 'Successful!',
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: themeContext.titleTextColor,
+                  color: lightText,
                 ),
               ),
               SizedBox(height: 20.h),
@@ -77,8 +77,8 @@ class SuccessScreen extends StatelessWidget {
                   Expanded(
                     child: CustomButton(
                       buttonName: 'Share',
-                      buttonColor: themeContext.tertiaryBackgroundColor,
-                      buttonTextColor: themeContext.kPrimary,
+                      buttonColor: lightgray,
+                      buttonTextColor: primaryColor,
                       onPressed: () {
                         final message = '₦$amount was sent to $recipientName ($recipientAccount). Successful transaction!';
                         Share.share(message, subject: 'Transaction Successful');
@@ -89,8 +89,8 @@ class SuccessScreen extends StatelessWidget {
                   Expanded(
                     child: CustomButton(
                         buttonName: 'View Details',
-                        buttonColor: themeContext.tertiaryBackgroundColor,
-                        buttonTextColor: themeContext.kPrimary,
+                        buttonColor: lightgray,
+                        buttonTextColor: primaryColor,
                         onPressed: () => Navigator.pushNamed(context, RouteList.bottomNavBar)
                     ),
                   ),
@@ -101,7 +101,7 @@ class SuccessScreen extends StatelessWidget {
                 width: double.infinity,
                 child: CustomButton(
                     buttonName: 'Done',
-                    buttonColor: themeContext.kPrimary,
+                    buttonColor: primaryColor,
                     buttonTextColor: Colors.white,
                     onPressed: () => Navigator.pushNamed(context, RouteList.bottomNavBar)
                 ),

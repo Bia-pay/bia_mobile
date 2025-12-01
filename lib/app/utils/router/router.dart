@@ -21,7 +21,7 @@ import '../../../feature/dashboard/send_money/input_transfer/success.dart';
 import '../../../feature/dashboard/send_money/scan_transfer/scanner.dart';
 import '../../../feature/dashboard/send_money/scan_transfer/scanner_onboarding.dart';
 import '../../../feature/dashboard/send_money/to_bank/transfer_to_banks.dart';
-import '../../../feature/settings/qr_code.dart';
+import '../../../feature/settings/presentation/qr_code.dart';
 import '../../../feature/top_up/add_money.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

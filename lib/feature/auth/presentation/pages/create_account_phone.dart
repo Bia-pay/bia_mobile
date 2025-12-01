@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
+import '../../../../app/utils/image.dart';
 import '../../authcontroller/authcontroller.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
@@ -19,7 +21,7 @@ class PhoneRegScreen extends ConsumerStatefulWidget {
 class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
   final TextEditingController phoneController = TextEditingController();
   bool _agreed = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,8 +31,6 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.themeContext;
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -38,14 +38,13 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
           Positioned(
             top: -90,
             right: -55,
-            child: SvgPicture.asset('assets/svg/create-account-vector.svg', height: 220.h),
+            child: SvgPicture.asset(vector, height: 220.h),
           ),
           Positioned(
             bottom: -30,
             left: -25,
-            child: SvgPicture.asset('assets/svg/create-account-vector-one.svg', height: 250.h),
+            child: SvgPicture.asset(vectorOne, height: 250.h),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 35.w, vertical: 240.h),
@@ -56,7 +55,6 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                   SizedBox(height: 10.h),
                   Text('Enter your phone number', style: context.textTheme.bodyLarge),
                   SizedBox(height: 20.h),
-
                   CustomTextFormField(
                     label: 'Mobile Number',
                     controller: phoneController,
@@ -77,7 +75,7 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                       Checkbox(
                         value: _agreed,
                         onChanged: (v) => setState(() => _agreed = v ?? false),
-                        activeColor: theme.kPrimary,
+                        activeColor: primaryColor,
                       ),
                       Expanded(
                         child: Text.rich(
@@ -88,7 +86,7 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                               TextSpan(
                                 text: 'Terms & Conditions',
                                 style: context.textTheme.bodySmall?.copyWith(
-                                  color: theme.kPrimary,
+                                  color: primaryColor,
                                 ),
                               ),
                             ],
@@ -98,9 +96,8 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                     ],
                   ),
                   SizedBox(height: 20.h),
-
                   CustomButton(
-                    buttonColor: theme.kPrimary,
+                    buttonColor:primaryColor,
                     buttonTextColor: Colors.white,
                     buttonName: _isLoading ? 'Please wait...' : 'Next',
                     buttonBorderColor: Colors.transparent,
@@ -129,9 +126,7 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                       }
                     },
                   ),
-
                   SizedBox(height: 20.h),
-
                   GestureDetector(
                     onTap: () => Navigator.pushNamed(context, RouteList.loginScreen),
                     child: Text.rich(
@@ -142,7 +137,7 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                           TextSpan(
                             text: 'Sign In',
                             style: context.textTheme.bodySmall?.copyWith(
-                              color: theme.kPrimary,
+                              color: primaryColor,
                             ),
                           ),
                         ],

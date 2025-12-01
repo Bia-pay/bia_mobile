@@ -1,9 +1,12 @@
+import 'package:bia/app/utils/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bia/core/__core.dart';
-import 'package:bia/core/constraint.dart';
 import '../../../app/view/widget/app_button.dart';
 import '../../../app/view/widget/app_textfield.dart';
+import '../../utils/colors.dart';
 
 class AmountBottomSheet extends StatefulWidget {
   final TextEditingController controller;
@@ -60,17 +63,17 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BottomSheet(
       enableDrag: true,
       builder: (context) {
         return Container(
-          height: 800.h(context),
-          padding: padR(context, horizontal: 200.w(context)),
+          height: 800.h,
+          padding: EdgeInsets.symmetric(horizontal: 200.w),
           decoration: BoxDecoration(
-            color: context.themeContext.grayWhiteBg,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(40),
-            ),
+            color: theme.colorScheme.background,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,94 +83,94 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
                 child: Container(
                   width: 40,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
+                  margin: EdgeInsets.only(bottom: 20.h),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: theme.dividerColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
 
               // Recipient header
-              RRow(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Recipient",
-                    style: context.textTheme.titleMedium?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  RSvg('assets/svg/cancel.svg', height: 20.h(context)),
+                  SvgPicture.asset('assets/svg/cancel.svg', height: 20.h),
                 ],
               ),
 
-              20.vSpace(context),
+              SizedBox(height: 20.h),
 
               // Recipient card
               Container(
-                height: 90.h(context),
-                padding: padR(
-                  context,
-                  vertical: 13.h(context),
-                  left: 150.w(context),
-                  right: 90.w(context),
+                height: 90.h,
+                padding: EdgeInsets.only(
+                  top: 13.h,
+                  bottom: 13.h,
+                  left: 150.w,
+                  right: 90.w,
                 ),
                 decoration: BoxDecoration(
-                  color: context.themeContext.offWhiteBg,
+                  color: theme.colorScheme.surface,
                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
-                child: RRow(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    RRow(
+                    Row(
                       children: [
                         CircleAvatar(
                           radius: 28,
                           child: widget.recipientIconPath != null
-                              ? RSvg(widget.recipientIconPath!,
-                              height: 30.h(context))
+                              ? SvgPicture.asset(
+                                  widget.recipientIconPath!,
+                                  height: 30.h,
+                                )
                               : Icon(Icons.person, size: 30),
                         ),
-                        30.hSpace(context),
+                        SizedBox(height: 30.h),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               widget.recipientName,
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: context.themeContext.titleTextColor,
-                                fontSize: 15.sp(context),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.textTheme.bodyLarge?.color,
+                                fontSize: 15.sp,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             Text(
                               widget.recipientAccount,
-                              style: context.textTheme.labelSmall?.copyWith(
-                                color:
-                                context.themeContext.secondaryTextColor,
-                                fontSize: 11.sp(context),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.textTheme.bodySmall?.color,
+                                fontSize: 11.sp,
                               ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    RSvg('assets/svg/edit.svg', height: 20.h(context)),
+                    SvgPicture.asset('assets/svg/edit.svg', height: 20.h),
                   ],
                 ),
               ),
 
-              20.vSpace(context),
-
+              SizedBox(height: 20.h),
               // Title
               Text(
                 widget.title,
-                style: context.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              10.vSpace(context),
+              SizedBox(height: 20.h),
 
               // Amount input
               Center(
@@ -178,13 +181,13 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
                   decoration: InputDecoration(
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
-                        color: context.themeContext.kPrimary,
+                        color: theme.colorScheme.primary,
                         width: 1,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(
-                        color: context.themeContext.kPrimary,
+                        color: theme.colorScheme.primary,
                         width: 1,
                       ),
                     ),
@@ -192,29 +195,29 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
                 ),
               ),
 
-              10.vSpace(context),
+              SizedBox(height: 10.h),
 
               // Next button
               Center(
                 child: SizedBox(
-                  width: 750.w(context),
-                  child: SolidAppButton.primary(
-                    text: 'Next',
-                    borderRadius: 8,
+                  width: 750.w,
+                  child: CustomButton(
+                    buttonColor: primaryColor,
+                    buttonTextColor: primaryColor,
+                    buttonName: 'Next',
                     onPressed: widget.onNext,
                   ),
                 ),
               ),
 
-              15.vSpace(context),
+              SizedBox(height: 15.h),
 
               // Keypad
               Expanded(
                 child: GridView.builder(
                   itemCount: 12,
-                  padding: padR(context, vertical: 0),
-                  gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+                  padding: EdgeInsets.symmetric(vertical: 0),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 55,
@@ -223,23 +226,31 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
                   ),
                   itemBuilder: (context, index) {
                     List<String> keys = [
-                      "1", "2", "3",
-                      "4", "5", "6",
-                      "7", "8", "9",
-                      "x", "0", "ok",
+                      "1",
+                      "2",
+                      "3",
+                      "4",
+                      "5",
+                      "6",
+                      "7",
+                      "8",
+                      "9",
+                      "x",
+                      "0",
+                      "ok",
                     ];
                     String key = keys[index];
 
-                    Color keyColor = context.themeContext.keyColor;
-                    Color textColor = context.themeContext.secondaryTextColor;
+                    Color keyColor = theme.colorScheme.surface;
+                    Color textColor =
+                        theme.textTheme.bodyMedium?.color ?? Colors.black;
 
                     if (key == "x") {
-                      keyColor = context.themeContext.kPrimary;
-                      textColor =
-                          context.themeContext.tertiaryTextColor;
+                      keyColor = theme.colorScheme.primary;
+                      textColor = theme.colorScheme.onPrimary;
                     } else if (key == "ok") {
-                      keyColor = context.themeContext.kPrimary;
-                      textColor = context.themeContext.tertiaryBackgroundColor;
+                      keyColor = theme.colorScheme.primary;
+                      textColor = theme.colorScheme.onPrimary;
                     }
 
                     bool isSelected = _selectedIndex == index;
@@ -253,50 +264,49 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
                           if (key == "x") {
                             removeDigit();
                           } else if (key == "ok") {
-                            if (widget.onOk != null) {
-                              widget.onOk!();
-                            } else {
-                              Navigator.pop(context);
-                            }
+                            widget.onOk != null
+                                ? widget.onOk!()
+                                : Navigator.pop(context);
                           } else {
                             addDigit(key);
                           }
                         },
                         borderRadius: BorderRadius.circular(50),
                         child: Container(
-                          height: 280.h(context),
-                          width: 190,
+                          height: 280.h,
+                          width: 190.w,
                           decoration: BoxDecoration(
                             color: keyColor,
                             borderRadius: BorderRadius.circular(50),
                             border: isSelected
                                 ? Border.all(
-                              color: context.themeContext.kPrimary,
-                              width: 2.0,
-                            )
+                                    color: theme.colorScheme.primary,
+                                    width: 2.0,
+                                  )
                                 : null,
                           ),
                           alignment: Alignment.center,
                           child: key == "x"
-                              ? RSvg(
-                            'assets/svg/cancel.svg',
-                            height: 20.h(context),
-                            color: context.themeContext
-                                .tertiaryBackgroundColor,
-                          )
+                              ? SvgPicture.asset(
+                                  'assets/svg/cancel.svg',
+                                  height: 20.h,
+                                  color: theme.colorScheme.onPrimary,
+                                )
                               : key == "ok"
-                              ? Icon(Icons.arrow_forward,
-                              color: textColor, size: 24)
+                              ? Icon(
+                                  Icons.arrow_forward,
+                                  color: textColor,
+                                  size: 24,
+                                )
                               : Text(
-                            key,
-                            style: context.textTheme.headlineSmall
-                                ?.copyWith(
-                              color: context.themeContext
-                                  .secondaryTextColor,
-                              fontSize: 24.sp(context),
-                              fontWeight: FontWeight.w300,
-                            ),
-                          ),
+                                  key,
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        color: textColor,
+                                        fontSize: 24.sp,
+                                        fontWeight: FontWeight.w300,
+                                      ),
+                                ),
                         ),
                       ),
                     );

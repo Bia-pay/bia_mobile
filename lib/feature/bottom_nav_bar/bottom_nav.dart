@@ -1,10 +1,10 @@
 import 'package:bia/core/__core.dart';
-import 'package:bia/core/constraint.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../app/utils/colors.dart';
 import '../dashboard/pages/homepage.dart';
 import '../dashboard/send_money/scan_transfer/scanner_onboarding.dart';
-import '../settings/account_settings.dart';
+import '../settings/presentation/account_settings.dart';
 
 class BottomNavBar extends StatefulWidget {
   const BottomNavBar({super.key});
@@ -24,18 +24,17 @@ class _BottomNavBarState extends State<BottomNavBar> {
   }
 
   final List<Widget> _widgetOptions = <Widget>[
-    const HomePage(),      // Screen 1
-    const UProfile(),   // Screen 2
-    const ScannerOnboarding(), // Screen 4
+    const HomePage(),
+    const UProfile(),
+    const ScannerOnboarding(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _widgetOptions[_selectedIndex], // ✅ THIS DISPLAYS CURRENT SCREEN
-      backgroundColor: Colors.grey[100],
+      body: _widgetOptions[_selectedIndex],
+      backgroundColor: lightBackground, // using colors.dart
 
-      // Your custom navbar
       bottomNavigationBar: SizedBox(
         height: 80,
         child: Stack(
@@ -51,17 +50,17 @@ class _BottomNavBarState extends State<BottomNavBar> {
             Positioned(
               bottom: 25,
               child: GestureDetector(
-                onTap: () => _onItemTapped(2), // Navigate to index 2
+                onTap: () => _onItemTapped(2),
                 child: Container(
                   height: 90,
                   width: 90,
-                  decoration: BoxDecoration(
-                    color: context.themeContext.kPrimary,
+                  decoration: const BoxDecoration(
+                    color: primaryColor, // colors.dart
                     shape: BoxShape.circle,
                   ),
                   child: Padding(
-                    padding: padR(context,all: 35),
-                    child: RSvg('assets/svg/scan.svg'),
+                    padding: EdgeInsets.all( 35),
+                    child: SvgPicture.asset('assets/svg/scan.svg'),
                   ),
                 ),
               ),
@@ -78,7 +77,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildNavItem(Icons.home, 0),
-                    const SizedBox(width: 60), // gap f
+                    const SizedBox(width: 60),
                     _buildNavItem(Icons.settings, 1),
                   ],
                 ),
@@ -96,7 +95,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       onTap: () => _onItemTapped(index),
       child: Icon(
         icon,
-        color: isSelected ? context.themeContext.kPrimary : context.themeContext.checkboxBorderColor,
+        color: isSelected ? primaryColor : kGray, // colors.dart
       ),
     );
   }
@@ -106,15 +105,14 @@ class BNBCustomPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = lightSurface // colors.dart
       ..style = PaintingStyle.fill;
 
     final path = Path();
-
     double arcWidth = 120;
     double arcRadius = 62;
 
-    path.moveTo(0,0);
+    path.moveTo(0, 0);
     path.lineTo((size.width - arcWidth) / 2, -10);
 
     path.arcToPoint(
@@ -138,9 +136,12 @@ class BNBCustomPainter extends CustomPainter {
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
+
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: Text("Wallet Screen", style: TextStyle(fontSize: 24)));
+  Widget build(BuildContext context) => const Center(
+    child: Text(
+      "Wallet Screen",
+      style: TextStyle(fontSize: 24, color: lightText), // colors.dart
+    ),
+  );
 }
-
-

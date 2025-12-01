@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../../../core/extensions/theme_extension.dart';
+import '../../../../app/utils/colors.dart';
 import '../../dashboardcontroller/dashboardcontroller.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
@@ -39,11 +39,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     _animation = Tween<double>(begin: 0, end: 1).animate(_animationController);
   }
 
-  // 🔥 navigate only when user taps button
   void _goToAmountPage(BuildContext context) async {
     if (verifiedName == null || verifiedAccount == null) return;
 
-    // FULLY stop and dispose scanner before navigating
     await controller.stop();
     controller.dispose();
 
@@ -98,12 +96,10 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
             isVerified = true;
             verifiedName = fullname;
             verifiedAccount = account;
-            _scanLocked = true; // stop scanning completely
+            _scanLocked = true;
           });
 
-          // Stop camera after verification
           await controller.stop();
-
           return;
         } else {
           _showError(result?.responseMessage ?? "Verification failed");
@@ -133,13 +129,12 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
     final colorScheme = theme.colorScheme;
 
     const double boxSize = 290;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: darkBackground,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -152,12 +147,12 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                   width: boxSize.w,
                   height: boxSize.w,
                   decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: colorScheme.primary, width: 3),
+                    color: darkSurface,
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: primaryColor, width: 3.w),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20.r),
                     child: Stack(
                       children: [
                         if (!_scanLocked)
@@ -175,8 +170,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                               left: 0,
                               right: 0,
                               child: Container(
-                                height: 3,
-                                color: colorScheme.primary,
+                                height: 3.h,
+                                color: primaryColor,
                               ),
                             );
                           },
@@ -188,19 +183,19 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
 
                 SizedBox(height: 20.h),
 
-                // 🟩 VERIFIED CONTAINER (restored)
+                // 🟩 VERIFIED CONTAINER
                 if (isVerified) ...[
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     padding: EdgeInsets.all(15.w),
                     decoration: BoxDecoration(
-                      color: themeContext.offWhiteBg,
-                      borderRadius: BorderRadius.circular(15),
+                      color: lightSurface,
+                      borderRadius: BorderRadius.circular(15.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
+                          blurRadius: 6.r,
+                          offset: Offset(0, 3.h),
                         ),
                       ],
                     ),
@@ -210,12 +205,12 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                         Row(
                           children: [
                             Icon(Icons.verified_rounded,
-                                color: themeContext.kPrimary, size: 22),
+                                color: primaryColor, size: 22.sp),
                             SizedBox(width: 8.w),
                             Text(
                               "Account Verified",
                               style: theme.textTheme.titleMedium?.copyWith(
-                                  color: themeContext.kPrimary,
+                                  color: primaryColor,
                                   fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -226,23 +221,23 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                                 ?.copyWith(fontWeight: FontWeight.w600)),
                         Text("Account: $verifiedAccount",
                             style: theme.textTheme.bodyMedium?.copyWith(
-                                color: themeContext.secondaryTextColor)),
+                                color: darkSecondaryText)),
                         SizedBox(height: 15.h),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: themeContext.kPrimary,
-                              padding: EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: primaryColor,
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                             ),
                             onPressed: () => _goToAmountPage(context),
                             child: Text(
                               "Send Money",
                               style: theme.textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
+                                  color: lightText,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -273,8 +268,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                         torch == TorchState.on
                             ? Icons.flash_on
                             : Icons.flash_off,
-                        size: 38,
-                        color: colorScheme.primary,
+                        size: 38.sp,
+                        color: primaryColor,
                       ),
                       onPressed: controller.toggleTorch,
                     );

@@ -5,11 +5,15 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import 'package:hive/hive.dart';
-import '../../../../app/utils/router/route_constant.dart';
-import '../../../../app/utils/widgets/pin_field.dart';
-import '../../app/utils/colors.dart';
-import '../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../../../../app/utils/router/route_constant.dart';
+import '../../../../../app/utils/widgets/pin_field.dart';
+import '../../../app/utils/colors.dart';
+import '../../../core/local/localStorage.dart';
+import '../../auth/modal/reponse/response_modal.dart';
+import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../dashboard/dashboardcontroller/provider.dart';
 
 class UProfile extends ConsumerStatefulWidget {
   const UProfile({super.key});
@@ -22,7 +26,8 @@ class _UProfileState extends ConsumerState<UProfile> {
   String _expandedTile = '';
   bool biometricEnabled = false;
   bool loginBiometricEnabled = false;
-
+  UserResponse? _user;
+  bool _isLoadingProfile = true;
   final List<Map<String, dynamic>> securityItems = [
     {
       'title': 'Pin Settings',
@@ -69,8 +74,38 @@ class _UProfileState extends ConsumerState<UProfile> {
   void initState() {
     super.initState();
     _loadBiometricSetting();
+    _loadUserProfile();
   }
 
+
+  Future<void> _loadUserProfile() async {
+    final controller = ref.read(dashboardControllerProvider.notifier);
+
+    // Step 1: Load cached user immediately
+    final box = await Hive.openBox('authBox');
+    final savedUserJson = box.get('saved_user_profile');
+    if (savedUserJson != null) {
+      final cachedUser = UserResponse.fromJson(Map<String, dynamic>.from(savedUserJson));
+      setState(() {
+        _user = cachedUser;
+        _isLoadingProfile = false; // we have something to show
+      });
+    }
+
+    // Step 2: Fetch fresh profile in the background
+    try {
+      final freshUser = await controller.fetchUserProfile(context);
+      if (freshUser != null) {
+        setState(() {
+          _user = freshUser;
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error updating user profile: $e");
+      setState(() => _isLoadingProfile = false);
+    }
+  }
   Future<void> _loadBiometricSetting() async {
     final box = await Hive.openBox('settingsBox');
     setState(() {
@@ -79,23 +114,35 @@ class _UProfileState extends ConsumerState<UProfile> {
     });
   }
 
-  Future<void> _logout(BuildContext context) async {
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
     try {
       EasyLoading.show(status: "Logging out...");
 
       final authBox = await Hive.openBox('authBox');
       final token = authBox.get('token', defaultValue: '');
       final biometricEnabled = authBox.get('login_biometric_enabled', defaultValue: false);
+      final userId = authBox.get('userId', defaultValue: '');
 
-      // Clear this user's saved beneficiaries
+      // Clear cached transactions for this user
+      await TransactionStorage.clearTransactions(userId);
+
+      // Clear any saved profile
+      await authBox.delete('saved_user_profile');
+
+      // Clear this user's saved beneficiaries if you have this function
       await clearRecentBeneficiaries(token);
 
+      // Clear token and other Hive data
       if (biometricEnabled) {
         await authBox.delete('token');
         await authBox.delete('refreshToken');
       } else {
         await authBox.clear();
       }
+
+      // Reset providers to initial state
+      ref.invalidate(recentTransactionsProvider);
+      ref.invalidate(dashboardControllerProvider);
 
       EasyLoading.dismiss();
 
@@ -123,7 +170,6 @@ class _UProfileState extends ConsumerState<UProfile> {
       );
     }
   }
-
   Future<void> clearRecentBeneficiaries(String token) async {
     final box = await Hive.openBox('recentBeneficiaries');
     await box.delete(token);
@@ -139,7 +185,7 @@ class _UProfileState extends ConsumerState<UProfile> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _logout(context);
+              _logout(context, ref );
             },
             child: const Text("Logout", style: TextStyle(color: Colors.red)),
           ),
@@ -147,7 +193,6 @@ class _UProfileState extends ConsumerState<UProfile> {
       ),
     );
   }
-
   void _handleItemTap(BuildContext context, String title) {
     final route = routeMap[title];
     if (route != null) {
@@ -161,7 +206,6 @@ class _UProfileState extends ConsumerState<UProfile> {
     final confirmPinController = TextEditingController();
     final repo = ref.read(dashboardControllerProvider.notifier);
 
-    final themeContext = context.themeContext;
     final textTheme = Theme.of(context).textTheme;
     showModalBottomSheet(
       context: context,
@@ -173,15 +217,15 @@ class _UProfileState extends ConsumerState<UProfile> {
         message: "Enter and confirm your 4-digit transaction PIN.",
         child: Column(
           children: [
-            AppPinCodeField(controller: pinController, length: 4,  fillColor: themeContext.keyColor,
-              inactiveColor: themeContext.keyColor,
-              activeColor: themeContext.kPrimary,
-              selectedColor: themeContext.kPrimary,),
+            AppPinCodeField(controller: pinController, length: 4,  fillColor: keyAColor,
+              inactiveColor: keyAColor,
+              activeColor: primaryColor,
+              selectedColor: primaryColor,),
             const SizedBox(height: 15),
-            AppPinCodeField(controller: confirmPinController, length: 4,  fillColor: themeContext.keyColor,
-                inactiveColor: themeContext.keyColor,
-                activeColor: themeContext.kPrimary,
-                selectedColor: themeContext.kPrimary),
+            AppPinCodeField(controller: confirmPinController, length: 4,  fillColor: keyAColor,
+                inactiveColor: keyAColor,
+                activeColor: primaryColor,
+                selectedColor: primaryColor),
           ],
         ),
         onConfirm: () async {
@@ -212,7 +256,6 @@ class _UProfileState extends ConsumerState<UProfile> {
   /// ✅ Fingerprint modals preserved
   void _showPinSetupModal(BuildContext context, Box box) {
     final pinController = TextEditingController();
-    final themeContext = context.themeContext;
     final textTheme = Theme.of(context).textTheme;
     showModalBottomSheet(
       context: context,
@@ -222,10 +265,10 @@ class _UProfileState extends ConsumerState<UProfile> {
         context,
         title: "Enable Biometric Payment",
         message: "Enter your 4-digit transaction PIN to link it to your fingerprint.",
-        child: AppPinCodeField(controller: pinController, length: 4,  fillColor: themeContext.keyColor,
-            inactiveColor: themeContext.keyColor,
-            activeColor: themeContext.kPrimary,
-            selectedColor: themeContext.kPrimary),
+        child: AppPinCodeField(controller: pinController, length: 4,  fillColor: keyAColor,
+            inactiveColor: keyAColor,
+            activeColor: primaryColor,
+            selectedColor: primaryColor),
         onConfirm: () async {
           final pin = pinController.text.trim();
           if (pin.length != 4) {
@@ -286,7 +329,6 @@ class _UProfileState extends ConsumerState<UProfile> {
         required Widget child,
         required VoidCallback onConfirm,
       }) {
-    final themeContext = context.themeContext;
     return Container(
       padding: EdgeInsets.only(
         left: 20,
@@ -295,7 +337,7 @@ class _UProfileState extends ConsumerState<UProfile> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       decoration: BoxDecoration(
-        color: themeContext.grayWhiteBg,
+        color: offWhite,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
       ),
       child: Column(
@@ -307,7 +349,7 @@ class _UProfileState extends ConsumerState<UProfile> {
             margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)),
           ),
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: themeContext.kPrimary, fontWeight: FontWeight.w600)),
+          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: primaryColor, fontWeight: FontWeight.w600)),
           const SizedBox(height: 15),
           Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 25),
@@ -318,7 +360,7 @@ class _UProfileState extends ConsumerState<UProfile> {
             child: ElevatedButton(
               onPressed: onConfirm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: themeContext.kPrimary,
+                backgroundColor: primaryColor,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -337,7 +379,6 @@ class _UProfileState extends ConsumerState<UProfile> {
   // 🧱 UI
   @override
   Widget build(BuildContext context) {
-    final theme = context.themeContext;
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -373,19 +414,24 @@ class _UProfileState extends ConsumerState<UProfile> {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) => Column(
-    children: [
-      CircleAvatar(
-        radius: 50.r,
-        backgroundImage: const NetworkImage('https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg'),
-      ),
-      SizedBox(height: 10.h),
-      Text('Salma Gambo', style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-      Text('@capitanaserdel', style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)),
-      SizedBox(height: 15.h),
-    ],
-  );
+  Widget _buildProfileHeader(BuildContext context) {
+    final name = _user?.fullname ?? 'No Name';
+    final username = _user?.phone ?? 'username';
+    final avatarUrl = 'https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg'; // Optional: from user if available
 
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 50.r,
+          backgroundImage: NetworkImage(avatarUrl),
+        ),
+        SizedBox(height: 10.h),
+        Text(name, style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+        Text('$username', style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)),
+        SizedBox(height: 15.h),
+      ],
+    );
+  }
   Widget _buildSection(BuildContext context, String title, List<Map<String, dynamic>> items) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),

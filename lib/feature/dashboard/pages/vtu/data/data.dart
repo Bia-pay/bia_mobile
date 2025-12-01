@@ -1,6 +1,9 @@
+import 'package:bia/app/utils/colors.dart';
+import 'package:bia/app/utils/colors.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
 import '../../../widgets/transaction.dart';
@@ -19,13 +22,13 @@ class _DataState extends State<Data> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.themeContext.grayWhiteBg,
+      backgroundColor: lightBackground,
       resizeToAvoidBottomInset: true,
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(62.h),
         child: Container(
           padding: EdgeInsets.symmetric( horizontal: 10.w),
-          color: context.themeContext.grayWhiteBg,
+          color: lightBackground,
           alignment: Alignment.center,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -83,7 +86,7 @@ class _DataState extends State<Data> {
                 Container(
                   padding: EdgeInsets.symmetric( vertical: 17, horizontal: 10),
                   decoration: BoxDecoration(
-                    color: context.themeContext.tertiaryBackgroundColor,
+                   // color: context.themeContext.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
@@ -110,7 +113,7 @@ class _DataState extends State<Data> {
                               margin: EdgeInsets.symmetric( vertical: 6, horizontal: 7),
                               height: 70.h,
                               decoration: BoxDecoration(
-                                color: context.themeContext.kSecondary,
+                                //color: context.themeContext.kSecondary,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -123,7 +126,7 @@ class _DataState extends State<Data> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(100),
                                       border: Border.all(
-                                        color: context.themeContext.kPrimary,
+                                        color: primaryColor,
                                       ),
                                     ),
                                     child: Image.asset(
@@ -143,8 +146,8 @@ class _DataState extends State<Data> {
                                           tx.name,
                                           style: context.textTheme.bodyMedium
                                               ?.copyWith(
-                                            color: context
-                                                .themeContext.titleTextColor,
+                                            // color: context
+                                            //     .themeContext.titleTextColor,
                                             fontSize: 15.sp,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -154,8 +157,8 @@ class _DataState extends State<Data> {
                                           style: context.textTheme.bodySmall
                                               ?.copyWith(
                                             fontSize: 11.sp,
-                                            color: context.themeContext
-                                                .secondaryTextColor,
+                                            // color: context.themeContext
+                                            //     .secondaryTextColor,
                                           ),
                                         ),
                                       ],
@@ -206,7 +209,7 @@ class _CardOneState extends State<CardOne> {
     return Container(
       padding: EdgeInsets.symmetric( vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-        color: context.themeContext.tertiaryBackgroundColor,
+       // color: context.themeContext.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
@@ -236,7 +239,7 @@ class _CardOneState extends State<CardOne> {
                       padding: EdgeInsets.symmetric(horizontal: 12.w,),
                       decoration: BoxDecoration(
                           border: Border.all(
-                              color: context.themeContext.checkboxBorderColor
+                              //color: context.themeContext.checkboxBorderColor
                           ),
                           borderRadius: BorderRadius.all(Radius.circular(10.r))
                       ),
@@ -455,13 +458,13 @@ class _NetworkDropdownState extends State<NetworkDropdown> {
             height: 30.h,
             width: 60.w,
             decoration: BoxDecoration(
-              color: context.themeContext.kSecondary,
+              //color: context.themeContext.kSecondary,
               shape: BoxShape.rectangle,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
             child: Icon(
               Icons.person_rounded,
-              color: context.themeContext.kPrimary,
+              color: primaryColor,
               size: 18,
             ),
           ),
@@ -544,7 +547,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
         TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: context.themeContext.kPrimary,
+          labelColor: primaryColor,
           unselectedLabelColor: Colors.grey,
           tabs: _tabs.map((e) => Tab(text: e)).toList(),
         ),
@@ -582,13 +585,13 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                       duration: const Duration(milliseconds: 200),
                       padding: EdgeInsets.only( top: 1.h, left: 10,right: 10.w),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? context.themeContext.kPrimary.withOpacity(0.15)
-                            : context.themeContext.kSecondary,
+                        // color: isSelected
+                        //     ? primaryColor.withOpacity(0.15)
+                        //     : context.themeContext.kSecondary,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
-                              ? context.themeContext.kPrimary
+                              ? primaryColor
                               : Colors.transparent,
                           width: 1.5,
                         ),
@@ -604,7 +607,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                             style: context.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 16.sp,
-                              color: context.themeContext.titleTextColor,
+                             // color: context.themeContext.titleTextColor,
                             ),
                           ),
 
@@ -625,7 +628,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                                   style: TextStyle(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w700,
-                                    color: context.themeContext.kPrimary,
+                                    color: primaryColor,
                                   ),
                                 ),
                               ],
@@ -653,7 +656,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                           if (plan['bonus'] != null) Container(
                             padding: EdgeInsets.symmetric( horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: context.themeContext.kPrimary.withOpacity(0.08),
+                              color: primaryColor.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -661,7 +664,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: context.textTheme.bodySmall?.copyWith(
-                                color: context.themeContext.kPrimary,
+                                color: primaryColor,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 11.sp,
                               ),
@@ -717,7 +720,9 @@ void showAirtimeConfirmationSheet(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: SvgPicture.asset('assets/svg/cancel.svg',color: context.themeContext.secondaryTextColor,),
+              child: SvgPicture.asset('assets/svg/cancel.svg',
+                //color: context.themeContext.secondaryTextColor,
+              ),
             ),
 
             // 💰 Big Amount
@@ -730,7 +735,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
-                        color: context.themeContext.titleTextColor,
+                       /// color: context.themeContext.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -738,7 +743,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                        color: context.themeContext.titleTextColor,
+                       // color: context.themeContext.titleTextColor,
                       ),
                     ),
                   ],
@@ -752,7 +757,7 @@ void showAirtimeConfirmationSheet(
             Container(
               padding: EdgeInsets.symmetric( vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-                color: context.themeContext.offWhiteBg,
+               // color: context.themeContext.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -903,7 +908,7 @@ Widget _buildSummaryRow(
                   width: 25,
                   height: 15,
                   decoration: BoxDecoration(
-                    color: false ? context.themeContext.kPrimary : Colors.grey.shade300,
+                    color: false ? primaryColor : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(

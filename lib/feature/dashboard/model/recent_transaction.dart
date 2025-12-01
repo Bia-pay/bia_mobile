@@ -1,3 +1,55 @@
+class TransactionItem {
+  final int id;
+  final double amount;
+  final bool isCredit;
+  final String? senderName;
+  final String? receiverName;
+  final DateTime? createdAt; // ✅ make this DateTime
+
+  TransactionItem({
+    required this.id,
+    required this.amount,
+    required this.isCredit,
+    this.senderName,
+    this.receiverName,
+    this.createdAt,
+  });
+
+  factory TransactionItem.fromJson(Map<String, dynamic> json) {
+    DateTime? parsedDate;
+    final createdAtRaw = json['createdAt'];
+
+    if (createdAtRaw != null) {
+      if (createdAtRaw is String) {
+        parsedDate = DateTime.tryParse(createdAtRaw);
+      } else if (createdAtRaw is DateTime) {
+        parsedDate = createdAtRaw;
+      }
+    }
+
+    return TransactionItem(
+      id: json['id'] ?? 0,
+      amount: (json['amount'] is String)
+          ? double.tryParse(json['amount']) ?? 0
+          : (json['amount']?.toDouble() ?? 0),
+      isCredit: json['isCredit'] ?? false,
+      senderName: json['sender'] != null ? json['sender']['fullname'] : null,
+      receiverName: json['receiver'] != null ? json['receiver']['fullname'] : null,
+      createdAt: parsedDate,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'amount': amount,
+      'isCredit': isCredit,
+      'senderName': senderName,
+      'receiverName': receiverName,
+      'createdAt': createdAt?.toIso8601String(), // ✅ save as string
+    };
+  }
+}
 class TransactionResponse {
   final bool responseSuccessful;
   final String responseMessage;
@@ -17,46 +69,10 @@ class TransactionResponse {
       transactions: list.map((e) => TransactionItem.fromJson(e)).toList(),
     );
   }
-}
 
-class TransactionItem {
-  final int id;
-  final String? type;
-  final String? serviceType;
-  final String? amount;
-  final bool? isCredit;
-  final String? description;
-  final String? createdAt;
-  final String? senderName;
-  final String? receiverName;
-
-  TransactionItem({
-    required this.id,
-    this.type,
-    this.serviceType,
-    this.amount,
-    this.isCredit,
-    this.description,
-    this.createdAt,
-    this.senderName,
-    this.receiverName,
-  });
-
-  factory TransactionItem.fromJson(Map<String, dynamic> json) {
-    final metadata = json['metadata'] ?? {};
-    final sender = json['sender'] ?? {};
-    final receiver = json['receiver'] ?? {};
-
-    return TransactionItem(
-      id: json['id'],
-      type: json['type'] ?? '',
-      serviceType: json['serviceType'] ?? '',
-      amount: json['amount'] ?? '0',
-      isCredit: json['isCredit'] ?? false,
-      description: json['description'] ?? '',
-      createdAt: json['createdAt'] ?? '',
-      senderName: metadata['senderName'] ?? sender['fullname'] ?? '',
-      receiverName: metadata['receiverName'] ?? receiver['fullname'] ?? '',
-    );
-  }
+  Map<String, dynamic> toJson() => {
+    'responseSuccessful': responseSuccessful,
+    'responseMessage': responseMessage,
+    'transactions': transactions.map((e) => e.toJson()).toList(),
+  };
 }

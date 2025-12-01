@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
+import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/custom_button.dart';
+import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
+import '../../../../app/utils/widgets/custom_text_field.dart';
 import '../../authcontroller/authcontroller.dart';
 
 class WelcomeBackScreen extends ConsumerStatefulWidget {
@@ -43,19 +47,18 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     try {
       final canCheck = await _auth.canCheckBiometrics;
       final isSupported = await _auth.isDeviceSupported();
-
       final availableBiometrics = await _auth.getAvailableBiometrics();
 
       hasFingerprint = (canCheck && isSupported) &&
           (availableBiometrics.contains(BiometricType.fingerprint) ||
               availableBiometrics.isNotEmpty);
 
-      debugPrint("🧠 canCheckBiometrics: $canCheck");
-      debugPrint("🧠 isDeviceSupported: $isSupported");
-      debugPrint("🧠 availableBiometrics: $availableBiometrics");
-      debugPrint("✅ hasFingerprint final: $hasFingerprint");
+      debugPrint("canCheckBiometrics: $canCheck");
+      debugPrint("isDeviceSupported: $isSupported");
+      debugPrint("availableBiometrics: $availableBiometrics");
+      debugPrint("hasFingerprint final: $hasFingerprint");
     } catch (e) {
-      debugPrint("⚠️ Biometric detection failed: $e");
+      debugPrint("⚠Biometric detection failed: $e");
     }
 
     final biometricEnabled = settingsBox.get("login_biometric_enabled", defaultValue: false);
@@ -71,25 +74,21 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       savedPassword = savedPwd;
     });
 
-    // ✅ Logic flow
     if (!hasFingerprint) {
-      debugPrint("🚫 No fingerprint hardware detected. Showing password only.");
       setState(() => _showPasswordField = true);
       return;
     }
 
     if (hasFingerprint && biometricEnabled) {
-      debugPrint("🔐 Fingerprint login enabled. Launching biometric...");
       Future.delayed(const Duration(milliseconds: 800), _authenticate);
     } else {
-      debugPrint("🧾 Fingerprint available but not enabled. Showing password field.");
       setState(() => _showPasswordField = true);
     }
   }
+
   Future<void> _authenticate() async {
     try {
       setState(() => _isAuthenticating = true);
-
       final didAuthenticate = await _auth.authenticate(
         localizedReason: 'Authenticate to log in',
         options: const AuthenticationOptions(
@@ -104,7 +103,6 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
         return;
       }
 
-      // ✅ After biometric success, log in using saved password
       final authController = ref.read(authControllerProvider.notifier);
 
       if (phone == null || savedPassword == null) {
@@ -115,7 +113,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
       await authController.logIn(context, phone!, savedPassword!.trim());
 
-      final box = Hive.box("authB ox");
+      final box = Hive.box("authBox");
       final token = box.get("token");
 
       if (token != null && token.isNotEmpty && mounted) {
@@ -125,13 +123,12 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
         setState(() => _showPasswordField = true);
       }
     } catch (e) {
-      debugPrint("⚠️ Biometric error: $e");
+      debugPrint("Biometric error: $e");
       setState(() => _showPasswordField = true);
     } finally {
       if (mounted) setState(() => _isAuthenticating = false);
     }
   }
-
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: Colors.red),
@@ -140,10 +137,8 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final themeContext = context.themeContext;
-
     return Scaffold(
+      backgroundColor: lightBackground,
       resizeToAvoidBottomInset: false,
       body: Center(
         child: Padding(
@@ -151,30 +146,29 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                Image.asset('assets/svg/logo-one.png', height: 100.h),
-                SizedBox(height: 20.h),
-                Text('Welcome Back,',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontSize: 24.sp,
-                      color: themeContext.primaryTextColor,
-                    )),
-                Text(fullname?.toUpperCase() ?? 'USER',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: themeContext.kPrimary,
-                      fontWeight: FontWeight.bold,
-                    )),
+                Image.asset(appLogoFull, height: 100.h),
+                Text(
+                  'Welcome Back,',
+                  style: context.textTheme.headlineLarge?.copyWith(
+                    fontSize: 26.sp,
+                    color: lightText,
+                  )),
+                Text(
+                  fullname?.toUpperCase() ?? 'USER',
+                  style: context.textTheme.headlineLarge?.copyWith(
+                    color: primaryColor, // ✅ Brand primary
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18.sp,                  ),
+                ),
                 SizedBox(height: 30.h),
-
-                /// ✅ Biometric Login
                 if (_hasBiometric && _biometricEnabled && !_showPasswordField)
                   Column(
                     children: [
                       GestureDetector(
                         onTap: _isAuthenticating ? null : _authenticate,
                         child: SvgPicture.asset(
-                          'assets/svg/fingerprint.svg',
+                          fingerPrint,
                           height: 100.h,
-                          colorFilter: ColorFilter.mode(themeContext.kPrimary, BlendMode.srcIn),
                         ),
                       ),
                       SizedBox(height: 15.h),
@@ -182,38 +176,37 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                         onPressed: () => setState(() => _showPasswordField = true),
                         child: Text(
                           'Use Password Instead',
-                          style: theme.textTheme.bodyMedium?.copyWith(color: themeContext.kPrimary),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: primaryColor,
+                            ),
                         ),
                       ),
                     ],
                   )
                 else
-                /// ✅ Password Field (Fallback)
                   Column(
                     children: [
-                      TextField(
+                      CustomTextFormField(
+                        label: 'Password',
                         controller: passwordController,
+                        hintText: 'Enter your password',
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: "Password",
-                          border: OutlineInputBorder(),
-                        ),
+                        validator: (value) =>
+                        value.isEmpty ? 'Password is required' : null,
+                        suffixIcon: const Icon(Icons.remove_red_eye_outlined),
                       ),
                       SizedBox(height: 20.h),
                       CustomButton(
                         buttonName: 'Login',
-                        buttonColor: themeContext.kPrimary,
-                        buttonTextColor: Colors.white,
+                        buttonColor: primaryColor, // ✅ Brand primary
+                        buttonTextColor: lightBackground,
                         onPressed: () async {
                           final authState = ref.read(authControllerProvider.notifier);
-
                           final success = await authState.logIn(
                             context,
                             phone!,
                             passwordController.text.trim(),
                           );
-                          final box = Hive.box("authBox");
-                          final token = box.get("token");
 
                           if (success) {
                             Navigator.pushNamed(context, RouteList.bottomNavBar);
@@ -222,29 +215,24 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                       ),
                     ],
                   ),
-
                 SizedBox(height: 20.h),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, RouteList.loginScreen);
-                  },
+                  onTap: () => Navigator.pushReplacementNamed(context, RouteList.loginScreen),
                   child: Text(
                     'Use another account',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: themeContext.titleTextColor,
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: lightSecondaryText,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                SizedBox(height: 30.h),
+                SizedBox(height: 10.h),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacementNamed(context, RouteList.loginScreen);
-                  },
+                  onTap: () => Navigator.pushReplacementNamed(context, RouteList.loginScreen),
                   child: Text(
                     'Forgot Number / Password?',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: themeContext.titleTextColor,
+                    style: TextStyle(
+                      color: lightSecondaryText,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

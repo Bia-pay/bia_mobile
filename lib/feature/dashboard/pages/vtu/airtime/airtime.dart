@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
+import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
 import '../../../send_money/widget/tabs.dart';
@@ -18,11 +20,10 @@ class Airtime extends ConsumerStatefulWidget {
 class _AirtimeState extends ConsumerState<Airtime> {
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: themeContext.grayWhiteBg,
+      backgroundColor: lightBackground,
       resizeToAvoidBottomInset: false,
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 60.h),
@@ -52,7 +53,7 @@ class _AirtimeState extends ConsumerState<Airtime> {
                   Text(
                     'History',
                     style: textTheme.bodyMedium?.copyWith(
-                      color: context.themeContext.kPrimary,
+                      color: primaryColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),                ],
@@ -72,7 +73,7 @@ class _AirtimeState extends ConsumerState<Airtime> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 18.h),
                 decoration: BoxDecoration(
-                  color: themeContext.tertiaryBackgroundColor,
+                 // color: themeContext.tertiaryBackgroundColor,
                   borderRadius: BorderRadius.circular(15.r),
                 ),
                 child: Column(
@@ -97,7 +98,7 @@ class _AirtimeState extends ConsumerState<Airtime> {
                             padding: EdgeInsets.symmetric(
                                 vertical: 10.h, horizontal: 16.w),
                             decoration: BoxDecoration(
-                              color: themeContext.kSecondary,
+                            //  color: themeContext.kSecondary,
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Row(
@@ -109,7 +110,8 @@ class _AirtimeState extends ConsumerState<Airtime> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: themeContext.kPrimary),
+                                       // color: themeContext.kPrimary
+                                    ),
                                   ),
                                   child: Image.asset('assets/svg/bank.png',
                                       height: 18.h),
@@ -130,8 +132,8 @@ class _AirtimeState extends ConsumerState<Airtime> {
                                       Text(
                                         tx.dateTime,
                                         style: textTheme.bodySmall?.copyWith(
-                                          color: themeContext
-                                              .secondaryTextColor,
+                                          // color: themeContext
+                                          //     .secondaryTextColor,
                                         ),
                                       ),
                                     ],
@@ -139,7 +141,8 @@ class _AirtimeState extends ConsumerState<Airtime> {
                                 ),
                                 Icon(Icons.arrow_forward_ios_outlined,
                                     size: 14.sp,
-                                    color: themeContext.secondaryTextColor),
+                                   // color: themeContext.secondaryTextColor
+                                ),
                               ],
                             ),
                           );
@@ -170,12 +173,11 @@ class _CardOneState extends ConsumerState<CardOne> {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
-        color: themeContext.tertiaryBackgroundColor,
+        color: lightSurface,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
@@ -201,12 +203,11 @@ class _CardThreeState extends ConsumerState<CardThree> {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
-        color: themeContext.tertiaryBackgroundColor,
+      //  color: themeContext.tertiaryBackgroundColor,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
@@ -232,12 +233,11 @@ class _CardTwoState extends ConsumerState<CardTwo> {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h),
       decoration: BoxDecoration(
-        color: themeContext.tertiaryBackgroundColor,
+       // color: themeContext.tertiaryBackgroundColor,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
@@ -319,7 +319,6 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -327,7 +326,7 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
         padding: EdgeInsets.symmetric(horizontal: 12.w,),
         decoration: BoxDecoration(
           border: Border.all(
-            color: context.themeContext.checkboxBorderColor
+            //color: context.themeContext.checkboxBorderColor
           ),
           borderRadius: BorderRadius.all(Radius.circular(10.r))
         ),
@@ -339,10 +338,11 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<Map<String, dynamic>>(
                   value: _selectedProvider,
-                  dropdownColor: themeContext.offWhiteBg,
+                 // dropdownColor: themeContext.offWhiteBg,
                   borderRadius: BorderRadius.circular(10.r),
                   icon: Icon(Icons.arrow_drop_down_rounded,
-                      color: themeContext.secondaryTextColor, size: 20.sp),
+                     // color: themeContext.secondaryTextColor, size: 20.sp
+                  ),
                   selectedItemBuilder: (_) {
                     return _providers.map((provider) {
                       return Container(
@@ -440,7 +440,6 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
     final theme = Theme.of(context);
 
     return Column(
@@ -470,7 +469,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                   padding: EdgeInsets.symmetric(horizontal: 12.w,),
                   decoration: BoxDecoration(
                       border: Border.all(
-                          color: context.themeContext.checkboxBorderColor
+                        //  color: context.themeContext.checkboxBorderColor
                       ),
                       borderRadius: BorderRadius.all(Radius.circular(10.r))
                   ),
@@ -493,7 +492,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
             Expanded(
               child: CustomButton(
                 buttonName: 'PAY',
-                buttonColor: themeContext.kPrimary,
+                buttonColor: primaryColor,
                 buttonTextColor: Colors.white,
                 onPressed: () {
                   final amountText = _amountController.text.trim();
@@ -553,7 +552,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(
-                    color: isSelected ? themeContext.kPrimary : Colors.grey.shade300,
+                   // color: isSelected ? themeContext.kPrimary : Colors.grey.shade300,
                     width: 1.3,
                   ),
                 ),
@@ -562,7 +561,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: themeContext.titleTextColor,
+                   // color: themeContext.titleTextColor,
                     fontSize: 14.sp,
                   ),
                 ),
@@ -604,7 +603,6 @@ class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
     final theme = Theme.of(context);
 
     return Column(
@@ -685,7 +683,9 @@ void showAirtimeConfirmationSheet(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: SvgPicture.asset('assets/svg/cancel.svg',color: context.themeContext.secondaryTextColor,),
+              child: SvgPicture.asset('assets/svg/cancel.svg',
+               // color: context.themeContext.secondaryTextColor,
+              ),
             ),
 
             // 💰 Big Amount
@@ -698,7 +698,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
-                        color: context.themeContext.titleTextColor,
+                      //  color: context.themeContext.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -706,7 +706,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                        color: context.themeContext.titleTextColor,
+                      //  color: context.themeContext.titleTextColor,
                       ),
                     ),
                   ],
@@ -720,7 +720,7 @@ void showAirtimeConfirmationSheet(
             Container(
               padding: EdgeInsets.symmetric( vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-                color: context.themeContext.offWhiteBg,
+             //   color: context.themeContext.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -872,7 +872,7 @@ Widget _buildSummaryRow(
                   width: 25,
                   height: 15,
                   decoration: BoxDecoration(
-                    color: false ? context.themeContext.kPrimary : Colors.grey.shade300,
+                   // color: false ? context.themeContext.kPrimary : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(

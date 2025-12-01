@@ -1,3 +1,4 @@
+import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -23,34 +24,37 @@ class _SplashScreenState extends ConsumerState<Splash> {
   }
 
   Future<void> _checkAuthStatus() async {
-    await Future.delayed(const Duration(seconds: 2)); // small splash delay
+    await Future.delayed(const Duration(seconds: 2));
 
     final box = await Hive.openBox("authBox");
-    final accessToken = box.get("token");
-    print(accessToken);
+    final token = box.get("token");
+    print("TOKEN → $token");
 
     if (!mounted) return;
 
-    if (accessToken != null && accessToken.toString().isNotEmpty) {
-      // ✅ User is already logged in → navigate to main dashboard
-      Navigator.pushReplacementNamed(context, RouteList.welcomeBackScreen);
+    if (token != null && token.toString().isNotEmpty) {
+      // User already logged in
+      Navigator.pushReplacementNamed(
+        context,
+        RouteList.welcomeBackScreen,
+      );
     } else {
-      // 🚀 No token → go to onboarding
-      Navigator.pushReplacementNamed(context, RouteList.getStarted);
+      // No login found
+      Navigator.pushReplacementNamed(
+        context,
+        RouteList.getStarted,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeContext = context.themeContext;
-
     return Scaffold(
       body: Container(
-        color: themeContext.kSplash,
+        color: accentColor,
         alignment: Alignment.center,
-        child: Image.asset(
-          'assets/svg/logo.png',
-          height: 230.h,
+        child: Image.asset( splashLogo,
+          height: 200.h,
         ),
       ),
     );

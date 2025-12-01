@@ -1,9 +1,9 @@
-import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../dashboard/widgets/transaction.dart';
+import '../../../../app/utils/colors.dart'; // <-- import your colors.dart
 
 class AddMoney extends ConsumerStatefulWidget {
   const AddMoney({super.key});
@@ -16,10 +16,9 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeContext = context.themeContext;
 
     return Scaffold(
-      backgroundColor: themeContext.grayWhiteBg,
+      backgroundColor: lightBackground, // from colors.dart
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
@@ -35,23 +34,25 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                       children: [
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: const Icon(Icons.arrow_back_ios, size: 18),
+                          child: const Icon(Icons.arrow_back_ios, size: 18, color: lightText),
                         ),
                         SizedBox(width: 8.w),
                         Text(
                           'Add Money',
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 18.sp,
+                            color: lightText,
                           ),
                         ),
                       ],
                     ),
                     Text(
                       'FAQ',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: themeContext.kPrimary,
+                      style: TextStyle(
+                        color: primaryColor,
                         fontWeight: FontWeight.w500,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ],
@@ -68,9 +69,10 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                 Center(
                   child: Text(
                     'OR',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: themeContext.secondaryTextColor,
+                      color: kGray,
+                      fontSize: 14.sp,
                     ),
                   ),
                 ),
@@ -90,7 +92,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                         child: Container(
                           height: 70.h,
                           decoration: BoxDecoration(
-                            color: themeContext.offWhiteBg,
+                            color: lightSurface,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Padding(
@@ -105,7 +107,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(100),
                                     border: Border.all(
-                                      color: themeContext.kPrimary,
+                                      color: primaryColor,
                                     ),
                                   ),
                                   child: Image.asset(
@@ -122,19 +124,17 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                                     children: [
                                       Text(
                                         tx.name,
-                                        style:
-                                        theme.textTheme.bodyMedium?.copyWith(
-                                          color: themeContext.titleTextColor,
+                                        style: TextStyle(
+                                          color: lightText,
                                           fontSize: 14.sp,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                       Text(
                                         tx.dateTime,
-                                        style:
-                                        theme.textTheme.bodySmall?.copyWith(
+                                        style: TextStyle(
                                           fontSize: 11.sp,
-                                          color: themeContext.secondaryTextColor,
+                                          color: lightSecondaryText,
                                         ),
                                       ),
                                     ],
@@ -143,7 +143,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                                 Icon(
                                   Icons.arrow_forward_ios_outlined,
                                   size: 14.sp,
-                                  color: themeContext.secondaryTextColor,
+                                  color: lightSecondaryText,
                                 ),
                               ],
                             ),
@@ -168,31 +168,28 @@ class BalanceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final themeContext = context.themeContext;
-
     return Container(
       padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 20.w),
       decoration: BoxDecoration(
-        color: themeContext.tertiaryBackgroundColor,
+        color: lightSurface,
         borderRadius: BorderRadius.circular(10.r),
       ),
       child: Column(
         children: [
           Text(
             'Bia Account Number',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: themeContext.secondaryTextColor,
+            style: TextStyle(
+              color: lightSecondaryText,
               fontSize: 13.sp,
             ),
           ),
           SizedBox(height: 8.h),
           Text(
             '8037386998',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: TextStyle(
               fontSize: 20.sp,
               fontWeight: FontWeight.w800,
-              color: themeContext.titleTextColor,
+              color: lightText,
               letterSpacing: 4,
             ),
           ),
@@ -202,15 +199,15 @@ class BalanceCard extends ConsumerWidget {
           SizedBox(
             width: 180.w,
             child: CustomButton(
-              buttonColor: themeContext.kPrimary,
-              buttonTextColor: Colors.white,
+              buttonColor: primaryColor,
+              buttonTextColor: lightBackground,
               buttonName: 'Share Details',
               onPressed: () {},
             ),
           ),
 
           SizedBox(height: 20.h),
-          Divider(color: themeContext.lightGray, thickness: 1),
+          Divider(color: lightBorderColor, thickness: 1),
           SizedBox(height: 5.h),
 
           /// Bank Transfer Option
@@ -222,29 +219,29 @@ class BalanceCard extends ConsumerWidget {
               padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: themeContext.kPrimary),
+                border: Border.all(color: primaryColor),
               ),
               child: Image.asset('assets/svg/bank.png', height: 10.h),
             ),
             title: Text(
               'Via Bank Transfer',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: themeContext.titleTextColor,
+              style: TextStyle(
+                color: lightText,
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: Text(
               'FREE Instant bank funding within 10s',
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: TextStyle(
                 fontSize: 11.sp,
-                color: themeContext.secondaryTextColor,
+                color: lightSecondaryText,
               ),
             ),
             trailing: Icon(
               Icons.arrow_forward_ios_outlined,
               size: 14.sp,
-              color: themeContext.secondaryTextColor,
+              color: lightSecondaryText,
             ),
           ),
         ],
