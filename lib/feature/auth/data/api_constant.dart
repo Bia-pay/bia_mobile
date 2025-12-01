@@ -6,8 +6,6 @@ class ApiConstant {
 
   // ------------ USER SIGN
   static const LOGIN = '/api/v1/auth/login';
-
-  // ----------------- SIGN UP---------------
   static const REGISTER_STEP_ONE = '/api/v1/auth/register';
   static const REGISTER_STEP_TWO = '/api/v1/auth/verify/otp';
   static const RESEND_OTP = '/api/v1/auth/resend/otp';
