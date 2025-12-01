@@ -95,7 +95,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CustomHeader(
-                  title: 'Money Transfer',
+                  title: 'Send Money',
                   onBackPressed: () => Navigator.of(context).pop(),
                 ),
                 SizedBox(height: 10.h),
