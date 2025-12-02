@@ -10,8 +10,10 @@ import '../../settings/model/qr_code.dart';
 import '../dashboard_repo/repo.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
+import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
 import '../model/recent_transfer.dart';
+import '../model/verify_transactions.dart';
 
 final dashboardControllerProvider =
 StateNotifierProvider<DashboardController, AsyncValue<ResponseBody?>>((ref) {
@@ -337,4 +339,68 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       EasyLoading.dismiss();
       return null;
     }
-  }}
+  }
+  // ✅ Deposit Money
+  Future<DepositResponseModel?> depositMoney(BuildContext context, double amount) async {
+    if (amount <= 0) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Enter a valid amount",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response = await dashboardRepository.depositMoney({"amount": amount});
+      EasyLoading.dismiss();
+
+      if (response.responseSuccessful && response.data != null) {
+        print(response.data);
+        return response;
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.error,
+          iconColor: Colors.red,
+          position: ToastPosition.top,
+        );
+        return null;
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Deposit failed: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<VerifyTransactionResponse?> verifyDeposit(BuildContext context, String reference) async {
+
+    final result =  await dashboardRepository.verifyPayment(reference);
+   // final result = await repo.verifyPayment(reference);
+
+    if (result != null && result.responseSuccessful) {
+      print("💰 Payment Verified Successfully!");
+      return result;
+    } else {
+      print("❌ Payment Verification Failed");
+      return null;
+    }
+  }
+
+}

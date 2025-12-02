@@ -4,7 +4,9 @@ class TransactionItem {
   final bool isCredit;
   final String? senderName;
   final String? receiverName;
-  final DateTime? createdAt; // ✅ make this DateTime
+  final String? provider;       // NEW
+  final String? serviceType;    // NEW
+  final DateTime? createdAt;
 
   TransactionItem({
     required this.id,
@@ -12,6 +14,8 @@ class TransactionItem {
     required this.isCredit,
     this.senderName,
     this.receiverName,
+    this.provider,
+    this.serviceType,
     this.createdAt,
   });
 
@@ -33,8 +37,16 @@ class TransactionItem {
           ? double.tryParse(json['amount']) ?? 0
           : (json['amount']?.toDouble() ?? 0),
       isCredit: json['isCredit'] ?? false,
-      senderName: json['sender'] != null ? json['sender']['fullname'] : null,
-      receiverName: json['receiver'] != null ? json['receiver']['fullname'] : null,
+
+      senderName:
+      json['sender'] != null ? json['sender']['fullname'] : null,
+
+      receiverName:
+      json['receiver'] != null ? json['receiver']['fullname'] : null,
+
+      provider: json['provider'],              // ✅ now parsed
+      serviceType: json['serviceType'],        // ✅ now parsed
+
       createdAt: parsedDate,
     );
   }
@@ -46,7 +58,9 @@ class TransactionItem {
       'isCredit': isCredit,
       'senderName': senderName,
       'receiverName': receiverName,
-      'createdAt': createdAt?.toIso8601String(), // ✅ save as string
+      'provider': provider,              // ✅ include
+      'serviceType': serviceType,        // ✅ include
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 }

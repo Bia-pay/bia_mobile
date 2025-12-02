@@ -14,6 +14,7 @@ import '../../../feature/auth/presentation/pages/onboarding.dart';
 import '../../../feature/auth/presentation/pages/splash_screen.dart';
 import '../../../feature/auth/presentation/pages/welcome_back.dart';
 import '../../../feature/bottom_nav_bar/bottom_nav.dart';
+import '../../../feature/dashboard/pages/transaction_history.dart';
 import '../../../feature/dashboard/pages/vtu/airtime/airtime.dart';
 import '../../../feature/dashboard/send_money/input_transfer/amount.dart';
 import '../../../feature/dashboard/send_money/input_transfer/send_money_transfer.dart';
@@ -21,8 +22,8 @@ import '../../../feature/dashboard/send_money/input_transfer/success.dart';
 import '../../../feature/dashboard/send_money/scan_transfer/scanner.dart';
 import '../../../feature/dashboard/send_money/scan_transfer/scanner_onboarding.dart';
 import '../../../feature/dashboard/send_money/to_bank/transfer_to_banks.dart';
+import '../../../feature/dashboard/send_money/top_up/add_money.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
-import '../../../feature/top_up/add_money.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RouteGenerator {
@@ -146,6 +147,12 @@ class RouteGenerator {
         return PageSlideTransition(
           page: (context) => ScannerOnboarding(),
           settings: RouteSettings(name: RouteList.scannerOnboarding),
+        );
+
+      case RouteList.transactionHistory:
+        return PageSlideTransition(
+          page: (context) => TransactionHistory(),
+          settings: RouteSettings(name: RouteList.transactionHistory),
         );
 
       case RouteList.createAccountVerifyOtpScreen:

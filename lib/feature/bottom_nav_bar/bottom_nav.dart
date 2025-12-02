@@ -1,14 +1,14 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../app/utils/colors.dart';
+import '../../app/utils/image.dart';
 import '../dashboard/pages/homepage.dart';
 import '../dashboard/send_money/scan_transfer/scanner_onboarding.dart';
 import '../settings/presentation/account_settings.dart';
 
 class BottomNavBar extends StatefulWidget {
   const BottomNavBar({super.key});
-  static const String routeName = '/bottomNavBar';
 
   @override
   _BottomNavBarState createState() => _BottomNavBarState();
@@ -33,16 +33,15 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _widgetOptions[_selectedIndex],
-      backgroundColor: lightBackground, // using colors.dart
-
+      backgroundColor: whiteBackground, // using colors.dart
       bottomNavigationBar: SizedBox(
-        height: 80,
+        height: 80.h,
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
           children: [
             CustomPaint(
-              size: Size(MediaQuery.of(context).size.width, 80),
+              size: Size(MediaQuery.of(context).size.width, 80.h),
               painter: BNBCustomPainter(),
             ),
 
@@ -52,15 +51,15 @@ class _BottomNavBarState extends State<BottomNavBar> {
               child: GestureDetector(
                 onTap: () => _onItemTapped(2),
                 child: Container(
-                  height: 90,
-                  width: 90,
+                  height: 90.h,
+                  width: 90.w,
                   decoration: const BoxDecoration(
                     color: primaryColor, // colors.dart
                     shape: BoxShape.circle,
                   ),
                   child: Padding(
                     padding: EdgeInsets.all( 35),
-                    child: SvgPicture.asset('assets/svg/scan.svg'),
+                    child: SvgPicture.asset(scanner),
                   ),
                 ),
               ),
@@ -72,12 +71,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
               left: 0,
               right: 0,
               child: SizedBox(
-                height: 80,
+                height: 80.h,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildNavItem(Icons.home, 0),
-                    const SizedBox(width: 60),
+                     SizedBox(width: 60.w),
                     _buildNavItem(Icons.settings, 1),
                   ],
                 ),
@@ -105,7 +104,7 @@ class BNBCustomPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = lightSurface // colors.dart
+      ..color = whiteBackground // colors.dart
       ..style = PaintingStyle.fill;
 
     final path = Path();

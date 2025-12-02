@@ -18,56 +18,59 @@ class AuthRepository {
 
   AuthRepository(this._apiClient);
 
-  // 🔐 Normal login (manual or biometric)
+  // ---------------- LOGIN ----------------
   Future<ResponseModel> logIn(Map<String, dynamic> body,
       {bool fromBiometric = false}) async {
     print('📡 Attempting login...');
 
     try {
-      http.Response response = await _apiClient.postData(
-        ApiConstant.LOGIN,
-        body,
-      );
+      http.Response response =
+      await _apiClient.postData(ApiConstant.LOGIN, body);
+
+      final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final jsonResponse = jsonDecode(response.body);
         print("✅ Success response: $jsonResponse");
 
         final responseBody = jsonResponse['responseBody'] ?? {};
+        final userJson =
+        Map<String, dynamic>.from(responseBody['user'] ?? {});
+        final walletJson =
+        Map<String, dynamic>.from(responseBody['wallet'] ?? {});
 
-        // 🟩 Extract user, wallet, tokens
-        final userJson = Map<String, dynamic>.from(responseBody['user'] ?? {});
-        final walletJson = Map<String, dynamic>.from(responseBody['wallet'] ?? {});
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
 
-        // 🟩 Save everything to Hive
+        // ---------------- SAVE TOKENS CORRECTLY ----------------
         final box = await Hive.openBox("authBox");
+
         await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
+
+        // Save user details
         await box.put("fullname", userJson['fullname'] ?? '');
         await box.put("phone", userJson['phone'] ?? '');
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
-        await box.put("has_pin", false); // assume new user has no PIN
-        await box.put('refreshToken', refreshToken);  // long-lived refresh token
+        await box.put("has_pin", false);
 
-        // If this is a manual login, store credentials for biometric login
+        // Save password only for biometric login
         if (!fromBiometric && body.containsKey('password')) {
           await box.put("password", body['password']);
           await box.put("login_biometric_enabled", true);
           print("🔐 Credentials saved for biometric login.");
         }
 
-        // 🟩 Update API headers for future requests
+        // Update API token
         _apiClient.updateHeaders(accessToken);
 
-
-        print("🔐 Tokens & wallet info saved successfully");
+        print("🔐 Login tokens saved successfully");
 
         return ResponseModel(
-          responseMessage: jsonResponse['responseMessage'] ?? 'Login successful',
-          responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
+          responseMessage:
+          jsonResponse['responseMessage'] ?? 'Login successful',
+          responseSuccessful:
+          jsonResponse['responseSuccessful'] ?? true,
           statusCode: response.statusCode,
           responseBody: ResponseBody(
             accessToken: accessToken,
@@ -76,18 +79,15 @@ class AuthRepository {
             wallet: WalletResponse.fromJson(walletJson),
           ),
         );
-      } else {
-        final jsonResponse = jsonDecode(response.body);
-        print("❌ Error response: $jsonResponse");
-
-        final errorMessage = jsonResponse["responseMessage"] ?? "Login failed";
-
-        return ResponseModel(
-          responseMessage: errorMessage,
-          responseSuccessful: false,
-          statusCode: response.statusCode,
-        );
       }
+
+      print("❌ Error response: $jsonResponse");
+      return ResponseModel(
+        responseMessage:
+        jsonResponse["responseMessage"] ?? "Login failed",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
       print('🔥 Exception during login: $e');
       return ResponseModel(
@@ -98,139 +98,112 @@ class AuthRepository {
     }
   }
 
-  // 🔓 Fingerprint-based login using saved credentials
+  // ---------------- BIOMETRIC LOGIN ----------------
   Future<ResponseModel?> biometricLogin() async {
     try {
       final box = await Hive.openBox('authBox');
       final canCheck = await _localAuth.canCheckBiometrics;
-      final enabled = box.get('login_biometric_enabled', defaultValue: false);
+      final enabled =
+      box.get('login_biometric_enabled', defaultValue: false);
 
-      if (!canCheck || !enabled) {
-        print("🚫 Biometric login not enabled or device not supported.");
-        return null;
-      }
+      if (!canCheck || !enabled) return null;
 
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to log in securely',
+        localizedReason: 'Authenticate to log in',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
-          useErrorDialogs: true,
         ),
       );
 
-      if (!authenticated) {
-        print("❌ Authentication failed or canceled by user.");
-        return null;
-      }
+      if (!authenticated) return null;
 
-      // 🔍 Retrieve saved credentials
       final phone = box.get('phone');
       final password = box.get('password');
 
-      if (phone == null || password == null) {
-        print("⚠️ Missing saved credentials in Hive.");
-        return null;
-      }
+      if (phone == null || password == null) return null;
 
-      print("✅ Biometric authentication success. Logging in automatically...");
-
-      final body = {
+      return await logIn({
         "phone": phone,
         "password": password,
-      };
-
-      return await logIn(body, fromBiometric: true);
+      }, fromBiometric: true);
     } catch (e) {
       print("🔥 Exception during biometric login: $e");
       return null;
     }
   }
 
-  // 🧾 Register Step 1
+  // ---------------- REGISTER STEP ONE ----------------
   Future<ResponseModel> registerStepOne(body) async {
-    print('Got here in auth repo');
     try {
-      http.Response response = await _apiClient.postData(
-        ApiConstant.REGISTER_STEP_ONE,
-        body,
-      );
+      http.Response response =
+      await _apiClient.postData(ApiConstant.REGISTER_STEP_ONE, body);
+
+      final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        var jsonResponse = jsonDecode(response.body);
         print("✅ Success response: $jsonResponse");
 
-        final userResponse = ResponseModel.fromJson(jsonResponse, response.statusCode);
+        final responseModel =
+        ResponseModel.fromJson(jsonResponse, response.statusCode);
 
         final box = Hive.box("authBox");
-        await box.put("accessToken", userResponse.responseBody?.accessToken);
-        await box.put("fullname", userResponse.responseBody?.user?.fullname);
-        await box.put("phone", userResponse.responseBody?.user?.phone);
+        await box.put("fullname", responseModel.responseBody?.user?.fullname);
+        await box.put("phone", responseModel.responseBody?.user?.phone);
 
-        return ResponseModel(
-          responseMessage: 'Login Successful',
-          responseSuccessful: true,
-          statusCode: response.statusCode,
-          responseBody: userResponse.responseBody,
-        );
-      } else {
-        var jsonResponse = jsonDecode(response.body);
-        print("❌ Error response: $jsonResponse");
-
-        String errorMessage =
-            jsonResponse["responseMessage"] ?? "Unknown error occurred";
-
-        return ResponseModel(
-          responseMessage: errorMessage,
-          responseSuccessful: false,
-          statusCode: response.statusCode,
-        );
+        return responseModel;
       }
-    } catch (e) {
-      print('❌ Exception during sign in: $e');
+
+      print("❌ Error response: $jsonResponse");
       return ResponseModel(
-        responseMessage: 'Something went wrong. Please try again.',
+        responseMessage:
+        jsonResponse["responseMessage"] ?? "Unknown error",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print('❌ Exception during register step 1: $e');
+      return ResponseModel(
+        responseMessage: 'Something went wrong',
         responseSuccessful: false,
         statusCode: 500,
       );
     }
   }
 
-  // 🧾 Register Step 2
+  // ---------------- REGISTER STEP TWO ----------------
   Future<ResponseModel> registerStepTwo(Map<String, dynamic> body) async {
-    print('📡 Register Step Two - Verifying OTP...');
     try {
-      final response = await _apiClient.postData(
-        ApiConstant.REGISTER_STEP_TWO,
-        body,
-      );
+      http.Response response =
+      await _apiClient.postData(ApiConstant.REGISTER_STEP_TWO, body);
+
+      final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final jsonResponse = jsonDecode(response.body);
         print("✅ Success response: $jsonResponse");
 
         final responseBody = jsonResponse['responseBody'] ?? {};
-
-        final userJson = Map<String, dynamic>.from(responseBody['user'] ?? {});
-        final walletJson = Map<String, dynamic>.from(responseBody['wallet'] ?? {});
+        final userJson =
+        Map<String, dynamic>.from(responseBody['user'] ?? {});
+        final walletJson =
+        Map<String, dynamic>.from(responseBody['wallet'] ?? {});
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
 
         final box = await Hive.openBox("authBox");
-        await box.put("accessToken", accessToken);
+        await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
-        await box.put("fullname", userJson['fullname'] ?? '');
-        await box.put("phone", userJson['phone'] ?? '');
-        await box.put("balance", walletJson['balance'] ?? 0);
+        await box.put("fullname", userJson['fullname']);
+        await box.put("phone", userJson['phone']);
+        await box.put("balance", walletJson['balance']);
 
         _apiClient.updateHeaders(accessToken);
 
-        print("🔐 Tokens & user info saved successfully");
-
         return ResponseModel(
           responseMessage:
-          jsonResponse['responseMessage'] ?? 'OTP verified successfully',
-          responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
+          jsonResponse['responseMessage'] ?? 'OTP verified',
+          responseSuccessful:
+          jsonResponse['responseSuccessful'] ?? true,
           statusCode: response.statusCode,
           responseBody: ResponseBody(
             accessToken: accessToken,
@@ -239,87 +212,71 @@ class AuthRepository {
             wallet: WalletResponse.fromJson(walletJson),
           ),
         );
-      } else {
-        final jsonResponse = jsonDecode(response.body);
-        print("❌ Error response: $jsonResponse");
-
-        final errorMessage =
-            jsonResponse["responseMessage"] ?? "Failed to verify OTP";
-
-        return ResponseModel(
-          responseMessage: errorMessage,
-          responseSuccessful: false,
-          statusCode: response.statusCode,
-        );
       }
+
+      print("❌ Error response: $jsonResponse");
+      return ResponseModel(
+        responseMessage:
+        jsonResponse["responseMessage"] ?? "OTP failed",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
       print('🔥 Exception during registerStepTwo: $e');
       return ResponseModel(
-        responseMessage: 'Something went wrong. Please try again.',
+        responseMessage: 'Something went wrong',
         responseSuccessful: false,
         statusCode: 500,
       );
     }
   }
 
-  // 🧾 Register Step 3
+  // ---------------- REGISTER STEP THREE ----------------
   Future<ResponseModel> registerStepThree(body) async {
-    print('Got here in auth repo');
     try {
-      http.Response response = await _apiClient.postData(
-        ApiConstant.REGISTER_STEP_THREE,
-        body,
-      );
+      http.Response response =
+      await _apiClient.postData(ApiConstant.REGISTER_STEP_THREE, body);
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        var jsonResponse = jsonDecode(response.body);
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         print("✅ Success response: $jsonResponse");
 
-        final userResponse = ResponseModel.fromJson(jsonResponse, response.statusCode);
+        final responseModel =
+        ResponseModel.fromJson(jsonResponse, response.statusCode);
 
         final box = Hive.box("authBox");
-        await box.put("accessToken", userResponse.responseBody?.accessToken);
-        await box.put("fullname", userResponse.responseBody?.user?.fullname);
-        await box.put("has_pin", false); // assume new user has no PIN
-        return ResponseModel(
-          responseMessage: 'Registration Successful',
-          responseSuccessful: true,
-          statusCode: response.statusCode,
-          responseBody: userResponse.responseBody,
-        );
-      } else {
-        var jsonResponse = jsonDecode(response.body);
-        print("❌ Error response: $jsonResponse");
+        await box.put("fullname", responseModel.responseBody?.user?.fullname);
+        await box.put("has_pin", false);
 
-        String errorMessage =
-            jsonResponse["responseMessage"] ?? "Unknown error occurred";
-
-        return ResponseModel(
-          responseMessage: errorMessage,
-          responseSuccessful: false,
-          statusCode: response.statusCode,
-        );
+        return responseModel;
       }
-    } catch (e) {
-      print('❌ Exception during registration: $e');
+
+      print("❌ Error response: $jsonResponse");
       return ResponseModel(
-        responseMessage: 'Something went wrong. Please try again.',
+        responseMessage:
+        jsonResponse["responseMessage"] ?? "Registration failed",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print('❌ Exception during register step 3: $e');
+      return ResponseModel(
+        responseMessage: 'Something went wrong',
         responseSuccessful: false,
         statusCode: 500,
       );
     }
   }
+
+  // ---------------- SET PIN ----------------
   Future<ResponseModel> setPin(String pin, String confirmPin) async {
     try {
-      final body = {
+      http.Response response =
+      await _apiClient.postData(ApiConstant.SET_PIN, {
         "pin": pin,
         "confirmPin": confirmPin,
-      };
-
-      http.Response response = await _apiClient.postData(
-        ApiConstant.SET_PIN, // add this constant
-        body,
-      );
+      });
 
       final jsonResponse = jsonDecode(response.body);
 
@@ -329,14 +286,16 @@ class AuthRepository {
         await box.put("saved_pin", pin);
 
         return ResponseModel(
-          responseMessage: jsonResponse["responseMessage"] ?? "PIN set successfully",
+          responseMessage:
+          jsonResponse["responseMessage"] ?? "PIN set successfully",
           responseSuccessful: true,
           statusCode: response.statusCode,
         );
       }
 
       return ResponseModel(
-        responseMessage: jsonResponse["responseMessage"] ?? "Failed to set PIN",
+        responseMessage:
+        jsonResponse["responseMessage"] ?? "Failed to set PIN",
         responseSuccessful: false,
         statusCode: response.statusCode,
       );

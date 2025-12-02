@@ -13,14 +13,16 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 });
 
 class ApiClient {
+
   String? appBASE_URL = ApiConstant.BASE_URL;
   late Map<String, String> _mainHeaders;
   String token = "";
   final ApiHelper apiHelper;
 
+  Timer? _refreshTimer;
+
   ApiClient({required this.apiHelper}) {
     final box = Hive.box('authBox');
-
     token = box.get('token', defaultValue: '') ?? '';
 
     _mainHeaders = {
@@ -28,6 +30,28 @@ class ApiClient {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
     };
+
+    // Start periodic refresh every 20 minutes
+    _startPeriodicRefresh();
+  }
+
+  void _startPeriodicRefresh() {
+    // Cancel any existing timer
+    _refreshTimer?.cancel();
+
+    _refreshTimer = Timer.periodic(
+      const Duration(minutes: 20),
+          (timer) async {
+        final success = await _refreshToken();
+        if (!success) {
+          print('⚠️ Could not refresh token periodically');
+        }
+      },
+    );
+  }
+
+  void dispose() {
+    _refreshTimer?.cancel();
   }
   void updateHeaders(String newToken) {
     token = newToken;
@@ -37,13 +61,15 @@ class ApiClient {
   // ---------------- Refresh Token ----------------
   Future<bool> _refreshToken() async {
     final box = await Hive.openBox('authBox');
-    final refreshToken = box.get('refreshToken') ?? '';
+    final refreshToken = box.get('refreshToken', defaultValue: '') ?? '';
 
     if (refreshToken.isEmpty) return false;
 
     try {
+      final fullRefreshUrl = Uri.parse("${ApiConstant.BASE_URL}${ApiConstant.REFRESH_TOKEN}");
+
       final response = await http.post(
-        Uri.parse(ApiConstant.REFRESH_TOKEN),
+        fullRefreshUrl,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refreshToken': refreshToken}),
       );
@@ -69,7 +95,6 @@ class ApiClient {
       return false;
     }
   }
-
   // ---------------- Authorized Request Wrapper ----------------
   Future<http.Response> _authorizedRequest(
       Future<http.Response> Function() apiCall) async {
