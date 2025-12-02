@@ -109,7 +109,7 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
         // Limit to recent 3
         final limited = merged.take(3000).toList();
 
-        // Update UI and cache
+
         state = AsyncValue.data(limited);
         await TransactionStorage.saveTransactions(userId, limited);
       }
