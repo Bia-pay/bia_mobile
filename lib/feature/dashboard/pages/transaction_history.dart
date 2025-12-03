@@ -1,6 +1,5 @@
 import 'package:bia/app/view/widget/app_bar.dart';
 import 'package:bia/core/__core.dart';
-import 'package:bia/feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -84,20 +83,29 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                 child: Icon(
                                   tx.isCredit ? Icons.call_received : Icons.call_made,
                                   color: tx.isCredit ? successColor : errorColor,
+                                  size: 20.sp,
                                 ),
                               ),
-                              title: Text(titleText),
+                              title: Text(titleText,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                  color: lightSecondaryText,
+                                ),),
                               subtitle: Text(
                                 formatTransactionDate(tx.createdAt),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w300,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText,
                                 ),
                               ),
                               trailing: Text(
                                 "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: tx.isCredit ? successColor : errorColor,
+                                  color: tx.isCredit ? successTextColor : errorColor,
+                                  fontSize: 15.sp,
                                 ),
                               ),
                             ),

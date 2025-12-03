@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/colors.dart';
+import '../../../../app/utils/router/route_constant.dart';
 import '../../dashboard_repo/repo.dart';
 import '../../dashboardcontroller/dashboardcontroller.dart';
 import '../../widgets/transaction.dart';
@@ -312,7 +313,25 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
 
       if (res != null && res.responseSuccessful && res.data?.status == "success") {
         print("🎉 Payment verified: ${res.responseMessage}");
-        _showDialog("Success", "Payment verified successfully!");
+
+        if (!mounted) return;
+
+        // Close WebView
+        Navigator.pop(context);
+        print("🎉 Payment verified: ${res.data?.amount.toString()}");
+        // Go to success screen
+        Navigator.pushNamed(
+          context,
+          RouteList.successScreen,
+          arguments: {
+            "type": "deposit",
+            "amount": res.data?.amount.toString(),
+            "reference": res.data?.reference,
+            "channel": res.data?.channel ?? "Paystack",
+          },
+        );
+
+        return;
       } else {
         print("⚠️ Payment not completed");
         _showDialog("Failed", "Payment was not completed.");
@@ -322,7 +341,6 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
       _showDialog("Error", "An error occurred while verifying payment.");
     }
   }
-
   Future<bool> _onWillPop() async {
     if (await _controller.canGoBack()) {
       _controller.goBack();

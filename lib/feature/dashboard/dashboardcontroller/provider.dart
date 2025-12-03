@@ -102,14 +102,13 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
         for (var tx in state.value ?? []) map[tx.id] = tx;
         for (var tx in fresh) map[tx.id] = tx;
 
-        // Get all transactions, sorted by createdAt descending
+
         final merged = map.values.toList()
           ..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
-        // Limit to recent 3
         final limited = merged.take(3000).toList();
 
-        // Update UI and cache
+
         state = AsyncValue.data(limited);
         await TransactionStorage.saveTransactions(userId, limited);
       }

@@ -6,12 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
-import 'feature/auth/interceptor/interceptor.dart';
-import 'feature/auth/presentation/pages/splash_screen.dart'; // make sure this exists
 
 // ==================== MAIN ENTRY ====================
 

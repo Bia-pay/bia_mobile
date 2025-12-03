@@ -11,7 +11,7 @@ extension MediaSize on BuildContext {
 /// 🔹 Responsive padding & margin helpers
 EdgeInsets padR(
     BuildContext context, {
-      double all = 0, // ✅ replaces "both"
+      double all = 0,
       double? horizontal,
       double? vertical,
       double? top,
