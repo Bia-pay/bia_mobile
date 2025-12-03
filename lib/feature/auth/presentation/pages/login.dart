@@ -1,5 +1,6 @@
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
+import 'package:bia/feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -111,12 +112,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                   ],
                   SizedBox(height: 10.h),
-                  Center(
-                    child: Text(
-                      'Forget Number / Password ?',
-                      style: context.textTheme.bodySmall?.copyWith(
-                        color: lightText,
-                        fontWeight: FontWeight.w500,
+                  GestureDetector(
+                    onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=> ForgotPasswordScreen1())),
+                    child: Center(
+                      child: Text(
+                        'Forget Number / Password ?',
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: lightText,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
