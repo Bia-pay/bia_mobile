@@ -23,6 +23,7 @@ import '../../../feature/dashboard/send_money/scan_transfer/scanner.dart';
 import '../../../feature/dashboard/send_money/scan_transfer/scanner_onboarding.dart';
 import '../../../feature/dashboard/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/send_money/top_up/add_money.dart';
+import '../../../feature/settings/presentation/change_password.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -136,9 +137,12 @@ class RouteGenerator {
 
         return PageSlideTransition(
           page: (context) => SuccessScreen(
+            type: args['type'],
             amount: args['amount'],
             recipientName: args['recipientName'],
             recipientAccount: args['recipientAccount'],
+            reference: args['reference'],
+            channel: args['channel'],
           ),
           settings: RouteSettings(name: RouteList.successScreen),
         );
@@ -169,6 +173,12 @@ class RouteGenerator {
         return PageSlideTransition(
           page: (context) => QrScannerScreen(),
           settings: RouteSettings(name: RouteList.qrScannerScreen),
+        );
+
+      case RouteList.changePaymentPin:
+        return PageSlideTransition(
+          page: (context) => ChangePaymentPin(),
+          settings: RouteSettings(name: RouteList.changePaymentPin),
         );
 
       case RouteList.qrScreen:

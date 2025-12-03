@@ -22,7 +22,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-
+  bool showMore = false;
   Future<void> _handleRefresh() async {
     final txFuture = ref.read(recentTransactionsProvider.notifier).refresh();
     final walletFuture = ref.read(dashboardControllerProvider.notifier)
@@ -30,6 +30,39 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     await Future.wait([txFuture, walletFuture]);
   }
+  List<Map<String, dynamic>> _quickActions(BuildContext context) => [
+    {
+      'label': 'Airtime',
+      'icon': Icon(Icons.bar_chart, color: primaryColor),
+      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.airtime),
+    },
+    {
+      'label': 'Data',
+      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
+      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.data),
+    },
+    {
+      'label': 'Cable TV',
+      'icon': Icon(Icons.tv, color: primaryColor),
+      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.cable),
+    },
+    {
+      'label': 'Tiktok Coin',
+      'icon': Image.asset(tiktok, height: 23.h),
+      'onTap': () => Navigator.pushNamed(context, RouteList.electricity),
+    },
+    {
+      'label': 'Utility Bill',
+      'icon': Icon(Icons.electrical_services, color: primaryColor),
+      'onTap': () => Navigator.pushNamed(context, RouteList.electricity),
+    },
+    {
+      'label': 'Internet',
+      'icon': Icon(Icons.wifi, color: primaryColor),
+      'onTap': () {},
+    },
+  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +123,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
               // QUICK SEND ROW
               Container(
-                padding: EdgeInsets.symmetric(vertical: 19.h, horizontal: 5.w),
+                padding: EdgeInsets.symmetric(vertical: 19.h, ),
                 decoration: BoxDecoration(
                   color: offWhite,
                   borderRadius: BorderRadius.circular(8),
@@ -99,7 +132,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ActionButton(
-                      label: 'Send TP',
+                      label: 'Send TP      ',
                       icon: SvgPicture.asset(send),
                       onTap: () => Navigator.pushNamed(
                         context,
@@ -112,7 +145,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     ActionButton(
                       label: 'Other Banks',
-                      icon: Image.asset(atm, height: 23.h),
+                      icon: Image.asset(atm, height: 21.h),
                       onTap: () => Navigator.pushNamed(
                         context,
                         RouteList.sendMoneyToBank,
@@ -136,44 +169,62 @@ class _HomePageState extends ConsumerState<HomePage> {
 
               // QUICK ACTION BUTTONS
               Container(
-                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 25.w),
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 5.w),
                 decoration: BoxDecoration(
                   color: offWhite,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
                   children: [
-                    QuickActionButton(
-                      label: 'Airtime',
-                      icon: Icon(Icons.bar_chart, color: primaryColor),
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        RouteList.airtime,
-                      ),
+                    // FIRST ROW (exactly 4 items)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: _quickActions(context)
+                          .take(4)
+                          .map((item) => QuickActionButton(
+                        label: item['label'],
+                        icon: item['icon'],
+                        onTap: item['onTap'],
+                      ))
+                          .toList(),
                     ),
-                    QuickActionButton(
-                      label: 'Data',
-                      icon: Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        RouteList.data,
+
+                    SizedBox(height: 15),
+
+                    // SECOND ROW (only visible if showMore)
+                    if (showMore)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: _quickActions(context)
+                            .skip(4)
+                            .map((item) => QuickActionButton(
+                          label: item['label'],
+                          icon: item['icon'],
+                          onTap: item['onTap'],
+                        ))
+                            .toList(),
                       ),
-                    ),
-                    QuickActionButton(
-                      label: 'Cable TV',
-                      icon: Icon(Icons.tv, color: primaryColor),
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        RouteList.cable,
-                      ),
-                    ),
-                    QuickActionButton(
-                      label: 'Utility Bill',
-                      icon: Icon(Icons.accessibility, color: primaryColor),
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        RouteList.electricity,
+
+
+                    // MORE / LESS TOGGLE
+                    GestureDetector(
+                      onTap: () => setState(() => showMore = !showMore),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            showMore ? "Less" : "More",
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
+                          ),
+                          Icon(
+                            showMore ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            color: primaryColor,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -249,20 +300,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 child: Icon(
                                   tx.isCredit ? Icons.call_received : Icons.call_made,
                                   color: tx.isCredit ? successColor : errorColor,
+                                  size: 20.sp,
                                 ),
                               ),
-                              title: Text(titleText),
+                              title: Text(titleText,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                  color: lightSecondaryText,
+                                ),),
                               subtitle: Text(
                                 formatTransactionDate(tx.createdAt),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w300,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText,
                                 ),
                               ),
                               trailing: Text(
                                 "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: tx.isCredit ? successColor : errorColor,
+                                  color: tx.isCredit ? successTextColor : errorColor,
+                                  fontSize: 15.sp,
                                 ),
                               ),
                             ),
@@ -396,7 +456,7 @@ class ActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 20.w),
+            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 11.w),
             decoration: BoxDecoration(
              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
@@ -408,8 +468,8 @@ class ActionButton extends StatelessWidget {
             label,
             style: context.textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              fontSize: 11.sp,
             ),
           ),
         ],
@@ -440,7 +500,7 @@ class QuickActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 9.w),
             decoration: BoxDecoration(
              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
@@ -452,8 +512,8 @@ class QuickActionButton extends StatelessWidget {
             label,
             style: context.textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              fontSize: 10.sp,
             ),
           ),
         ],

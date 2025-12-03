@@ -23,6 +23,7 @@ const editSvg = 'assets/svg/edit.svg';
 const cancelSvg = 'assets/svg/cancel.svg';
 const successSvg = 'assets/svg/success-transfer.svg';
 const scanner = 'assets/svg/scan.svg';
+const tiktok = 'assets/svg/tik.png';
 
 
 

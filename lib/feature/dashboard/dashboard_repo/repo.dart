@@ -404,4 +404,40 @@ class DashboardRepository {
       return null;
     }
   }
+  Future<ResponseModel> changePin(Map<String, dynamic> body) async {
+    print('📡 Updating PIN...');
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found. Please log in again.",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      // Attach token
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.putData(ApiConstant.UPDATE_PIN, body);
+      final jsonResponse = jsonDecode(response.body);
+      print("🔁 Update PIN response: $jsonResponse");
+
+      return ResponseModel(
+        responseMessage:
+        jsonResponse['responseMessage'] ?? "Failed to update PIN",
+        responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Error updating PIN: $e");
+      return ResponseModel(
+        responseMessage: "Something went wrong. Please try again.",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
 }
