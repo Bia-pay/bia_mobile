@@ -158,10 +158,11 @@ class _CompleteTransactionBottomSheetState
       final token = authBox.get("token");
 
       if (token != null && token.isNotEmpty && mounted) {
-        Navigator.pushReplacementNamed(
+        Navigator.pushNamed(
           context,
           RouteList.successScreen,
           arguments: {
+            "type": "transfer", // ✅ must be here
             "amount": total.toStringAsFixed(2),
             "recipientName": widget.recipientName,
             "recipientAccount": widget.recipientAccount,
@@ -201,6 +202,8 @@ class _CompleteTransactionBottomSheetState
         borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
       ),
       child: SingleChildScrollView(
+        reverse: true, // scrolls to bottom when keyboard appears
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -309,34 +312,42 @@ class _CompleteTransactionBottomSheetState
                       buttonName: 'Send Money',
                       buttonColor: primaryColor,
                       buttonTextColor: Colors.white,
-                      onPressed: () async {
-                        final authController = ref.read(
-                          dashboardControllerProvider.notifier,
-                        );
-                        await authController.sendMoney(
-                          context,
-                          widget.recipientAccount,
-                          total.toStringAsFixed(2),
-                          'Transfer',
-                          pinController.text,
-                          save: _saveAsBeneficiary,
-                        );
+                        onPressed: () async {
+                          final authController = ref.read(dashboardControllerProvider.notifier);
 
-                        final box = Hive.box("authBox");
-                        final token = box.get("token");
-
-                        if (token != null && token.isNotEmpty) {
-                          Navigator.pushReplacementNamed(
+                          // Call sendMoney and get response
+                          final response = await authController.sendMoney(
                             context,
-                            RouteList.successScreen,
-                            arguments: {
-                              "amount": total.toStringAsFixed(2),
-                              "recipientName": widget.recipientName,
-                              "recipientAccount": widget.recipientAccount,
-                            },
+                            widget.recipientAccount,
+                            total.toStringAsFixed(2),
+                            'Transfer',
+                            pinController.text,
+                            save: _saveAsBeneficiary,
                           );
-                        }
-                      },
+
+                          // ✅ Check if the transfer was successful
+                          if (response != null && response.responseSuccessful) {
+                            Navigator.pushNamed(
+                              context,
+                              RouteList.successScreen,
+                              arguments: {
+                                "type": "transfer",
+                                "amount": total.toStringAsFixed(2),
+                                "recipientName": widget.recipientName,
+                                "recipientAccount": widget.recipientAccount,
+                              },
+                            );
+                          } else {
+                            // ❌ Show error if PIN is wrong or transfer failed
+                            final msg = response?.responseMessage ?? "Transfer failed. Check your PIN.";
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(msg),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
                     ),
                   ),
                 ],

@@ -68,6 +68,8 @@ class _UProfileState extends ConsumerState<UProfile> {
   final Map<String, String> routeMap = {
     'Generate Qr Code': RouteList.qrScreen,
     'Help Center': RouteList.helpCenter,
+    'Change Payment Pin': RouteList.changePaymentPin,
+    //'Forget Payment Pin': RouteList.forgetPaymentPin,
   };
 
   @override
@@ -534,6 +536,8 @@ class _UProfileState extends ConsumerState<UProfile> {
                           onTap: () async {
                             if (subTitle == 'Set Pin') {
                               _showSetPinModal(context, ref);
+                            } if (subTitle == 'Change Payment Pin') {
+                              Navigator.pushNamed(context, RouteList.changePaymentPin);
                             }
                           },
                           child: Text(

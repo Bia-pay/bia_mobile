@@ -1,5 +1,4 @@
 import 'package:bia/core/__core.dart';
-import 'package:bia/feature/dashboard/dashboard_repo/repo.dart';
 import 'package:bia/feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,8 +13,6 @@ import '../../../app/utils/widgets/pin_field.dart';
 import '../../../core/helper/helper.dart';
 import '../../auth/authrepo/repo.dart';
 import '../dashboardcontroller/provider.dart';
-import '../widgets/transaction.dart';
-import '../dashboard_repo/repo.dart'; // or wherever you put recentTransactionsProvider
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -25,55 +22,53 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  // @override
-  // void initState() {
-  //   super.initState();
-  //
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     _maybeShowPinSheet();
-  //   });
-  // }
-  //
-  // void _maybeShowPinSheet() async {
-  //   final box = await Hive.openBox('authBox'); // ensure the box is ready
-  //
-  //   final hasPin = box.get('has_pin', defaultValue: false);
-  //   final savedPin = box.get('saved_pin', defaultValue: '');
-  //
-  //   // Show sheet only for new users who have not set a valid PIN
-  //   if (!hasPin || savedPin.isEmpty) {
-  //     Future.delayed(const Duration(milliseconds: 200), () {
-  //       showModalBottomSheet(
-  //         context: context,
-  //         isDismissible: false,
-  //         enableDrag: false,
-  //         isScrollControlled: true,
-  //         backgroundColor: Colors.white,
-  //         shape: const RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //         ),
-  //         builder: (_) => const _SetPinSheet(),
-  //       );
-  //     });
-  //   }
-  // }
-
+  bool showMore = false;
   Future<void> _handleRefresh() async {
-    // show pull-to-refresh spinner until both complete
     final txFuture = ref.read(recentTransactionsProvider.notifier).refresh();
-    final walletFuture = ref.read(dashboardControllerProvider.notifier).refreshWalletBalance();
+    final walletFuture = ref.read(dashboardControllerProvider.notifier)
+        .refreshWalletBalance();
+
     await Future.wait([txFuture, walletFuture]);
   }
+  List<Map<String, dynamic>> _quickActions(BuildContext context) => [
+    {
+      'label': 'Airtime',
+      'icon': Icon(Icons.bar_chart, color: primaryColor),
+      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.airtime),
+    },
+    {
+      'label': 'Data',
+      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
+      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.data),
+    },
+    {
+      'label': 'Cable TV',
+      'icon': Icon(Icons.tv, color: primaryColor),
+      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.cable),
+    },
+    {
+      'label': 'Tiktok Coin',
+      'icon': Image.asset(tiktok, height: 23.h),
+      'onTap': () => Navigator.pushNamed(context, RouteList.electricity),
+    },
+    {
+      'label': 'Utility Bill',
+      'icon': Icon(Icons.electrical_services, color: primaryColor),
+      'onTap': () => Navigator.pushNamed(context, RouteList.electricity),
+    },
+    {
+      'label': 'Internet',
+      'icon': Icon(Icons.wifi, color: primaryColor),
+      'onTap': () {},
+    },
+  ];
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final box = Hive.box('authBox');
-    final fullname = box.get('fullname', defaultValue: 'NGN');
-
-    final recentTransactions = transactions.length > 3
-        ? transactions.sublist(transactions.length - 3)
-        : transactions;
+    final fullname = box.get('fullname', defaultValue: 'User');
 
     return RefreshIndicator(
       onRefresh: _handleRefresh,
@@ -81,282 +76,272 @@ class _HomePageState extends ConsumerState<HomePage> {
         backgroundColor: offWhiteBackground,
         resizeToAvoidBottomInset: false,
         body: SafeArea(
-          child: Padding(
+          child: ListView(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              // TOP SECTION: WELCOME + ICON
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            height: 42.h,
-                            width: 45.w,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: primaryColor),
-                            ),
-                            child: Image.asset(appLogoPng),
-                          ),
-                          SizedBox(width: 10.w),
-                          Text(
-                            'Hello, ${fullname}',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
                       Container(
-                        height: 45.h,
+                        height: 42.h,
+                        width: 45.w,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(100),
+                          border: Border.all(color: primaryColor),
                         ),
-                        child: SvgPicture.asset(bell),
+                        child: Image.asset(appLogoPng),
+                      ),
+                      SizedBox(width: 10.w),
+                      Text(
+                        'Hello, $fullname',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 10.h),
-                  const BalanceCard(),
-                  SizedBox(height: 10.h),
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 19.h,
-                      horizontal: 5.w,
-                    ),
+                    height: 45.h,
                     decoration: BoxDecoration(
-                      color: offWhite,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(100),
                     ),
-                    child: Row(
+                    child: SvgPicture.asset(bell),
+                  ),
+                ],
+              ),
+
+              SizedBox(height: 10.h),
+
+              // BALANCE CARD
+              const BalanceCard(),
+
+              SizedBox(height: 10.h),
+
+              // QUICK SEND ROW
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 19.h, ),
+                decoration: BoxDecoration(
+                  color: offWhite,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ActionButton(
+                      label: 'Send TP      ',
+                      icon: SvgPicture.asset(send),
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        RouteList.sendMoneyTransfer,
+                      ),
+                    ),
+                    ActionButton(
+                      label: 'Bia Trike',
+                      icon: Icon(Icons.car_crash_sharp, color: primaryColor),
+                    ),
+                    ActionButton(
+                      label: 'Other Banks',
+                      icon: Image.asset(atm, height: 21.h),
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        RouteList.sendMoneyToBank,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 10.h),
+
+              // QUICK ACTION TITLE
+              Text(
+                'Quick Actions',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              SizedBox(height: 8.h),
+
+              // QUICK ACTION BUTTONS
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 5.w),
+                decoration: BoxDecoration(
+                  color: offWhite,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    // FIRST ROW (exactly 4 items)
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ActionButton(
-                          label: 'Send TP',
-                          icon: SvgPicture.asset(send),
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            RouteList.sendMoneyTransfer,
+                      children: _quickActions(context)
+                          .take(4)
+                          .map((item) => QuickActionButton(
+                        label: item['label'],
+                        icon: item['icon'],
+                        onTap: item['onTap'],
+                      ))
+                          .toList(),
+                    ),
+
+                    SizedBox(height: 15),
+
+                    // SECOND ROW (only visible if showMore)
+                    if (showMore)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: _quickActions(context)
+                            .skip(4)
+                            .map((item) => QuickActionButton(
+                          label: item['label'],
+                          icon: item['icon'],
+                          onTap: item['onTap'],
+                        ))
+                            .toList(),
+                      ),
+
+
+                    // MORE / LESS TOGGLE
+                    GestureDetector(
+                      onTap: () => setState(() => showMore = !showMore),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            showMore ? "Less" : "More",
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
                           ),
-                        ),
-                        ActionButton(
-                          label: 'Bia Trike',
-                          icon: Icon(
-                            Icons.car_crash_sharp,
+                          Icon(
+                            showMore ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                             color: primaryColor,
                           ),
-                        ),
-                        ActionButton(
-                          label: 'Other Banks',
-                          icon: Image.asset(atm, height: 23.h),
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            RouteList.sendMoneyToBank,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    'Quick Actions',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 20.h,
-                      horizontal: 25.w,
-                    ),
-                    decoration: BoxDecoration(
-                    color: offWhite,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        QuickActionButton(
-                          label: 'Airtime',
-                          icon: Icon(
-                            Icons.bar_chart,
-                            color: primaryColor,
-                          ),
-                          onTap: () => Navigator.pushReplacementNamed(
-                            context,
-                            RouteList.airtime,
-                          ),
-                        ),
-                        QuickActionButton(
-                          label: 'Data',
-                          icon: Icon(
-                            Icons.four_g_plus_mobiledata,
-                            color: primaryColor,
-                          ),
-                          onTap: () => Navigator.pushReplacementNamed(
-                            context,
-                            RouteList.data,
-                          ),
-                        ),
-                        QuickActionButton(
-                          label: 'Cable TV',
-                          icon: Icon(
-                            Icons.tv,
-                            color: primaryColor,
-                          ),
-                          onTap: () => Navigator.pushReplacementNamed(
-                            context,
-                            RouteList.cable,
-                          ),
-                        ),
-                        QuickActionButton(
-                          label: 'Utility Bill',
-                          icon: Icon(
-                            Icons.accessibility,
-                            color: primaryColor,
-                          ),
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            RouteList.electricity,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 10.h),
+
+              // TRANSACTION HISTORY TITLE
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   Text(
                     'Transaction History',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 10.h),
-                  // Consumer(
-                  //   builder: (context, ref, _) {
-                  //     final asyncData = ref.watch(recentTransactionsProvider);
-                  //
-                  //     return asyncData.when(
-                  //       data: (response) {
-                  //         if (!response.responseSuccessful || response.transactions.isEmpty) {
-                  //           return Center(
-                  //             child: Text(response.responseMessage.isNotEmpty
-                  //                 ? response.responseMessage
-                  //                 : "No recent transactions"),
-                  //           );
-                  //         }
-                  //
-                  //         return ListView.builder(
-                  //           shrinkWrap: true,
-                  //           physics: const NeverScrollableScrollPhysics(),
-                  //           itemCount: response.transactions.length,
-                  //           itemBuilder: (context, index) {
-                  //             final tx = response.transactions[index];
-                  //             return Container(
-                  //               margin: EdgeInsets.only(bottom: 6.h),
-                  //               decoration: BoxDecoration(
-                  //                 //color: themeContext.offWhiteBg,
-                  //                 borderRadius: BorderRadius.circular(8.r),
-                  //               ),
-                  //               child: ListTile(
-                  //                 leading: Icon(
-                  //                   tx.isCredit == true ? Icons.call_received : Icons.call_made,
-                  //                   color: tx.isCredit == true ? Colors.green : Colors.red,
-                  //                 ),
-                  //                 title: Text(tx.isCredit == true
-                  //                     ? tx.senderName ?? 'Unknown'
-                  //                     : tx.receiverName ?? 'Unknown',
-                  //                   style: theme.textTheme.bodyMedium?.copyWith(
-                  //                 fontWeight: FontWeight.w600,
-                  //                 ),),
-                  //                 subtitle: Text(tx.createdAt ?? '',
-                  //                   style: theme.textTheme.bodySmall?.copyWith(
-                  //                     fontWeight: FontWeight.w300,
-                  //                   ),),
-                  //                 trailing: Text("${tx.isCredit == true ? '+' : '-'}₦${tx.amount}",
-                  //                   style: theme.textTheme.bodyLarge?.copyWith(
-                  //                     fontWeight: FontWeight.w600,
-                  //                     color: tx.isCredit == true ? Colors.green : Colors.red,
-                  //                   ),),
-                  //               ),
-                  //             );
-                  //           },
-                  //         );
-                  //       },
-                  //       loading: () => const Center(child: CircularProgressIndicator()),
-                  //       error: (err, _) => Center(child: Text("Error: ${err.toString()}")),
-                  //     );
-                  //   },
-                  // ),
-              // Usage in HomePage
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final asyncTx = ref.watch(recentTransactionsProvider);
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      RouteList.transactionHistory,
+                    ),
+                    child: Text(
+                      'View all',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w300,
+                        fontSize: 10.sp,
+                        color: lightSecondaryText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-                      return asyncTx.when(
-                        data: (transactions) {
-                          if (transactions.isEmpty) {
-                            return const Center(child: Text("No recent transactions"));
-                          }
+              SizedBox(height: 10.h),
+              Consumer(
+                builder: (context, ref, _) {
+                  final asyncTx = ref.watch(recentTransactionsProvider);
 
-                          return ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: transactions.length,
-                            itemBuilder: (context, index) {
-                              final tx = transactions[index];
-                              return Container(
-                                margin: EdgeInsets.only(bottom: 6.h),
+                  return asyncTx.when(
+                    data: (transactions) {
+                      if (transactions.isEmpty) {
+                        return const Center(child: Text("No recent transactions"));
+                      }
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: transactions.length,
+                        itemBuilder: (context, index) {
+                          final tx = transactions[index];
+
+                          final titleText = tx.serviceType == "TOPUP"
+                              ? (tx.provider ?? "Top Up")
+                              : (tx.isCredit
+                              ? (tx.senderName ?? "Unknown")
+                              : (tx.receiverName ?? "Unknown"));
+
+                          return Container(
+                            margin: EdgeInsets.only(bottom: 6.h),
+                            decoration: BoxDecoration(
+                              color: offWhite,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: ListTile(
+                              leading: Container(
+                                padding: EdgeInsets.all(8.r),
                                 decoration: BoxDecoration(
-                                  color: offWhite,
-                                  borderRadius: BorderRadius.circular(8.r),
+                                  color: tx.isCredit ? successColor.withOpacity(0.1) : errorColor.withOpacity(0.1),
+                                  shape: BoxShape.circle
                                 ),
-                                child: ListTile(
-                                  leading: Icon(
-                                    tx.isCredit == true ? Icons.call_received : Icons.call_made,
-                                    color: tx.isCredit == true ? successColor : errorColor,
-                                  ),
-                                  title: Text(
-                                    tx.isCredit == true
-                                        ? tx.senderName ?? 'Unknown'
-                                        : tx.receiverName ?? 'Unknown',
-                                  ),
-
-                                  subtitle: Text(
-                                    formatTransactionDate(tx.createdAt),
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                  trailing: Text(
-                                    "${tx.isCredit == true ? '+' : '-'}₦${tx.amount}",
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: tx.isCredit == true ? successColor : errorColor,
-                                    ),
-                                  ),
+                                child: Icon(
+                                  tx.isCredit ? Icons.call_received : Icons.call_made,
+                                  color: tx.isCredit ? successColor : errorColor,
+                                  size: 20.sp,
                                 ),
-                              );
-                            },
+                              ),
+                              title: Text(titleText,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                  color: lightSecondaryText,
+                                ),),
+                              subtitle: Text(
+                                formatTransactionDate(tx.createdAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText,
+                                ),
+                              ),
+                              trailing: Text(
+                                "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: tx.isCredit ? successTextColor : errorColor,
+                                  fontSize: 15.sp,
+                                ),
+                              ),
+                            ),
                           );
                         },
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Center(child: Text("Error: $e")),
                       );
                     },
-                  )                ],
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text("Error: $e")),
+                  );
+                },
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 }
-
 class BalanceCard extends ConsumerWidget {
   const BalanceCard({super.key});
 
@@ -471,7 +456,7 @@ class ActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 20.w),
+            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 11.w),
             decoration: BoxDecoration(
              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
@@ -483,8 +468,8 @@ class ActionButton extends StatelessWidget {
             label,
             style: context.textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              fontSize: 11.sp,
             ),
           ),
         ],
@@ -515,7 +500,7 @@ class QuickActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 9.w),
             decoration: BoxDecoration(
              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
@@ -527,8 +512,8 @@ class QuickActionButton extends StatelessWidget {
             label,
             style: context.textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              fontSize: 10.sp,
             ),
           ),
         ],

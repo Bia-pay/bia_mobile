@@ -7,8 +7,10 @@ import '../../auth/data/api_constant.dart';
 import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 import '../../settings/model/qr_code.dart';
+import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
 import '../model/recent_transfer.dart';
+import '../model/verify_transactions.dart';
 
 final dashboardRepositoryProvider = Provider((ref) {
   final apiClient = ref.read(apiClientProvider);
@@ -113,21 +115,8 @@ class DashboardRepository {
       final token = box.get("token", defaultValue: "");
       print("🔑 Using token: $token");
 
-      final headers = {
-        'Content-type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-
-      print("➡️ Headers: $headers");
-      print("➡️ Body: $body");
-
-      final response = await http.post(
-        Uri.parse("${ApiConstant.BASE_URL}${ApiConstant.VERIFY_ACCOUNT}"),
-        headers: headers,
-        body: jsonEncode(body),
-      );
-
+      _apiClient.updateHeaders(token);
+      final response = await _apiClient.postData(ApiConstant.VERIFY_ACCOUNT, body);
       final jsonResponse = jsonDecode(response.body);
       print("✅ Verify response: $jsonResponse");
 
@@ -277,7 +266,51 @@ class DashboardRepository {
         transactions: [],
       );
     }
-  }  Future<RecentBeneficiaryResponse> getRecentBeneficiary() async {
+  }
+  Future<TransactionResponse> getTransactions() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return TransactionResponse(
+          responseSuccessful: false,
+          responseMessage: "No token found",
+          transactions: [],
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=3000");
+      final jsonResponse = jsonDecode(response.body);
+
+      // 🔹 Print out the raw responseBody for debugging
+      debugPrint('📦 Transaction API responseBody: ${jsonResponse['responseBody']}');
+
+      final body = jsonResponse['responseBody'] ?? {};
+      final list = body['transactions'] ?? [];
+
+      final parsedTransactions = list
+          .map<TransactionItem>((e) => TransactionItem.fromJson(e))
+          .toList();
+
+      return TransactionResponse(
+        responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
+        responseMessage: jsonResponse['responseMessage'] ?? '',
+        transactions: parsedTransactions,
+      );
+    } catch (e) {
+      debugPrint('⚠️ Transaction API error: $e');
+      return TransactionResponse(
+        responseSuccessful: false,
+        responseMessage: "Error: $e",
+        transactions: [],
+      );
+    }
+  }
+
+  Future<RecentBeneficiaryResponse> getRecentBeneficiary() async {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
@@ -306,16 +339,8 @@ class DashboardRepository {
       final token = box.get('token', defaultValue: '');
       if (token.isEmpty) return null;
 
-      final headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-
-      final response = await http.get(
-        Uri.parse("${ApiConstant.BASE_URL}${ApiConstant.PROFILE_UPDATE}"),
-        headers: headers,
-      );
+      _apiClient.updateHeaders(token);
+      final response = await _apiClient.getData(ApiConstant.PROFILE_UPDATE);
 
       final jsonResponse = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -332,5 +357,87 @@ class DashboardRepository {
       return null;
     }
   }
+// 💰 Deposit Money
+  Future<DepositResponseModel> depositMoney(Map<String, dynamic> body) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+      print("🔑 Using token: $token");
 
+      _apiClient.updateHeaders(token);
+      final response = await _apiClient.postData(ApiConstant.DEPOSIT, body);
+      // 🔹 Print raw API response
+      print("➡️ Status code: ${response.statusCode}");
+      print("➡️ Raw response body: ${response.body}");
+
+      final jsonData = jsonDecode(response.body);
+
+      // 🔹 Print decoded JSON
+      print("➡️ Decoded JSON: $jsonData");
+
+      return DepositResponseModel.fromJson(jsonData);
+    } catch (e) {
+      print('❌ Deposit API error: $e');
+      return DepositResponseModel(
+        responseMessage: 'Unable to initialize deposit',
+        responseSuccessful: false,
+      );
+    }
+  }
+  Future<VerifyTransactionResponse?> verifyPayment(String reference) async {
+    final url = "${ApiConstant.VERIFY_PAYMENT}/$reference";
+    print('📡 Verifying payment... $reference');
+    try {
+      final response = await _apiClient.getData(url);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        print("🔍 Verify Payment Response: $jsonResponse");
+
+        // ✅ Only pass the JSON map
+        return VerifyTransactionResponse.fromJson(jsonResponse);
+      }
+
+      return null;
+    } catch (e) {
+      print("🔥 Error verifying payment: $e");
+      return null;
+    }
+  }
+  Future<ResponseModel> changePin(Map<String, dynamic> body) async {
+    print('📡 Updating PIN...');
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found. Please log in again.",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      // Attach token
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.putData(ApiConstant.UPDATE_PIN, body);
+      final jsonResponse = jsonDecode(response.body);
+      print("🔁 Update PIN response: $jsonResponse");
+
+      return ResponseModel(
+        responseMessage:
+        jsonResponse['responseMessage'] ?? "Failed to update PIN",
+        responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Error updating PIN: $e");
+      return ResponseModel(
+        responseMessage: "Something went wrong. Please try again.",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
 }

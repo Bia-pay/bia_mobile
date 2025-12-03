@@ -7,21 +7,86 @@ import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
 class SuccessScreen extends StatelessWidget {
-  final String amount;
-  final String recipientName;
-  final String recipientAccount;
+  final String? amount;
+  final String? recipientName;
+  final String? recipientAccount;
+  final String? reference;
+  final String? channel;
+  final String? type;
+
 
   const SuccessScreen({
     super.key,
-    required this.amount,
-    required this.recipientName,
-    required this.recipientAccount,
+    this.amount,
+    this.recipientName,
+    this.recipientAccount,
+    this.reference,
+    this.channel,
+    this.type,
   });
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final args =
+    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
+    // Extract all args
+    final String? typ = type;
+    final String? amot = amount;
+
+    // Transfer
+    final String? rName = recipientName;
+    final String? rAccount = recipientAccount;
+
+    // Deposit
+    final String? ref = reference;
+    final String? chl = channel;
+
+    final textTheme = Theme.of(context).textTheme;
+    print(type);
+    print(recipientName);
+    print(amount);
+    print(reference);
+    // -------------------------
+    // TITLE BASED ON TYPE
+    // -------------------------
+    String titleText;
+    if (typ == "transfer") {
+      titleText = "Transfer Successful";
+    } else if (typ == "deposit") {
+      titleText = "Paystack Top-up Successful";
+    } else {
+      titleText = "Successful!";
+    }
+
+    // -------------------------
+    // SUBTITLE / DETAILS
+    // -------------------------
+    Widget details;
+    switch (type) {
+      case "transfer":
+        details = Text(
+          "₦$amot has been transferred to $rAccount ($rName)",
+          textAlign: TextAlign.center,
+          style: textTheme.bodyMedium?.copyWith(color: lightText),
+        );
+        break;
+
+      case "deposit":
+        details = Text(
+          "₦$amount has been topped up from Paystack\nReference: $ref\nChannel: $chl",
+          textAlign: TextAlign.center,
+          style: textTheme.bodyMedium?.copyWith(color: lightText),
+        );
+        break;
+
+      default:
+        details = Text(
+          "Transaction successful.",
+          textAlign: TextAlign.center,
+          style: textTheme.bodyMedium?.copyWith(color: lightText),
+        );
+    }
     return Scaffold(
       backgroundColor: lightBackground,
       resizeToAvoidBottomInset: false,
@@ -32,45 +97,30 @@ class SuccessScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 30.h),
-              SvgPicture.asset(
-                successSvg,
-                fit: BoxFit.contain,
-                height: 100.h,
-              ),
-              SizedBox(height: 20.h),
+
+              // Success Icon
+              SvgPicture.asset(successSvg, height: 100.h),
+
+              SizedBox(height: 25.h),
+
+              // TITLE
               Text(
-                'Successful!',
+                titleText,
+                textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: lightText,
                 ),
               ),
+
               SizedBox(height: 20.h),
 
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '₦$amount',
-                      style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: ' was sent to ',
-                      style: textTheme.bodyMedium,
-                    ),
-                    TextSpan(
-                      text: recipientName,
-                      style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: '\nSuccessful.',
-                      style: textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20.h),
+              // SUBTITLE DETAILS
+              details,
+
+              SizedBox(height: 30.h),
+
+              // ACTION BUTTONS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -80,32 +130,46 @@ class SuccessScreen extends StatelessWidget {
                       buttonColor: lightgray,
                       buttonTextColor: primaryColor,
                       onPressed: () {
-                        final message = '₦$amount was sent to $recipientName ($recipientAccount). Successful transaction!';
-                        Share.share(message, subject: 'Transaction Successful');
+                        String msg = "";
+
+                        if (type == "transfer") {
+                          msg =
+                          "₦$amount was transferred to $recipientAccount ($recipientName).";
+                        } else if (type == "deposit") {
+                          msg =
+                          "₦$amount top-up successful.\nReference: $reference\nChannel: $channel";
+                        }
+
+                        Share.share(msg, subject: "Transaction Successful");
                       },
                     ),
                   ),
-                  SizedBox(width: 20.w,),
+                  SizedBox(width: 20.w),
                   Expanded(
                     child: CustomButton(
-                        buttonName: 'View Details',
-                        buttonColor: lightgray,
-                        buttonTextColor: primaryColor,
-                        onPressed: () => Navigator.pushNamed(context, RouteList.bottomNavBar)
+                      buttonName: 'View Details',
+                      buttonColor: lightgray,
+                      buttonTextColor: primaryColor,
+                      onPressed: () =>
+                          Navigator.pushNamed(context, RouteList.bottomNavBar),
                     ),
                   ),
                 ],
               ),
+
               Spacer(),
+
               SizedBox(
                 width: double.infinity,
                 child: CustomButton(
-                    buttonName: 'Done',
-                    buttonColor: primaryColor,
-                    buttonTextColor: Colors.white,
-                    onPressed: () => Navigator.pushNamed(context, RouteList.bottomNavBar)
+                  buttonName: 'Done',
+                  buttonColor: primaryColor,
+                  buttonTextColor: Colors.white,
+                  onPressed: () =>
+                      Navigator.pushNamed(context, RouteList.bottomNavBar),
                 ),
               ),
+
               SizedBox(height: 20.h),
             ],
           ),
