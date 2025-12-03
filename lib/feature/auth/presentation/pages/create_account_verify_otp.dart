@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -24,7 +23,6 @@ class CreateAccountVerifyOtpScreen extends ConsumerStatefulWidget {
 class _CreateAccountVerifyOtpScreenState
     extends ConsumerState<CreateAccountVerifyOtpScreen> {
   final TextEditingController otpController = TextEditingController();
-
 
   bool _isLoading = false;
 
@@ -52,18 +50,12 @@ class _CreateAccountVerifyOtpScreenState
           Positioned(
             top: -90,
             right: -55,
-            child: SvgPicture.asset(
-              vector,
-              height: 220.h,
-            ),
+            child: SvgPicture.asset(vector, height: 220.h),
           ),
           Positioned(
             bottom: -30,
             left: -25,
-            child: SvgPicture.asset(
-              vectorOne,
-              height: 250.h,
-            ),
+            child: SvgPicture.asset(vectorOne, height: 250.h),
           ),
 
           SafeArea(
@@ -74,9 +66,7 @@ class _CreateAccountVerifyOtpScreenState
                 children: [
                   Text('Verify OTP', style: context.textTheme.headlineLarge),
                   SizedBox(height: 20.h),
-                  Text(
-                      'Enter your Otp',
-                      style: context.textTheme.bodyMedium),
+                  Text('Enter your Otp', style: context.textTheme.bodyMedium),
                   SizedBox(height: 20.h),
                   PinCodeTextField(
                     appContext: context,
@@ -111,9 +101,15 @@ class _CreateAccountVerifyOtpScreenState
                     buttonBorderColor: Colors.transparent,
                     onPressed: () async {
                       final otp = otpController.text.trim();
-                      final authState = ref.watch(authControllerProvider.notifier);
+                      final authState = ref.watch(
+                        authControllerProvider.notifier,
+                      );
 
-                      final response = await authState.registerStepTwo(context, otp, widget.phone);
+                      final response = await authState.registerStepTwo(
+                        context,
+                        otp,
+                        widget.phone,
+                      );
 
                       if (response?.responseSuccessful == true) {
                         Navigator.pushNamed(
@@ -123,7 +119,10 @@ class _CreateAccountVerifyOtpScreenState
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(response?.responseMessage ?? 'Registration failed'),
+                            content: Text(
+                              response?.responseMessage ??
+                                  'Registration failed',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );

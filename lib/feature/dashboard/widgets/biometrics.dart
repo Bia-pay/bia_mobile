@@ -21,14 +21,16 @@ class _BiometricToggleSwitchState extends State<BiometricToggleSwitch> {
     final box = await Hive.openBox('settings');
     final saved = box.get('biometric_enabled', defaultValue: false);
     setState(() => _isEnabled = saved);
-    print("✅ Biometric setting loaded: $_isEnabled");
+    debugPrint("✅ Biometric setting loaded: $_isEnabled");
   }
 
   Future<void> _toggleBiometric(bool value) async {
     final box = await Hive.openBox('settings');
     await box.put('biometric_enabled', value);
     setState(() => _isEnabled = value);
-    print("🔐 Biometric authentication is now: ${value ? 'ENABLED' : 'DISABLED'}");
+    debugPrint(
+      "🔐 Biometric authentication is now: ${value ? 'ENABLED' : 'DISABLED'}",
+    );
   }
 
   @override

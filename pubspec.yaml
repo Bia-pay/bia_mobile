@@ -61,6 +61,7 @@ dependencies:
   share_plus:
   svg_flutter:
   webview_flutter: ^4.2.2
+  http: ^1.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

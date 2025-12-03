@@ -108,14 +108,18 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                     {"name": "John Musa", "account": "0345678912"},
                   ],
                   onSelectBeneficiary: (name, account) {
-                    Navigator.pushNamed(context, '/amountPage', arguments: {
-                      'recipientName': name,
-                      'recipientAccount': account,
-                      'controller': TextEditingController(),
-                    });
+                    Navigator.pushNamed(
+                      context,
+                      '/amountPage',
+                      arguments: {
+                        'recipientName': name,
+                        'recipientAccount': account,
+                        'controller': TextEditingController(),
+                      },
+                    );
                   },
                   onSearchTap: () {
-                    print("Search tapped");
+                    debugPrint("Search tapped");
                   },
                   showProgress: true,
                   showLogo: true,

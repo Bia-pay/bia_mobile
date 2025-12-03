@@ -2,23 +2,26 @@ import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/head
 import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/number_pad_section.dart';
 import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/phone_input_section.dart';
 import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/send_button.dart';
-import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/verification_section.dart';
+import 'package:bia/feature/auth/presentation/pages/forgot_password/forgot_password2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../modal/country_code.dart';
+import '../../../authcontroller/authcontroller.dart';
 
-class ForgotPasswordScreen1 extends StatefulWidget {
+class ForgotPasswordScreen1 extends ConsumerStatefulWidget {
   const ForgotPasswordScreen1({super.key});
 
   @override
-  State<ForgotPasswordScreen1> createState() => _ForgotPasswordScreen1State();
+  ConsumerState<ForgotPasswordScreen1> createState() =>
+      _ForgotPasswordScreen1State();
 }
 
-class _ForgotPasswordScreen1State extends State<ForgotPasswordScreen1> {
+class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
 
   CountryCode _selectedCountry = CountryCodes.allCountries.firstWhere(
-        (country) => country.code == 'NG',
+    (country) => country.code == 'NG',
     orElse: () => CountryCodes.allCountries.first,
   );
 
@@ -27,7 +30,7 @@ class _ForgotPasswordScreen1State extends State<ForgotPasswordScreen1> {
   @override
   void initState() {
     super.initState();
-    _phoneController.text = '0398829xxx';
+    _phoneController.text = '08112345678'; // Example Nigerian number
     // Add listener to check when phone number is complete
     _phoneController.addListener(_checkPhoneNumberComplete);
   }
@@ -128,26 +131,59 @@ class _ForgotPasswordScreen1State extends State<ForgotPasswordScreen1> {
               ],
 
               // Verification section - show when phone number is complete
-              if (_isPhoneNumberComplete) ...[
-                VerificationSection(
-                  screenWidth: screenWidth,
-                  codeController: _codeController,
-                ),
-                const SizedBox(height: 30),
-              ],
+              // if (_isPhoneNumberComplete) ...[
+              //   VerificationSection(
+              //     screenWidth: screenWidth,
+              //     codeController: _codeController,
+              //   ),
+              //   const SizedBox(height: 30),
+              // ],
 
               // Send button - enable/disable based on phone number completion
               SendButton(
                 screenWidth: screenWidth,
                 isEnabled: _isPhoneNumberComplete,
                 onPressed: _isPhoneNumberComplete
-                    ? () {
-                  final fullPhoneNumber =
-                      '${_selectedCountry.dialCode}${_phoneController.text}';
-                  debugPrint(
-                    'Sending code to: $fullPhoneNumber (${_selectedCountry.name})',
-                  );
-                }
+                    ? () async {
+                        // Format phone number correctly
+                        // Remove leading 0 if present and add country code without +
+                        String phoneNumber = _phoneController.text.trim();
+                        if (phoneNumber.startsWith('0')) {
+                          phoneNumber = phoneNumber.substring(1);
+                        }
+                        // Remove + from dial code and concatenate
+                        final dialCode = _selectedCountry.dialCode.replaceAll(
+                          '+',
+                          '',
+                        );
+                        final fullPhoneNumber = '$dialCode$phoneNumber';
+
+                        debugPrint(
+                          'Sending code to: $fullPhoneNumber (${_selectedCountry.name})',
+                        );
+
+                        // Call forgot password API
+                        final authController = ref.read(
+                          authControllerProvider.notifier,
+                        );
+                        final response = await authController.forgotPassword(
+                          context,
+                          fullPhoneNumber,
+                        );
+
+                        // Navigate to forgot_password2 screen if successful
+                        if (response != null && response.responseSuccessful) {
+                          if (!mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen2(
+                                phoneNumber: fullPhoneNumber,
+                              ),
+                            ),
+                          );
+                        }
+                      }
                     : null, // Disable button if phone not complete
               ),
               const SizedBox(height: 30),

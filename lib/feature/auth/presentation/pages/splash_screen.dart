@@ -28,7 +28,7 @@ class _SplashScreenState extends ConsumerState<Splash> {
 
     final box = await Hive.openBox("authBox");
     final token = box.get("token");
-    print("TOKEN → $token");
+    debugPrint("TOKEN → $token");
 
     if (!mounted) return;
 
