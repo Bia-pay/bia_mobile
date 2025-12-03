@@ -18,8 +18,7 @@ class PaymentWebViewPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PaymentWebViewPage> createState() =>
-      _PaymentWebViewPageState();
+  ConsumerState<PaymentWebViewPage> createState() => _PaymentWebViewPageState();
 }
 
 class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
@@ -59,7 +58,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
           },
           onNavigationRequest: (NavigationRequest request) async {
             final requestUrl = request.url;
-            print("🔗 Navigating to: $requestUrl");
+            debugPrint("🔗 Navigating to: $requestUrl");
 
             // Example: success/failure detection
             if (requestUrl.contains("payment/success")) {
@@ -91,7 +90,9 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
           .read(dashboardControllerProvider.notifier)
           .verifyDeposit(context, reference);
 
-      if (res != null && res.responseSuccessful && res.data?.status == "success") {
+      if (res != null &&
+          res.responseSuccessful &&
+          res.data?.status == "success") {
         widget.onSuccess?.call();
         _showDialog("Success", "Payment verified successfully!");
       } else {
@@ -154,7 +155,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
                 text: title,
-               // style: TextStyles.normalMedium14(context),
+                // style: TextStyles.normalMedium14(context),
               ),
             ),
           ),
@@ -168,9 +169,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
                   valueColor: AlwaysStoppedAnimation(primaryColor),
                   value: _progress,
                 ),
-              Expanded(
-                child: WebViewWidget(controller: _controller),
-              ),
+              Expanded(child: WebViewWidget(controller: _controller)),
             ],
           ),
         ),
@@ -183,8 +182,5 @@ class PaymentWebViewPageParams {
   final String url;
   final String reference;
 
-  PaymentWebViewPageParams({
-    required this.url,
-    required this.reference,
-  });
+  PaymentWebViewPageParams({required this.url, required this.reference});
 }

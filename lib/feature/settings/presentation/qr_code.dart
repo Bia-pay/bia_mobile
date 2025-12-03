@@ -8,8 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../app/utils/widgets/custom_appbar.dart';
-import '../../../app/utils/colors.dart'; // <-- import your colors.dart
+import '../../../app/utils/colors.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 
 class QrScreen extends ConsumerStatefulWidget {
@@ -54,7 +53,9 @@ class _QrScreenState extends ConsumerState<QrScreen> {
       final file = await File('${tempDir.path}/bia_qr.png').create();
       await file.writeAsBytes(bytes);
 
-      await Share.shareXFiles([XFile(file.path)], text: 'My Bia Wallet QR Code');
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'My Bia Wallet QR Code');
     } catch (e) {
       _showSnack('Failed to share QR code: $e', Colors.red);
     }
@@ -67,7 +68,9 @@ class _QrScreenState extends ConsumerState<QrScreen> {
       final Uint8List bytes = response.bodyBytes;
 
       final directory = await getApplicationDocumentsDirectory();
-      final file = await File('${directory.path}/bia_qr_${DateTime.now().millisecondsSinceEpoch}.png').create();
+      final file = await File(
+        '${directory.path}/bia_qr_${DateTime.now().millisecondsSinceEpoch}.png',
+      ).create();
       await file.writeAsBytes(bytes);
 
       _showSnack("QR Code saved successfully!", Colors.green);
@@ -77,9 +80,9 @@ class _QrScreenState extends ConsumerState<QrScreen> {
   }
 
   void _showSnack(String msg, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: color),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
 
   @override
@@ -93,89 +96,86 @@ class _QrScreenState extends ConsumerState<QrScreen> {
               ? const CircularProgressIndicator(color: primaryColor)
               : qrUrl == null
               ? Text(
-            "Failed to load QR code",
-            style: TextStyle(color: Colors.red, fontSize: 14.sp),
-          )
+                  "Failed to load QR code",
+                  style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                )
               : Column(
-            children: [
-              SizedBox(height: 50.h),
-               CustomHeader(title: 'Qr Code'),
-              SizedBox(height: 100.h),
-              Container(
-                decoration: BoxDecoration(
-                  color: lightSurface,
-                  borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                  children: [
+                    SizedBox(height: 50.h),
+                    CustomHeader(title: 'Qr Code'),
+                    SizedBox(height: 100.h),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: lightSurface,
+                        borderRadius: BorderRadius.circular(12.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Image.network(
+                        qrUrl!,
+                        height: 250.h,
+                        width: 250.w,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.error, size: 80.sp, color: Colors.red),
+                      ),
+                    ),
+                    SizedBox(height: 30.h),
+                    Text(
+                      "Scan this to send money to your Bia wallet",
+                      style: TextStyle(
+                        color: lightText,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14.sp,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Spacer(),
+
+                    /// ✅ Buttons Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.share),
+                            label: const Text("Share"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              foregroundColor: lightBackground,
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                            ),
+                            onPressed: _shareQrCode,
+                          ),
+                        ),
+                        SizedBox(width: 15.w),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.download),
+                            label: const Text("Download"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: lightSurface,
+                              foregroundColor: lightText,
+                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                            ),
+                            onPressed: _downloadQrCode,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                child: Image.network(
-                  qrUrl!,
-                  height: 250.h,
-                  width: 250.w,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.error,
-                    size: 80.sp,
-                    color: Colors.red,
-                  ),
-                ),
-              ),
-              SizedBox(height: 30.h),
-              Text(
-                "Scan this to send money to your Bia wallet",
-                style: TextStyle(
-                  color: lightText,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14.sp,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(),
-
-              /// ✅ Buttons Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.share),
-                      label: const Text("Share"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: lightBackground,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                      ),
-                      onPressed: _shareQrCode,
-                    ),
-                  ),
-                  SizedBox(width: 15.w),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.download),
-                      label: const Text("Download"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: lightSurface,
-                        foregroundColor: lightText,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                      ),
-                      onPressed: _downloadQrCode,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ),
       ),
     );

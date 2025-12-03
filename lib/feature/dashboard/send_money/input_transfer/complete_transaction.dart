@@ -82,7 +82,7 @@ class _CompleteTransactionBottomSheetState
       defaultValue: false,
     );
     final savedPiin = settingsBox.get("saved_pin");
-    print(savedPiin);
+    debugPrint(savedPiin);
     setState(() {
       _hasBiometric = hasFingerprint;
       _biometricEnabled = biometricEnabled;
@@ -203,7 +203,9 @@ class _CompleteTransactionBottomSheetState
       ),
       child: SingleChildScrollView(
         reverse: true, // scrolls to bottom when keyboard appears
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -312,42 +314,46 @@ class _CompleteTransactionBottomSheetState
                       buttonName: 'Send Money',
                       buttonColor: primaryColor,
                       buttonTextColor: Colors.white,
-                        onPressed: () async {
-                          final authController = ref.read(dashboardControllerProvider.notifier);
+                      onPressed: () async {
+                        final authController = ref.read(
+                          dashboardControllerProvider.notifier,
+                        );
 
-                          // Call sendMoney and get response
-                          final response = await authController.sendMoney(
+                        // Call sendMoney and get response
+                        final response = await authController.sendMoney(
+                          context,
+                          widget.recipientAccount,
+                          total.toStringAsFixed(2),
+                          'Transfer',
+                          pinController.text,
+                          save: _saveAsBeneficiary,
+                        );
+
+                        // ✅ Check if the transfer was successful
+                        if (response != null && response.responseSuccessful) {
+                          Navigator.pushNamed(
                             context,
-                            widget.recipientAccount,
-                            total.toStringAsFixed(2),
-                            'Transfer',
-                            pinController.text,
-                            save: _saveAsBeneficiary,
+                            RouteList.successScreen,
+                            arguments: {
+                              "type": "transfer",
+                              "amount": total.toStringAsFixed(2),
+                              "recipientName": widget.recipientName,
+                              "recipientAccount": widget.recipientAccount,
+                            },
                           );
-
-                          // ✅ Check if the transfer was successful
-                          if (response != null && response.responseSuccessful) {
-                            Navigator.pushNamed(
-                              context,
-                              RouteList.successScreen,
-                              arguments: {
-                                "type": "transfer",
-                                "amount": total.toStringAsFixed(2),
-                                "recipientName": widget.recipientName,
-                                "recipientAccount": widget.recipientAccount,
-                              },
-                            );
-                          } else {
-                            // ❌ Show error if PIN is wrong or transfer failed
-                            final msg = response?.responseMessage ?? "Transfer failed. Check your PIN.";
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(msg),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
+                        } else {
+                          // ❌ Show error if PIN is wrong or transfer failed
+                          final msg =
+                              response?.responseMessage ??
+                              "Transfer failed. Check your PIN.";
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(msg),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
                     ),
                   ),
                 ],

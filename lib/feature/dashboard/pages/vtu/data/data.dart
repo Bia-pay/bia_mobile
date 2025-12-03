@@ -27,7 +27,7 @@ class _DataState extends State<Data> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(62.h),
         child: Container(
-          padding: EdgeInsets.symmetric( horizontal: 10.w),
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
           color: lightBackground,
           alignment: Alignment.center,
           child: Row(
@@ -43,12 +43,10 @@ class _DataState extends State<Data> {
                       child: const Icon(Icons.arrow_back_ios),
                     ),
                   ),
-                 SizedBox(height: 5.h,),
+                  SizedBox(height: 5.h),
                   Text(
                     'Data',
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      fontSize: 18,
-                    ),
+                    style: context.textTheme.bodyMedium?.copyWith(fontSize: 18),
                   ),
                 ],
               ),
@@ -68,49 +66,58 @@ class _DataState extends State<Data> {
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.symmetric( horizontal: 20.w),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 /// ─── Card One ───
                 const CardTwo(),
-                SizedBox(height: 20.h,),
+                SizedBox(height: 20.h),
                 const CardOne(),
-                SizedBox(height: 20.h,),
+                SizedBox(height: 20.h),
                 const CardThree(),
 
-                SizedBox(height: 20.h,),
+                SizedBox(height: 20.h),
 
                 /// ─── Data Service Section ───
                 Container(
-                  padding: EdgeInsets.symmetric( vertical: 17, horizontal: 10),
+                  padding: EdgeInsets.symmetric(vertical: 17, horizontal: 10),
                   decoration: BoxDecoration(
-                   // color: context.themeContext.tertiaryBackgroundColor,
+                    // color: context.themeContext.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Data Service',
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          )),
-                      SizedBox(height: 10.h,),
+                      Text(
+                        'Data Service',
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
 
                       SizedBox(
                         height: 180.h,
                         child: ListView.builder(
-                          padding: EdgeInsets.symmetric( vertical: 8, horizontal: 0),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 0,
+                          ),
                           shrinkWrap: true,
                           physics: const BouncingScrollPhysics(),
                           itemCount: dataPlans.length,
                           itemBuilder: (context, index) {
                             final tx = dataPlans[index];
                             return Container(
-                              padding:
-                              EdgeInsets.symmetric( vertical: 8, horizontal: 18),
-                              margin: EdgeInsets.symmetric( vertical: 6, horizontal: 7),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 18,
+                              ),
+                              margin: EdgeInsets.symmetric(
+                                vertical: 6,
+                                horizontal: 7,
+                              ),
                               height: 70.h,
                               decoration: BoxDecoration(
                                 //color: context.themeContext.kSecondary,
@@ -125,41 +132,39 @@ class _DataState extends State<Data> {
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(
-                                        color: primaryColor,
-                                      ),
+                                      border: Border.all(color: primaryColor),
                                     ),
                                     child: Image.asset(
                                       'assets/svg/bank.png',
                                       height: 20.h,
                                     ),
                                   ),
-                                  SizedBox(width: 15.h,),
+                                  SizedBox(width: 15.h),
                                   Expanded(
                                     child: Column(
                                       mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                          MainAxisAlignment.center,
                                       crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           tx.name,
                                           style: context.textTheme.bodyMedium
                                               ?.copyWith(
-                                            // color: context
-                                            //     .themeContext.titleTextColor,
-                                            fontSize: 15.sp,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                                // color: context
+                                                //     .themeContext.titleTextColor,
+                                                fontSize: 15.sp,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                         Text(
                                           tx.dateTime,
                                           style: context.textTheme.bodySmall
                                               ?.copyWith(
-                                            fontSize: 11.sp,
-                                            // color: context.themeContext
-                                            //     .secondaryTextColor,
-                                          ),
+                                                fontSize: 11.sp,
+                                                // color: context.themeContext
+                                                //     .secondaryTextColor,
+                                              ),
                                         ),
                                       ],
                                     ),
@@ -178,7 +183,7 @@ class _DataState extends State<Data> {
                   ),
                 ),
 
-                SizedBox(height: 25.h,),
+                SizedBox(height: 25.h),
               ],
             ),
           ),
@@ -193,7 +198,12 @@ class CardOne extends StatefulWidget {
   final Function(int amount)? onAmountSelected;
   final Map<String, dynamic>? selectedProvider;
   final String? phoneNumber;
-  const CardOne({super.key, this.onAmountSelected, this.selectedProvider, this.phoneNumber});
+  const CardOne({
+    super.key,
+    this.onAmountSelected,
+    this.selectedProvider,
+    this.phoneNumber,
+  });
 
   @override
   State<CardOne> createState() => _CardOneState();
@@ -207,17 +217,18 @@ class _CardOneState extends State<CardOne> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric( vertical: 17, horizontal: 25),
+      padding: EdgeInsets.symmetric(vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-       // color: context.themeContext.tertiaryBackgroundColor,
+        // color: context.themeContext.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric( horizontal: 1.w,vertical: 5.h),
+        padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 5.h),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [    /// 💰 Amount Grid (matching your image layout)
+          children: [
+            /// 💰 Amount Grid (matching your image layout)
             Text(
               'Enter Amount',
               textAlign: TextAlign.start,
@@ -225,10 +236,9 @@ class _CardOneState extends State<CardOne> {
               //   fontWeight: FontWeight.w600,
               // ),
             ),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
 
             /// 🔹 Pay Button
-
             Row(
               children: [
                 Expanded(
@@ -236,12 +246,12 @@ class _CardOneState extends State<CardOne> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w,),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
                       decoration: BoxDecoration(
-                          border: Border.all(
-                              //color: context.themeContext.checkboxBorderColor
-                          ),
-                          borderRadius: BorderRadius.all(Radius.circular(10.r))
+                        border: Border.all(
+                          //color: context.themeContext.checkboxBorderColor
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,7 +283,9 @@ class _CardOneState extends State<CardOne> {
                         context,
                         amount: amount,
                         networkName: widget.selectedProvider?['name'] ?? 'MTN',
-                        networkLogo: widget.selectedProvider?['logo'] ?? 'assets/svg/mtn.jpg',
+                        networkLogo:
+                            widget.selectedProvider?['logo'] ??
+                            'assets/svg/mtn.jpg',
                         recipientNumber: widget.phoneNumber ?? '',
                       );
                     },
@@ -285,7 +297,7 @@ class _CardOneState extends State<CardOne> {
               selectedProvider: _selectedProvider,
               phoneNumber: _phoneNumber,
               onAmountSelected: (amount) {
-                print('Selected amount: ₦$amount');
+                debugPrint('Selected amount: ₦$amount');
               },
             ),
           ],
@@ -345,7 +357,7 @@ class _NetworkDropdownState extends State<NetworkDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    return  Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -447,12 +459,15 @@ class _NetworkDropdownState extends State<NetworkDropdown> {
                 contentPadding: EdgeInsets.zero,
               ),
               onChanged: (value) {
-                _detectNetwork(value);                // ✅ still auto-detect network
-                widget.onPhoneChanged?.call(value);   // ✅ send phone number upward
-              },            ),
+                _detectNetwork(value); // ✅ still auto-detect network
+                widget.onPhoneChanged?.call(
+                  value,
+                ); // ✅ send phone number upward
+              },
+            ),
           ),
 
-          SizedBox(height: 5.h,),
+          SizedBox(height: 5.h),
           // 👤 Profile icon
           Container(
             height: 30.h,
@@ -462,17 +477,14 @@ class _NetworkDropdownState extends State<NetworkDropdown> {
               shape: BoxShape.rectangle,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
-            child: Icon(
-              Icons.person_rounded,
-              color: primaryColor,
-              size: 18,
-            ),
+            child: Icon(Icons.person_rounded, color: primaryColor, size: 18),
           ),
         ],
       ),
     );
   }
 }
+
 /// ─── DATA SELECTOR (tabs + bonus chip restored) ───
 class DataAmountSelector extends StatefulWidget {
   final Function(int amount)? onAmountSelected;
@@ -496,7 +508,13 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
   int? selectedAmount;
 
   // Tabs
-  final List<String> _tabs = ['Gifting', 'Corporate', 'SME', 'Hot', 'Exclusive'];
+  final List<String> _tabs = [
+    'Gifting',
+    'Corporate',
+    'SME',
+    'Hot',
+    'Exclusive',
+  ];
   late final TabController _tabController;
 
   // Plans PER TAB — includes your specific bonus labels like TikTok / Facebook
@@ -504,32 +522,82 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
     'Gifting': [
       {'data': '110MB', 'price': 100, 'duration': '1 DAY', 'bonus': 'Facebook'},
       {'data': '150MB', 'price': 200, 'duration': '1 DAY', 'bonus': 'TikTok'},
-      {'data': '500MB', 'price': 400, 'duration': '3 DAYS', 'bonus': 'Instagram'},
-      {'data': '1GB',   'price': 800, 'duration': '7 DAYS', 'bonus': 'YouTube'},
-      {'data': '2GB',   'price': 1200, 'duration': '10 DAYS', 'bonus': 'WhatsApp'},
-      {'data': '3GB',   'price': 1800, 'duration': '14 DAYS', 'bonus': 'Facebook'},
+      {
+        'data': '500MB',
+        'price': 400,
+        'duration': '3 DAYS',
+        'bonus': 'Instagram',
+      },
+      {'data': '1GB', 'price': 800, 'duration': '7 DAYS', 'bonus': 'YouTube'},
+      {
+        'data': '2GB',
+        'price': 1200,
+        'duration': '10 DAYS',
+        'bonus': 'WhatsApp',
+      },
+      {
+        'data': '3GB',
+        'price': 1800,
+        'duration': '14 DAYS',
+        'bonus': 'Facebook',
+      },
     ],
     'Corporate': [
-      {'data': '2GB',  'price': 1500, 'duration': '14 DAYS', 'bonus': 'Team Share'},
-      {'data': '5GB',  'price': 3000, 'duration': '30 DAYS', 'bonus': 'Staff Bonus'},
-      {'data': '10GB', 'price': 6000, 'duration': '60 DAYS', 'bonus': 'Office Pack'},
-      {'data': '20GB', 'price': 11000, 'duration': '90 DAYS', 'bonus': 'Conference'},
+      {
+        'data': '2GB',
+        'price': 1500,
+        'duration': '14 DAYS',
+        'bonus': 'Team Share',
+      },
+      {
+        'data': '5GB',
+        'price': 3000,
+        'duration': '30 DAYS',
+        'bonus': 'Staff Bonus',
+      },
+      {
+        'data': '10GB',
+        'price': 6000,
+        'duration': '60 DAYS',
+        'bonus': 'Office Pack',
+      },
+      {
+        'data': '20GB',
+        'price': 11000,
+        'duration': '90 DAYS',
+        'bonus': 'Conference',
+      },
     ],
     'SME': [
-      {'data': '500MB', 'price': 250, 'duration': '1 DAY',  'bonus': 'SME Share'},
-      {'data': '1GB',   'price': 500, 'duration': '3 DAYS', 'bonus': 'Reseller'},
-      {'data': '2GB',   'price': 900, 'duration': '7 DAYS', 'bonus': 'Reseller'},
-      {'data': '5GB',   'price': 2200, 'duration': '14 DAYS', 'bonus': 'Bulk'},
+      {
+        'data': '500MB',
+        'price': 250,
+        'duration': '1 DAY',
+        'bonus': 'SME Share',
+      },
+      {'data': '1GB', 'price': 500, 'duration': '3 DAYS', 'bonus': 'Reseller'},
+      {'data': '2GB', 'price': 900, 'duration': '7 DAYS', 'bonus': 'Reseller'},
+      {'data': '5GB', 'price': 2200, 'duration': '14 DAYS', 'bonus': 'Bulk'},
     ],
     'Hot': [
-      {'data': '1.5GB', 'price': 500,  'duration': '1 DAY',  'bonus': '🔥 Flash'},
-      {'data': '3GB',   'price': 1000, 'duration': '3 DAYS', 'bonus': '🔥 Weekend'},
-      {'data': '5GB',   'price': 1500, 'duration': '7 DAYS', 'bonus': '🔥 Promo'},
+      {'data': '1.5GB', 'price': 500, 'duration': '1 DAY', 'bonus': '🔥 Flash'},
+      {
+        'data': '3GB',
+        'price': 1000,
+        'duration': '3 DAYS',
+        'bonus': '🔥 Weekend',
+      },
+      {'data': '5GB', 'price': 1500, 'duration': '7 DAYS', 'bonus': '🔥 Promo'},
     ],
     'Exclusive': [
       {'data': '15GB', 'price': 3500, 'duration': '30 DAYS', 'bonus': 'VIP'},
       {'data': '25GB', 'price': 5500, 'duration': '45 DAYS', 'bonus': 'VIP+'},
-      {'data': '40GB', 'price': 8000, 'duration': '60 DAYS', 'bonus': 'Premium'},
+      {
+        'data': '40GB',
+        'price': 8000,
+        'duration': '60 DAYS',
+        'bonus': 'Premium',
+      },
     ],
   };
 
@@ -560,13 +628,13 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
             children: _tabs.map((tabName) {
               final plans = categorizedPlans[tabName]!;
               return GridView.builder(
-                padding: EdgeInsets.all( 12),
+                padding: EdgeInsets.all(12),
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,       // ✅ exactly 3 columns
+                  crossAxisCount: 3, // ✅ exactly 3 columns
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.85,  // ✅ slightly taller to avoid overflow
+                  childAspectRatio: 0.85, // ✅ slightly taller to avoid overflow
                 ),
                 itemCount: plans.length,
                 itemBuilder: (context, index) {
@@ -583,16 +651,14 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.only( top: 1.h, left: 10,right: 10.w),
+                      padding: EdgeInsets.only(top: 1.h, left: 10, right: 10.w),
                       decoration: BoxDecoration(
                         // color: isSelected
                         //     ? primaryColor.withOpacity(0.15)
                         //     : context.themeContext.kSecondary,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected
-                              ? primaryColor
-                              : Colors.transparent,
+                          color: isSelected ? primaryColor : Colors.transparent,
                           width: 1.5,
                         ),
                       ),
@@ -607,12 +673,12 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                             style: context.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 16.sp,
-                             // color: context.themeContext.titleTextColor,
+                              // color: context.themeContext.titleTextColor,
                             ),
                           ),
 
                           // PRICE
-                          SizedBox(height: 5.h,),
+                          SizedBox(height: 5.h),
                           Text.rich(
                             TextSpan(
                               children: [
@@ -638,7 +704,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                           ),
 
                           // DURATION
-                          SizedBox(height: 5.h,),
+                          SizedBox(height: 5.h),
                           Text(
                             plan['duration'],
                             maxLines: 1,
@@ -653,23 +719,27 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                           const Spacer(),
 
                           // BONUS CHIP (Facebook, TikTok, etc.)
-                          if (plan['bonus'] != null) Container(
-                            padding: EdgeInsets.symmetric( horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: primaryColor.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              plan['bonus'],
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.textTheme.bodySmall?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 11.sp,
+                          if (plan['bonus'] != null)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                plan['bonus'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11.sp,
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -685,12 +755,12 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
 }
 
 void showAirtimeConfirmationSheet(
-    BuildContext context, {
-      required int amount,
-      required String networkName,
-      required String networkLogo,
-      required String recipientNumber,
-    }) {
+  BuildContext context, {
+  required int amount,
+  required String networkName,
+  required String networkLogo,
+  required String recipientNumber,
+}) {
   final currencySymbol = Constants.nairaCurrencySymbol;
 
   showModalBottomSheet(
@@ -720,7 +790,8 @@ void showAirtimeConfirmationSheet(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: SvgPicture.asset('assets/svg/cancel.svg',
+              child: SvgPicture.asset(
+                'assets/svg/cancel.svg',
                 //color: context.themeContext.secondaryTextColor,
               ),
             ),
@@ -735,7 +806,8 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
-                       /// color: context.themeContext.titleTextColor,
+
+                        /// color: context.themeContext.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -743,21 +815,20 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                       // color: context.themeContext.titleTextColor,
+                        // color: context.themeContext.titleTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 20.h,),
-
+            SizedBox(height: 20.h),
 
             // 📄 Transaction summary
             Container(
-              padding: EdgeInsets.symmetric( vertical: 18, horizontal: 16),
+              padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-               // color: context.themeContext.offWhiteBg,
+                // color: context.themeContext.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -785,7 +856,7 @@ void showAirtimeConfirmationSheet(
                               ),
                             ),
                           ),
-                          SizedBox(height: 6.h,),
+                          SizedBox(height: 6.h),
 
                           Text(
                             networkName,
@@ -798,8 +869,16 @@ void showAirtimeConfirmationSheet(
                       ),
                     ],
                   ),
-                  _buildSummaryRow(context, 'Recipient Mobile', recipientNumber),
-                  _buildSummaryRow(context, 'Amount', '$currencySymbol$amount.00'),
+                  _buildSummaryRow(
+                    context,
+                    'Recipient Mobile',
+                    recipientNumber,
+                  ),
+                  _buildSummaryRow(
+                    context,
+                    'Amount',
+                    '$currencySymbol$amount.00',
+                  ),
                   _buildSummaryRow(
                     context,
                     'Use Cashback (${currencySymbol}34.00)',
@@ -817,7 +896,7 @@ void showAirtimeConfirmationSheet(
             ),
 
             Divider(color: Colors.grey.shade300),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
             // 💳 Payment Method
             Text(
               'Payment Method',
@@ -826,11 +905,11 @@ void showAirtimeConfirmationSheet(
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
 
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric( vertical: 16, horizontal: 18),
+              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 18),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
@@ -849,13 +928,16 @@ void showAirtimeConfirmationSheet(
               ),
             ),
 
-            SizedBox(height: 20.h,),
-
+            SizedBox(height: 20.h),
 
             // 🟩 Pay Button
             Padding(
-                padding: EdgeInsets.symmetric( horizontal: 10.w),
-                child: CustomButton(buttonColor: Colors.white, buttonTextColor: Colors.white, buttonName: 'Pay')
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: CustomButton(
+                buttonColor: Colors.white,
+                buttonTextColor: Colors.white,
+                buttonName: 'Pay',
+              ),
             ),
           ],
         ),
@@ -863,14 +945,15 @@ void showAirtimeConfirmationSheet(
     },
   );
 }
+
 /// 🔹 Helper Summary Row Widget
 Widget _buildSummaryRow(
-    BuildContext context,
-    String title,
-    String value, {
-      bool bonus = false,
-      bool hasToggle = false,
-    }) {
+  BuildContext context,
+  String title,
+  String value, {
+  bool bonus = false,
+  bool hasToggle = false,
+}) {
   return Padding(
     padding: EdgeInsets.symmetric(vertical: 6.h),
     child: Row(
@@ -893,13 +976,8 @@ Widget _buildSummaryRow(
                 ),
               )
             else
-              Text(
-                  value,
-                  style: context.textTheme.bodyMedium?.copyWith(
-                  )
-
-              ),
-            SizedBox(height: 5.h,),
+              Text(value, style: context.textTheme.bodyMedium?.copyWith()),
+            SizedBox(height: 5.h),
             if (hasToggle)
               GestureDetector(
                 onTap: () {},
@@ -912,7 +990,9 @@ Widget _buildSummaryRow(
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(
-                    alignment: false ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: false
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: Container(
                       width: 10.w,
                       height: 10.h,

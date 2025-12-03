@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get_utils/src/extensions/context_extensions.dart';
-import 'package:hive/hive.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -24,15 +23,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool _obscurePassword = true;
+
   @override
   void dispose() {
     phoneController.dispose();
     passwordController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider.notifier);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -41,18 +42,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Positioned(
             top: -90.h,
             right: -55.w,
-            child: SvgPicture.asset(
-              vector,
-              height: 250.h,
-            ),
+            child: SvgPicture.asset(vector, height: 250.h),
           ),
           Positioned(
             bottom: -130.h,
             left: -25.w,
-            child: SvgPicture.asset(
-              vectorOne,
-              height: 330.h,
-            ),
+            child: SvgPicture.asset(vectorOne, height: 330.h),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -85,35 +80,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: 'Password',
                     controller: passwordController,
                     hintText: 'Enter your password',
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     validator: (value) =>
-                    value.isEmpty ? 'Password is required' : null,
-                    suffixIcon: const Icon(Icons.remove_red_eye_outlined),
+                        value.isEmpty ? 'Password is required' : null,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
                   SizedBox(height: 40.h),
                   CustomButton(
                     buttonColor: primaryColor,
                     buttonTextColor: Colors.white,
                     buttonName: isLoading ? 'Logging in...' : 'Login',
-                    onPressed: isLoading ? null : () async {
-                      final authState = ref.read(authControllerProvider.notifier);
-                      final success = await authState.logIn(
-                        context,
-                        phoneController.text.trim(),
-                        passwordController.text.trim(),
-                      );
-                      if (success) {
-                        Navigator.pushNamed(context, RouteList.bottomNavBar);
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final authState = ref.read(
+                              authControllerProvider.notifier,
+                            );
+                            final success = await authState.logIn(
+                              context,
+                              phoneController.text.trim(),
+                              passwordController.text.trim(),
+                            );
+                            if (success) {
+                              Navigator.pushNamed(
+                                context,
+                                RouteList.bottomNavBar,
+                              );
+                            }
+                          },
                   ),
                   if (isLoading) ...[
                     SizedBox(height: 10.h),
-                    const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ],
                   SizedBox(height: 10.h),
                   GestureDetector(
-                    onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=> ForgotPasswordScreen1())),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ForgotPasswordScreen1(),
+                      ),
+                    ),
                     child: Center(
                       child: Text(
                         'Forget Number / Password ?',

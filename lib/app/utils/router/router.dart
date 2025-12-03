@@ -5,7 +5,6 @@ import 'package:bia/feature/dashboard/pages/vtu/data/data.dart';
 import 'package:bia/feature/dashboard/pages/vtu/tv_cable/cable.dart';
 import 'package:bia/feature/dashboard/pages/vtu/utility/utility.dart';
 import 'package:flutter/material.dart';
-
 import '../../../feature/auth/presentation/pages/create_account.dart';
 import '../../../feature/auth/presentation/pages/create_account_phone.dart';
 import '../../../feature/auth/presentation/pages/create_account_verify_otp.dart';
@@ -25,7 +24,6 @@ import '../../../feature/dashboard/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/send_money/top_up/add_money.dart';
 import '../../../feature/settings/presentation/change_password.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class RouteGenerator {
   static dynamic route() {
@@ -33,7 +31,7 @@ class RouteGenerator {
   }
 
   static Route<dynamic> appRoutes(RouteSettings routeSettings) {
-    final arguments = routeSettings.arguments;
+    // final arguments = routeSettings.arguments;
 
     switch (routeSettings.name) {
       case RouteList.onBoardingScreen:
@@ -163,9 +161,8 @@ class RouteGenerator {
         final args = routeSettings.arguments as Map<String, dynamic>?;
 
         return PageSlideTransition(
-          page: (context) => CreateAccountVerifyOtpScreen(
-            phone: args?['phone'] ?? '',
-          ),
+          page: (context) =>
+              CreateAccountVerifyOtpScreen(phone: args?['phone'] ?? ''),
           settings: RouteSettings(name: RouteList.createAccountVerifyOtpScreen),
         );
 
