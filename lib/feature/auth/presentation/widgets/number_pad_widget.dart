@@ -23,7 +23,7 @@ class NumberPadWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(containerPadding),
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
