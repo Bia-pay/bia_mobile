@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/image.dart';
-import '../../../../app/utils/router/route_constant.dart';
 
+import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 class SuccessScreen extends StatelessWidget {
   final String? amount;
   final String? recipientName;
@@ -14,6 +14,7 @@ class SuccessScreen extends StatelessWidget {
   final String? reference;
   final String? channel;
   final String? type;
+
 
   const SuccessScreen({
     super.key,
@@ -28,7 +29,7 @@ class SuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
 
     // Extract all args
     final String? typ = type;
@@ -43,10 +44,10 @@ class SuccessScreen extends StatelessWidget {
     final String? chl = channel;
 
     final textTheme = Theme.of(context).textTheme;
-    debugPrint(type);
-    debugPrint(recipientName);
-    debugPrint(amount);
-    debugPrint(reference);
+    print(type);
+    print(recipientName);
+    print(amount);
+    print(reference);
     // -------------------------
     // TITLE BASED ON TYPE
     // -------------------------
@@ -134,10 +135,10 @@ class SuccessScreen extends StatelessWidget {
 
                         if (type == "transfer") {
                           msg =
-                              "₦$amount was transferred to $recipientAccount ($recipientName).";
+                          "₦$amount was transferred to $recipientAccount ($recipientName).";
                         } else if (type == "deposit") {
                           msg =
-                              "₦$amount top-up successful.\nReference: $reference\nChannel: $channel";
+                          "₦$amount top-up successful.\nReference: $reference\nChannel: $channel";
                         }
 
                         Share.share(msg, subject: "Transaction Successful");

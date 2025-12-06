@@ -6,6 +6,8 @@ class TransactionItem {
   final String? receiverName;
   final String? provider;       // NEW
   final String? serviceType;    // NEW
+  final String? status;         // NEW
+  final String? transactionId;    // NEW
   final DateTime? createdAt;
 
   TransactionItem({
@@ -16,6 +18,8 @@ class TransactionItem {
     this.receiverName,
     this.provider,
     this.serviceType,
+    this.status,
+    this.transactionId,
     this.createdAt,
   });
 
@@ -46,6 +50,8 @@ class TransactionItem {
 
       provider: json['provider'],              // ✅ now parsed
       serviceType: json['serviceType'],        // ✅ now parsed
+      status: json['status'],                  // ✅ now parsed
+      transactionId: json['transactionId'],    // ✅ now parsed
 
       createdAt: parsedDate,
     );
@@ -60,6 +66,8 @@ class TransactionItem {
       'receiverName': receiverName,
       'provider': provider,              // ✅ include
       'serviceType': serviceType,        // ✅ include
+      'status': status,                  // ✅ include
+      'transactionId': transactionId,    // ✅ include
       'createdAt': createdAt?.toIso8601String(),
     };
   }
