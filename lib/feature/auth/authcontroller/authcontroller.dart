@@ -429,7 +429,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         'phone': phone,
         'newPassword': newPassword,
         'confirmNewPassword': confirmNewPassword,
-      };
+       };
 
       debugPrint(" Resetting password: $body");
 
