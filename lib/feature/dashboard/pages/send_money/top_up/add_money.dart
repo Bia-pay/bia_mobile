@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/colors.dart';
-import '../../../../app/utils/router/route_constant.dart';
-import '../../dashboardcontroller/dashboardcontroller.dart';
-import '../../widgets/transaction.dart';
+
+import '../../../../../app/utils/colors.dart';
+import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/router/route_constant.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../widgets/transaction.dart';
 
 class AddMoney extends ConsumerStatefulWidget {
   const AddMoney({super.key});
@@ -16,6 +18,7 @@ class AddMoney extends ConsumerStatefulWidget {
 }
 
 class _AddMoneyState extends ConsumerState<AddMoney> {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,20 +38,16 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                       children: [
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: const Icon(
-                            Icons.arrow_back_ios,
-                            size: 18,
-                            color: lightText,
-                          ),
+                          child: const Icon(Icons.arrow_back_ios,
+                              size: 18, color: lightText),
                         ),
                         SizedBox(width: 8.w),
                         Text(
                           'Add Money',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18.sp,
-                            color: lightText,
-                          ),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18.sp,
+                              color: lightText),
                         ),
                       ],
                     ),
@@ -75,10 +74,9 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                   child: Text(
                     'OR',
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: kGray,
-                      fontSize: 14.sp,
-                    ),
+                        fontWeight: FontWeight.w600,
+                        color: kGray,
+                        fontSize: 14.sp),
                   ),
                 ),
 
@@ -97,9 +95,8 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                         child: Container(
                           height: 70.h,
                           decoration: BoxDecoration(
-                            color: lightSurface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                              color: lightSurface,
+                              borderRadius: BorderRadius.circular(8)),
                           child: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 20.w),
                             child: Row(
@@ -114,7 +111,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                                     border: Border.all(color: primaryColor),
                                   ),
                                   child: Image.asset(
-                                    'assets/svg/bank.png',
+                                    bank,
                                     height: 20.h,
                                   ),
                                 ),
@@ -123,7 +120,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         tx.name,
@@ -201,26 +198,13 @@ class BalanceCard extends ConsumerWidget {
             child: CustomButton(
               buttonColor: primaryColor,
               buttonTextColor: lightBackground,
-              buttonName: 'Proceed to Deposit',
+              buttonName: 'Share',
               onPressed: () async {
-                final controller = ref.read(
-                  dashboardControllerProvider.notifier,
-                );
-                final response = await controller.depositMoney(context, 10000);
+                Navigator.pushNamed(
+                  context,
+                  RouteList.depositScreen,
 
-                if (response != null) {
-                  final url = response.data!.authorizationUrl;
-                  final reference = response.data!.reference;
-                  debugPrint('Send Money PayStack URL: $url');
-                  debugPrint('Send Money PayStack REFERENCE: $reference');
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PaymentWebViewPage(url: url, reference: reference),
-                    ),
-                  );
-                }
+                );
               },
             ),
           ),
@@ -245,10 +229,9 @@ class BalanceCard extends ConsumerWidget {
             title: Text(
               'Via Bank Transfer',
               style: TextStyle(
-                color: lightText,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-              ),
+                  color: lightText,
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600),
             ),
             subtitle: Text(
               'FREE Instant bank funding within 10s',
@@ -270,11 +253,7 @@ class PaymentWebViewPage extends ConsumerStatefulWidget {
   final String url;
   final String reference;
 
-  const PaymentWebViewPage({
-    super.key,
-    required this.url,
-    required this.reference,
-  });
+  const PaymentWebViewPage({super.key, required this.url, required this.reference});
 
   @override
   ConsumerState<PaymentWebViewPage> createState() => _PaymentWebViewPageState();
@@ -303,7 +282,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
             return NavigationDecision.navigate;
           },
           onPageFinished: (url) {
-            debugPrint("🌐 Page finished loading: $url");
+            print("🌐 Page finished loading: $url");
           },
         ),
       )
@@ -314,23 +293,21 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
     if (_hasVerified) return;
     _hasVerified = true;
 
-    debugPrint("📡 Verifying payment... $reference");
+    print("📡 Verifying payment... $reference");
 
     try {
       final res = await ref
           .read(dashboardControllerProvider.notifier)
           .verifyDeposit(context, reference);
 
-      if (res != null &&
-          res.responseSuccessful &&
-          res.data?.status == "success") {
-        debugPrint("🎉 Payment verified: ${res.responseMessage}");
+      if (res != null && res.responseSuccessful && res.data?.status == "success") {
+        print("🎉 Payment verified: ${res.responseMessage}");
 
         if (!mounted) return;
 
         // Close WebView
         Navigator.pop(context);
-        debugPrint("🎉 Payment verified: ${res.data?.amount.toString()}");
+        print("🎉 Payment verified: ${res.data?.amount.toString()}");
         // Go to success screen
         Navigator.pushNamed(
           context,
@@ -345,15 +322,14 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
 
         return;
       } else {
-        debugPrint("⚠️ Payment not completed");
+        print("⚠️ Payment not completed");
         _showDialog("Failed", "Payment was not completed.");
       }
     } catch (e) {
-      debugPrint("❌ Verification error: $e");
+      print("❌ Verification error: $e");
       _showDialog("Error", "An error occurred while verifying payment.");
     }
   }
-
   Future<bool> _onWillPop() async {
     if (await _controller.canGoBack()) {
       _controller.goBack();
@@ -382,7 +358,6 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -391,3 +366,4 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
     );
   }
 }
+

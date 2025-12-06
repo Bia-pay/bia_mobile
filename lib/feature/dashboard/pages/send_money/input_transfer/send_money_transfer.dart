@@ -2,10 +2,10 @@ import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../app/view/widget/app_bar.dart';
-import '../../../../app/view/widget/app_search_field.dart';
-import '../../dashboardcontroller/dashboardcontroller.dart';
-import '../../model/recent_transfer.dart';
+import '../../../../../app/view/widget/app_bar.dart';
+import '../../../../../app/view/widget/app_search_field.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../model/recent_transfer.dart';
 import '../widget/tabs.dart';
 
 class SendMoneyTransfer extends ConsumerStatefulWidget {

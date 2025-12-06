@@ -56,6 +56,7 @@ class UserResponse {
   final String? status;
   final String? tier;
   final String? roles;
+  final String? pin;
   final bool? isVerified;
   final String? createdAt;
   final String? updatedAt;
@@ -68,6 +69,7 @@ class UserResponse {
     this.status,
     this.tier,
     this.roles,
+    this.pin,
     this.isVerified,
     this.createdAt,
     this.updatedAt,
@@ -82,6 +84,7 @@ class UserResponse {
       status: json['status'],
       tier: json['tier'],
       roles: json['roles'],
+      pin: json['pin'],
       isVerified: json['isVerified'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
@@ -96,6 +99,7 @@ class UserResponse {
     'status': status,
     'tier': tier,
     'roles': roles,
+    'pin': pin,
     'isVerified': isVerified,
     'createdAt': createdAt,
     'updatedAt': updatedAt,

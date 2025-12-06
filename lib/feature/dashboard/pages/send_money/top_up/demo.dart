@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../../app/utils/colors.dart';
-import '../../../../feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
+
+import '../../../../../app/utils/colors.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class PaymentWebViewPage extends ConsumerStatefulWidget {
   final PaymentWebViewPageParams params;

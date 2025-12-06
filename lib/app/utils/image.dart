@@ -24,6 +24,9 @@ const cancelSvg = 'assets/svg/cancel.svg';
 const successSvg = 'assets/svg/success-transfer.svg';
 const scanner = 'assets/svg/scan.svg';
 const tiktok = 'assets/svg/tik.png';
+const bank = 'assets/svg/bank.png';
+const mic = 'assets/svg/mic.svg';
+const chatting = 'assets/svg/chatting.svg';
 
 
 

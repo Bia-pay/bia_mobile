@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/router/route_constant.dart';
+import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import 'scanner.dart';
 
 class ScannerOnboarding extends ConsumerStatefulWidget {

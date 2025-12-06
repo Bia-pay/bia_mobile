@@ -23,11 +23,11 @@ class DashboardRepository {
 
   //  Transfer money
   Future<ResponseModel> sendMoney(Map<String, dynamic> body) async {
-    debugPrint('📡 Attempting transfer...');
+    print('📡 Attempting transfer...');
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      debugPrint("🔑 Using token: $token");
+      print("🔑 Using token: $token");
 
       if (token.isEmpty) {
         return ResponseModel(
@@ -42,24 +42,25 @@ class DashboardRepository {
 
       final response = await _apiClient.postData(ApiConstant.TRANSER, body);
       final jsonResponse = jsonDecode(response.body);
-      debugPrint("✅ API Response: $jsonResponse");
+      print("✅ API Response: $jsonResponse");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return ResponseModel(
           responseMessage:
-              jsonResponse['responseMessage'] ?? 'Transfer successful',
+          jsonResponse['responseMessage'] ?? 'Transfer successful',
           responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
           statusCode: response.statusCode,
         );
       } else {
         return ResponseModel(
-          responseMessage: jsonResponse["responseMessage"] ?? "Transfer failed",
+          responseMessage:
+          jsonResponse["responseMessage"] ?? "Transfer failed",
           responseSuccessful: false,
           statusCode: response.statusCode,
         );
       }
     } catch (e) {
-      debugPrint('🔥 Exception during transfer: $e');
+      print('🔥 Exception during transfer: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Please try again.',
         responseSuccessful: false,
@@ -70,11 +71,11 @@ class DashboardRepository {
 
   //  Set payment PIN
   Future<ResponseModel> setPin(Map<String, dynamic> body) async {
-    debugPrint('📡 Setting PIN...');
+    print('📡 Setting PIN...');
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      debugPrint("🔑 Using token: $token");
+      print("🔑 Using token: $token");
 
       if (token.isEmpty) {
         return ResponseModel(
@@ -88,16 +89,16 @@ class DashboardRepository {
 
       final response = await _apiClient.postData(ApiConstant.SET_PIN, body);
       final jsonResponse = jsonDecode(response.body);
-      debugPrint("✅ Response: $jsonResponse");
+      print("✅ Response: $jsonResponse");
 
       return ResponseModel(
         responseMessage:
-            jsonResponse['responseMessage'] ?? 'PIN set successfully',
+        jsonResponse['responseMessage'] ?? 'PIN set successfully',
         responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
         statusCode: response.statusCode,
       );
     } catch (e) {
-      debugPrint('🔥 Exception during setPin: $e');
+      print('🔥 Exception during setPin: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Please try again.',
         responseSuccessful: false,
@@ -108,24 +109,20 @@ class DashboardRepository {
 
   //  Verify account
   Future<ResponseModel> verifyAccount(Map<String, dynamic> body) async {
-    debugPrint('📡 Verifying account...');
+    print('📡 Verifying account...');
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      debugPrint("🔑 Using token: $token");
+      print("🔑 Using token: $token");
 
       _apiClient.updateHeaders(token);
-      final response = await _apiClient.postData(
-        ApiConstant.VERIFY_ACCOUNT,
-        body,
-      );
+      final response = await _apiClient.postData(ApiConstant.VERIFY_ACCOUNT, body);
       final jsonResponse = jsonDecode(response.body);
-      debugPrint("✅ Verify response: $jsonResponse");
+      print("✅ Verify response: $jsonResponse");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // The API returns: { responseSuccessful: true, responseMessage: "...", responseBody: { fullname: "..." } }
-        final Map<String, dynamic> verifyBody =
-            (jsonResponse['responseBody'] ?? {}) as Map<String, dynamic>;
+        final Map<String, dynamic> verifyBody = (jsonResponse['responseBody'] ?? {}) as Map<String, dynamic>;
         final String fullname = (verifyBody['fullname'] ?? '').toString();
 
         // Wrap fullname into your existing ResponseBody.user so rest of app can read result.responseBody?.user?.fullname
@@ -134,23 +131,20 @@ class DashboardRepository {
         );
 
         return ResponseModel(
-          responseMessage:
-              jsonResponse['responseMessage'] ??
-              'Account verified successfully',
+          responseMessage: jsonResponse['responseMessage'] ?? 'Account verified successfully',
           responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
           statusCode: response.statusCode,
           responseBody: wrappedResponseBody,
         );
       } else {
         return ResponseModel(
-          responseMessage:
-              jsonResponse['responseMessage'] ?? 'Verification failed',
+          responseMessage: jsonResponse['responseMessage'] ?? 'Verification failed',
           responseSuccessful: false,
           statusCode: response.statusCode,
         );
       }
     } catch (e) {
-      debugPrint('🔥 Exception verifying account: $e');
+      print('🔥 Exception verifying account: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Please try again.',
         responseSuccessful: false,
@@ -161,11 +155,11 @@ class DashboardRepository {
 
   //  Fetch user QR code
   Future<QrCodeResponse> getUserQrCode() async {
-    debugPrint('📡 Fetching user QR code...');
+    print('📡 Fetching user QR code...');
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      debugPrint("🔑 Using token: $token");
+      print("🔑 Using token: $token");
 
       if (token.isEmpty) {
         return QrCodeResponse(
@@ -180,7 +174,7 @@ class DashboardRepository {
       // ✅ Call endpoint
       final response = await _apiClient.getData(ApiConstant.GENERATE_QR_CODE);
       final jsonResponse = jsonDecode(response.body);
-      debugPrint("✅ QR Response: $jsonResponse");
+      print("✅ QR Response: $jsonResponse");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return QrCodeResponse.fromJson(jsonResponse);
@@ -188,12 +182,12 @@ class DashboardRepository {
         return QrCodeResponse(
           responseSuccessful: false,
           responseMessage:
-              jsonResponse["responseMessage"] ?? "Failed to fetch QR code",
+          jsonResponse["responseMessage"] ?? "Failed to fetch QR code",
           responseBody: null,
         );
       }
     } catch (e) {
-      debugPrint('🔥 Exception fetching QR code: $e');
+      print('🔥 Exception fetching QR code: $e');
       return QrCodeResponse(
         responseMessage: "Something went wrong. Please try again.",
         responseSuccessful: false,
@@ -210,9 +204,7 @@ class DashboardRepository {
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         if (jsonResponse['responseSuccessful'] == true) {
-          final balanceJson = Map<String, dynamic>.from(
-            jsonResponse['responseBody'] ?? {},
-          );
+          final balanceJson = Map<String, dynamic>.from(jsonResponse['responseBody'] ?? {});
 
           // Save locally to Hive
           final box = await Hive.openBox('authBox');
@@ -227,7 +219,7 @@ class DashboardRepository {
 
       return null;
     } catch (e) {
-      debugPrint('Error fetching wallet balance: $e');
+      print('Error fetching wallet balance: $e');
       return null;
     }
   }
@@ -248,15 +240,11 @@ class DashboardRepository {
 
       _apiClient.updateHeaders(token);
 
-      final response = await _apiClient.getData(
-        "${ApiConstant.TRANSACTION}?page=1&limit=3",
-      );
+      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
       final jsonResponse = jsonDecode(response.body);
 
       // 🔹 Print out the raw responseBody for debugging
-      debugPrint(
-        '📦 Transaction API responseBody: ${jsonResponse['responseBody']}',
-      );
+      debugPrint('📦 Transaction API responseBody: ${jsonResponse['responseBody']}');
 
       final body = jsonResponse['responseBody'] ?? {};
       final list = body['transactions'] ?? [];
@@ -279,7 +267,6 @@ class DashboardRepository {
       );
     }
   }
-
   Future<TransactionResponse> getTransactions() async {
     try {
       final box = await Hive.openBox("authBox");
@@ -295,15 +282,11 @@ class DashboardRepository {
 
       _apiClient.updateHeaders(token);
 
-      final response = await _apiClient.getData(
-        "${ApiConstant.TRANSACTION}?page=1&limit=3000",
-      );
+      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=3000");
       final jsonResponse = jsonDecode(response.body);
 
       // 🔹 Print out the raw responseBody for debugging
-      debugPrint(
-        '📦 Transaction API responseBody: ${jsonResponse['responseBody']}',
-      );
+      debugPrint('📦 Transaction API responseBody: ${jsonResponse['responseBody']}');
 
       final body = jsonResponse['responseBody'] ?? {};
       final list = body['transactions'] ?? [];
@@ -331,12 +314,11 @@ class DashboardRepository {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      if (token.isEmpty)
-        return RecentBeneficiaryResponse(
-          responseSuccessful: false,
-          responseMessage: "No token found",
-          beneficiaries: [],
-        );
+      if (token.isEmpty) return RecentBeneficiaryResponse(
+        responseSuccessful: false,
+        responseMessage: "No token found",
+        beneficiaries: [],
+      );
 
       _apiClient.updateHeaders(token);
       final response = await _apiClient.getData(ApiConstant.RECENT_TRANSFER);
@@ -363,10 +345,8 @@ class DashboardRepository {
 
       final jsonResponse = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final user = UserResponse.fromJson(
-          jsonResponse['responseBody']['user'],
-        );
-        debugPrint(response.body);
+        final user = UserResponse.fromJson(jsonResponse['responseBody']['user']);
+        print(response.body);
         // Save locally
         await box.put('saved_user_profile', user.toJson());
         return user;
@@ -379,27 +359,26 @@ class DashboardRepository {
     }
   }
 
-  // 💰 Deposit Money
   Future<DepositResponseModel> depositMoney(Map<String, dynamic> body) async {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      debugPrint("🔑 Using token: $token");
+      print("🔑 Using token: $token");
 
       _apiClient.updateHeaders(token);
       final response = await _apiClient.postData(ApiConstant.DEPOSIT, body);
       // 🔹 Print raw API response
-      debugPrint("➡️ Status code: ${response.statusCode}");
-      debugPrint("➡️ Raw response body: ${response.body}");
+      print("➡️ Status code: ${response.statusCode}");
+      print("➡️ Raw response body: ${response.body}");
 
       final jsonData = jsonDecode(response.body);
 
       // 🔹 Print decoded JSON
-      debugPrint("➡️ Decoded JSON: $jsonData");
+      print("➡️ Decoded JSON: $jsonData");
 
       return DepositResponseModel.fromJson(jsonData);
     } catch (e) {
-      debugPrint('❌ Deposit API error: $e');
+      print('❌ Deposit API error: $e');
       return DepositResponseModel(
         responseMessage: 'Unable to initialize deposit',
         responseSuccessful: false,
@@ -409,13 +388,13 @@ class DashboardRepository {
 
   Future<VerifyTransactionResponse?> verifyPayment(String reference) async {
     final url = "${ApiConstant.VERIFY_PAYMENT}/$reference";
-    debugPrint('📡 Verifying payment... $reference');
+    print('📡 Verifying payment... $reference');
     try {
       final response = await _apiClient.getData(url);
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        debugPrint("🔍 Verify Payment Response: $jsonResponse");
+        print("🔍 Verify Payment Response: $jsonResponse");
 
         // ✅ Only pass the JSON map
         return VerifyTransactionResponse.fromJson(jsonResponse);
@@ -423,13 +402,13 @@ class DashboardRepository {
 
       return null;
     } catch (e) {
-      debugPrint("🔥 Error verifying payment: $e");
+      print("🔥 Error verifying payment: $e");
       return null;
     }
   }
 
   Future<ResponseModel> changePin(Map<String, dynamic> body) async {
-    debugPrint('📡 Updating PIN...');
+    print('📡 Updating PIN...');
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
@@ -447,16 +426,16 @@ class DashboardRepository {
 
       final response = await _apiClient.putData(ApiConstant.UPDATE_PIN, body);
       final jsonResponse = jsonDecode(response.body);
-      debugPrint("🔁 Update PIN response: $jsonResponse");
+      print("🔁 Update PIN response: $jsonResponse");
 
       return ResponseModel(
         responseMessage:
-            jsonResponse['responseMessage'] ?? "Failed to update PIN",
+        jsonResponse['responseMessage'] ?? "Failed to update PIN",
         responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
         statusCode: response.statusCode,
       );
     } catch (e) {
-      debugPrint("🔥 Error updating PIN: $e");
+      print("🔥 Error updating PIN: $e");
       return ResponseModel(
         responseMessage: "Something went wrong. Please try again.",
         responseSuccessful: false,
