@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/image.dart';
-import '../../../../app/utils/router/route_constant.dart';
+
+import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 class SuccessScreen extends StatelessWidget {
   final String? amount;
   final String? recipientName;

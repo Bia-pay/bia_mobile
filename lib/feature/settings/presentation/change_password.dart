@@ -3,25 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get_utils/src/extensions/context_extensions.dart';
-import 'package:hive/hive.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/custom_button.dart';
 import '../../../app/utils/widgets/custom_appbar.dart';
 import '../../../app/utils/widgets/pin_field.dart';
 import '../../auth/authcontroller/authcontroller.dart';
-import '../../auth/data/api_constant.dart';
-
 import 'package:bia/core/__core.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../../app/utils/image.dart';
-import '../../../../app/view/widget/app_textfield.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
-import 'account_settings.dart';
 
 class ChangePaymentPin extends ConsumerStatefulWidget {
   const ChangePaymentPin({super.key, this.title = "Change Payment Pin"});

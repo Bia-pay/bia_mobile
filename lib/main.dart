@@ -7,6 +7,7 @@ import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
@@ -25,7 +26,7 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox("authBox");
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

@@ -240,7 +240,7 @@ class DashboardRepository {
 
       _apiClient.updateHeaders(token);
 
-      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=3");
+      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
       final jsonResponse = jsonDecode(response.body);
 
       // 🔹 Print out the raw responseBody for debugging
@@ -333,6 +333,7 @@ class DashboardRepository {
       );
     }
   }
+
   Future<UserResponse?> getUserProfile() async {
     try {
       final box = await Hive.openBox('authBox');
@@ -357,7 +358,7 @@ class DashboardRepository {
       return null;
     }
   }
-// 💰 Deposit Money
+
   Future<DepositResponseModel> depositMoney(Map<String, dynamic> body) async {
     try {
       final box = await Hive.openBox("authBox");
@@ -384,6 +385,7 @@ class DashboardRepository {
       );
     }
   }
+
   Future<VerifyTransactionResponse?> verifyPayment(String reference) async {
     final url = "${ApiConstant.VERIFY_PAYMENT}/$reference";
     print('📡 Verifying payment... $reference');
@@ -404,6 +406,7 @@ class DashboardRepository {
       return null;
     }
   }
+
   Future<ResponseModel> changePin(Map<String, dynamic> body) async {
     print('📡 Updating PIN...');
     try {

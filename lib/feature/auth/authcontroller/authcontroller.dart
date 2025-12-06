@@ -28,8 +28,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       BuildContext context,
       String phone,
       String password,
-      ) async {
-    if (phone.isEmpty || password.isEmpty) {
+      ) async { if (phone.isEmpty || password.isEmpty) {
       ToastHelper.showToast(
         context: context,
         message: "All fields are required.",
@@ -79,6 +78,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       return false;
     }
   }
+
   Future<ResponseModel?> registerStepOne(BuildContext context, String phone) async {
     if (phone.isEmpty) {
       ToastHelper.showToast(

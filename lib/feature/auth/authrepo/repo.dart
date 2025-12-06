@@ -18,59 +18,42 @@ class AuthRepository {
 
   AuthRepository(this._apiClient);
 
-  // ---------------- LOGIN ----------------
-  Future<ResponseModel> logIn(Map<String, dynamic> body,
-      {bool fromBiometric = false}) async {
+  Future<ResponseModel> logIn(Map<String, dynamic> body, {bool fromBiometric = false}) async {
     print('📡 Attempting login...');
-
     try {
-      http.Response response =
-      await _apiClient.postData(ApiConstant.LOGIN, body);
-
+      final response = await _apiClient.postData(ApiConstant.LOGIN, body);
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("✅ Success response: $jsonResponse");
+        print("✅ Login Success: $jsonResponse");
 
         final responseBody = jsonResponse['responseBody'] ?? {};
-        final userJson =
-        Map<String, dynamic>.from(responseBody['user'] ?? {});
-        final walletJson =
-        Map<String, dynamic>.from(responseBody['wallet'] ?? {});
-
+        final userJson = Map<String, dynamic>.from(responseBody['user'] ?? {});
+        final walletJson = Map<String, dynamic>.from(responseBody['wallet'] ?? {});
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
 
-        // ---------------- SAVE TOKENS CORRECTLY ----------------
-        final box = await Hive.openBox("authBox");
-
+        // Save Hive data
+        final box = await Hive.openBox('authBox');
         await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
-
-        // Save user details
         await box.put("fullname", userJson['fullname'] ?? '');
         await box.put("phone", userJson['phone'] ?? '');
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
-        await box.put("has_pin", false);
+        await box.put("has_pin", userJson['pin'] != null);
 
-        // Save password only for biometric login
+        // Save password only for biometric
         if (!fromBiometric && body.containsKey('password')) {
           await box.put("password", body['password']);
           await box.put("login_biometric_enabled", true);
-          print("🔐 Credentials saved for biometric login.");
         }
 
-        // Update API token
         _apiClient.updateHeaders(accessToken);
 
-        print("🔐 Login tokens saved successfully");
-
         return ResponseModel(
-          responseMessage:
-          jsonResponse['responseMessage'] ?? 'Login successful',
-          responseSuccessful:
-          jsonResponse['responseSuccessful'] ?? true,
+          responseMessage: jsonResponse['responseMessage'] ?? 'Login successful',
+          responseSuccessful: true,
           statusCode: response.statusCode,
           responseBody: ResponseBody(
             accessToken: accessToken,
@@ -81,23 +64,52 @@ class AuthRepository {
         );
       }
 
-      print("❌ Error response: $jsonResponse");
+      print("❌ Login Failed: $jsonResponse");
       return ResponseModel(
-        responseMessage:
-        jsonResponse["responseMessage"] ?? "Login failed",
+        responseMessage: jsonResponse['responseMessage'] ?? 'Login failed',
         responseSuccessful: false,
         statusCode: response.statusCode,
       );
     } catch (e) {
-      print('🔥 Exception during login: $e');
+      print('🔥 Login Exception: $e');
       return ResponseModel(
-        responseMessage: 'Something went wrong. Please try again.',
+        responseMessage: 'Something went wrong. Try again.',
         responseSuccessful: false,
         statusCode: 500,
       );
     }
   }
 
+  /// ---------------- SET PIN ----------------
+  Future<ResponseModel> setPin(String pin, String confirmPin) async {
+    try {
+      final body = {'pin': pin, 'confirmPin': confirmPin};
+      final response = await _apiClient.postData(ApiConstant.SET_PIN, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        print("✅ PIN set successfully: $jsonResponse");
+        return ResponseModel(
+          responseMessage: jsonResponse['responseMessage'] ?? 'PIN set successfully',
+          responseSuccessful: true,
+          statusCode: response.statusCode,
+        );
+      }
+
+      return ResponseModel(
+        responseMessage: jsonResponse['responseMessage'] ?? 'Failed to set PIN',
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Set PIN Exception: $e");
+      return ResponseModel(
+        responseMessage: 'Something went wrong. Try again.',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
   // ---------------- BIOMETRIC LOGIN ----------------
   Future<ResponseModel?> biometricLogin() async {
     try {
@@ -150,6 +162,7 @@ class AuthRepository {
         final box = Hive.box("authBox");
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("phone", responseModel.responseBody?.user?.phone);
+        await box.put("pin",responseModel.responseBody?.user?.pin);
 
         return responseModel;
       }
@@ -195,6 +208,7 @@ class AuthRepository {
         await box.put("refreshToken", refreshToken);
         await box.put("fullname", userJson['fullname']);
         await box.put("phone", userJson['phone']);
+        await box.put("pin", userJson['pin']);
         await box.put("balance", walletJson['balance']);
 
         _apiClient.updateHeaders(accessToken);
@@ -270,41 +284,41 @@ class AuthRepository {
   }
 
   // ---------------- SET PIN ----------------
-  Future<ResponseModel> setPin(String pin, String confirmPin) async {
-    try {
-      http.Response response =
-      await _apiClient.postData(ApiConstant.SET_PIN, {
-        "pin": pin,
-        "confirmPin": confirmPin,
-      });
-
-      final jsonResponse = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final box = Hive.box("authBox");
-        await box.put("has_pin", true);
-        await box.put("saved_pin", pin);
-
-        return ResponseModel(
-          responseMessage:
-          jsonResponse["responseMessage"] ?? "PIN set successfully",
-          responseSuccessful: true,
-          statusCode: response.statusCode,
-        );
-      }
-
-      return ResponseModel(
-        responseMessage:
-        jsonResponse["responseMessage"] ?? "Failed to set PIN",
-        responseSuccessful: false,
-        statusCode: response.statusCode,
-      );
-    } catch (e) {
-      return ResponseModel(
-        responseMessage: "Something went wrong",
-        responseSuccessful: false,
-        statusCode: 500,
-      );
-    }
-  }
+  // Future<ResponseModel> setPin(String pin, String confirmPin) async {
+  //   try {
+  //     http.Response response =
+  //     await _apiClient.postData(ApiConstant.SET_PIN, {
+  //       "pin": pin,
+  //       "confirmPin": confirmPin,
+  //     });
+  //
+  //     final jsonResponse = jsonDecode(response.body);
+  //
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       final box = Hive.box("authBox");
+  //       await box.put("has_pin", true);
+  //       await box.put("saved_pin", pin);
+  //
+  //       return ResponseModel(
+  //         responseMessage:
+  //         jsonResponse["responseMessage"] ?? "PIN set successfully",
+  //         responseSuccessful: true,
+  //         statusCode: response.statusCode,
+  //       );
+  //     }
+  //
+  //     return ResponseModel(
+  //       responseMessage:
+  //       jsonResponse["responseMessage"] ?? "Failed to set PIN",
+  //       responseSuccessful: false,
+  //       statusCode: response.statusCode,
+  //     );
+  //   } catch (e) {
+  //     return ResponseModel(
+  //       responseMessage: "Something went wrong",
+  //       responseSuccessful: false,
+  //       statusCode: 500,
+  //     );
+  //   }
+  // }
 }

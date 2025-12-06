@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../../../app/utils/colors.dart';
-import '../../dashboardcontroller/dashboardcontroller.dart';
+
+import '../../../../../app/utils/colors.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
   const QrScannerScreen({super.key});
