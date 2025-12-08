@@ -21,7 +21,7 @@ void main() async {
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-// ==================== MAIN APP ====================
+// ================== MAIN APP ====================
 
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
