@@ -2,10 +2,11 @@ import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:bia/feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -58,7 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Center(
                     child: Text(
                       'Login to Your Account',
-                      style: context.textTheme.headlineLarge,
+                      style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   ),
                   SizedBox(height: 40.h),
@@ -112,11 +113,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               phoneController.text.trim(),
                               passwordController.text.trim(),
                             );
-                            if (success) {
-                              Navigator.pushNamed(
-                                context,
-                                RouteList.bottomNavBar,
-                              );
+                            if (success && mounted) {
+                              context.go(RouteList.bottomNavBar);
                             }
                           },
                   ),
@@ -128,16 +126,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                   SizedBox(height: 10.h),
                   GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ForgotPasswordScreen1(),
-                      ),
-                    ),
+                    onTap: () => context.go(RouteList.forgotPassword),
                     child: Center(
                       child: Text(
                         'Forget Number / Password ?',
-                        style: context.textTheme.bodySmall?.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: lightText,
                           fontWeight: FontWeight.w500,
                         ),
@@ -146,9 +139,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   SizedBox(height: 20.h),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, RouteList.phoneRegScreen);
-                    },
+                    onTap: () => context.go(RouteList.phoneRegScreen),
                     child: Center(
                       child: RichText(
                         textAlign: TextAlign.center,
@@ -156,17 +147,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             TextSpan(
                               text: 'Don’t have an account? ',
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: lightSecondaryText,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: lightSecondaryText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
                             TextSpan(
                               text: 'Sign Up',
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),

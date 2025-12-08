@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../app/utils/colors.dart';
@@ -122,7 +122,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       final token = box.get("token");
 
       if (token != null && token.isNotEmpty && mounted) {
-        Navigator.pushReplacementNamed(context, RouteList.bottomNavBar);
+        context.go(RouteList.bottomNavBar);
       } else {
         _showError("Login failed. Please try again.");
         setState(() => _showPasswordField = true);
@@ -155,14 +155,14 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                 Image.asset(appLogoFull, height: 100.h),
                 Text(
                   'Welcome Back,',
-                  style: context.textTheme.headlineLarge?.copyWith(
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     fontSize: 26.sp,
                     color: lightText,
                   ),
                 ),
                 Text(
                   fullname?.toUpperCase() ?? 'USER',
-                  style: context.textTheme.headlineLarge?.copyWith(
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     color: primaryColor, // ✅ Brand primary
                     fontWeight: FontWeight.bold,
                     fontSize: 18.sp,
@@ -182,9 +182,9 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                             setState(() => _showPasswordField = true),
                         child: Text(
                           'Use Password Instead',
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            color: primaryColor,
-                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(color: primaryColor),
                         ),
                       ),
                     ],
@@ -227,11 +227,8 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                             passwordController.text.trim(),
                           );
 
-                          if (success) {
-                            Navigator.pushNamed(
-                              context,
-                              RouteList.bottomNavBar,
-                            );
+                          if (success && mounted) {
+                            context.go(RouteList.bottomNavBar);
                           }
                         },
                       ),
@@ -239,13 +236,10 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                   ),
                 SizedBox(height: 20.h),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacementNamed(
-                    context,
-                    RouteList.loginScreen,
-                  ),
+                  onTap: () => context.go(RouteList.loginScreen),
                   child: Text(
                     'Use another account',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: lightSecondaryText,
                       fontWeight: FontWeight.w500,
                     ),
@@ -253,10 +247,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                 ),
                 SizedBox(height: 10.h),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacementNamed(
-                    context,
-                    RouteList.loginScreen,
-                  ),
+                  onTap: () => context.go(RouteList.forgotPassword),
                   child: Text(
                     'Forgot Number / Password?',
                     style: TextStyle(

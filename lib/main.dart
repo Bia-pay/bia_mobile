@@ -3,20 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
 
-// ==================== MAIN ENTRY ====================
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   await Hive.initFlutter();
   await Hive.openBox("authBox");
@@ -66,12 +61,11 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     final themeMode = ref.watch(themeProvider);
 
     return ScreenUtilInit(
-      designSize: const Size(390, 844), // your Figma base frame
+      designSize: const Size(390, 844),
       minTextAdapt: true,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
-        child: GetMaterialApp(
-          navigatorKey: navigatorKey,
+        child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
 
           // Themes
@@ -79,14 +73,11 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
           darkTheme: darkTheme,
           themeMode: themeMode,
 
-          // Routing
-          routes: RouteGenerator.route(),
-          onGenerateRoute: RouteGenerator.appRoutes,
-          onUnknownRoute: RouteGenerator.onUnknownRoute,
+          // Routing with go_router
+          routerConfig: AppRouter.router,
 
           // Core UI
           builder: EasyLoading.init(),
-          initialRoute: 'Splash', // must match your splash route
         ),
       ),
     );

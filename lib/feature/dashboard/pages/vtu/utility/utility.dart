@@ -2,7 +2,7 @@ import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
@@ -29,7 +29,7 @@ class _ElectricityState extends State<Electricity> {
         preferredSize: Size.fromHeight(62.h),
         child: Container(
           padding: EdgeInsets.symmetric( horizontal: 10.w,vertical: 40.h),
-        //  color: context.themeContext.grayWhiteBg,
+        //  color: Theme.of(context)Context.grayWhiteBg,
           alignment: Alignment.center,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -47,7 +47,7 @@ class _ElectricityState extends State<Electricity> {
                   SizedBox(height: 5.h,),
                   Text(
                     'Electricity',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 18,
                     ),
                   ),
@@ -55,7 +55,7 @@ class _ElectricityState extends State<Electricity> {
               ),
               Text(
                 "History",
-                style: context.textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 18,
                 ),
               ),
@@ -85,14 +85,14 @@ class _ElectricityState extends State<Electricity> {
                 Container(
                   padding: EdgeInsets.symmetric( vertical: 17, horizontal: 10),
                   decoration: BoxDecoration(
-                   // color: context.themeContext.tertiaryBackgroundColor,
+                   // color: Theme.of(context)Context.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Electricity Service',
-                          style: context.textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           )),
                       SizedBox(height: 10.h,),
@@ -112,7 +112,7 @@ class _ElectricityState extends State<Electricity> {
                               margin: EdgeInsets.symmetric( vertical: 6, horizontal: 7),
                               height: 70.h,
                               decoration: BoxDecoration(
-                               // color: context.themeContext.kSecondary,
+                               // color: Theme.of(context)Context.kSecondary,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -125,7 +125,7 @@ class _ElectricityState extends State<Electricity> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(100),
                                       border: Border.all(
-                                       // color: context.themeContext.kPrimary,
+                                       // color: Theme.of(context)Context.kPrimary,
                                       ),
                                     ),
                                     child: Image.asset(
@@ -143,7 +143,7 @@ class _ElectricityState extends State<Electricity> {
                                       children: [
                                         Text(
                                           tx.name,
-                                          style: context.textTheme.bodyMedium
+                                          style: Theme.of(context).textTheme.bodyMedium
                                               ?.copyWith(
                                             // color: context
                                             //     .themeContext.titleTextColor,
@@ -153,10 +153,10 @@ class _ElectricityState extends State<Electricity> {
                                         ),
                                         Text(
                                           tx.dateTime,
-                                          style: context.textTheme.bodySmall
+                                          style: Theme.of(context).textTheme.bodySmall
                                               ?.copyWith(
                                             fontSize: 11.sp,
-                                            // color: context.themeContext
+                                            // color: Theme.of(context)Context
                                             //     .secondaryTextColor,
                                           ),
                                         ),
@@ -208,7 +208,7 @@ class _CardOneState extends State<CardOne> {
     return Container(
       padding: EdgeInsets.symmetric( vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-       // color: context.themeContext.tertiaryBackgroundColor,
+       // color: Theme.of(context)Context.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
@@ -238,7 +238,7 @@ class _CardOneState extends State<CardOne> {
                       padding: EdgeInsets.symmetric(horizontal: 12.w,),
                       decoration: BoxDecoration(
                           border: Border.all(
-                            //  color: context.themeContext.checkboxBorderColor
+                            //  color: Theme.of(context)Context.checkboxBorderColor
                           ),
                           borderRadius: BorderRadius.all(Radius.circular(10.r))
                       ),
@@ -281,7 +281,7 @@ class _CardOneState extends State<CardOne> {
                       padding: EdgeInsets.symmetric(horizontal: 12.w,),
                       decoration: BoxDecoration(
                           border: Border.all(
-                             // color: context.themeContext.checkboxBorderColor
+                             // color: Theme.of(context)Context.checkboxBorderColor
                           ),
                           borderRadius: BorderRadius.all(Radius.circular(10.r))
                       ),
@@ -594,7 +594,7 @@ void showAirtimeConfirmationSheet(
                 borderRadius: BorderRadius.circular(10),
               ),
               child: SvgPicture.asset('assets/svg/cancel.svg',
-                //color: context.themeContext.secondaryTextColor,
+                //color: Theme.of(context)Context.secondaryTextColor,
               ),
             ),
 
@@ -608,7 +608,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
-                        //color: context.themeContext.titleTextColor,
+                        //color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -616,7 +616,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                       // color: context.themeContext.titleTextColor,
+                       // color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                   ],
@@ -630,7 +630,7 @@ void showAirtimeConfirmationSheet(
             Container(
               padding: EdgeInsets.symmetric( vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-               // color: context.themeContext.offWhiteBg,
+               // color: Theme.of(context)Context.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -641,7 +641,7 @@ void showAirtimeConfirmationSheet(
                     children: [
                       Text(
                         'Product Name',
-                        style: context.textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -662,7 +662,7 @@ void showAirtimeConfirmationSheet(
 
                           Text(
                             networkName,
-                            style: context.textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.black87,
                               fontWeight: FontWeight.w600,
                             ),
@@ -694,7 +694,7 @@ void showAirtimeConfirmationSheet(
             // 💳 Payment Method
             Text(
               'Payment Method',
-              style: context.textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w400,
                 color: Colors.black87,
               ),
@@ -713,7 +713,7 @@ void showAirtimeConfirmationSheet(
                 children: [
                   Text(
                     'Available Balance (${currencySymbol}314,171.32)',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
@@ -751,7 +751,7 @@ Widget _buildSummaryRow(
       children: [
         Text(
           title,
-          style: context.textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.grey.shade600,
           ),
         ),
@@ -768,7 +768,7 @@ Widget _buildSummaryRow(
             else
               Text(
                   value,
-                  style: context.textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   )
 
               ),
@@ -781,7 +781,7 @@ Widget _buildSummaryRow(
                   width: 25,
                   height: 15,
                   decoration: BoxDecoration(
-                    //color: false ? context.themeContext.kPrimary : Colors.grey.shade300,
+                    //color: false ? Theme.of(context)Context.kPrimary : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(

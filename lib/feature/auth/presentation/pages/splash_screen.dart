@@ -1,6 +1,7 @@
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -34,16 +35,10 @@ class _SplashScreenState extends ConsumerState<Splash> {
 
     if (token != null && token.toString().isNotEmpty) {
       // User already logged in
-      Navigator.pushReplacementNamed(
-        context,
-        RouteList.welcomeBackScreen,
-      );
+      context.go(RouteList.welcomeBackScreen);
     } else {
       // No login found
-      Navigator.pushReplacementNamed(
-        context,
-        RouteList.getStarted,
-      );
+      context.go(RouteList.getStarted);
     }
   }
 
@@ -53,9 +48,7 @@ class _SplashScreenState extends ConsumerState<Splash> {
       body: Container(
         color: accentColor,
         alignment: Alignment.center,
-        child: Image.asset( splashLogo,
-          height: 200.h,
-        ),
+        child: Image.asset(splashLogo, height: 200.h),
       ),
     );
   }

@@ -1,10 +1,11 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import 'package:hive/hive.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/pin_field.dart';
@@ -165,11 +166,7 @@ class _UProfileState extends ConsumerState<UProfile> {
 
       if (!mounted) return;
 
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen,
-        (route) => false,
-      );
+      context.go(biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -219,7 +216,7 @@ class _UProfileState extends ConsumerState<UProfile> {
   void _handleItemTap(BuildContext context, String title) {
     final route = routeMap[title];
     if (route != null) {
-      Navigator.pushNamed(context, route);
+      context.pushNamed(route);
     }
   }
 
@@ -459,7 +456,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                     Center(
                       child: Text(
                         'Settings',
-                        style: context.textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 24.spMin,
                         ),
@@ -495,13 +492,13 @@ class _UProfileState extends ConsumerState<UProfile> {
         SizedBox(height: 10.h),
         Text(
           name,
-          style: context.textTheme.titleLarge?.copyWith(
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         Text(
           '$username',
-          style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 12.spMin),
         ),
         SizedBox(height: 15.h),
       ],
@@ -519,7 +516,7 @@ class _UProfileState extends ConsumerState<UProfile> {
         delegate: SliverChildListDelegate([
           Text(
             title,
-            style: context.textTheme.labelMedium?.copyWith(
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
               fontSize: 15.spMin,
             ),
@@ -581,7 +578,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                 Expanded(
                   child: Text(
                     title,
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                       fontSize: 15.spMin,
                       color: isLogout ? Colors.red : Colors.grey.shade700,
@@ -643,7 +640,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                             },
                             child: Text(
                               subTitle,
-                              style: context.textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontSize: 14.spMin,
                                 color: Colors.grey.shade700,
                               ),

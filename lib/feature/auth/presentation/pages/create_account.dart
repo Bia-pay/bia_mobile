@@ -1,10 +1,11 @@
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -62,7 +63,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                 children: [
                   Text(
                     'Complete Registration',
-                    style: context.textTheme.headlineLarge,
+                    style: Theme.of(context).textTheme.headlineLarge,
                   ),
                   SizedBox(height: 20.h),
 
@@ -119,11 +120,11 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                         child: Text.rich(
                           TextSpan(
                             text: 'I agree with ',
-                            style: context.textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.bodySmall,
                             children: [
                               TextSpan(
                                 text: 'Terms & Conditions',
-                                style: context.textTheme.bodySmall?.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: primaryColor,
                                 ),
                               ),
@@ -156,7 +157,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       );
 
                       if (response?.responseSuccessful == true) {
-                        Navigator.pushNamed(context, RouteList.bottomNavBar);
+                        context.pushNamed(RouteList.bottomNavBar);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -175,15 +176,15 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
                   GestureDetector(
                     onTap: () =>
-                        Navigator.pushNamed(context, RouteList.loginScreen),
+                        context.pushNamed(RouteList.loginScreen),
                     child: Text.rich(
                       TextSpan(
                         text: 'Already have an account? ',
-                        style: context.textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodySmall,
                         children: [
                           TextSpan(
                             text: 'Sign In',
-                            style: context.textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: primaryColor,
                             ),
                           ),

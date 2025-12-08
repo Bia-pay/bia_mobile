@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../app/utils/colors.dart';
@@ -65,11 +66,7 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
     // Navigate to login screen if successful
     if (response != null && response.responseSuccessful) {
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        RouteList.loginScreen,
-        (route) => false,
-      );
+      context.go(RouteList.loginScreen);
     }
   }
 

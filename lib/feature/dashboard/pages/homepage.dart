@@ -1,10 +1,11 @@
 import 'package:bia/core/__core.dart';
 import 'package:bia/feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/custom_button.dart';
@@ -34,27 +35,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     {
       'label': 'Airtime',
       'icon': Icon(Icons.bar_chart, color: primaryColor),
-      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.airtime),
+      'onTap': () => context.pushReplacementNamed(RouteList.airtime),
     },
     {
       'label': 'Data',
       'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
-      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.data),
+      'onTap': () => context.pushReplacementNamed(RouteList.data),
     },
     {
       'label': 'Cable TV',
       'icon': Icon(Icons.tv, color: primaryColor),
-      'onTap': () => Navigator.pushReplacementNamed(context, RouteList.cable),
+      'onTap': () => context.pushReplacementNamed(RouteList.cable),
     },
     {
       'label': 'Tiktok Coin',
       'icon': Image.asset(tiktok, height: 23.h),
-      'onTap': () => Navigator.pushNamed(context, RouteList.electricity),
+      'onTap': () => context.pushNamed(RouteList.electricity),
     },
     {
       'label': 'Utility Bill',
       'icon': Icon(Icons.electrical_services, color: primaryColor),
-      'onTap': () => Navigator.pushNamed(context, RouteList.electricity),
+      'onTap': () => context.pushNamed(RouteList.electricity),
     },
     {
       'label': 'Internet',
@@ -406,7 +407,7 @@ class BalanceCard extends ConsumerWidget {
 
           /// ➕ Add Money Button
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, RouteList.topUp),
+            onTap: () => context.pushNamed(RouteList.topUp),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
               decoration: BoxDecoration(
@@ -420,7 +421,7 @@ class BalanceCard extends ConsumerWidget {
                   SizedBox(width: 6.w),
                   Text(
                     'Add money',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
@@ -466,7 +467,7 @@ class ActionButton extends StatelessWidget {
           SizedBox(height: 10.h),
           Text(
             label,
-            style: context.textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
               fontWeight: FontWeight.w700,
               fontSize: 11.sp,
@@ -510,7 +511,7 @@ class QuickActionButton extends StatelessWidget {
           SizedBox(height: 10.h),
           Text(
             label,
-            style: context.textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
               fontWeight: FontWeight.w700,
               fontSize: 10.sp,

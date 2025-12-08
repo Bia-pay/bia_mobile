@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_utils/get_utils.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final TextEditingController controller;
@@ -71,7 +70,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             padding: EdgeInsets.only(bottom: 5.h),
             child: Text(
               widget.label!,
-              style: context.textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontSize: 13.spMin,
               ),
@@ -92,18 +91,18 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 ? Icon(widget.icons, color: Colors.grey, size: 18.sp)
                 : widget.images != null
                 ? Padding(
-              padding: EdgeInsets.all(8.w),
-              child: Image.asset(
-                widget.images!,
-                width: 14.w,
-                height: 14.w,
-                fit: BoxFit.contain,
-              ),
-            )
+                    padding: EdgeInsets.all(8.w),
+                    child: Image.asset(
+                      widget.images!,
+                      width: 14.w,
+                      height: 14.w,
+                      fit: BoxFit.contain,
+                    ),
+                  )
                 : null,
             suffixIcon: widget.suffixIcon,
             hintText: widget.hintText,
-            hintStyle: context.textTheme.bodySmall?.copyWith(
+            hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: widget.hintColor ?? Colors.grey[400],
               fontWeight: FontWeight.w400,
               fontSize: 13.sp,

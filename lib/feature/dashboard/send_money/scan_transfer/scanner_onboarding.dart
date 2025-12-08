@@ -56,7 +56,7 @@ class _ScannerOnboardingState extends ConsumerState<ScannerOnboarding> {
                   buttonName: 'Scan Item',
                   buttonColor: theme.colorScheme.primary,
                   buttonTextColor: Colors.white,
-                  onPressed: () => Navigator.pushNamed(context, RouteList.qrScannerScreen),
+                  onPressed: () => context.pushNamed(RouteList.qrScannerScreen),
                 ),
               ),
             ],
