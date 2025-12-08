@@ -382,7 +382,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-  // ---------------- RESET PASSWORD ----------------
+  // ---------------- RESET PASSWORD ---------------
   Future<ResponseModel?> resetPassword(
       BuildContext context,
       String otp,
