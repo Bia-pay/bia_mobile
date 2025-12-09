@@ -1,9 +1,10 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../../app/utils/image.dart';
 import '../../authcontroller/authcontroller.dart';
@@ -64,9 +65,9 @@ class _CreateAccountVerifyOtpScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Verify OTP', style: context.textTheme.headlineLarge),
+                  Text('Verify OTP', style: Theme.of(context).textTheme.headlineLarge),
                   SizedBox(height: 20.h),
-                  Text('Enter your Otp', style: context.textTheme.bodyMedium),
+                  Text('Enter your Otp', style: Theme.of(context).textTheme.bodyMedium),
                   SizedBox(height: 20.h),
                   PinCodeTextField(
                     appContext: context,

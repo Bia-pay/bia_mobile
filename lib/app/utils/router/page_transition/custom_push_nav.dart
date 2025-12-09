@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 void namedNav(BuildContext context, String route) {
-  Navigator.pushNamed(context, route);
+  context.pushNamed(route);
 }
 void popNav(BuildContext context) {
   Navigator.pop(context);
 }
 void namedNavRemoveUntil(BuildContext context, String route){
-  Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
+  context.goNamed(route);
 }

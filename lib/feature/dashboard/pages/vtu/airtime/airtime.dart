@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
@@ -343,7 +343,7 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
         padding: EdgeInsets.symmetric(horizontal: 12.w),
         decoration: BoxDecoration(
           border: Border.all(
-            //color: context.themeContext.checkboxBorderColor
+            //color: Theme.of(context)Context.checkboxBorderColor
           ),
           borderRadius: BorderRadius.all(Radius.circular(10.r)),
         ),
@@ -485,7 +485,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                   padding: EdgeInsets.symmetric(horizontal: 12.w),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      //  color: context.themeContext.checkboxBorderColor
+                      //  color: Theme.of(context)Context.checkboxBorderColor
                     ),
                     borderRadius: BorderRadius.all(Radius.circular(10.r)),
                   ),
@@ -699,7 +699,7 @@ void showAirtimeConfirmationSheet(
               ),
               child: SvgPicture.asset(
                 'assets/svg/cancel.svg',
-                // color: context.themeContext.secondaryTextColor,
+                // color: Theme.of(context)Context.secondaryTextColor,
               ),
             ),
 
@@ -713,7 +713,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
-                        //  color: context.themeContext.titleTextColor,
+                        //  color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -721,7 +721,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                        //  color: context.themeContext.titleTextColor,
+                        //  color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                   ],
@@ -734,7 +734,7 @@ void showAirtimeConfirmationSheet(
             Container(
               padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-                //   color: context.themeContext.offWhiteBg,
+                //   color: Theme.of(context)Context.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -745,7 +745,7 @@ void showAirtimeConfirmationSheet(
                     children: [
                       Text(
                         'Product Name',
-                        style: context.textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -766,7 +766,7 @@ void showAirtimeConfirmationSheet(
 
                           Text(
                             networkName,
-                            style: context.textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.black87,
                               fontWeight: FontWeight.w600,
                             ),
@@ -806,7 +806,7 @@ void showAirtimeConfirmationSheet(
             // 💳 Payment Method
             Text(
               'Payment Method',
-              style: context.textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w400,
                 color: Colors.black87,
               ),
@@ -825,7 +825,7 @@ void showAirtimeConfirmationSheet(
                 children: [
                   Text(
                     'Available Balance (${currencySymbol}314,171.32)',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
@@ -867,7 +867,7 @@ Widget _buildSummaryRow(
       children: [
         Text(
           title,
-          style: context.textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.grey.shade600,
           ),
         ),
@@ -882,7 +882,7 @@ Widget _buildSummaryRow(
                 ),
               )
             else
-              Text(value, style: context.textTheme.bodyMedium?.copyWith()),
+              Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith()),
             SizedBox(height: 5.h),
             if (hasToggle)
               GestureDetector(
@@ -892,7 +892,7 @@ Widget _buildSummaryRow(
                   width: 25,
                   height: 15,
                   decoration: BoxDecoration(
-                    // color: false ? context.themeContext.kPrimary : Colors.grey.shade300,
+                    // color: false ? Theme.of(context)Context.kPrimary : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(
@@ -932,7 +932,7 @@ Widget _buildPaymentRow(
       children: [
         Text(
           method,
-          style: context.textTheme.bodyMedium?.copyWith(color: Colors.black87),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
         ),
         Row(
           children: [

@@ -2,7 +2,6 @@ import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/custom_button.dart';
@@ -437,13 +436,13 @@ class _ConfirmChange2FAState extends ConsumerState<ConfirmChange2FA> {
                   children: [
                     Text(
                       "Confirm your code",
-                      style: context.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w400,
-                        color: theme.brightness == Brightness.light
-                            ? darkBackground
-                            : lightBackground,
-                        fontSize: 15.spMin,
-                      ),
+                      // style: context.textTheme.bodySmall?.copyWith(
+                      //   fontWeight: FontWeight.w400,
+                      //   color: theme.brightness == Brightness.light
+                      //       ? darkBackground
+                      //       : lightBackground,
+                      //   fontSize: 15.spMin,
+                      // ),
                     ),
                     SizedBox(height: 20.h),
                     PinCodeTextField(

@@ -3,7 +3,7 @@ import 'package:bia/app/utils/colors.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
 import '../../../widgets/transaction.dart';
@@ -46,7 +46,7 @@ class _DataState extends State<Data> {
                   SizedBox(height: 5.h),
                   Text(
                     'Data',
-                    style: context.textTheme.bodyMedium?.copyWith(fontSize: 18),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 18),
                   ),
                 ],
               ),
@@ -83,7 +83,7 @@ class _DataState extends State<Data> {
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 17, horizontal: 10),
                   decoration: BoxDecoration(
-                    // color: context.themeContext.tertiaryBackgroundColor,
+                    // color: Theme.of(context)Context.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
@@ -91,7 +91,7 @@ class _DataState extends State<Data> {
                     children: [
                       Text(
                         'Data Service',
-                        style: context.textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -120,7 +120,7 @@ class _DataState extends State<Data> {
                               ),
                               height: 70.h,
                               decoration: BoxDecoration(
-                                //color: context.themeContext.kSecondary,
+                                //color: Theme.of(context)Context.kSecondary,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -149,7 +149,7 @@ class _DataState extends State<Data> {
                                       children: [
                                         Text(
                                           tx.name,
-                                          style: context.textTheme.bodyMedium
+                                          style: Theme.of(context).textTheme.bodyMedium
                                               ?.copyWith(
                                                 // color: context
                                                 //     .themeContext.titleTextColor,
@@ -159,10 +159,10 @@ class _DataState extends State<Data> {
                                         ),
                                         Text(
                                           tx.dateTime,
-                                          style: context.textTheme.bodySmall
+                                          style: Theme.of(context).textTheme.bodySmall
                                               ?.copyWith(
                                                 fontSize: 11.sp,
-                                                // color: context.themeContext
+                                                // color: Theme.of(context)Context
                                                 //     .secondaryTextColor,
                                               ),
                                         ),
@@ -219,7 +219,7 @@ class _CardOneState extends State<CardOne> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-        // color: context.themeContext.tertiaryBackgroundColor,
+        // color: Theme.of(context)Context.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
@@ -249,7 +249,7 @@ class _CardOneState extends State<CardOne> {
                       padding: EdgeInsets.symmetric(horizontal: 12.w),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          //color: context.themeContext.checkboxBorderColor
+                          //color: Theme.of(context)Context.checkboxBorderColor
                         ),
                         borderRadius: BorderRadius.all(Radius.circular(10.r)),
                       ),
@@ -417,7 +417,7 @@ class _NetworkDropdownState extends State<NetworkDropdown> {
                         ),
                         Text(
                           provider['name'],
-                          style: context.textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontSize: 9.sp,
                           ),
                         ),
@@ -473,7 +473,7 @@ class _NetworkDropdownState extends State<NetworkDropdown> {
             height: 30.h,
             width: 60.w,
             decoration: BoxDecoration(
-              //color: context.themeContext.kSecondary,
+              //color: Theme.of(context)Context.kSecondary,
               shape: BoxShape.rectangle,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
@@ -655,7 +655,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                       decoration: BoxDecoration(
                         // color: isSelected
                         //     ? primaryColor.withOpacity(0.15)
-                        //     : context.themeContext.kSecondary,
+                        //     : Theme.of(context)Context.kSecondary,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected ? primaryColor : Colors.transparent,
@@ -670,10 +670,10 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                             plan['data'],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: context.textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               fontSize: 16.sp,
-                              // color: context.themeContext.titleTextColor,
+                              // color: Theme.of(context)Context.titleTextColor,
                             ),
                           ),
 
@@ -709,7 +709,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                             plan['duration'],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: context.textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey.shade600,
                               fontSize: 11.sp,
                             ),
@@ -733,7 +733,7 @@ class _DataAmountSelectorState extends State<DataAmountSelector>
                                 plan['bonus'],
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: context.textTheme.bodySmall?.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: primaryColor,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 11.sp,
@@ -792,7 +792,7 @@ void showAirtimeConfirmationSheet(
               ),
               child: SvgPicture.asset(
                 'assets/svg/cancel.svg',
-                //color: context.themeContext.secondaryTextColor,
+                //color: Theme.of(context)Context.secondaryTextColor,
               ),
             ),
 
@@ -807,7 +807,7 @@ void showAirtimeConfirmationSheet(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
 
-                        /// color: context.themeContext.titleTextColor,
+                        /// color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -815,7 +815,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                        // color: context.themeContext.titleTextColor,
+                        // color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                   ],
@@ -828,7 +828,7 @@ void showAirtimeConfirmationSheet(
             Container(
               padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-                // color: context.themeContext.offWhiteBg,
+                // color: Theme.of(context)Context.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -839,7 +839,7 @@ void showAirtimeConfirmationSheet(
                     children: [
                       Text(
                         'Product Name',
-                        style: context.textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -860,7 +860,7 @@ void showAirtimeConfirmationSheet(
 
                           Text(
                             networkName,
-                            style: context.textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.black87,
                               fontWeight: FontWeight.w600,
                             ),
@@ -900,7 +900,7 @@ void showAirtimeConfirmationSheet(
             // 💳 Payment Method
             Text(
               'Payment Method',
-              style: context.textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w400,
                 color: Colors.black87,
               ),
@@ -919,7 +919,7 @@ void showAirtimeConfirmationSheet(
                 children: [
                   Text(
                     'Available Balance (${currencySymbol}314,171.32)',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
@@ -961,7 +961,7 @@ Widget _buildSummaryRow(
       children: [
         Text(
           title,
-          style: context.textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.grey.shade600,
           ),
         ),
@@ -976,7 +976,7 @@ Widget _buildSummaryRow(
                 ),
               )
             else
-              Text(value, style: context.textTheme.bodyMedium?.copyWith()),
+              Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith()),
             SizedBox(height: 5.h),
             if (hasToggle)
               GestureDetector(

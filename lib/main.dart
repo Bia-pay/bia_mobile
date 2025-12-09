@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -11,8 +10,6 @@ import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
-import 'feature/auth/interceptor/interceptor.dart';
-import 'feature/auth/presentation/pages/splash_screen.dart'; // make sure this exists
 
 // ==================== MAIN ENTRY ====================
 
@@ -75,8 +72,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       minTextAdapt: true,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
-        child: GetMaterialApp(
-          navigatorKey: navigatorKey,
+        child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
 
           // Themes
@@ -85,13 +81,10 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
           themeMode: themeMode,
 
           // Routing
-          routes: RouteGenerator.route(),
-          onGenerateRoute: RouteGenerator.appRoutes,
-          onUnknownRoute: RouteGenerator.onUnknownRoute,
+          routerConfig: AppRouter.router,
 
           // Core UI
           builder: EasyLoading.init(),
-          initialRoute: 'Splash', // must match your splash route
         ),
       ),
     );

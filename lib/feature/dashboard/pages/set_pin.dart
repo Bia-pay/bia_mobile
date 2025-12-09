@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../app/utils/colors.dart';
 import '../../../app/utils/widgets/pin_field.dart';
 
@@ -84,6 +85,10 @@ class _SetPinState extends ConsumerState<SetPin> {
     return Scaffold(
       backgroundColor: offWhiteBackground,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: primaryColor),
+          onPressed: () => context.pop(),
+        ),
         title: Text(
           isConfirm ? "Confirm Payment PIN" : widget.title,
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),

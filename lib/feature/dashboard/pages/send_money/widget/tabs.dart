@@ -47,7 +47,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-           // color: context.themeContext.pinfieldTextColor,
+           // color: Theme.of(context)Context.pinfieldTextColor,
             borderRadius: BorderRadius.circular(15.r),
           ),
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),

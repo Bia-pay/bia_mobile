@@ -1,11 +1,12 @@
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
-
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
@@ -25,10 +26,11 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   AuthController(this.authRepository) : super(const AsyncLoading());
 
   Future<bool> logIn(
-      BuildContext context,
-      String phone,
-      String password,
-      ) async { if (phone.isEmpty || password.isEmpty) {
+    BuildContext context,
+    String phone,
+    String password,
+  ) async {
+    if (phone.isEmpty || password.isEmpty) {
       ToastHelper.showToast(
         context: context,
         message: "All fields are required.",
@@ -46,10 +48,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         dismissOnTap: false,
       );
 
-      Map<String, dynamic> body = {
-        'phone': phone,
-        'password': password,
-      };
+      Map<String, dynamic> body = {'phone': phone, 'password': password};
 
       final response = await authRepository.logIn(body);
       EasyLoading.dismiss();
@@ -79,7 +78,10 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-  Future<ResponseModel?> registerStepOne(BuildContext context, String phone) async {
+  Future<ResponseModel?> registerStepOne(
+    BuildContext context,
+    String phone,
+  ) async {
     if (phone.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -104,7 +106,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       EasyLoading.dismiss();
 
       if (response.responseSuccessful) {
-        EasyLoading.showToast(response.responseMessage,);
+        EasyLoading.showToast(response.responseMessage);
         // ToastHelper.showToast(
         //   context: context,
         //   message: response.responseMessage,
@@ -122,7 +124,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         );
       }
 
-      return response; // ✅ <--- important
+      return response; //  <--- important
     } catch (e) {
       EasyLoading.dismiss();
       ToastHelper.showToast(
@@ -136,13 +138,17 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _logout(BuildContext context) async {
     try {
       EasyLoading.show(status: "Logging out...");
 
       final authBox = await Hive.openBox('authBox');
       final token = authBox.get('token', defaultValue: '');
-      final biometricEnabled = authBox.get('login_biometric_enabled', defaultValue: false);
+      final biometricEnabled = authBox.get(
+        'login_biometric_enabled',
+        defaultValue: false,
+      );
 
       // Clear this user's saved beneficiaries
       await clearRecentBeneficiaries(token);
@@ -158,11 +164,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       if (!mounted) return;
 
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen,
-            (route) => false,
-      );
+      context.go(biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -187,10 +189,10 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   }
 
   Future<ResponseModel?> registerStepTwo(
-      BuildContext context,
-      String otp,
-      String phone,
-      ) async {
+    BuildContext context,
+    String otp,
+    String phone,
+  ) async {
     if (otp.isEmpty || phone.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -209,10 +211,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         dismissOnTap: false,
       );
 
-      Map<String, dynamic> body = {
-        'otp': otp,
-        'phone': phone,
-      };
+      Map<String, dynamic> body = {'otp': otp, 'phone': phone};
 
       debugPrint("➡️ Sending verify OTP: $body");
 
@@ -238,7 +237,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         );
       }
 
-      return response; // ✅ IMPORTANT — return it to the UI
+      return response; //  IMPORTANT — return it to the UI
     } catch (e) {
       EasyLoading.dismiss();
       ToastHelper.showToast(
@@ -252,14 +251,13 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-
   Future<ResponseModel?> registerStepThree(
-      BuildContext context,
-      String fullname,
-      String email,
-      String password,
-      ) async {
-    if (email.isEmpty || fullname.isEmpty|| password.isEmpty) {
+    BuildContext context,
+    String fullname,
+    String email,
+    String password,
+  ) async {
+    if (email.isEmpty || fullname.isEmpty || password.isEmpty) {
       ToastHelper.showToast(
         context: context,
         message: "Field is required.",
@@ -283,9 +281,11 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         'password': password,
       };
 
-      debugPrint("➡️ Registering: $body");
+      debugPrint(" Registering: $body");
 
-      final ResponseModel response = await authRepository.registerStepThree(body);
+      final ResponseModel response = await authRepository.registerStepThree(
+        body,
+      );
 
       EasyLoading.dismiss();
 
@@ -320,10 +320,12 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       return null;
     }
   }
+
+  // ---------------- FORGOT PASSWORD ----------------
   Future<ResponseModel?> forgotPassword(
-      BuildContext context,
-      String phone,
-      ) async {
+    BuildContext context,
+    String phone,
+  ) async {
     if (phone.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -384,12 +386,12 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
   // ---------------- RESET PASSWORD ---------------
   Future<ResponseModel?> resetPassword(
-      BuildContext context,
-      String otp,
-      String phone,
-      String newPassword,
-      String confirmNewPassword,
-      ) async {
+    BuildContext context,
+    String otp,
+    String phone,
+    String newPassword,
+    String confirmNewPassword,
+  ) async {
     if (otp.isEmpty ||
         phone.isEmpty ||
         newPassword.isEmpty ||
@@ -467,13 +469,14 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       return null;
     }
   }
+
   // ---------------- PRIVATE KEY CONTROLLER ---------------
   // Future<void> privateChatKeyController(
   //   BuildContext context,
   //   String keyLabel,
   // ) async {
   //   if (keyLabel.isEmpty) {
-  //     print('All fields are required.');
+  //     debugPrint('All fields are required.');
   //     ToastHelper.showToast(
   //       context: context,
   //       message: "All fields are required.",
@@ -491,14 +494,14 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   //       dismissOnTap: false,
   //     );
   //     Map<String, dynamic> body = {'keyLabel': keyLabel};
-  //     print(body);
+  //     debugPrint(body);
   //     var response = await authRepository.signIn(body);
   //     EasyLoading.dismiss();
   //     if (!mounted) return;
 
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       //  Display the response coming from responsebody
-  //       print(response);
+  //       debugPrint(response);
   //     } else {
   //       ToastHelper.showToast(
   //         context: context,
@@ -509,7 +512,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   //       );
   //     }
   //   } catch (e) {
-  //     print('Error during sign-in: $e');
+  //     debugPrint('Error during sign-in: $e');
   //     EasyLoading.dismiss();
   //     ToastHelper.showToast(
   //       context: context,
