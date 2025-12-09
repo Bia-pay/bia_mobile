@@ -127,8 +127,9 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
                     highlightColor: Colors.transparent,
                     onTap: () {
                       setState(() => _selectedIndex = index);
-                      if (key == "x") removeDigit();
-                      else if (key == "ok") _goToNewPinPage();
+                      if (key == "x") {
+                        removeDigit();
+                      } else if (key == "ok") _goToNewPinPage();
                       else addDigit(key);
                     },
                     child: Container(
@@ -281,8 +282,9 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
                     highlightColor: Colors.transparent,
                     onTap: () {
                       setState(() => _selectedIndex = index);
-                      if (key == "x") removeDigit();
-                      else if (key == "ok") _confirmNewPin();
+                      if (key == "x") {
+                        removeDigit();
+                      } else if (key == "ok") _confirmNewPin();
                       else addDigit(key);
                     },
                     child: Container(

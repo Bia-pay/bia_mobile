@@ -39,7 +39,7 @@ class _BiometricToggleSwitchState extends State<BiometricToggleSwitch> {
       title: const Text('Enable Biometric Authentication'),
       value: _isEnabled,
       onChanged: _toggleBiometric,
-      activeColor: Colors.green,
+      activeThumbColor: Colors.green,
     );
   }
 }

@@ -12,7 +12,6 @@ import '../../../feature/auth/presentation/pages/welcome_back.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password2.dart';
 import '../../../feature/bottom_nav_bar/bottom_nav.dart';
-import '../../../feature/dashboard/pages/homepage.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/amount.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/send_money_transfer.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/success.dart';

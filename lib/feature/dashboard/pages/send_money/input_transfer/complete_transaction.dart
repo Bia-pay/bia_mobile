@@ -412,7 +412,7 @@ class _CompleteTransactionBottomSheetState
                 _saveAsBeneficiary = value;
               });
             },
-            activeColor: primaryColor,
+            activeThumbColor: primaryColor,
           ),
         ),
       ],

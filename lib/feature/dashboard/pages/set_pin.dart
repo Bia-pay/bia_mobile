@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import '../../../../app/utils/colors.dart';
+import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/pin_field.dart';
 
 class SetPin extends ConsumerStatefulWidget {
@@ -29,6 +31,7 @@ class _SetPinState extends ConsumerState<SetPin> {
     pinController.dispose();
     super.dispose();
   }
+
   void addDigit(String value) {
     if (!mounted) return;
     setState(() {
@@ -41,7 +44,10 @@ class _SetPinState extends ConsumerState<SetPin> {
     if (!mounted) return;
     setState(() {
       if (pinController.text.isNotEmpty) {
-        pinController.text = pinController.text.substring(0, pinController.text.length - 1);
+        pinController.text = pinController.text.substring(
+          0,
+          pinController.text.length - 1,
+        );
       }
       _checkMinLimit();
     });
@@ -64,8 +70,18 @@ class _SetPinState extends ConsumerState<SetPin> {
       });
     } else {
       if (pinController.text == firstPin) {
-        print("PIN set successfully: ${pinController.text}");
-        if (mounted) Navigator.pop(context); // Safe navigation
+        debugPrint("PIN set successfully: ${pinController.text}");
+        if (mounted) {
+          // Save PIN status to Hive to prevent re-prompting
+          final box = Hive.box('authBox');
+          box.put('has_pin', true);
+
+          // Clear controller before navigation to prevent disposal error
+          final pin = pinController.text;
+          pinController.clear();
+          // Navigate to home page after successful PIN setup
+          context.go(RouteList.bottomNavBar);
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("PINs do not match. Try again!")),
@@ -76,7 +92,8 @@ class _SetPinState extends ConsumerState<SetPin> {
   }
 
   void _checkMinLimit() {
-    showMinWarning = pinController.text.length < 4 && pinController.text.isNotEmpty;
+    showMinWarning =
+        pinController.text.length < 4 && pinController.text.isNotEmpty;
   }
 
   @override
@@ -91,7 +108,9 @@ class _SetPinState extends ConsumerState<SetPin> {
         ),
         title: Text(
           isConfirm ? "Confirm Payment PIN" : widget.title,
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: offWhiteBackground,
         elevation: 0,
@@ -104,7 +123,9 @@ class _SetPinState extends ConsumerState<SetPin> {
             SizedBox(height: 65.h),
             Text(
               isConfirm ? "Enter PIN again to confirm" : "Enter a new PIN",
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             SizedBox(height: 15.h),
             Padding(
@@ -140,13 +161,31 @@ class _SetPinState extends ConsumerState<SetPin> {
                   mainAxisExtent: 70.h,
                 ),
                 itemBuilder: (context, index) {
-                  List<String> keys = ["1","2","3","4","5","6","7","8","9","x","0","ok"];
+                  List<String> keys = [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "x",
+                    "0",
+                    "ok",
+                  ];
                   String key = keys[index];
                   Color keyColor = keyAColor;
                   Color textColor = lightSecondaryText;
 
-                  if (key == "x") { keyColor = primaryColor.withOpacity(0.1); textColor = primaryColor; }
-                  else if (key == "ok") { keyColor = primaryColor; textColor = whiteBackground; }
+                  if (key == "x") {
+                    keyColor = primaryColor.withValues(alpha: 0.1);
+                    textColor = primaryColor;
+                  } else if (key == "ok") {
+                    keyColor = primaryColor;
+                    textColor = whiteBackground;
+                  }
 
                   return InkWell(
                     borderRadius: BorderRadius.circular(50.r),
@@ -154,29 +193,55 @@ class _SetPinState extends ConsumerState<SetPin> {
                     highlightColor: Colors.transparent,
                     onTap: () {
                       setState(() => _selectedIndex = index);
-                      if (key == "x") removeDigit();
-                      else if (key == "ok") _goToNextStep();
-                      else addDigit(key);
+                      if (key == "x") {
+                        removeDigit();
+                      } else if (key == "ok") {
+                        _goToNextStep();
+                      } else {
+                        addDigit(key);
+                      }
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _selectedIndex == index ? Colors.white : keyColor,
+                        color: _selectedIndex == index
+                            ? Colors.white
+                            : keyColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: _selectedIndex == index ? primaryColor : Colors.transparent, width: 2),
+                        border: Border.all(
+                          color: _selectedIndex == index
+                              ? primaryColor
+                              : Colors.transparent,
+                          width: 2,
+                        ),
                       ),
                       alignment: Alignment.center,
                       child: key == "x"
-                          ? SvgPicture.asset('assets/svg/cancel.svg', height: 20.h, colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn))
+                          ? SvgPicture.asset(
+                              'assets/svg/cancel.svg',
+                              height: 20.h,
+                              colorFilter: ColorFilter.mode(
+                                primaryColor,
+                                BlendMode.srcIn,
+                              ),
+                            )
                           : key == "ok"
-                          ? Icon(Icons.arrow_forward, color: _selectedIndex == index ? primaryColor : textColor, size: 24.sp)
+                          ? Icon(
+                              Icons.arrow_forward,
+                              color: _selectedIndex == index
+                                  ? primaryColor
+                                  : textColor,
+                              size: 24.sp,
+                            )
                           : Text(
-                        key,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: _selectedIndex == index ? primaryColor : lightText,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 24.sp,
-                        ),
-                      ),
+                              key,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: _selectedIndex == index
+                                    ? primaryColor
+                                    : lightText,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 24.sp,
+                              ),
+                            ),
                     ),
                   );
                 },

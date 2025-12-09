@@ -70,7 +70,7 @@ class _AmountBottomSheetState extends State<AmountBottomSheet> {
           height: 800.h,
           padding: EdgeInsets.symmetric(horizontal: 200.w),
           decoration: BoxDecoration(
-            color: theme.colorScheme.background,
+            color: theme.colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
           ),
           child: Column(

@@ -200,7 +200,7 @@ class CardOne extends StatefulWidget {
 
 class _CardOneState extends State<CardOne> {
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
   final TextEditingController _amountController = TextEditingController();
 
   @override
@@ -337,7 +337,7 @@ class CardThree extends ConsumerStatefulWidget {
 
 class _CardThreeState extends ConsumerState<CardThree> {
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
 
   @override
   Widget build(BuildContext context) {
@@ -486,7 +486,7 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
                               ),
                             ),
                             SizedBox(width: 10.w), // vertical divider between dropdown and input (optional)
-                            Container(
+                            SizedBox(
                               width: 1,
                               height: 36.h,
                              // color: themeContext.checkboxBorderColor,
