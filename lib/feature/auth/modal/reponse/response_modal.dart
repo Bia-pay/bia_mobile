@@ -1,4 +1,3 @@
-import '../../../dashboard/model/dashboard_model.dart';
 
 class ResponseModel {
   final String responseMessage;

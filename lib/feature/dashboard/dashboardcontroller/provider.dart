@@ -46,8 +46,12 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
 
         // Merge with local cache
         final Map<int, TransactionItem> map = {};
-        for (var tx in state.value ?? []) map[tx.id] = tx;
-        for (var tx in fresh) map[tx.id] = tx;
+        for (var tx in state.value ?? []) {
+          map[tx.id] = tx;
+        }
+        for (var tx in fresh) {
+          map[tx.id] = tx;
+        }
 
         // Get all transactions, sorted by createdAt descending
         final merged = map.values.toList()
@@ -99,8 +103,12 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
 
         // Merge with local cache
         final Map<int, TransactionItem> map = {};
-        for (var tx in state.value ?? []) map[tx.id] = tx;
-        for (var tx in fresh) map[tx.id] = tx;
+        for (var tx in state.value ?? []) {
+          map[tx.id] = tx;
+        }
+        for (var tx in fresh) {
+          map[tx.id] = tx;
+        }
 
 
         final merged = map.values.toList()

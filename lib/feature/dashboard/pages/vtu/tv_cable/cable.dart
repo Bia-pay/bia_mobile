@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 
-import '../../../../../app/utils/colors.dart';
 
 class CableTv extends StatefulWidget {
   const CableTv({super.key});

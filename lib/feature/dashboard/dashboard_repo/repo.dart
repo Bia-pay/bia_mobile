@@ -314,11 +314,13 @@ class DashboardRepository {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
-      if (token.isEmpty) return RecentBeneficiaryResponse(
+      if (token.isEmpty) {
+        return RecentBeneficiaryResponse(
         responseSuccessful: false,
         responseMessage: "No token found",
         beneficiaries: [],
       );
+      }
 
       _apiClient.updateHeaders(token);
       final response = await _apiClient.getData(ApiConstant.RECENT_TRANSFER);

@@ -28,7 +28,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       TextEditingController();
 
   bool _agreed = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void dispose() {
@@ -82,8 +82,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v.isEmpty) return 'Email required';
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v))
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
                         return 'Invalid email';
+                      }
                       return null;
                     },
                   ),

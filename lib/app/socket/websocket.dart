@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:bia/app/socket/provider.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

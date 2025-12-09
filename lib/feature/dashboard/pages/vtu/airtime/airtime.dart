@@ -174,7 +174,7 @@ class CardOne extends ConsumerStatefulWidget {
 
 class _CardOneState extends ConsumerState<CardOne> {
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +201,7 @@ class CardThree extends ConsumerStatefulWidget {
 
 class _CardThreeState extends ConsumerState<CardThree> {
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
 
   @override
   Widget build(BuildContext context) {
@@ -454,7 +454,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
   ];
 
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
   int? selectedAmount;
 
   @override
@@ -614,7 +614,7 @@ class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
   final TextEditingController _amountController = TextEditingController();
 
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
   int? selectedAmount;
 
   @override

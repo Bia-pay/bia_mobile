@@ -25,7 +25,7 @@ class _CreateAccountVerifyOtpScreenState
     extends ConsumerState<CreateAccountVerifyOtpScreen> {
   final TextEditingController otpController = TextEditingController();
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {

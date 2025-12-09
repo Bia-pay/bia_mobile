@@ -211,7 +211,7 @@ class CardOne extends StatefulWidget {
 
 class _CardOneState extends State<CardOne> {
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final String _phoneNumber = '';
   final TextEditingController _amountController = TextEditingController();
 
   @override

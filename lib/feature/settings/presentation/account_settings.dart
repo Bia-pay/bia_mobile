@@ -525,7 +525,7 @@ class _UProfileState extends ConsumerState<UProfile> {
         Text(name,
           //  style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)
         ),
-        Text('$username',
+        Text(username,
          //   style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)
         ),
         SizedBox(height: 15.h),

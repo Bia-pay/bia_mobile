@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import 'scanner.dart';
 
 class ScannerOnboarding extends ConsumerStatefulWidget {
   const ScannerOnboarding({super.key});
