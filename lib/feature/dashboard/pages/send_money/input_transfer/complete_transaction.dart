@@ -1,15 +1,17 @@
 import 'package:bia/app/utils/widgets/pin_field.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:hive/hive.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/image.dart';
-import '../../../../app/utils/router/route_constant.dart';
-import '../../dashboardcontroller/dashboardcontroller.dart';
+
+import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/router/route_constant.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class CompleteTransactionBottomSheet extends ConsumerStatefulWidget {
   final String amount;
@@ -82,7 +84,7 @@ class _CompleteTransactionBottomSheetState
       defaultValue: false,
     );
     final savedPiin = settingsBox.get("saved_pin");
-    print(savedPiin);
+    debugPrint(savedPiin);
     setState(() {
       _hasBiometric = hasFingerprint;
       _biometricEnabled = biometricEnabled;
@@ -158,10 +160,11 @@ class _CompleteTransactionBottomSheetState
       final token = authBox.get("token");
 
       if (token != null && token.isNotEmpty && mounted) {
-        Navigator.pushReplacementNamed(
+        Navigator.pushNamed(
           context,
           RouteList.successScreen,
           arguments: {
+            "type": "transfer", // ✅ must be here
             "amount": total.toStringAsFixed(2),
             "recipientName": widget.recipientName,
             "recipientAccount": widget.recipientAccount,
@@ -201,6 +204,10 @@ class _CompleteTransactionBottomSheetState
         borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
       ),
       child: SingleChildScrollView(
+        reverse: true, // scrolls to bottom when keyboard appears
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -313,7 +320,9 @@ class _CompleteTransactionBottomSheetState
                         final authController = ref.read(
                           dashboardControllerProvider.notifier,
                         );
-                        await authController.sendMoney(
+
+                        // Call sendMoney and get response
+                        final response = await authController.sendMoney(
                           context,
                           widget.recipientAccount,
                           total.toStringAsFixed(2),
@@ -322,18 +331,28 @@ class _CompleteTransactionBottomSheetState
                           save: _saveAsBeneficiary,
                         );
 
-                        final box = Hive.box("authBox");
-                        final token = box.get("token");
-
-                        if (token != null && token.isNotEmpty) {
-                          Navigator.pushReplacementNamed(
+                        // ✅ Check if the transfer was successful
+                        if (response != null && response.responseSuccessful) {
+                          Navigator.pushNamed(
                             context,
                             RouteList.successScreen,
                             arguments: {
+                              "type": "transfer",
                               "amount": total.toStringAsFixed(2),
                               "recipientName": widget.recipientName,
                               "recipientAccount": widget.recipientAccount,
                             },
+                          );
+                        } else {
+                          // ❌ Show error if PIN is wrong or transfer failed
+                          final msg =
+                              response?.responseMessage ??
+                              "Transfer failed. Check your PIN.";
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(msg),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       },

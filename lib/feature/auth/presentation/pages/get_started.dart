@@ -1,9 +1,10 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
@@ -45,7 +46,7 @@ class _GetStartedState extends ConsumerState<GetStarted> {
               Text(
                 'Pay your Keke fare instantly by\n just scanning a QR code',
                 textAlign: TextAlign.center,
-                style: context.textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontSize: 19.sp,
                   color: offWhiteBackground,
                   fontWeight: FontWeight.w500,
@@ -56,7 +57,7 @@ class _GetStartedState extends ConsumerState<GetStarted> {
               Text(
                 'No cash, no delays\n just scan, pay, and move',
                 textAlign: TextAlign.center,
-                style: context.textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontSize: 18.sp,
                   color: offWhiteBackground,
                   fontWeight: FontWeight.w500,
@@ -71,8 +72,7 @@ class _GetStartedState extends ConsumerState<GetStarted> {
                   buttonTextColor: primaryColor,
                   buttonName: 'Get Started',
                   onPressed: () {
-                    Navigator.pushNamed(
-                        context, RouteList.onBoardingScreen);
+                    context.go(RouteList.onBoardingScreen);
                   },
                 ),
               ),

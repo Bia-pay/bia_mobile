@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
-
 import '../interceptor/interceptor.dart';
 import 'api_constant.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  final apiHelper = ref.read(apiHelperProvider); // inject ApiHelper
+  final apiHelper = ref.read(apiHelperProvider); 
   return ApiClient(apiHelper: apiHelper);
 });
 
@@ -44,7 +44,7 @@ class ApiClient {
           (timer) async {
         final success = await _refreshToken();
         if (!success) {
-          print('⚠️ Could not refresh token periodically');
+          debugPrint(' Could not refresh token periodically');
         }
       },
     );
@@ -84,14 +84,14 @@ class ApiClient {
 
         updateHeaders(newAccessToken);
 
-        print('🔄 Token refreshed successfully');
+        debugPrint(' Token refreshed successfully');
         return true;
       } else {
-        print('❌ Failed to refresh token: ${response.body}');
+        debugPrint(' Failed to refresh token: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('🔥 Exception refreshing token: $e');
+      debugPrint(' Exception refreshing token: $e');
       return false;
     }
   }
@@ -115,9 +115,9 @@ class ApiClient {
     return _authorizedRequest(() async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
 
-      print("➡️ POST $fullUrl");
-      print("➡️ Headers: $_mainHeaders");
-      print("➡️ Body: $body");
+      debugPrint(" POST $fullUrl");
+      debugPrint(" Headers: $_mainHeaders");
+      debugPrint(" Body: $body");
 
       final response = await http.post(
         fullUrl,
@@ -134,9 +134,9 @@ class ApiClient {
     return _authorizedRequest(() async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
 
-      print("➡️ PATCH $fullUrl");
-      print("➡️ Headers: $_mainHeaders");
-      print("➡️ Body: $body");
+      debugPrint(" PATCH $fullUrl");
+      debugPrint(" Headers: $_mainHeaders");
+      debugPrint(" Body: $body");
 
       final response = await http.patch(
         fullUrl,
@@ -153,9 +153,9 @@ class ApiClient {
     return _authorizedRequest(() async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
 
-      print("➡️ PUT $fullUrl");
-      print("➡️ Headers: $_mainHeaders");
-      print("➡️ Body: $body");
+      debugPrint(" PUT $fullUrl");
+      debugPrint(" Headers: $_mainHeaders");
+      debugPrint(" Body: $body");
 
       final response = await http.put(
         fullUrl,
@@ -172,8 +172,8 @@ class ApiClient {
     return _authorizedRequest(() async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
 
-      print("➡️ GET $fullUrl");
-      print("➡️ Headers: $_mainHeaders");
+      debugPrint(" GET $fullUrl");
+      debugPrint(" Headers: $_mainHeaders");
 
       final response = await http.get(
         fullUrl,

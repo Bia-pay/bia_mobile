@@ -1,11 +1,12 @@
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
+import 'package:bia/feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
-import 'package:hive/hive.dart';
+
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -23,15 +24,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool _obscurePassword = true;
+
   @override
   void dispose() {
     phoneController.dispose();
     passwordController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider.notifier);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -40,18 +43,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Positioned(
             top: -90.h,
             right: -55.w,
-            child: SvgPicture.asset(
-              vector,
-              height: 250.h,
-            ),
+            child: SvgPicture.asset(vector, height: 250.h),
           ),
           Positioned(
             bottom: -130.h,
             left: -25.w,
-            child: SvgPicture.asset(
-              vectorOne,
-              height: 330.h,
-            ),
+            child: SvgPicture.asset(vectorOne, height: 330.h),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -62,7 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Center(
                     child: Text(
                       'Login to Your Account',
-                      style: context.textTheme.headlineLarge,
+                      style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   ),
                   SizedBox(height: 40.h),
@@ -84,47 +81,65 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: 'Password',
                     controller: passwordController,
                     hintText: 'Enter your password',
-                    obscureText: true,
+                    obscureText: _obscurePassword,
                     validator: (value) =>
-                    value.isEmpty ? 'Password is required' : null,
-                    suffixIcon: const Icon(Icons.remove_red_eye_outlined),
+                        value.isEmpty ? 'Password is required' : null,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
                   SizedBox(height: 40.h),
                   CustomButton(
                     buttonColor: primaryColor,
                     buttonTextColor: Colors.white,
                     buttonName: isLoading ? 'Logging in...' : 'Login',
-                    onPressed: isLoading ? null : () async {
-                      final authState = ref.read(authControllerProvider.notifier);
-                      final success = await authState.logIn(
-                        context,
-                        phoneController.text.trim(),
-                        passwordController.text.trim(),
-                      );
-                      if (success) {
-                        Navigator.pushNamed(context, RouteList.bottomNavBar);
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            final authState = ref.read(
+                              authControllerProvider.notifier,
+                            );
+                            final success = await authState.logIn(
+                              context,
+                              phoneController.text.trim(),
+                              passwordController.text.trim(),
+                            );
+                            if (success && mounted) {
+                              context.go(RouteList.bottomNavBar);
+                            }
+                          },
                   ),
                   if (isLoading) ...[
                     SizedBox(height: 10.h),
-                    const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ],
                   SizedBox(height: 10.h),
-                  Center(
-                    child: Text(
-                      'Forget Number / Password ?',
-                      style: context.textTheme.bodySmall?.copyWith(
-                        color: lightText,
-                        fontWeight: FontWeight.w500,
+                  GestureDetector(
+                    onTap: () => context.go(RouteList.forgotPassword),
+                    child: Center(
+                      child: Text(
+                        'Forget Number / Password ?',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: lightText,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
                   SizedBox(height: 20.h),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, RouteList.phoneRegScreen);
-                    },
+                    onTap: () => context.go(RouteList.phoneRegScreen),
                     child: Center(
                       child: RichText(
                         textAlign: TextAlign.center,
@@ -132,17 +147,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             TextSpan(
                               text: 'Don’t have an account? ',
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: lightSecondaryText,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: lightSecondaryText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                             ),
                             TextSpan(
                               text: 'Sign Up',
-                              style: context.textTheme.bodyMedium?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ],
                         ),

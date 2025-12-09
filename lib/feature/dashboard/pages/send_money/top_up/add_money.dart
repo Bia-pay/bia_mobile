@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/colors.dart';
-import '../../dashboard_repo/repo.dart';
-import '../../dashboardcontroller/dashboardcontroller.dart';
-import '../../widgets/transaction.dart';
+
+import '../../../../../app/utils/colors.dart';
+import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/router/route_constant.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../widgets/transaction.dart';
 
 class AddMoney extends ConsumerStatefulWidget {
   const AddMoney({super.key});
@@ -16,6 +19,7 @@ class AddMoney extends ConsumerStatefulWidget {
 }
 
 class _AddMoneyState extends ConsumerState<AddMoney> {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,7 +112,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                                     border: Border.all(color: primaryColor),
                                   ),
                                   child: Image.asset(
-                                    'assets/svg/bank.png',
+                                    bank,
                                     height: 20.h,
                                   ),
                                 ),
@@ -195,26 +199,13 @@ class BalanceCard extends ConsumerWidget {
             child: CustomButton(
               buttonColor: primaryColor,
               buttonTextColor: lightBackground,
-              buttonName: 'Proceed to Deposit',
+              buttonName: 'Share',
               onPressed: () async {
-                final controller = ref.read(dashboardControllerProvider.notifier);
-                final response = await controller.depositMoney(context, 10000);
+                Navigator.pushNamed(
+                  context,
+                  RouteList.depositScreen,
 
-                if (response != null) {
-                  final url = response.data!.authorizationUrl;
-                  final reference = response.data!.reference;
-               print('Send Money PayStack URL: $url');
-               print('Send Money PayStack REFERENCE: $reference');
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PaymentWebViewPage(
-                        url: url,
-                        reference: reference,
-                      ),
-                    ),
-                  );
-                }
+                );
               },
             ),
           ),
@@ -312,7 +303,25 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
 
       if (res != null && res.responseSuccessful && res.data?.status == "success") {
         print("🎉 Payment verified: ${res.responseMessage}");
-        _showDialog("Success", "Payment verified successfully!");
+
+        if (!mounted) return;
+
+        // Close WebView
+        Navigator.pop(context);
+        print("🎉 Payment verified: ${res.data?.amount.toString()}");
+        // Go to success screen
+        Navigator.pushNamed(
+          context,
+          RouteList.successScreen,
+          arguments: {
+            "type": "deposit",
+            "amount": res.data?.amount.toString(),
+            "reference": res.data?.reference,
+            "channel": res.data?.channel ?? "Paystack",
+          },
+        );
+
+        return;
       } else {
         print("⚠️ Payment not completed");
         _showDialog("Failed", "Payment was not completed.");
@@ -322,7 +331,6 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
       _showDialog("Error", "An error occurred while verifying payment.");
     }
   }
-
   Future<bool> _onWillPop() async {
     if (await _controller.canGoBack()) {
       _controller.goBack();

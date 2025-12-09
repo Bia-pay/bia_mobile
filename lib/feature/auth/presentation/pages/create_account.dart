@@ -1,12 +1,11 @@
-import 'dart:convert';
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
-import 'package:http/http.dart' as http;
+
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -17,14 +16,16 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
   static const String routeName = '/createAccountScreen';
 
   @override
-  ConsumerState<CreateAccountScreen> createState() => _CreateAccountScreenState();
+  ConsumerState<CreateAccountScreen> createState() =>
+      _CreateAccountScreenState();
 }
 
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   bool _agreed = false;
   bool _isLoading = false;
@@ -38,10 +39,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -62,7 +61,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Complete Registration', style: context.textTheme.headlineLarge),
+                  Text(
+                    'Complete Registration',
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
                   SizedBox(height: 20.h),
 
                   CustomTextFormField(
@@ -80,7 +82,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       if (v.isEmpty) return 'Email required';
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) return 'Invalid email';
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v))
+                        return 'Invalid email';
                       return null;
                     },
                   ),
@@ -117,11 +120,11 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                         child: Text.rich(
                           TextSpan(
                             text: 'I agree with ',
-                            style: context.textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.bodySmall,
                             children: [
                               TextSpan(
                                 text: 'Terms & Conditions',
-                                style: context.textTheme.bodySmall?.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: primaryColor,
                                 ),
                               ),
@@ -142,19 +145,26 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                       final fullname = nameController.text.trim();
                       final email = emailController.text.trim();
                       final password = passwordController.text.trim();
-                      final authState = ref.watch(authControllerProvider.notifier);
+                      final authState = ref.watch(
+                        authControllerProvider.notifier,
+                      );
 
-                      final response = await authState.registerStepThree(context, fullname, email, password);
+                      final response = await authState.registerStepThree(
+                        context,
+                        fullname,
+                        email,
+                        password,
+                      );
 
                       if (response?.responseSuccessful == true) {
-                        Navigator.pushNamed(
-                          context,
-                          RouteList.bottomNavBar,
-                        );
+                        context.pushNamed(RouteList.bottomNavBar);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(response?.responseMessage ?? 'Registration failed'),
+                            content: Text(
+                              response?.responseMessage ??
+                                  'Registration failed',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -165,16 +175,17 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                   SizedBox(height: 20.h),
 
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, RouteList.loginScreen),
+                    onTap: () =>
+                        context.pushNamed(RouteList.loginScreen),
                     child: Text.rich(
                       TextSpan(
                         text: 'Already have an account? ',
-                        style: context.textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodySmall,
                         children: [
                           TextSpan(
                             text: 'Sign In',
-                            style: context.textTheme.bodySmall?.copyWith(
-                              color:primaryColor,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: primaryColor,
                             ),
                           ),
                         ],

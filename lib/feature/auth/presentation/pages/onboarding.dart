@@ -1,9 +1,10 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
@@ -114,7 +115,7 @@ class _OnboardingPage extends StatelessWidget {
               children: [
                 Text(
                   data.title,
-                  style: context.textTheme.headlineMedium?.copyWith(
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: lightText,
                     fontWeight: FontWeight.w600,
                     fontSize: 35.sp,
@@ -122,7 +123,7 @@ class _OnboardingPage extends StatelessWidget {
                 ),
                 Text(
                   data.titleColor,
-                  style: context.textTheme.headlineMedium?.copyWith(
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: primaryColor,
                     fontWeight: FontWeight.w600,
                     fontSize: 35.sp,
@@ -134,7 +135,7 @@ class _OnboardingPage extends StatelessWidget {
                   child: Text(
                     data.subtitle,
                     textAlign: TextAlign.start,
-                    style: context.textTheme.bodySmall?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: lightSecondaryText,
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w400,
@@ -160,8 +161,7 @@ class _OnboardingPage extends StatelessWidget {
                     buttonName: isLastPage ? 'Done' : 'Skip',
                     onPressed: () {
                       if (isLastPage) {
-                        Navigator.pushNamed(
-                            context, RouteList.phoneRegScreen);
+                        context.go(RouteList.phoneRegScreen);
                       } else {
                         pageController.nextPage(
                           duration: const Duration(milliseconds: 300),

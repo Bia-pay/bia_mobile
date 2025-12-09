@@ -1,10 +1,7 @@
 // ----------------------- CUSTOM APP BAR HELPER -------------------------
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:get/get_utils/get_utils.dart';
 
 import '../colors.dart';
 import '../image.dart';
@@ -35,7 +32,7 @@ class ArrowBackIcon extends StatelessWidget {
           SizedBox(width: 55.w),
           Text(
             name,
-            style: context.textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: theme.brightness == Brightness.light
                   ? darkBackground
                   : lightBackground,

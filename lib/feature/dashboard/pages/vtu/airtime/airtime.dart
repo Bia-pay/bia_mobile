@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
-import '../../../send_money/widget/tabs.dart';
 import '../../../widgets/transaction.dart';
+import '../../send_money/widget/tabs.dart';
 
 class Airtime extends ConsumerStatefulWidget {
   const Airtime({super.key});
@@ -56,7 +56,8 @@ class _AirtimeState extends ConsumerState<Airtime> {
                       color: primaryColor,
                       fontWeight: FontWeight.w500,
                     ),
-                  ),                ],
+                  ),
+                ],
               ),
 
               SizedBox(height: 30.h),
@@ -73,7 +74,7 @@ class _AirtimeState extends ConsumerState<Airtime> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 18.h),
                 decoration: BoxDecoration(
-                 // color: themeContext.tertiaryBackgroundColor,
+                  // color: themeContext.tertiaryBackgroundColor,
                   borderRadius: BorderRadius.circular(15.r),
                 ),
                 child: Column(
@@ -96,9 +97,11 @@ class _AirtimeState extends ConsumerState<Airtime> {
                           return Container(
                             margin: EdgeInsets.symmetric(vertical: 6.h),
                             padding: EdgeInsets.symmetric(
-                                vertical: 10.h, horizontal: 16.w),
+                              vertical: 10.h,
+                              horizontal: 16.w,
+                            ),
                             decoration: BoxDecoration(
-                            //  color: themeContext.kSecondary,
+                              //  color: themeContext.kSecondary,
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Row(
@@ -110,22 +113,23 @@ class _AirtimeState extends ConsumerState<Airtime> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                       // color: themeContext.kPrimary
+                                      // color: themeContext.kPrimary
                                     ),
                                   ),
-                                  child: Image.asset('assets/svg/bank.png',
-                                      height: 18.h),
+                                  child: Image.asset(
+                                    'assets/svg/bank.png',
+                                    height: 18.h,
+                                  ),
                                 ),
                                 SizedBox(width: 15.w),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         tx.name,
-                                        style:
-                                        textTheme.bodyMedium?.copyWith(
+                                        style: textTheme.bodyMedium?.copyWith(
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -139,9 +143,10 @@ class _AirtimeState extends ConsumerState<Airtime> {
                                     ],
                                   ),
                                 ),
-                                Icon(Icons.arrow_forward_ios_outlined,
-                                    size: 14.sp,
-                                   // color: themeContext.secondaryTextColor
+                                Icon(
+                                  Icons.arrow_forward_ios_outlined,
+                                  size: 14.sp,
+                                  // color: themeContext.secondaryTextColor
                                 ),
                               ],
                             ),
@@ -173,7 +178,6 @@ class _CardOneState extends ConsumerState<CardOne> {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
@@ -182,14 +186,12 @@ class _CardOneState extends ConsumerState<CardOne> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          AirtimeAmountSelector()
-        ],
+        children: [AirtimeAmountSelector()],
       ),
     );
   }
 }
+
 class CardThree extends ConsumerStatefulWidget {
   const CardThree({super.key});
 
@@ -203,18 +205,15 @@ class _CardThreeState extends ConsumerState<CardThree> {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
       decoration: BoxDecoration(
-      //  color: themeContext.tertiaryBackgroundColor,
+        //  color: themeContext.tertiaryBackgroundColor,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BeneficiarySelector()
-        ],
+        children: [BeneficiarySelector()],
       ),
     );
   }
@@ -233,11 +232,10 @@ class _CardTwoState extends ConsumerState<CardTwo> {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h),
       decoration: BoxDecoration(
-       // color: themeContext.tertiaryBackgroundColor,
+        // color: themeContext.tertiaryBackgroundColor,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
@@ -250,11 +248,11 @@ class _CardTwoState extends ConsumerState<CardTwo> {
             //   fontWeight: FontWeight.w600,
             // ),
           ),
-          SizedBox(height: 10.h,),
+          SizedBox(height: 10.h),
           NetworkDropdown(
-            onChanged: (provider) => setState(() => _selectedProvider = provider),
-            onPhoneChanged: (number) =>
-                setState(() => _phoneNumber = number),
+            onChanged: (provider) =>
+                setState(() => _selectedProvider = provider),
+            onPhoneChanged: (number) => setState(() => _phoneNumber = number),
           ),
         ],
       ),
@@ -262,16 +260,11 @@ class _CardTwoState extends ConsumerState<CardTwo> {
   }
 }
 
-
 class NetworkDropdown extends ConsumerStatefulWidget {
   final ValueChanged<Map<String, dynamic>>? onChanged;
   final ValueChanged<String>? onPhoneChanged;
 
-  const NetworkDropdown({
-    super.key,
-    this.onChanged,
-    this.onPhoneChanged,
-  });
+  const NetworkDropdown({super.key, this.onChanged, this.onPhoneChanged});
 
   @override
   ConsumerState<NetworkDropdown> createState() => _NetworkDropdownState();
@@ -299,13 +292,38 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
     final prefix = input.substring(0, 4);
 
     Map<String, dynamic>? detected;
-    if (['0803', '0806', '0703', '0706', '0813', '0816', '0810', '0814', '0903', '0906']
-        .contains(prefix)) {
+    if ([
+      '0803',
+      '0806',
+      '0703',
+      '0706',
+      '0813',
+      '0816',
+      '0810',
+      '0814',
+      '0903',
+      '0906',
+    ].contains(prefix)) {
       detected = _providers.firstWhere((p) => p['name'] == 'MTN');
-    } else if (['0802', '0808', '0708', '0812', '0701', '0902', '0907', '0901']
-        .contains(prefix)) {
+    } else if ([
+      '0802',
+      '0808',
+      '0708',
+      '0812',
+      '0701',
+      '0902',
+      '0907',
+      '0901',
+    ].contains(prefix)) {
       detected = _providers.firstWhere((p) => p['name'] == 'Airtel');
-    } else if (['0805', '0807', '0811', '0705', '0815', '0905'].contains(prefix)) {
+    } else if ([
+      '0805',
+      '0807',
+      '0811',
+      '0705',
+      '0815',
+      '0905',
+    ].contains(prefix)) {
       detected = _providers.firstWhere((p) => p['name'] == 'Glo');
     } else if (['0809', '0818', '0817', '0909', '0908'].contains(prefix)) {
       detected = _providers.firstWhere((p) => p['name'] == '9mobile');
@@ -319,16 +337,15 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
 
   @override
   Widget build(BuildContext context) {
-
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w,),
+        padding: EdgeInsets.symmetric(horizontal: 12.w),
         decoration: BoxDecoration(
           border: Border.all(
-            //color: context.themeContext.checkboxBorderColor
+            //color: Theme.of(context)Context.checkboxBorderColor
           ),
-          borderRadius: BorderRadius.all(Radius.circular(10.r))
+          borderRadius: BorderRadius.all(Radius.circular(10.r)),
         ),
         child: Row(
           children: [
@@ -338,10 +355,11 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<Map<String, dynamic>>(
                   value: _selectedProvider,
-                 // dropdownColor: themeContext.offWhiteBg,
+                  // dropdownColor: themeContext.offWhiteBg,
                   borderRadius: BorderRadius.circular(10.r),
-                  icon: Icon(Icons.arrow_drop_down_rounded,
-                     // color: themeContext.secondaryTextColor, size: 20.sp
+                  icon: Icon(
+                    Icons.arrow_drop_down_rounded,
+                    // color: themeContext.secondaryTextColor, size: 20.sp
                   ),
                   selectedItemBuilder: (_) {
                     return _providers.map((provider) {
@@ -385,15 +403,15 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
                 ),
               ),
             ),
+
             /// 👤 Icon
             SvgPicture.asset('assets/svg/line.svg'),
-            SizedBox(width: 10.w,),
+            SizedBox(width: 10.w),
+
             /// 📞 Input field
             Expanded(
               flex: 5,
-              child: CustomTextField(
-                hint: 'Kano Electricity (KEDCO)',
-              ),
+              child: CustomTextField(hint: 'Kano Electricity (KEDCO)'),
             ),
           ],
         ),
@@ -415,7 +433,8 @@ class AirtimeAmountSelector extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AirtimeAmountSelector> createState() => _AirtimeAmountSelectorState();
+  ConsumerState<AirtimeAmountSelector> createState() =>
+      _AirtimeAmountSelectorState();
 }
 
 class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
@@ -445,8 +464,6 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-
         /// 💰 Amount Grid (matching your image layout)
         Text(
           'Enter Amount',
@@ -455,10 +472,9 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
           //   fontWeight: FontWeight.w600,
           // ),
         ),
-        SizedBox(height: 10.h,),
+        SizedBox(height: 10.h),
 
         /// 🔹 Pay Button
-
         Row(
           children: [
             Expanded(
@@ -466,12 +482,12 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w,),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
                   decoration: BoxDecoration(
-                      border: Border.all(
-                        //  color: context.themeContext.checkboxBorderColor
-                      ),
-                      borderRadius: BorderRadius.all(Radius.circular(10.r))
+                    border: Border.all(
+                      //  color: Theme.of(context)Context.checkboxBorderColor
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(10.r)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -503,7 +519,9 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                     context,
                     amount: amount,
                     networkName: widget.selectedProvider?['name'] ?? 'MTN',
-                    networkLogo: widget.selectedProvider?['logo'] ?? 'assets/svg/mtn.jpg',
+                    networkLogo:
+                        widget.selectedProvider?['logo'] ??
+                        'assets/svg/mtn.jpg',
                     recipientNumber: widget.phoneNumber ?? '',
                   );
                 },
@@ -511,7 +529,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
             ),
           ],
         ),
-        SizedBox(height: 20.h,),
+        SizedBox(height: 20.h),
         Text(
           'Select Amount',
           textAlign: TextAlign.start,
@@ -519,7 +537,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
           //   fontWeight: FontWeight.w600,
           // ),
         ),
-        SizedBox(height: 10.h,),
+        SizedBox(height: 10.h),
 
         /// 🔹 Clean grid layout
         Wrap(
@@ -552,7 +570,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(
-                   // color: isSelected ? themeContext.kPrimary : Colors.grey.shade300,
+                    // color: isSelected ? themeContext.kPrimary : Colors.grey.shade300,
                     width: 1.3,
                   ),
                 ),
@@ -561,7 +579,7 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                   // color: themeContext.titleTextColor,
+                    // color: themeContext.titleTextColor,
                     fontSize: 14.sp,
                   ),
                 ),
@@ -570,7 +588,6 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
           }),
         ),
         SizedBox(height: 25.h),
-
       ],
     );
   }
@@ -589,13 +606,12 @@ class BeneficiarySelector extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<BeneficiarySelector> createState() => _BeneficiarySelectorState();
+  ConsumerState<BeneficiarySelector> createState() =>
+      _BeneficiarySelectorState();
 }
 
 class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
   final TextEditingController _amountController = TextEditingController();
-
-
 
   Map<String, dynamic>? _selectedProvider;
   String _phoneNumber = '';
@@ -608,8 +624,6 @@ class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-
         /// 💰 Amount Grid (matching your image layout)
         Text(
           'Select Beneficiary',
@@ -618,7 +632,7 @@ class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
           //   fontWeight: FontWeight.w600,
           // ),
         ),
-        SizedBox(height: 10.h,),
+        SizedBox(height: 10.h),
         BeneficiaryTabSection(
           favorites: [
             {"name": "Mustapha Garba", "account": "0123456789"},
@@ -631,9 +645,9 @@ class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
             {"name": "John Musa", "account": "0345678912"},
           ],
           onSelectBeneficiary: (name, account) {
-            print('Selected $name - $account');
+            debugPrint('Selected $name - $account');
           },
-          onSearchTap: () => print('Search tapped'),
+          onSearchTap: () => debugPrint('Search tapped'),
 
           // optional config:
           showProgress: false, // hide progress circle
@@ -641,19 +655,19 @@ class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
         ),
 
         SizedBox(height: 25.h),
-
       ],
     );
   }
 }
+
 /// 🔹 Bottom Sheet Confirmation
 void showAirtimeConfirmationSheet(
-    BuildContext context, {
-      required int amount,
-      required String networkName,
-      required String networkLogo,
-      required String recipientNumber,
-    }) {
+  BuildContext context, {
+  required int amount,
+  required String networkName,
+  required String networkLogo,
+  required String recipientNumber,
+}) {
   final currencySymbol = Constants.nairaCurrencySymbol;
 
   showModalBottomSheet(
@@ -683,8 +697,9 @@ void showAirtimeConfirmationSheet(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: SvgPicture.asset('assets/svg/cancel.svg',
-               // color: context.themeContext.secondaryTextColor,
+              child: SvgPicture.asset(
+                'assets/svg/cancel.svg',
+                // color: Theme.of(context)Context.secondaryTextColor,
               ),
             ),
 
@@ -698,7 +713,7 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 14.spMin, // smaller ₦
                         fontWeight: FontWeight.w600,
-                      //  color: context.themeContext.titleTextColor,
+                        //  color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                     TextSpan(
@@ -706,21 +721,20 @@ void showAirtimeConfirmationSheet(
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                      //  color: context.themeContext.titleTextColor,
+                        //  color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-      SizedBox(height: 20.h,),
+            SizedBox(height: 20.h),
 
-
-      // 📄 Transaction summary
+            // 📄 Transaction summary
             Container(
-              padding: EdgeInsets.symmetric( vertical: 18, horizontal: 16),
+              padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-             //   color: context.themeContext.offWhiteBg,
+                //   color: Theme.of(context)Context.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -731,7 +745,7 @@ void showAirtimeConfirmationSheet(
                     children: [
                       Text(
                         'Product Name',
-                        style: context.textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey.shade600,
                         ),
                       ),
@@ -748,11 +762,11 @@ void showAirtimeConfirmationSheet(
                               ),
                             ),
                           ),
-                          SizedBox(height: 6.h,),
+                          SizedBox(height: 6.h),
 
                           Text(
                             networkName,
-                            style: context.textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.black87,
                               fontWeight: FontWeight.w600,
                             ),
@@ -761,8 +775,16 @@ void showAirtimeConfirmationSheet(
                       ),
                     ],
                   ),
-                  _buildSummaryRow(context, 'Recipient Mobile', recipientNumber),
-                  _buildSummaryRow(context, 'Amount', '$currencySymbol$amount.00'),
+                  _buildSummaryRow(
+                    context,
+                    'Recipient Mobile',
+                    recipientNumber,
+                  ),
+                  _buildSummaryRow(
+                    context,
+                    'Amount',
+                    '$currencySymbol$amount.00',
+                  ),
                   _buildSummaryRow(
                     context,
                     'Use Cashback (${currencySymbol}34.00)',
@@ -780,20 +802,20 @@ void showAirtimeConfirmationSheet(
             ),
 
             Divider(color: Colors.grey.shade300),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
             // 💳 Payment Method
             Text(
               'Payment Method',
-              style: context.textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w400,
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
 
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric( vertical: 16, horizontal: 18),
+              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 18),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
@@ -803,7 +825,7 @@ void showAirtimeConfirmationSheet(
                 children: [
                   Text(
                     'Available Balance (${currencySymbol}314,171.32)',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
@@ -812,13 +834,16 @@ void showAirtimeConfirmationSheet(
               ),
             ),
 
-            SizedBox(height: 20.h,),
-
+            SizedBox(height: 20.h),
 
             // 🟩 Pay Button
             Padding(
-                padding: EdgeInsets.symmetric( horizontal: 10.w),
-                child: CustomButton(buttonColor: Colors.white, buttonTextColor: Colors.white, buttonName: 'Pay')
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: CustomButton(
+                buttonColor: Colors.white,
+                buttonTextColor: Colors.white,
+                buttonName: 'Pay',
+              ),
             ),
           ],
         ),
@@ -829,12 +854,12 @@ void showAirtimeConfirmationSheet(
 
 /// 🔹 Helper Summary Row Widget
 Widget _buildSummaryRow(
-    BuildContext context,
-    String title,
-    String value, {
-      bool bonus = false,
-      bool hasToggle = false,
-    }) {
+  BuildContext context,
+  String title,
+  String value, {
+  bool bonus = false,
+  bool hasToggle = false,
+}) {
   return Padding(
     padding: EdgeInsets.symmetric(vertical: 6.h),
     child: Row(
@@ -842,7 +867,7 @@ Widget _buildSummaryRow(
       children: [
         Text(
           title,
-          style: context.textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Colors.grey.shade600,
           ),
         ),
@@ -857,13 +882,8 @@ Widget _buildSummaryRow(
                 ),
               )
             else
-              Text(
-                  value,
-                  style: context.textTheme.bodyMedium?.copyWith(
-                  )
-
-              ),
-            SizedBox(height: 5.h,),
+              Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith()),
+            SizedBox(height: 5.h),
             if (hasToggle)
               GestureDetector(
                 onTap: () {},
@@ -872,11 +892,13 @@ Widget _buildSummaryRow(
                   width: 25,
                   height: 15,
                   decoration: BoxDecoration(
-                   // color: false ? context.themeContext.kPrimary : Colors.grey.shade300,
+                    // color: false ? Theme.of(context)Context.kPrimary : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(
-                    alignment: false ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: false
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: Container(
                       width: 10.w,
                       height: 10.h,
@@ -898,11 +920,11 @@ Widget _buildSummaryRow(
 
 /// 🔹 Helper Payment Row Widget
 Widget _buildPaymentRow(
-    BuildContext context,
-    String method,
-    String amount, {
-      required bool selected,
-    }) {
+  BuildContext context,
+  String method,
+  String amount, {
+  required bool selected,
+}) {
   return Padding(
     padding: EdgeInsets.symmetric(vertical: 8.h),
     child: Row(
@@ -910,9 +932,7 @@ Widget _buildPaymentRow(
       children: [
         Text(
           method,
-          style: context.textTheme.bodyMedium?.copyWith(
-            color: Colors.black87,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
         ),
         Row(
           children: [

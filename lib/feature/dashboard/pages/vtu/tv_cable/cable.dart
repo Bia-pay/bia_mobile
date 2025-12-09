@@ -2,7 +2,7 @@ import 'package:bia/core/__core.dart';
 import 'package:bia/core/constraint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 
 import '../../../../../app/utils/colors.dart';
 
@@ -24,7 +24,7 @@ class _CableTvState extends State<CableTv> {
         preferredSize: Size.fromHeight(62.h(context)),
         child: Container(
           padding: padR(context, horizontal: 120.w(context)),
-        //  color: context.themeContext.grayWhiteBg,
+          //  color: Theme.of(context)Context.grayWhiteBg,
           alignment: Alignment.center,
           child: RRow(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -42,9 +42,7 @@ class _CableTvState extends State<CableTv> {
                   5.hSpace(context),
                   Text(
                     'CableTv',
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      fontSize: 18,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 18),
                   ),
                 ],
               ),
@@ -72,7 +70,7 @@ class _CableTvState extends State<CableTv> {
                   height: 50.h(context),
                   padding: padR(context, horizontal: 42),
                   decoration: BoxDecoration(
-                    //color: context.themeContext.offWhiteBg,
+                    //color: Theme.of(context)Context.offWhiteBg,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -87,7 +85,7 @@ class _CableTvState extends State<CableTv> {
                           children: [
                             Text(
                               '${Constants.nairaCurrencySymbol}100',
-                              style: context.textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 //color: primaryColor,
                                 fontSize: 15.sp(context),
                                 fontWeight: FontWeight.w600,
@@ -100,15 +98,15 @@ class _CableTvState extends State<CableTv> {
                         children: [
                           Text(
                             '(1)',
-                            style: context.textTheme.labelMedium?.copyWith(
-                              //color: context.themeContext.secondaryTextColor,
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              //color: Theme.of(context)Context.secondaryTextColor,
                             ),
                           ),
                           10.hSpace(context),
                           Icon(
                             Icons.arrow_forward_ios_outlined,
                             size: 12.sp(context),
-                           // color: context.themeContext.secondaryTextColor,
+                            // color: Theme.of(context)Context.secondaryTextColor,
                           ),
                         ],
                       ),
@@ -127,16 +125,18 @@ class _CableTvState extends State<CableTv> {
                 Container(
                   padding: padR(context, vertical: 17, horizontal: 35),
                   decoration: BoxDecoration(
-                  //  color: context.themeContext.tertiaryBackgroundColor,
+                    //  color: Theme.of(context)Context.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('CableTv Service',
-                          style: context.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          )),
+                      Text(
+                        'CableTv Service',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       10.vSpace(context),
                     ],
                   ),
@@ -169,7 +169,7 @@ class _CardOneState extends State<CardOne> {
     return Container(
       padding: padR(context, vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-       // color: context.themeContext.tertiaryBackgroundColor,
+        // color: Theme.of(context)Context.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
@@ -189,7 +189,7 @@ class _CardOneState extends State<CardOne> {
               selectedProvider: _selectedProvider,
               phoneNumber: _smartcardNumber,
               onAmountSelected: (amount) {
-                print('Selected amount: ₦$amount');
+                debugPrint('Selected amount: ₦$amount');
               },
             ),
           ],
@@ -290,7 +290,7 @@ class _CableProviderDropdownState extends State<CableProviderDropdown> {
                         8.hSpace(context),
                         Text(
                           provider['name'],
-                          style: context.textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontSize: 11.sp(context),
                             fontWeight: FontWeight.w600,
                           ),
@@ -345,12 +345,12 @@ class _CableProviderDropdownState extends State<CableProviderDropdown> {
             height: 30.h(context),
             width: 60.w(context),
             decoration: BoxDecoration(
-            //  color: context.themeContext.kSecondary,
+              //  color: Theme.of(context)Context.kSecondary,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
             child: Icon(
               Icons.person_rounded,
-             // color: primaryColor,
+              // color: primaryColor,
               size: 18,
             ),
           ),
@@ -397,7 +397,8 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
       'title': 'Confam / month',
       'price': 11000,
       'cashback': '₦20 Cashback',
-      'channels': 'Family time comes first with over 105+ channels, entertainment and sports.',
+      'channels':
+          'Family time comes first with over 105+ channels, entertainment and sports.',
       'image': 'assets/images/confam.jpg',
     },
     {
@@ -411,14 +412,16 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
       'title': 'Padi / month',
       'price': 4400,
       'cashback': '₦20 Cashback',
-      'channels': 'Enjoy over 45+ channels, thrilling Nollywood movies and dramas.',
+      'channels':
+          'Enjoy over 45+ channels, thrilling Nollywood movies and dramas.',
       'image': 'assets/images/padi.jpg',
     },
     {
       'title': 'Compact Plus / month',
       'price': 26000,
       'cashback': '₦20 Cashback',
-      'channels': 'Get more action with Premier League, movies and local series.',
+      'channels':
+          'Get more action with Premier League, movies and local series.',
       'image': 'assets/images/compact_plus.png',
     },
   ];
@@ -473,9 +476,7 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected
-                              ? primaryColor
-                              : Colors.transparent,
+                          color: isSelected ? primaryColor : Colors.transparent,
                           width: 1.5,
                         ),
                         image: DecorationImage(
@@ -506,7 +507,9 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                             if (plan['tag'] == 'Hot')
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.redAccent,
                                   borderRadius: BorderRadius.circular(20),

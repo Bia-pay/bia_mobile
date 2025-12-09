@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../app/utils/image.dart';
 import '../dashboard/pages/homepage.dart';
-import '../dashboard/send_money/scan_transfer/scanner_onboarding.dart';
+import '../dashboard/pages/send_money/scan_transfer/scanner_onboarding.dart';
 import '../settings/presentation/account_settings.dart';
 
 class BottomNavBar extends StatefulWidget {

@@ -26,7 +26,10 @@ const offWhite = Color(0xFFFFFFFF);
 ///
 const errorColor = Color(0xFFEF4444); // bright red
 /// ✅ SUCCESS GREEN
-const successColor = Color(0xFF22C55E); // main green for success messages, icons
+const successColor = Color(0xFF22C55E);
+const pendingColor = Color(0xFFFFDA60);
+const primaryGreenColor = Color(0xFF49C25B);
+const successTextColor = Color(0xFF1A9C47); // main green for success messages, icons
 const successLight = Color(0xFFD1FAE5); // light green background for containers, badges,
 const errorLight = Color(0xFFFEE2E2); // light red background for icons, containers, etc.
 /// 🌑 DARK THEME COLORS

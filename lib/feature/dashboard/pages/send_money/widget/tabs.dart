@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../app/utils/colors.dart';
+
+import '../../../../../app/utils/colors.dart';
 
 class BeneficiaryTabSection extends ConsumerStatefulWidget {
   final List<Map<String, String>> favorites;
@@ -46,7 +47,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-           // color: context.themeContext.pinfieldTextColor,
+           // color: Theme.of(context)Context.pinfieldTextColor,
             borderRadius: BorderRadius.circular(15.r),
           ),
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),

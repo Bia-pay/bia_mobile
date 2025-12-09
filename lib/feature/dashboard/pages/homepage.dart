@@ -1,10 +1,11 @@
 import 'package:bia/core/__core.dart';
 import 'package:bia/feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/custom_button.dart';
@@ -22,13 +23,67 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-
+  bool showMore = false;
   Future<void> _handleRefresh() async {
     final txFuture = ref.read(recentTransactionsProvider.notifier).refresh();
     final walletFuture = ref.read(dashboardControllerProvider.notifier)
         .refreshWalletBalance();
 
     await Future.wait([txFuture, walletFuture]);
+  }
+  List<Map<String, dynamic>> _quickActions(BuildContext context) => [
+    {
+      'label': 'Airtime',
+      'icon': Icon(Icons.bar_chart, color: primaryColor),
+      'onTap': () => context.pushReplacementNamed(RouteList.airtime),
+    },
+    {
+      'label': 'Data',
+      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
+      'onTap': () => context.pushReplacementNamed(RouteList.data),
+    },
+    {
+      'label': 'Cable TV',
+      'icon': Icon(Icons.tv, color: primaryColor),
+      'onTap': () => context.pushReplacementNamed(RouteList.cable),
+    },
+    {
+      'label': 'Tiktok Coin',
+      'icon': Image.asset(tiktok, height: 23.h),
+      'onTap': () => context.pushNamed(RouteList.electricity),
+    },
+    {
+      'label': 'Utility Bill',
+      'icon': Icon(Icons.electrical_services, color: primaryColor),
+      'onTap': () => context.pushNamed(RouteList.electricity),
+    },
+    {
+      'label': 'Internet',
+      'icon': Icon(Icons.wifi, color: primaryColor),
+      'onTap': () {},
+    },
+  ];
+
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        _checkPinStatus();
+      });
+    });
+  }
+  Future<void> _checkPinStatus() async {
+    final box = Hive.box('authBox');
+    final hasPin = box.get('has_pin', defaultValue: false);
+
+    if (!hasPin) {
+      // Show bottom sheet for PIN
+      //Navigator.pushNamed(context, RouteList.setTransactionPin);
+      context.go( RouteList.setTransactionPin);
+
+    }
   }
 
   @override
@@ -44,17 +99,15 @@ class _HomePageState extends ConsumerState<HomePage> {
         resizeToAvoidBottomInset: false,
         body: SafeArea(
           child: ListView(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 1.h),
             children: [
-
-              // TOP SECTION: WELCOME + ICON
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
                       Container(
-                        height: 42.h,
+                        height: 40.h,
                         width: 45.w,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(100),
@@ -63,11 +116,26 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: Image.asset(appLogoPng),
                       ),
                       SizedBox(width: 10.w),
-                      Text(
-                        'Hello, $fullname',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello,',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: lightSecondaryText,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                          Text(
+                            fullname,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: lightText,
+                              fontSize: 13.sp,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -80,17 +148,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ],
               ),
-
               SizedBox(height: 10.h),
-
-              // BALANCE CARD
-              const BalanceCard(),
-
+              BalanceCard(),
               SizedBox(height: 10.h),
-
-              // QUICK SEND ROW
               Container(
-                padding: EdgeInsets.symmetric(vertical: 19.h, horizontal: 5.w),
+                padding: EdgeInsets.symmetric(vertical: 14.h, ),
                 decoration: BoxDecoration(
                   color: offWhite,
                   borderRadius: BorderRadius.circular(8),
@@ -99,20 +161,50 @@ class _HomePageState extends ConsumerState<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ActionButton(
-                      label: 'Send TP',
+                      label: 'Send TP      ',
                       icon: SvgPicture.asset(send),
                       onTap: () => Navigator.pushNamed(
                         context,
                         RouteList.sendMoneyTransfer,
                       ),
                     ),
-                    ActionButton(
-                      label: 'Bia Trike',
-                      icon: Icon(Icons.car_crash_sharp, color: primaryColor),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ActionButton(
+                          label: 'Bia Trike',
+                          icon: Icon(Icons.car_crash_sharp, color: primaryColor),
+                          onTap: () {
+                            // Optional: show a SnackBar
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Bia Trike coming soon!')),
+                            );
+                          },
+                        ),
+                        Positioned(
+                          top: -5.h,
+                          right: -20.w,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: primaryGreenColor,
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Text(
+                              'Coming Soon',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 6.sp,
+                                color: whiteBackground,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     ActionButton(
                       label: 'Other Banks',
-                      icon: Image.asset(atm, height: 23.h),
+                      icon: Image.asset(atm, height: 21.h),
                       onTap: () => Navigator.pushNamed(
                         context,
                         RouteList.sendMoneyToBank,
@@ -121,75 +213,133 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
               ),
-
-              SizedBox(height: 10.h),
-
-              // QUICK ACTION TITLE
+              SizedBox(height: 8.h),
               Text(
                 'Quick Actions',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.sp,
                 ),
               ),
-
               SizedBox(height: 8.h),
-
-              // QUICK ACTION BUTTONS
               Container(
-                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 25.w),
+                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 15.w),
                 decoration: BoxDecoration(
                   color: offWhite,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
                   children: [
-                    QuickActionButton(
-                      label: 'Airtime',
-                      icon: Icon(Icons.bar_chart, color: primaryColor),
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        RouteList.airtime,
-                      ),
+                    // FIRST ROW (exactly 4 items)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(mic,height: 50.h,
+                          color: primaryColor,
+                        ), SvgPicture.asset(chatting,height: 50.h,
+                          color: primaryColor,
+                        ),
+                      ],
                     ),
-                    QuickActionButton(
-                      label: 'Data',
-                      icon: Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        RouteList.data,
-                      ),
+                    SizedBox(height: 5.h),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Bia AI',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                            color: primaryColor,
+
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            RouteList.transactionHistory,
+                          ),
+                          child:Icon(Icons.arrow_forward_ios_sharp,size: 12.sp, color: primaryColor ),
+                        ),
+                      ],
                     ),
-                    QuickActionButton(
-                      label: 'Cable TV',
-                      icon: Icon(Icons.tv, color: primaryColor),
-                      onTap: () => Navigator.pushReplacementNamed(
-                        context,
-                        RouteList.cable,
-                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10.h),
+
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 5.w),
+                decoration: BoxDecoration(
+                  color: offWhite,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    // FIRST ROW (exactly 4 items)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: _quickActions(context)
+                          .take(4)
+                          .map((item) => QuickActionButton(
+                        label: item['label'],
+                        icon: item['icon'],
+                        onTap: item['onTap'],
+                      ))
+                          .toList(),
                     ),
-                    QuickActionButton(
-                      label: 'Utility Bill',
-                      icon: Icon(Icons.accessibility, color: primaryColor),
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        RouteList.electricity,
+
+                    SizedBox(height: 5.h),
+
+                    // SECOND ROW (only visible if showMore)
+                    if (showMore)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: _quickActions(context)
+                            .skip(4)
+                            .map((item) => QuickActionButton(
+                          label: item['label'],
+                          icon: item['icon'],
+                          onTap: item['onTap'],
+                        ))
+                            .toList(),
+                      ),
+
+
+                    // MORE / LESS TOGGLE
+                    GestureDetector(
+                      onTap: () => setState(() => showMore = !showMore),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            showMore ? "Less" : "More",
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
+                          ),
+                          Icon(
+                            showMore ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            color: primaryColor,
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-
-              SizedBox(height: 10.h),
-
-              // TRANSACTION HISTORY TITLE
+              SizedBox(height: 8.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Transaction History',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.sp,
                     ),
                   ),
                   GestureDetector(
@@ -208,31 +358,26 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ],
               ),
-
-              SizedBox(height: 10.h),
+              SizedBox(height: 8.h),
               Consumer(
                 builder: (context, ref, _) {
                   final asyncTx = ref.watch(recentTransactionsProvider);
-
                   return asyncTx.when(
                     data: (transactions) {
                       if (transactions.isEmpty) {
                         return const Center(child: Text("No recent transactions"));
                       }
-
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: transactions.length,
                         itemBuilder: (context, index) {
                           final tx = transactions[index];
-
                           final titleText = tx.serviceType == "TOPUP"
-                              ? (tx.provider ?? "Top Up")
+                              ? (tx.serviceType ?? "Top Up")
                               : (tx.isCredit
                               ? (tx.senderName ?? "Unknown")
                               : (tx.receiverName ?? "Unknown"));
-
                           return Container(
                             margin: EdgeInsets.only(bottom: 6.h),
                             decoration: BoxDecoration(
@@ -243,29 +388,87 @@ class _HomePageState extends ConsumerState<HomePage> {
                               leading: Container(
                                 padding: EdgeInsets.all(8.r),
                                 decoration: BoxDecoration(
-                                  color: tx.isCredit ? successColor.withOpacity(0.1) : errorColor.withOpacity(0.1),
-                                  shape: BoxShape.circle
+                                  color: tx.status == "PENDING"
+                                      ? pendingColor.withOpacity(0.1)
+                                      : tx.isCredit
+                                      ? successColor.withOpacity(0.1)
+                                      : errorColor.withOpacity(0.1),
+                                  shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   tx.isCredit ? Icons.call_received : Icons.call_made,
-                                  color: tx.isCredit ? successColor : errorColor,
+                                  color: tx.status == "PENDING"
+                                      ? pendingColor
+                                      : tx.isCredit
+                                      ? successColor
+                                      : errorColor,
+                                  size: 20.sp,
                                 ),
                               ),
-                              title: Text(titleText),
+                              title: Text(
+                                titleText,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.sp,
+                                  color: tx.status == "PENDING"
+                                      ? pendingColor
+                                      : lightSecondaryText,
+                                ),
+                              ),
                               subtitle: Text(
                                 formatTransactionDate(tx.createdAt),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w300,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText,
                                 ),
                               ),
-                              trailing: Text(
-                                "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: tx.isCredit ? successColor : errorColor,
-                                ),
+                              trailing: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13.sp,
+                                      color: tx.status == "PENDING"
+                                          ? pendingColor
+                                          : tx.isCredit
+                                          ? successTextColor
+                                          : errorColor,
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 2.h),
+
+                                  /// BADGE
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: tx.status == "PENDING"
+                                          ? pendingColor.withOpacity(0.1)
+                                          : tx.isCredit
+                                          ? successColor.withOpacity(0.1)
+                                          : errorColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4.r),
+                                    ),
+                                    child: Text(
+                                      tx.status ?? "",
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 8.sp,
+                                        color: tx.status == "PENDING"
+                                            ? pendingColor
+                                            : tx.isCredit
+                                            ? successTextColor
+                                            : errorColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
+                            )
                           );
                         },
                       );
@@ -287,24 +490,23 @@ class BalanceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final theme = Theme.of(context);
 
-    // 🔹 Listen to the wallet balance from DashboardController
+    // Wallet visibility state
+    final isVisible = ref.watch(balanceVisibilityProvider);
+
+    // Wallet balance from controller
     final walletState = ref.watch(dashboardControllerProvider);
 
-    // Extract wallet info safely
     final wallet = walletState.when(
       data: (responseBody) => responseBody?.wallet,
       loading: () => null,
       error: (_, __) => null,
     );
 
-    // Get balance from wallet or fallback to Hive
     final balance = wallet?.balance?.toString() ??
         Hive.box('authBox').get('balance', defaultValue: '0').toString();
 
-    // Format balance with commas
     final formattedBalance = balance.isEmpty
         ? '0'
         : balance.replaceAllMapped(
@@ -321,20 +523,42 @@ class BalanceCard extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// 💰 Balance Texts
+          /// Left side: Label + Balance + Eye Icon
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Available Balance',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white,
-                  fontSize: 12.sp,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Available Balance',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+
+                  /// 👁 Visibility Toggle
+                  GestureDetector(
+                    onTap: () {
+                      ref.read(balanceVisibilityProvider.notifier).state =
+                      !isVisible;
+                    },
+                    child: Icon(
+                      isVisible ? Icons.visibility : Icons.visibility_off,
+                      size: 16.sp,
+                      color: Colors.white,
+                    ),
+                  )
+                ],
               ),
               SizedBox(height: 4.h),
+
+              /// Balance display
               Text(
-                '${Constants.nairaCurrencySymbol}$formattedBalance',
+                isVisible
+                    ? '${Constants.nairaCurrencySymbol}$formattedBalance'
+                    : '******',
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -346,7 +570,7 @@ class BalanceCard extends ConsumerWidget {
 
           /// ➕ Add Money Button
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, RouteList.topUp),
+            onTap: () => context.pushNamed(RouteList.topUp),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
               decoration: BoxDecoration(
@@ -360,7 +584,7 @@ class BalanceCard extends ConsumerWidget {
                   SizedBox(width: 6.w),
                   Text(
                     'Add money',
-                    style: context.textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
@@ -396,7 +620,7 @@ class ActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 20.w),
+            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 11.w),
             decoration: BoxDecoration(
              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
@@ -406,10 +630,10 @@ class ActionButton extends StatelessWidget {
           SizedBox(height: 10.h),
           Text(
             label,
-            style: context.textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              fontSize: 11.sp,
             ),
           ),
         ],
@@ -440,7 +664,7 @@ class QuickActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 9.w),
             decoration: BoxDecoration(
              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
@@ -450,10 +674,10 @@ class QuickActionButton extends StatelessWidget {
           SizedBox(height: 10.h),
           Text(
             label,
-            style: context.textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12.sp,
+              fontWeight: FontWeight.w700,
+              fontSize: 10.sp,
             ),
           ),
         ],
@@ -462,14 +686,14 @@ class QuickActionButton extends StatelessWidget {
   }
 }
 
-class _SetPinSheet extends ConsumerStatefulWidget {
-  const _SetPinSheet({super.key});
+class SetPinSheet extends ConsumerStatefulWidget {
+  const SetPinSheet({super.key});
 
   @override
-  ConsumerState<_SetPinSheet> createState() => _SetPinSheetState();
+  ConsumerState<SetPinSheet> createState() => SetPinSheetState();
 }
 
-class _SetPinSheetState extends ConsumerState<_SetPinSheet> {
+class SetPinSheetState extends ConsumerState<SetPinSheet> {
   final pinController = TextEditingController();
   bool isLoading = false;
 

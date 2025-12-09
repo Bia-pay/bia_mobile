@@ -27,14 +27,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   DashboardController(this.dashboardRepository) : super(const AsyncLoading());
 
 
-  Future<ResponseModel?> sendMoney(
-      BuildContext context,
-      String account,
-      String amount,
-      String narration,
-      String pin,
-      {required bool save} // Added 'save' parameter
-      ) async {
+  Future<ResponseModel?> sendMoney(BuildContext context,String account,String amount,String narration,String pin,{required bool save}) async {
 
     if (account.isEmpty || amount.isEmpty || narration.isEmpty || pin.isEmpty ) {
       // Note: 'save' is a bool, so it cannot be empty, no need to check it here.
@@ -94,11 +87,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     }
   }
   // ✅ SET PIN
-  Future<ResponseModel?> setPin(
-      BuildContext context,
-      String pin,
-      String confirmPin,
-      ) async {
+  Future<ResponseModel?> setPin(BuildContext context,String pin,String confirmPin,) async {
     if (pin.isEmpty || confirmPin.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -116,13 +105,11 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         maskType: EasyLoadingMaskType.black,
         dismissOnTap: false,
       );
-
       Map<String, dynamic> body = {'pin': pin, 'confirmPin': confirmPin};
       debugPrint("➡️ Setting PIN: $body");
 
       final ResponseModel response = await dashboardRepository.setPin(body);
       EasyLoading.dismiss();
-
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
@@ -130,7 +117,6 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         iconColor: response.responseSuccessful ? Colors.green : Colors.red,
         position: ToastPosition.top,
       );
-
       return response;
     } catch (e) {
       EasyLoading.dismiss();
@@ -164,16 +150,11 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         maskType: EasyLoadingMaskType.black,
         dismissOnTap: false,
       );
-
       final Map<String, dynamic> body = {"account": account.trim()};
-
       debugPrint("➡️ Verifying account: $body");
       final ResponseModel response = await dashboardRepository.verifyAccount(body);
 
       EasyLoading.dismiss();
-
-
-
       return response;
     } catch (e) {
       EasyLoading.dismiss();
@@ -296,7 +277,9 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       debugPrint("❌ Error fetching recent beneficiaries from API: $e");
       return [];
     }
-  }  Future<void> loadWalletBalance() async {
+  }
+
+  Future<void> loadWalletBalance() async {
     // Load saved balance immediately from Hive first
     final box = Hive.box('authBox');
     final savedBalance = box.get('balance', defaultValue: '0');
@@ -403,4 +386,62 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     }
   }
 
+  Future<ResponseModel?> changePin(BuildContext context,String oldPin,String newPin,String confirmNewPin, ) async {
+
+    if (oldPin.isEmpty || newPin.isEmpty || confirmNewPin.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields are required.",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    if (newPin != confirmNewPin) {
+      ToastHelper.showToast(
+        context: context,
+        message: "New PIN and Confirm PIN do not match.",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+      final body = {
+        "currentPin": oldPin,
+        "newPin": newPin,
+        "confirmNewPin": confirmNewPin,
+      };
+      debugPrint("➡️ Updating PIN: $body");
+      final response = await dashboardRepository.changePin(body);
+      EasyLoading.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful ? Icons.check_circle : Icons.error,
+        iconColor: response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
 }
