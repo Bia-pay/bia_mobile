@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../app/utils/colors.dart';
-import '../../../../app/view/widget/app_bar.dart';
-import '../../../../app/view/widget/app_search_field.dart';
+import '../../../../../app/view/widget/app_bar.dart';
+import '../../../../../app/view/widget/app_search_field.dart';
 import '../widget/tabs.dart';
 
 class SendMoneyToBank extends ConsumerStatefulWidget {

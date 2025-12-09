@@ -12,18 +12,20 @@ import '../../../feature/auth/presentation/pages/welcome_back.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password2.dart';
 import '../../../feature/bottom_nav_bar/bottom_nav.dart';
+import '../../../feature/dashboard/pages/homepage.dart';
+import '../../../feature/dashboard/pages/send_money/input_transfer/amount.dart';
+import '../../../feature/dashboard/pages/send_money/input_transfer/send_money_transfer.dart';
+import '../../../feature/dashboard/pages/send_money/input_transfer/success.dart';
+import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner.dart';
+import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner_onboarding.dart';
+import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.dart';
+import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
+import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
 import '../../../feature/dashboard/pages/transaction_history.dart';
 import '../../../feature/dashboard/pages/vtu/airtime/airtime.dart';
 import '../../../feature/dashboard/pages/vtu/data/data.dart';
 import '../../../feature/dashboard/pages/vtu/tv_cable/cable.dart';
 import '../../../feature/dashboard/pages/vtu/utility/utility.dart';
-import '../../../feature/dashboard/send_money/input_transfer/amount.dart';
-import '../../../feature/dashboard/send_money/input_transfer/send_money_transfer.dart';
-import '../../../feature/dashboard/send_money/input_transfer/success.dart';
-import '../../../feature/dashboard/send_money/scan_transfer/scanner.dart';
-import '../../../feature/dashboard/send_money/scan_transfer/scanner_onboarding.dart';
-import '../../../feature/dashboard/send_money/to_bank/transfer_to_banks.dart';
-import '../../../feature/dashboard/send_money/top_up/add_money.dart';
 import '../../../feature/settings/presentation/change_password.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
 
@@ -63,6 +65,8 @@ class AppRouter {
       GoRoute(path: '/qr-scanner', name: RouteList.qrScannerScreen, builder: (context, state) => const QrScannerScreen()),
       GoRoute(path: '/qr-code', name: RouteList.qrScreen, builder: (context, state) => const QrScreen()),
       GoRoute(path: '/change-pin', name: RouteList.changePaymentPin, builder: (context, state) => const ChangePaymentPin()),
+      GoRoute(path: '/set-pin', name: RouteList.setTransactionPin, builder: (context, state) => const SetPinSheet()),
+      GoRoute(path: '/deposit-screen', name: RouteList.depositScreen, builder: (context, state) => const TopUpAmountPage()),
     ],
     errorBuilder: (context, state) => Scaffold(body: SafeArea(child: Center(child: Text('Route not found: ${state.uri}', textAlign: TextAlign.center)))),
   );

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../../../app/utils/image.dart';
-import '../../../../app/view/widget/app_textfield.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/view/widget/app_textfield.dart';
 import 'complete_transaction.dart';
 
 class AmountPage extends ConsumerStatefulWidget {

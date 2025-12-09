@@ -56,6 +56,8 @@ class RouteList {
   static const String confirmWalletPinScreen = '/confirmWalletPinScreen';
   static const String transactionHistory = '/transaction-history';
   static const String changePaymentPin = '/change-pin';
+  static const String setTransactionPin = '/set-pin';
+  static const String depositScreen = '/deposit-screen';
 
   // static const String twoFactorPinScreenCode = '/twoFactorPinScreenCode';
   // static const String animatedonboarding = '/animatedonboarding';

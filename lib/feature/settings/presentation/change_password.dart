@@ -1,18 +1,16 @@
 import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
+import 'package:get/get_utils/src/extensions/context_extensions.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:bia/core/__core.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/custom_button.dart';
 import '../../../app/utils/widgets/custom_appbar.dart';
 import '../../../app/utils/widgets/pin_field.dart';
 import '../../auth/authcontroller/authcontroller.dart';
+import 'package:bia/core/__core.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 
 class ChangePaymentPin extends ConsumerStatefulWidget {
@@ -62,7 +60,9 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
     }
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => NewPaymentPin(oldPin: oldPin.text)),
+      MaterialPageRoute(
+        builder: (_) => NewPaymentPin(oldPin: oldPin.text),
+      ),
     );
   }
 
@@ -72,12 +72,7 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
     return Scaffold(
       backgroundColor: offWhiteBackground,
       appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text(widget.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         backgroundColor: offWhiteBackground,
         elevation: 0,
         centerTitle: true,
@@ -87,12 +82,7 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
         child: Column(
           children: [
             SizedBox(height: 65.h),
-            Text(
-              'Enter OLD PIN',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text('Enter OLD PIN', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             SizedBox(height: 15.h),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 40),
@@ -108,10 +98,7 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
             if (showMinWarning)
               Padding(
                 padding: EdgeInsets.only(top: 6.h),
-                child: Text(
-                  "PIN must be 4 digits",
-                  style: theme.textTheme.bodySmall?.copyWith(color: errorColor),
-                ),
+                child: Text("PIN must be 4 digits", style: theme.textTheme.bodySmall?.copyWith(color: errorColor)),
               ),
             SizedBox(height: 120.h),
 
@@ -127,31 +114,13 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
                   mainAxisExtent: 70.h,
                 ),
                 itemBuilder: (context, index) {
-                  List<String> keys = [
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "x",
-                    "0",
-                    "ok",
-                  ];
+                  List<String> keys = ["1","2","3","4","5","6","7","8","9","x","0","ok"];
                   String key = keys[index];
                   Color keyColor = keyAColor;
                   Color textColor = lightSecondaryText;
 
-                  if (key == "x") {
-                    keyColor = primaryColor.withOpacity(0.1);
-                    textColor = primaryColor;
-                  } else if (key == "ok") {
-                    keyColor = primaryColor;
-                    textColor = whiteBackground;
-                  }
+                  if (key == "x") { keyColor = primaryColor.withOpacity(0.1); textColor = primaryColor; }
+                  else if (key == "ok") { keyColor = primaryColor; textColor = whiteBackground; }
 
                   return InkWell(
                     borderRadius: BorderRadius.circular(50.r),
@@ -159,54 +128,22 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
                     highlightColor: Colors.transparent,
                     onTap: () {
                       setState(() => _selectedIndex = index);
-                      if (key == "x")
-                        removeDigit();
-                      else if (key == "ok")
-                        _goToNewPinPage();
-                      else
-                        addDigit(key);
+                      if (key == "x") removeDigit();
+                      else if (key == "ok") _goToNewPinPage();
+                      else addDigit(key);
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _selectedIndex == index
-                            ? Colors.white
-                            : keyColor,
+                        color: _selectedIndex == index ? Colors.white : keyColor,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _selectedIndex == index
-                              ? primaryColor
-                              : Colors.transparent,
-                          width: 2,
-                        ),
+                        border: Border.all(color: _selectedIndex == index ? primaryColor : Colors.transparent, width: 2),
                       ),
                       alignment: Alignment.center,
                       child: key == "x"
-                          ? SvgPicture.asset(
-                              'assets/svg/cancel.svg',
-                              height: 20.h,
-                              colorFilter: ColorFilter.mode(
-                                primaryColor,
-                                BlendMode.srcIn,
-                              ),
-                            )
+                          ? SvgPicture.asset('assets/svg/cancel.svg', height: 20.h, colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn))
                           : key == "ok"
-                          ? Icon(
-                              Icons.arrow_forward,
-                              color: _selectedIndex == index
-                                  ? primaryColor
-                                  : textColor,
-                              size: 24.sp,
-                            )
-                          : Text(
-                              key,
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: _selectedIndex == index
-                                    ? primaryColor
-                                    : lightText,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 24.sp,
-                              ),
-                            ),
+                          ? Icon(Icons.arrow_forward, color: _selectedIndex == index ? primaryColor : textColor, size: 24.sp)
+                          : Text(key, style: theme.textTheme.headlineSmall?.copyWith(color: _selectedIndex == index ? primaryColor : lightText, fontWeight: FontWeight.w500, fontSize: 24.sp)),
                     ),
                   );
                 },
@@ -218,6 +155,7 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
     );
   }
 }
+
 
 class NewPaymentPin extends ConsumerStatefulWidget {
   final String oldPin;
@@ -258,20 +196,13 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
 
   void removeDigit() {
     setState(() {
-      if (activeController.text.isNotEmpty)
-        activeController.text = activeController.text.substring(
-          0,
-          activeController.text.length - 1,
-        );
+      if (activeController.text.isNotEmpty) activeController.text = activeController.text.substring(0, activeController.text.length - 1);
       _checkMinLimit();
     });
   }
 
   void _checkMinLimit() {
-    showMinWarning =
-        (newPin.text.length < 4 || confirmPin.text.length < 4) &&
-        newPin.text.isNotEmpty &&
-        confirmPin.text.isNotEmpty;
+    showMinWarning = (newPin.text.length < 4 || confirmPin.text.length < 4) && newPin.text.isNotEmpty && confirmPin.text.isNotEmpty;
   }
 
   Future<void> _confirmNewPin() async {
@@ -280,12 +211,7 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
       return;
     }
     if (newPin.text != confirmPin.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("New PIN and Confirm PIN do not match"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("New PIN and Confirm PIN do not match"), backgroundColor: Colors.red));
       return;
     }
     final controller = ref.read(dashboardControllerProvider.notifier);
@@ -298,9 +224,9 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
     );
 
     if (response != null && response.responseSuccessful) {
-      context.pushNamed(RouteList.bottomNavBar);
-    }
-  }
+      Navigator.pushNamed(
+          context,
+          RouteList.bottomNavBar);   }  }
 
   @override
   Widget build(BuildContext context) {
@@ -309,12 +235,7 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
     return Scaffold(
       backgroundColor: offWhiteBackground,
       appBar: AppBar(
-        title: Text(
-          "Set New PIN",
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text("Set New PIN", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         backgroundColor: offWhiteBackground,
         elevation: 0,
         centerTitle: true,
@@ -331,10 +252,7 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
             if (showMinWarning)
               Padding(
                 padding: EdgeInsets.only(top: 6.h),
-                child: Text(
-                  "PIN must be 4 digits",
-                  style: theme.textTheme.bodySmall?.copyWith(color: errorColor),
-                ),
+                child: Text("PIN must be 4 digits", style: theme.textTheme.bodySmall?.copyWith(color: errorColor)),
               ),
             SizedBox(height: 20.h),
 
@@ -350,31 +268,13 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
                   mainAxisExtent: 70.h,
                 ),
                 itemBuilder: (context, index) {
-                  List<String> keys = [
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "x",
-                    "0",
-                    "ok",
-                  ];
+                  List<String> keys = ["1","2","3","4","5","6","7","8","9","x","0","ok"];
                   String key = keys[index];
                   Color keyColor = keyAColor;
                   Color textColor = lightSecondaryText;
 
-                  if (key == "x") {
-                    keyColor = primaryColor.withOpacity(0.1);
-                    textColor = primaryColor;
-                  } else if (key == "ok") {
-                    keyColor = primaryColor;
-                    textColor = whiteBackground;
-                  }
+                  if (key == "x") { keyColor = primaryColor.withOpacity(0.1); textColor = primaryColor; }
+                  else if (key == "ok") { keyColor = primaryColor; textColor = whiteBackground; }
 
                   return InkWell(
                     borderRadius: BorderRadius.circular(50.r),
@@ -382,54 +282,22 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
                     highlightColor: Colors.transparent,
                     onTap: () {
                       setState(() => _selectedIndex = index);
-                      if (key == "x")
-                        removeDigit();
-                      else if (key == "ok")
-                        _confirmNewPin();
-                      else
-                        addDigit(key);
+                      if (key == "x") removeDigit();
+                      else if (key == "ok") _confirmNewPin();
+                      else addDigit(key);
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _selectedIndex == index
-                            ? Colors.white
-                            : keyColor,
+                        color: _selectedIndex == index ? Colors.white : keyColor,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _selectedIndex == index
-                              ? primaryColor
-                              : Colors.transparent,
-                          width: 2,
-                        ),
+                        border: Border.all(color: _selectedIndex == index ? primaryColor : Colors.transparent, width: 2),
                       ),
                       alignment: Alignment.center,
                       child: key == "x"
-                          ? SvgPicture.asset(
-                              'assets/svg/cancel.svg',
-                              height: 20.h,
-                              colorFilter: ColorFilter.mode(
-                                primaryColor,
-                                BlendMode.srcIn,
-                              ),
-                            )
+                          ? SvgPicture.asset('assets/svg/cancel.svg', height: 20.h, colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn))
                           : key == "ok"
-                          ? Icon(
-                              Icons.arrow_forward,
-                              color: _selectedIndex == index
-                                  ? primaryColor
-                                  : textColor,
-                              size: 24.sp,
-                            )
-                          : Text(
-                              key,
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: _selectedIndex == index
-                                    ? primaryColor
-                                    : lightText,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 24.sp,
-                              ),
-                            ),
+                          ? Icon(Icons.arrow_forward, color: _selectedIndex == index ? primaryColor : textColor, size: 24.sp)
+                          : Text(key, style: theme.textTheme.headlineSmall?.copyWith(color: _selectedIndex == index ? primaryColor : lightText, fontWeight: FontWeight.w500, fontSize: 24.sp)),
                     ),
                   );
                 },
@@ -444,12 +312,7 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
   Widget _buildPinField(String label, TextEditingController controller) {
     return Column(
       children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
+        Text(label, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
         SizedBox(height: 10.h),
         GestureDetector(
           onTap: () {
@@ -514,7 +377,7 @@ class _ConfirmChange2FAState extends ConsumerState<ConfirmChange2FA> {
   //     final data = jsonDecode(response.body);
   //     if (response.statusCode == 200 || response.statusCode == 201) {
   //       final jsonResponse = jsonDecode(response.body);
-  //       // debugPrint("✅ Two-factor PIN set successfully: $jsonResponse");
+  //       // print("✅ Two-factor PIN set successfully: $jsonResponse");
   //       Navigator.push(
   //         context,
   //         MaterialPageRoute(builder: (context) => TwoFactoradded()),
@@ -535,8 +398,8 @@ class _ConfirmChange2FAState extends ConsumerState<ConfirmChange2FA> {
   //         position: ToastPosition.top,
   //       );
   //
-  //       debugPrint("❌ Failed: ${response.statusCode} - ${response.body}");
-  //       debugPrint("❌ body: ${body}");
+  //       print("❌ Failed: ${response.statusCode} - ${response.body}");
+  //       print("❌ body: ${body}");
   //     }
   //   } catch (e) {
   //     ToastHelper.showToast(
@@ -546,7 +409,7 @@ class _ConfirmChange2FAState extends ConsumerState<ConfirmChange2FA> {
   //       iconColor: Colors.red,
   //       position: ToastPosition.top,
   //     );
-  //     debugPrint("⚠️ Error: $e");
+  //     print("⚠️ Error: $e");
   //   }
   // }
 
@@ -574,7 +437,7 @@ class _ConfirmChange2FAState extends ConsumerState<ConfirmChange2FA> {
                   children: [
                     Text(
                       "Confirm your code",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: context.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w400,
                         color: theme.brightness == Brightness.light
                             ? darkBackground
@@ -595,20 +458,20 @@ class _ConfirmChange2FAState extends ConsumerState<ConfirmChange2FA> {
                         fieldHeight: 50,
                         fieldWidth: 45,
                         inactiveColor:
-                            Colors.grey[200], // 🔹 Border color when inactive
+                        Colors.grey[200], // 🔹 Border color when inactive
                         selectedColor:
-                            Colors.grey[200], // 🔹 Border color when selected
+                        Colors.grey[200], // 🔹 Border color when selected
                         activeColor:
-                            Colors.grey[300], // 🔹 Border color when active
+                        Colors.grey[300], // 🔹 Border color when active
                         borderWidth: 0.5.w, // 🔹 Thickness of border
                         activeFillColor: Colors.transparent,
                         selectedFillColor: Colors.transparent,
                         inactiveFillColor: Colors.transparent,
                       ),
                       enableActiveFill:
-                          false, // 🔹 keeps it just border, no background fill
+                      false, // 🔹 keeps it just border, no background fill
                       onCompleted: (value) {
-                        debugPrint("PIN is $value");
+                        print("PIN is $value");
                       },
                     ),
                   ],

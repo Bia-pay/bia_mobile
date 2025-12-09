@@ -7,8 +7,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
-import '../../../send_money/widget/tabs.dart';
 import '../../../widgets/transaction.dart';
+import '../../send_money/widget/tabs.dart';
 
 class Airtime extends ConsumerStatefulWidget {
   const Airtime({super.key});
