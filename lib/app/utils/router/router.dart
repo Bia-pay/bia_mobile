@@ -21,6 +21,7 @@ import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner_onboar
 import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
+import '../../../feature/dashboard/pages/set_pin.dart';
 import '../../../feature/dashboard/pages/transaction_history.dart';
 import '../../../feature/dashboard/pages/vtu/airtime/airtime.dart';
 import '../../../feature/dashboard/pages/vtu/data/data.dart';
@@ -65,7 +66,7 @@ class AppRouter {
       GoRoute(path: '/qr-scanner', name: RouteList.qrScannerScreen, builder: (context, state) => const QrScannerScreen()),
       GoRoute(path: '/qr-code', name: RouteList.qrScreen, builder: (context, state) => const QrScreen()),
       GoRoute(path: '/change-pin', name: RouteList.changePaymentPin, builder: (context, state) => const ChangePaymentPin()),
-      GoRoute(path: '/set-pin', name: RouteList.setTransactionPin, builder: (context, state) => const SetPinSheet()),
+      GoRoute(path: '/set-pin', name: RouteList.setTransactionPin, builder: (context, state) => const SetPin()),
       GoRoute(path: '/deposit-screen', name: RouteList.depositScreen, builder: (context, state) => const TopUpAmountPage()),
     ],
     errorBuilder: (context, state) => Scaffold(body: SafeArea(child: Center(child: Text('Route not found: ${state.uri}', textAlign: TextAlign.center)))),

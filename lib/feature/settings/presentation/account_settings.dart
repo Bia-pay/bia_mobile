@@ -4,7 +4,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_utils/src/extensions/context_extensions.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/pin_field.dart';
@@ -158,12 +158,12 @@ class _UProfileState extends ConsumerState<UProfile> {
       EasyLoading.dismiss();
 
       if (!mounted) return;
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen,
-            (route) => false,
-      );
+      context.go(biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen);
+      // Navigator.pushNamedAndRemoveUntil(
+      //   context,
+      //   biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen,
+      //       (route) => false,
+      // );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -489,7 +489,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                     Center(
                       child: Text(
                         'Settings',
-                        style: context.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
+                       // style: context.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
                       ),
                     ),
                     SizedBox(height: 30.h),
@@ -522,8 +522,12 @@ class _UProfileState extends ConsumerState<UProfile> {
           backgroundImage: NetworkImage(avatarUrl),
         ),
         SizedBox(height: 10.h),
-        Text(name, style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
-        Text('$username', style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)),
+        Text(name,
+          //  style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)
+        ),
+        Text('$username',
+         //   style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)
+        ),
         SizedBox(height: 15.h),
       ],
     );
@@ -534,7 +538,9 @@ class _UProfileState extends ConsumerState<UProfile> {
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          Text(title, style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15.spMin)),
+          Text(title,
+             // style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15.spMin)
+          ),
           ...items.map((item) => _buildSettingsTile(context, item)),
           _divider(context),
         ]),
@@ -588,11 +594,11 @@ class _UProfileState extends ConsumerState<UProfile> {
                 Expanded(
                   child: Text(
                     title,
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15.spMin,
-                      color: isLogout ? Colors.red : Colors.grey.shade700,
-                    ),
+                    // style: context.textTheme.bodyMedium?.copyWith(
+                    //   fontWeight: FontWeight.w500,
+                    //   fontSize: 15.spMin,
+                    //   color: isLogout ? Colors.red : Colors.grey.shade700,
+                    // ),
                   ),
                 ),
                 if (hasDropdown)
@@ -637,10 +643,10 @@ class _UProfileState extends ConsumerState<UProfile> {
                           },
                           child: Text(
                             subTitle,
-                            style: context.textTheme.bodyMedium?.copyWith(
-                              fontSize: 14.spMin,
-                              color: Colors.grey.shade700,
-                            ),
+                            // style: context.textTheme.bodyMedium?.copyWith(
+                            //   fontSize: 14.spMin,
+                            //   color: Colors.grey.shade700,
+                            // ),
                           ),
                         ),
                       ]),

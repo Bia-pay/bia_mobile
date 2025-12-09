@@ -80,7 +80,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     if (!hasPin) {
       // Show bottom sheet for PIN
-      Navigator.pushNamed(context, RouteList.setTransactionPin);
+      //Navigator.pushNamed(context, RouteList.setTransactionPin);
+      context.go( RouteList.setTransactionPin);
 
     }
   }
