@@ -72,6 +72,7 @@ class PhoneInputSection extends StatelessWidget {
           ),
           // Phone number input
           Expanded(
+            flex: 3,
             child: TextField(
               controller: phoneController,
               style: const TextStyle(fontSize: 16),

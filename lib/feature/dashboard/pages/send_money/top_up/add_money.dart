@@ -201,8 +201,7 @@ class BalanceCard extends ConsumerWidget {
               buttonTextColor: lightBackground,
               buttonName: 'Share',
               onPressed: () async {
-                Navigator.pushNamed(
-                  context,
+                context.pushNamed(
                   RouteList.depositScreen,
 
                 );
@@ -310,13 +309,14 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
         Navigator.pop(context);
         print("🎉 Payment verified: ${res.data?.amount.toString()}");
         // Go to success screen
-        Navigator.pushNamed(
-          context,
+        context.pushNamed(
           RouteList.successScreen,
-          arguments: {
+          extra: {
             "type": "deposit",
-            "amount": res.data?.amount.toString(),
-            "reference": res.data?.reference,
+            "amount": res.data?.amount.toString() ?? "0",
+            "recipientName": "",
+            "recipientAccount": "",
+            "reference": res.data?.reference ?? "",
             "channel": res.data?.channel ?? "Paystack",
           },
         );

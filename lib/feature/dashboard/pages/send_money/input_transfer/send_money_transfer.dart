@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/view/widget/app_bar.dart';
 import '../../../../../app/view/widget/app_search_field.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
@@ -71,11 +72,9 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   void _goToAmountPage(BuildContext context) {
     if (verifiedName == null || verifiedAccount == null) return;
 
-    Navigator.pushNamed(
-      context,
-      '/amountPage',
-      arguments: {
-        'controller': TextEditingController(),
+    context.pushNamed(
+      RouteList.amountPage,
+      extra: {
         'recipientName': verifiedName,
         'recipientAccount': verifiedAccount,
       },

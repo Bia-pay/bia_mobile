@@ -20,7 +20,7 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
     final txFuture = ref.read(allTransactionsProvider.notifier).refresh();
 
 
-    await Future.wait([txFuture,]);
+    await Future.wait([txFuture,] as Iterable<Future<dynamic>>);
   }
 
   @override
@@ -59,8 +59,8 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                           final titleText = tx.serviceType == "TOPUP"
                               ? (tx.serviceType ?? "Top Up")
                               : (tx.isCredit
-                              ? (tx.senderName ?? "Unknown")
-                              : (tx.receiverName ?? "Unknown"));
+                              ? (tx.senderName ?? (tx.provider ?? "Transfer"))
+                              : (tx.receiverName ?? (tx.provider ?? "Transfer")));
 
                           return Container(
                             margin: EdgeInsets.only(bottom: 6.h),

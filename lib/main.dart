@@ -16,13 +16,15 @@ import 'app/utils/theme_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations([
+  // Set orientation (lightweight operation)
+  SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
+  // Initialize Hive but don't wait for box opening
   await Hive.initFlutter();
-  await Hive.openBox("authBox");
 
+  // Start the app immediately - boxes will be opened lazily
   runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 }
 

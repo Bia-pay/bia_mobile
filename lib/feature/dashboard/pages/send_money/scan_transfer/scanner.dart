@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../../app/utils/colors.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
@@ -47,11 +48,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     await controller.stop();
     controller.dispose();
 
-    Navigator.pushReplacementNamed(
-      context,
-      '/amountPage',
-      arguments: {
-        'controller': TextEditingController(),
+    context.pushReplacementNamed(
+      RouteList.amountPage,
+      extra: {
         'recipientName': verifiedName,
         'recipientAccount': verifiedAccount,
       },

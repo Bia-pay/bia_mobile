@@ -233,11 +233,16 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   Future<List<RecentBeneficiaryItem>> getRecentBeneficiary(BuildContext context) async {
     try {
       final box = await Hive.openBox('recentBeneficiaries');
-      final tokenBox = await Hive.openBox('authBox');
-      final token = tokenBox.get('token', defaultValue: '');
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+
+      if (userId.isEmpty) {
+        debugPrint("⚠️ No userId found, cannot load beneficiaries");
+        return [];
+      }
 
       // Load saved beneficiaries for this user first
-      final savedData = box.get(token, defaultValue: []);
+      final savedData = box.get('beneficiaries_$userId', defaultValue: []);
       if (savedData.isNotEmpty) {
         final savedBeneficiaries = (savedData as List)
             .map((e) => RecentBeneficiaryItem.fromJson(Map<String, dynamic>.from(e)))
@@ -246,14 +251,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         // Return saved list immediately
         Future.delayed(Duration.zero, () async {
           // Load fresh list in the background
-          final freshList = await _fetchAndSaveRecentBeneficiaries(box, token);
-          debugPrint("🔄 Updated recentBeneficiaries for user $token: ${freshList.length}");
+          final freshList = await _fetchAndSaveRecentBeneficiaries(box, userId);
+          debugPrint("🔄 Updated recentBeneficiaries for user $userId: ${freshList.length}");
         });
 
         return savedBeneficiaries;
       } else {
         // No saved data, fetch fresh immediately
-        return await _fetchAndSaveRecentBeneficiaries(box, token);
+        return await _fetchAndSaveRecentBeneficiaries(box, userId);
       }
     } catch (e) {
       debugPrint("❌ Error getting recent beneficiaries: $e");
@@ -262,14 +267,15 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   }
 
 // Helper method to fetch from API and save
-  Future<List<RecentBeneficiaryItem>> _fetchAndSaveRecentBeneficiaries(Box box, String token) async {
+  Future<List<RecentBeneficiaryItem>> _fetchAndSaveRecentBeneficiaries(Box box, String userId) async {
     try {
       final response = await dashboardRepository.getRecentBeneficiary();
 
       if (response.responseSuccessful && response.beneficiaries.isNotEmpty) {
-        // Save to Hive
+        // Save to Hive with userId key
         final jsonList = response.beneficiaries.map((e) => e.toJson()).toList();
-        await box.put(token, jsonList);
+        await box.put('beneficiaries_$userId', jsonList);
+        debugPrint("💾 Saved ${response.beneficiaries.length} beneficiaries for user $userId");
         return response.beneficiaries;
       }
       return [];

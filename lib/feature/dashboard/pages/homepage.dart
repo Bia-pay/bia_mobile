@@ -29,7 +29,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final walletFuture = ref.read(dashboardControllerProvider.notifier)
         .refreshWalletBalance();
 
-    await Future.wait([txFuture, walletFuture]);
+    await Future.wait([txFuture, walletFuture] as Iterable<Future<dynamic>>);
   }
   List<Map<String, dynamic>> _quickActions(BuildContext context) => [
     {
@@ -163,8 +163,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ActionButton(
                       label: 'Send TP      ',
                       icon: SvgPicture.asset(send),
-                      onTap: () => Navigator.pushNamed(
-                        context,
+                      onTap: () => context.pushNamed(
                         RouteList.sendMoneyTransfer,
                       ),
                     ),
@@ -205,8 +204,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ActionButton(
                       label: 'Other Banks',
                       icon: Image.asset(atm, height: 21.h),
-                      onTap: () => Navigator.pushNamed(
-                        context,
+                      onTap: () => context.pushNamed(
                         RouteList.sendMoneyToBank,
                       ),
                     ),
@@ -256,8 +254,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(
-                            context,
+                          onTap: () => context.pushNamed(
                             RouteList.transactionHistory,
                           ),
                           child:Icon(Icons.arrow_forward_ios_sharp,size: 12.sp, color: primaryColor ),
@@ -343,8 +340,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(
-                      context,
+                    onTap: () => context.pushNamed(
                       RouteList.transactionHistory,
                     ),
                     child: Text(
@@ -370,14 +366,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: transactions.length,
+                        itemCount: transactions.length > 2 ? 2 : transactions.length, // Show only 2 most recent
                         itemBuilder: (context, index) {
                           final tx = transactions[index];
                           final titleText = tx.serviceType == "TOPUP"
                               ? (tx.serviceType ?? "Top Up")
                               : (tx.isCredit
-                              ? (tx.senderName ?? "Unknown")
-                              : (tx.receiverName ?? "Unknown"));
+                              ? (tx.senderName ?? (tx.provider ?? "Transfer"))
+                              : (tx.receiverName ?? (tx.provider ?? "Transfer")));
                           return Container(
                             margin: EdgeInsets.only(bottom: 6.h),
                             decoration: BoxDecoration(

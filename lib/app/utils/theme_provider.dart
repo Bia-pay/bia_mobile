@@ -8,16 +8,24 @@ final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   ThemeNotifier() : super(ThemeMode.light) {
-    _loadTheme();
+    // Load theme asynchronously to avoid blocking startup
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTheme();
+    });
   }
 
   Future<void> _loadTheme() async {
-    final box = await Hive.openBox('settingsBox');
-    final savedTheme = box.get('themeMode', defaultValue: 'light');
-    if (savedTheme == 'dark') {
-      state = ThemeMode.dark;
-    } else {
-      state = ThemeMode.light;
+    try {
+      final box = await Hive.openBox('settingsBox');
+      final savedTheme = box.get('themeMode', defaultValue: 'light');
+      if (savedTheme == 'dark') {
+        state = ThemeMode.dark;
+      } else {
+        state = ThemeMode.light;
+      }
+    } catch (e) {
+      print('Error loading theme: $e');
+      // Keep default light theme
     }
   }
 

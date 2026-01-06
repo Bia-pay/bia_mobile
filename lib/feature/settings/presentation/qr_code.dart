@@ -57,7 +57,7 @@ class _QrScreenState extends ConsumerState<QrScreen> {
         XFile(file.path),
       ], text: 'My Bia Wallet QR Code');
     } catch (e) {
-      _showSnack('Failed to share QR code: $e', Colors.red);
+      _showSnack('Failed to share QR code: $e', errorColor);
     }
   }
 
@@ -73,9 +73,9 @@ class _QrScreenState extends ConsumerState<QrScreen> {
       ).create();
       await file.writeAsBytes(bytes);
 
-      _showSnack("QR Code saved successfully!", Colors.green);
+      _showSnack("QR Code saved successfully!", successColor);
     } catch (e) {
-      _showSnack('Failed to download QR code: $e', Colors.red);
+      _showSnack('Failed to download QR code: $e', errorColor);
     }
   }
 
@@ -88,7 +88,7 @@ class _QrScreenState extends ConsumerState<QrScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightBackground, // from colors.dart
+      backgroundColor: primaryColor, // from colors.dart
       body: Padding(
         padding: EdgeInsets.all(20.h),
         child: Center(
@@ -97,7 +97,7 @@ class _QrScreenState extends ConsumerState<QrScreen> {
               : qrUrl == null
               ? Text(
                   "Failed to load QR code",
-                  style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                  style: TextStyle(color: errorColor, fontSize: 14.sp),
                 )
               : Column(
                   children: [
@@ -105,24 +105,31 @@ class _QrScreenState extends ConsumerState<QrScreen> {
                     CustomHeader(title: 'Qr Code'),
                     SizedBox(height: 100.h),
                     Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: 20.h, vertical: 10.w),
+                      height: 350.h,
                       decoration: BoxDecoration(
                         color: lightSurface,
                         borderRadius: BorderRadius.circular(12.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 8,
+                            color: errorColor,
+                            blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Image.network(
-                        qrUrl!,
-                        height: 250.h,
-                        width: 250.w,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.error, size: 80.sp, color: Colors.red),
+                      child: Column(
+                        children: [
+                          Image.network(
+                            qrUrl!,
+                            height: 250.h,
+                            width: 250.w,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Icon(Icons.error, size: 80.sp, color: errorColor),
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(height: 30.h),
@@ -130,7 +137,7 @@ class _QrScreenState extends ConsumerState<QrScreen> {
                       "Scan this to send money to your Bia wallet",
                       style: TextStyle(
                         color: lightText,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w500,         
                         fontSize: 14.sp,
                       ),
                       textAlign: TextAlign.center,

@@ -1,5 +1,6 @@
 import 'package:bia/app/utils/widgets/pin_field.dart';
 import 'package:bia/core/__core.dart';
+import 'package:bia/feature/dashboard/pages/send_money/input_transfer/transaction_pin.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import 'package:hive/hive.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
+import '../../../../../core/utils/biometric_helper.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class CompleteTransactionBottomSheet extends ConsumerStatefulWidget {
@@ -55,56 +57,32 @@ class _CompleteTransactionBottomSheetState
   }
 
   Future<void> _initializeSettings() async {
-    final settingsBox = await Hive.openBox("settingsBox");
+    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricEnabled = await BiometricHelper.isTransactionBiometricEnabled();
+    final savedPiin = await BiometricHelper.getSavedPin();
 
-    bool hasFingerprint = false;
-    try {
-      // First check if the device supports any biometrics at all
-      final canCheck = await auth.canCheckBiometrics;
-      final isSupported = await auth.isDeviceSupported();
-
-      // Then specifically check for fingerprint if available
-      final availableBiometrics = await auth.getAvailableBiometrics();
-
-      hasFingerprint =
-          (canCheck && isSupported) &&
-          (availableBiometrics.contains(BiometricType.fingerprint) ||
-              availableBiometrics.isNotEmpty);
-
-      debugPrint("🧠 canCheckBiometrics: $canCheck");
-      debugPrint("🧠 isDeviceSupported: $isSupported");
-      debugPrint("🧠 availableBiometrics: $availableBiometrics");
-      debugPrint("✅ hasFingerprint final: $hasFingerprint");
-    } catch (e) {
-      debugPrint("⚠️ Biometric detection failed: $e");
-    }
-
-    final biometricEnabled = settingsBox.get(
-      "biometric_enabled",
-      defaultValue: false,
-    );
-    final savedPiin = settingsBox.get("saved_pin");
-    debugPrint(savedPiin);
     setState(() {
-      _hasBiometric = hasFingerprint;
+      _hasBiometric = availability.isAvailable;
       _biometricEnabled = biometricEnabled;
       savedPin = savedPiin;
     });
 
     // ✅ Logic flow
-    if (!hasFingerprint) {
-      debugPrint("🚫 No fingerprint hardware detected. Showing pin only.");
+    if (!availability.isAvailable) {
+      debugPrint("🚫 No biometric hardware detected. Showing PIN only.");
       setState(() => _showPasswordField = true);
       return;
     }
 
-    if (hasFingerprint && biometricEnabled) {
-      debugPrint("🔐 Fingerprint transfer enabled. Launching biometric...");
+    if (availability.isAvailable && biometricEnabled && savedPiin != null) {
+      debugPrint("🔐 ${availability.biometricTypeName} enabled for transactions. Launching authentication...");
       Future.delayed(const Duration(milliseconds: 400), _authenticate);
     } else {
-      debugPrint(
-        "🧾 Fingerprint available but not enabled. Showing pin field.",
-      );
+      if (!biometricEnabled) {
+        debugPrint("🧾 Biometric available but not enabled. Showing PIN field.");
+      } else if (savedPiin == null) {
+        debugPrint("⚠️ No saved PIN found. Showing PIN field.");
+      }
       setState(() => _showPasswordField = true);
     }
   }
@@ -140,7 +118,7 @@ class _CompleteTransactionBottomSheetState
 
       final cleanAmount =
           double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ??
-          0.0;
+              0.0;
 
       const double fee = 10.00;
       final total = cleanAmount + fee;
@@ -160,14 +138,15 @@ class _CompleteTransactionBottomSheetState
       final token = authBox.get("token");
 
       if (token != null && token.isNotEmpty && mounted) {
-        Navigator.pushNamed(
-          context,
+        context.pushNamed(
           RouteList.successScreen,
-          arguments: {
-            "type": "transfer", // ✅ must be here
+          extra: {
+            "type": "transfer",
             "amount": total.toStringAsFixed(2),
             "recipientName": widget.recipientName,
             "recipientAccount": widget.recipientAccount,
+            "reference": "",
+            "channel": "",
           },
         );
       } else {
@@ -193,7 +172,7 @@ class _CompleteTransactionBottomSheetState
 
     final amount =
         double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ??
-        0.0;
+            0.0;
     const double fee = 10.00;
     final total = amount + fee;
 
@@ -295,70 +274,35 @@ class _CompleteTransactionBottomSheetState
                 ],
               )
             else
-              Column(
-                children: [
-                  SizedBox(
-                    width: 250.w,
-                    child: AppPinCodeField(
-                      controller: pinController,
-                      length: 4,
-                      // 👇 Added custom styling
-                      fillColor: keyAColor,
-                      inactiveColor: keyAColor,
-                      activeColor: primaryColor,
-                      selectedColor: primaryColor,
-                    ),
-                  ),
-                  SizedBox(height: 20.h),
-                  SizedBox(
-                    width: double.infinity,
-                    child: CustomButton(
-                      buttonName: 'Send Money',
-                      buttonColor: primaryColor,
-                      buttonTextColor: Colors.white,
-                      onPressed: () async {
-                        final authController = ref.read(
-                          dashboardControllerProvider.notifier,
-                        );
+              SizedBox(
+                width: double.infinity,
+                child: CustomButton(
+                  buttonName: 'Send Money',
+                  buttonColor: primaryColor,
+                  buttonTextColor: Colors.white,
+                  onPressed: () {
+                    final amountValue =
+                        double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+                    const double fee = 10.0;
+                    final total = amountValue + fee;
 
-                        // Call sendMoney and get response
-                        final response = await authController.sendMoney(
-                          context,
-                          widget.recipientAccount,
-                          total.toStringAsFixed(2),
-                          'Transfer',
-                          pinController.text,
-                          save: _saveAsBeneficiary,
-                        );
+                    // Close bottom sheet first
+                    Navigator.of(context).pop();
 
-                        // ✅ Check if the transfer was successful
-                        if (response != null && response.responseSuccessful) {
-                          Navigator.pushNamed(
-                            context,
-                            RouteList.successScreen,
-                            arguments: {
-                              "type": "transfer",
-                              "amount": total.toStringAsFixed(2),
-                              "recipientName": widget.recipientName,
-                              "recipientAccount": widget.recipientAccount,
-                            },
-                          );
-                        } else {
-                          // ❌ Show error if PIN is wrong or transfer failed
-                          final msg =
-                              response?.responseMessage ??
-                              "Transfer failed. Check your PIN.";
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(msg),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                    // Navigate to TransactionPin screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TransactionPin(
+                          recipientAccount: widget.recipientAccount,
+                          recipientName: widget.recipientName,
+                          amount: total,
+                          saveAsBeneficiary: _saveAsBeneficiary,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
           ],
         ),
@@ -367,11 +311,11 @@ class _CompleteTransactionBottomSheetState
   }
 
   Widget _buildRow(
-    String label,
-    double value,
-    dynamic themeContext,
-    TextTheme textTheme,
-  ) {
+      String label,
+      double value,
+      dynamic themeContext,
+      TextTheme textTheme,
+      ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

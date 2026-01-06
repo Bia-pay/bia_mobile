@@ -113,8 +113,7 @@ class _CreateAccountVerifyOtpScreenState
                       );
 
                       if (response?.responseSuccessful == true) {
-                        Navigator.pushNamed(
-                          context,
+                        context.pushNamed(
                           RouteList.createAccountScreen,
                         );
                       } else {

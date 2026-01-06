@@ -21,7 +21,36 @@ class AuthRepository {
 
   Future<ResponseModel> logIn(Map<String, dynamic> body, {bool fromBiometric = false}) async {
     print('📡 Attempting login...');
+
     try {
+      // --- FIX: Normalize phone before sending ---
+      if (body.containsKey("phone")) {
+        String phone = body["phone"].toString().trim();
+
+        // Remove all spaces
+        phone = phone.replaceAll(" ", "");
+
+        // Remove leading "+"
+        if (phone.startsWith("+")) {
+          phone = phone.substring(1);
+        }
+
+        // Remove leading 0
+        if (phone.startsWith("0")) {
+          phone = phone.substring(1);
+        }
+
+        // Add country code if missing
+        if (!phone.startsWith("234")) {
+          phone = "234$phone";
+        }
+
+        body["phone"] = phone;
+      }
+
+      print("📤 Final body sent to backend: $body");
+
+      // --- Continue with your original code ---
       final response = await _apiClient.postData(ApiConstant.LOGIN, body);
       final jsonResponse = jsonDecode(response.body);
 
@@ -34,17 +63,16 @@ class AuthRepository {
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
 
-        // Save Hive data
         final box = await Hive.openBox('authBox');
         await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
+        await box.put("userId", userJson['id']?.toString() ?? '');
         await box.put("fullname", userJson['fullname'] ?? '');
         await box.put("phone", userJson['phone'] ?? '');
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
         await box.put("has_pin", userJson['pin'] != null);
 
-        // Save password only for biometric
         if (!fromBiometric && body.containsKey('password')) {
           await box.put("password", body['password']);
           await box.put("login_biometric_enabled", true);
@@ -80,7 +108,6 @@ class AuthRepository {
       );
     }
   }
-
   /// ---------------- SET PIN ----------------
   Future<ResponseModel> setPin(String pin, String confirmPin) async {
     try {
@@ -149,6 +176,34 @@ class AuthRepository {
   // ---------------- REGISTER STEP ONE ----------------
   Future<ResponseModel> registerStepOne(body) async {
     try {
+      // --- FIX: Normalize phone before sending ---
+      if (body.containsKey("phone")) {
+        String phone = body["phone"].toString().trim();
+
+        // Remove all spaces
+        phone = phone.replaceAll(" ", "");
+
+        // Remove leading "+"
+        if (phone.startsWith("+")) {
+          phone = phone.substring(1);
+        }
+
+        // Remove leading zero
+        if (phone.startsWith("0")) {
+          phone = phone.substring(1);
+        }
+
+        // Add country code if missing
+        if (!phone.startsWith("234")) {
+          phone = "234$phone";
+        }
+
+        body["phone"] = phone;
+      }
+
+      print("📤 Final registration body: $body");
+
+      // --- API CALL ---
       http.Response response =
       await _apiClient.postData(ApiConstant.REGISTER_STEP_ONE, body);
 
@@ -161,20 +216,22 @@ class AuthRepository {
         ResponseModel.fromJson(jsonResponse, response.statusCode);
 
         final box = Hive.box("authBox");
+        await box.put("userId", responseModel.responseBody?.user?.id?.toString() ?? '');
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("phone", responseModel.responseBody?.user?.phone);
-        await box.put("pin",responseModel.responseBody?.user?.pin);
+        await box.put("pin", responseModel.responseBody?.user?.pin);
 
         return responseModel;
       }
 
+      // Error
       print("❌ Error response: $jsonResponse");
       return ResponseModel(
-        responseMessage:
-        jsonResponse["responseMessage"] ?? "Unknown error",
+        responseMessage: jsonResponse["responseMessage"] ?? "Unknown error",
         responseSuccessful: false,
         statusCode: response.statusCode,
       );
+
     } catch (e) {
       print('❌ Exception during register step 1: $e');
       return ResponseModel(
@@ -207,6 +264,7 @@ class AuthRepository {
         final box = await Hive.openBox("authBox");
         await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
+        await box.put("userId", userJson['id']?.toString() ?? '');
         await box.put("fullname", userJson['fullname']);
         await box.put("phone", userJson['phone']);
         await box.put("pin", userJson['pin']);
@@ -261,6 +319,7 @@ class AuthRepository {
         ResponseModel.fromJson(jsonResponse, response.statusCode);
 
         final box = Hive.box("authBox");
+        await box.put("userId", responseModel.responseBody?.user?.id?.toString() ?? '');
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("has_pin", false);
 

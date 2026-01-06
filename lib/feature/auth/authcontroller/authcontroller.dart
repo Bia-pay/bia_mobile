@@ -10,6 +10,7 @@ import 'package:hive/hive.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
+import '../../../core/local/transaction_cache.dart';
 import '../authrepo/repo.dart';
 import '../modal/reponse/response_modal.dart';
 
@@ -150,8 +151,15 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         defaultValue: false,
       );
 
-      // Clear this user's saved beneficiaries
-      await clearRecentBeneficiaries(token);
+      // Clear transaction cache and beneficiaries
+      final userId = authBox.get('userId', defaultValue: '');
+      if (userId.isNotEmpty) {
+        await TransactionCache.clearTransactions(userId);
+        await clearRecentBeneficiaries(userId);
+      }
+
+      // Stop automatic token refresh
+     // TokenManager().stopAutoRefresh();
 
       if (biometricEnabled) {
         await authBox.delete('token');
@@ -183,9 +191,10 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-  Future<void> clearRecentBeneficiaries(String token) async {
+  Future<void> clearRecentBeneficiaries(String userId) async {
     final box = await Hive.openBox('recentBeneficiaries');
-    await box.delete(token);
+    await box.delete('beneficiaries_$userId');
+    debugPrint('🗑️ Cleared beneficiaries for user $userId');
   }
 
   Future<ResponseModel?> registerStepTwo(

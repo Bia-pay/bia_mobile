@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/view/widget/app_textfield.dart';
+import '../../../widgets/keypad.dart';
 import 'complete_transaction.dart';
 
 class AmountPage extends ConsumerStatefulWidget {
@@ -247,113 +248,18 @@ class _AmountPageState extends ConsumerState<AmountPage> {
 
             /// 🔢 Keypad
             Expanded(
-              child: GridView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 25.w),
-                itemCount: 12,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 16.h,
-                  crossAxisSpacing: 35.w,
-                  mainAxisExtent: 70.h,
-                ),
-                itemBuilder: (context, index) {
-                  List<String> keys = [
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "x",
-                    "0",
-                    "ok",
-                  ];
-                  String key = keys[index];
-
-                  Color keyColor = keyAColor;
-                  Color textColor = lightSecondaryText;
-
+              child: CustomGridKeypad(
+                onKeyPressed: (key) {
                   if (key == "x") {
-                    keyColor = primaryColor.withOpacity(0.1);
-                    textColor = primaryColor;
+                    removeDigit();
                   } else if (key == "ok") {
-                    keyColor = primaryColor;
-                    textColor = whiteBackground;
+                    _showConfirmBottomSheet();
+                  } else {
+                    addDigit(key);
                   }
-
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(50.r),
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      setState(() => _selectedIndex = index);
-
-                      if (key == "x") {
-                        removeDigit();
-                      } else if (key == "ok") {
-                        _showConfirmBottomSheet();
-                      } else {
-                        addDigit(key);
-                      }
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color:
-                        _selectedIndex == index ? Colors.white : keyColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _selectedIndex == index
-                              ? primaryColor
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                        boxShadow: _selectedIndex == index
-                            ? [
-                          BoxShadow(
-                            color:
-                            primaryColor.withOpacity(0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                            : [],
-                      ),
-                      alignment: Alignment.center,
-                      child: key == "x"
-                          ? SvgPicture.asset(
-                        'assets/svg/cancel.svg',
-                        height: 20.h,
-                        colorFilter: ColorFilter.mode(
-                          primaryColor,
-                          BlendMode.srcIn,
-                        ),
-                      )
-                          : key == "ok"
-                          ? Icon(
-                        Icons.arrow_forward,
-                        color: _selectedIndex == index
-                            ? primaryColor
-                            : textColor,
-                        size: 24.sp,
-                      )
-                          : Text(
-                        key,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: _selectedIndex == index
-                              ? primaryColor
-                              : lightText,
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
                 },
               ),
-            ),
+            )
           ],
         ),
       ),

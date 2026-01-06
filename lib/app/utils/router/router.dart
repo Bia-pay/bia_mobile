@@ -28,7 +28,11 @@ import '../../../feature/dashboard/pages/vtu/data/data.dart';
 import '../../../feature/dashboard/pages/vtu/tv_cable/cable.dart';
 import '../../../feature/dashboard/pages/vtu/utility/utility.dart';
 import '../../../feature/settings/presentation/change_password.dart';
+import '../../../feature/settings/presentation/loginSettings/enable_login_fingerpint.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
+import '../../../features/profile/pages/enable_login_fingerprint.dart';
+import '../../socket/socket_test_page.dart';
+export '../../../feature/settings/presentation/change_password.dart' show NewPaymentPin;
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -66,8 +70,25 @@ class AppRouter {
       GoRoute(path: '/qr-scanner', name: RouteList.qrScannerScreen, builder: (context, state) => const QrScannerScreen()),
       GoRoute(path: '/qr-code', name: RouteList.qrScreen, builder: (context, state) => const QrScreen()),
       GoRoute(path: '/change-pin', name: RouteList.changePaymentPin, builder: (context, state) => const ChangePaymentPin()),
-      GoRoute(path: '/set-pin', name: RouteList.setTransactionPin, builder: (context, state) => const SetPin()),
+      GoRoute(
+        path: '/set-pin',
+        name: RouteList.setTransactionPin,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final oldPin = extra?['oldPin'] as String?;
+
+          // If oldPin is provided, show NewPaymentPin (change flow)
+          // Otherwise show SetPin (first time setup)
+          if (oldPin != null && oldPin.isNotEmpty) {
+            return NewPaymentPin(oldPin: oldPin);
+          }
+          return const SetPin();
+        },
+      ),
       GoRoute(path: '/deposit-screen', name: RouteList.depositScreen, builder: (context, state) => const TopUpAmountPage()),
+      GoRoute(path: '/enable-login-fingerprint', name: RouteList.enableLoginFingerprint, builder: (context, state) => const EnableLoginFingerprint()),
+      GoRoute(path: '/enable-transaction-fingerprint', name: RouteList.enableTransactionPinFingerprint, builder: (context, state) => const EnableTransactionPinFingerprint()),
+      GoRoute(path: '/socket-test', name: 'socketTest', builder: (context, state) => const SocketTestPage()),
     ],
     errorBuilder: (context, state) => Scaffold(body: SafeArea(child: Center(child: Text('Route not found: ${state.uri}', textAlign: TextAlign.center)))),
   );

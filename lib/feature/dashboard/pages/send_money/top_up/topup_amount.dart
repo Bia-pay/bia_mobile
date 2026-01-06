@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/view/widget/app_textfield.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../widgets/keypad.dart';
 
 class TopUpAmountPage extends ConsumerStatefulWidget {
   final String title;
@@ -98,13 +100,14 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
 
       if (!mounted) return;
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => PaymentWebViewPage(
-            url: url,
-            reference: reference,
-          ),
+      // Navigate to WebView for payment (this should be a separate route or modal)
+      // For now, using a dialog/modal approach would be better
+      // TODO: Add WebView route or use modal
+      showDialog(
+        context: context,
+        builder: (_) => PaymentWebViewPage(
+          url: url,
+          reference: reference,
         ),
       );
     }
@@ -180,111 +183,17 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
                 ),
               ),
             SizedBox(height: 75.h),
-            Expanded(
-              child: GridView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 25.w),
-                itemCount: 12,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 16.h,
-                  crossAxisSpacing: 35.w,
-                  mainAxisExtent: 70.h,
-                ),
-                itemBuilder: (context, index) {
-                  List<String> keys = [
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                    "6",
-                    "7",
-                    "8",
-                    "9",
-                    "x",
-                    "0",
-                    "ok",
-                  ];
-                  String key = keys[index];
-
-                  Color keyColor = keyAColor;
-                  Color textColor = lightSecondaryText;
-
+            SizedBox(
+              height: 400.h, // or whatever fits your screen
+              child: CustomGridKeypad(
+                onKeyPressed: (key) {
                   if (key == "x") {
-                    keyColor = primaryColor.withOpacity(0.1);
-                    textColor = primaryColor;
+                    removeDigit();
                   } else if (key == "ok") {
-                    keyColor = primaryColor;
-                    textColor = whiteBackground;
+                    _processTopUp();
+                  } else {
+                    addDigit(key);
                   }
-
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(50.r),
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      setState(() => _selectedIndex = index);
-
-                      if (key == "x") {
-                        removeDigit();
-                      } else if (key == "ok") {
-                        _processTopUp();
-                      } else {
-                        addDigit(key);
-                      }
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color:
-                        _selectedIndex == index ? Colors.white : keyColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _selectedIndex == index
-                              ? primaryColor
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                        boxShadow: _selectedIndex == index
-                            ? [
-                          BoxShadow(
-                            color:
-                            primaryColor.withOpacity(0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ]
-                            : [],
-                      ),
-                      alignment: Alignment.center,
-                      child: key == "x"
-                          ? SvgPicture.asset(
-                        'assets/svg/cancel.svg',
-                        height: 20.h,
-                        colorFilter: ColorFilter.mode(
-                          primaryColor,
-                          BlendMode.srcIn,
-                        ),
-                      )
-                          : key == "ok"
-                          ? Icon(
-                        Icons.arrow_forward,
-                        color: _selectedIndex == index
-                            ? primaryColor
-                            : textColor,
-                        size: 24.sp,
-                      )
-                          : Text(
-                        key,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: _selectedIndex == index
-                              ? primaryColor
-                              : lightText,
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
                 },
               ),
             ),
@@ -294,6 +203,7 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
     );
   }
 }
+
 class PaymentWebViewPage extends ConsumerStatefulWidget {
   final String url;
   final String reference;
@@ -354,13 +264,14 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
         Navigator.pop(context);
         print("🎉 Payment verified: ${res.data?.amount.toString()}");
         // Go to success screen
-        Navigator.pushNamed(
-          context,
+        context.pushNamed(
           RouteList.successScreen,
-          arguments: {
+          extra: {
             "type": "deposit",
-            "amount": res.data?.amount.toString(),
-            "reference": res.data?.reference,
+            "amount": res.data?.amount.toString() ?? "0",
+            "recipientName": "",
+            "recipientAccount": "",
+            "reference": res.data?.reference ?? "",
             "channel": res.data?.channel ?? "Paystack",
           },
         );

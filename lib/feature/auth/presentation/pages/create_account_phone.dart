@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/utils/image.dart';
+import '../../../../app/utils/widgets/phone_input_widget.dart';
 import '../../authcontroller/authcontroller.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
@@ -56,17 +57,18 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                   SizedBox(height: 10.h),
                   Text('Enter your phone number', style: Theme.of(context).textTheme.bodyLarge),
                   SizedBox(height: 20.h),
-                  CustomTextFormField(
-                    label: 'Mobile Number',
+                  PhoneInputWidget(
                     controller: phoneController,
-                    hintText: 'e.g. 2348112345678',
-                    keyboardType: TextInputType.phone,
+                    label: 'Mobile Number',
+                    hintText: '8012345678',
                     validator: (value) {
-                      if (value.isEmpty) return 'Phone number required';
-                      if (!RegExp(r'^[0-9]{13}$').hasMatch(value)) {
-                        return 'Enter a valid 13-digit number';
-                      }
+                      if (value.isEmpty) return 'Phone number is required';
+                      if (value.length < 10) return 'Phone number too short';
                       return null;
+                    },
+                    onCountryChanged: (country) {
+                      // Handle country change
+                      print('Selected: ${country.name} ${country.dialCode}');
                     },
                   ),
                   SizedBox(height: 15.h),
@@ -107,15 +109,13 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                         : () async {
                       final phone = phoneController.text.trim();
                       final authState = ref.watch(authControllerProvider.notifier);
-
+                      print(' $phone');
                       final response = await authState.registerStepOne(context, phone);
 
                       if (response?.responseSuccessful == true) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CreateAccountVerifyOtpScreen(phone: phone),
-                          ),
+                        context.pushNamed(
+                          RouteList.createAccountVerifyOtpScreen,
+                          extra: phone,
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(

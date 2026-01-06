@@ -35,6 +35,21 @@ class TransactionItem {
       }
     }
 
+    // Handle both API format (nested sender/receiver) and cached format (flat senderName/receiverName)
+    String? senderName;
+    if (json['sender'] != null && json['sender'] is Map) {
+      senderName = json['sender']['fullname'];
+    } else if (json['senderName'] != null) {
+      senderName = json['senderName'];
+    }
+
+    String? receiverName;
+    if (json['receiver'] != null && json['receiver'] is Map) {
+      receiverName = json['receiver']['fullname'];
+    } else if (json['receiverName'] != null) {
+      receiverName = json['receiverName'];
+    }
+
     return TransactionItem(
       id: json['id'] ?? 0,
       amount: (json['amount'] is String)
@@ -42,11 +57,8 @@ class TransactionItem {
           : (json['amount']?.toDouble() ?? 0),
       isCredit: json['isCredit'] ?? false,
 
-      senderName:
-      json['sender'] != null ? json['sender']['fullname'] : null,
-
-      receiverName:
-      json['receiver'] != null ? json['receiver']['fullname'] : null,
+      senderName: senderName,
+      receiverName: receiverName,
 
       provider: json['provider'],              // ✅ now parsed
       serviceType: json['serviceType'],        // ✅ now parsed

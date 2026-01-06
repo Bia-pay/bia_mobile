@@ -25,19 +25,27 @@ class _SplashScreenState extends ConsumerState<Splash> {
   }
 
   Future<void> _checkAuthStatus() async {
-    await Future.delayed(const Duration(seconds: 2));
+    // Reduce artificial delay from 2 seconds to 1 second
+    await Future.delayed(const Duration(milliseconds: 1500));
 
-    final box = await Hive.openBox("authBox");
-    final token = box.get("token");
-    debugPrint("TOKEN → $token");
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token");
+      debugPrint("TOKEN → $token");
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (token != null && token.toString().isNotEmpty) {
-      // User already logged in
-      context.go(RouteList.welcomeBackScreen);
-    } else {
-      // No login found
+      if (token != null && token.toString().isNotEmpty) {
+        // User already logged in
+        context.go(RouteList.welcomeBackScreen);
+      } else {
+        // No login found
+        context.go(RouteList.getStarted);
+      }
+    } catch (e) {
+      debugPrint("Error checking auth status: $e");
+      if (!mounted) return;
+      // Fallback to get started screen
       context.go(RouteList.getStarted);
     }
   }

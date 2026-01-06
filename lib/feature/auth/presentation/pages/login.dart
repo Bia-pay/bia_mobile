@@ -10,6 +10,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
+import '../../../../app/utils/widgets/phone_input_widget.dart';
 import '../../authcontroller/authcontroller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -63,17 +64,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   SizedBox(height: 40.h),
-                  CustomTextFormField(
-                    label: 'Mobile Number',
+                  PhoneInputWidget(
                     controller: phoneController,
-                    hintText: 'Enter your phone number',
-                    keyboardType: TextInputType.phone,
+                    label: 'Mobile Number',
+                    hintText: '8012345678',
                     validator: (value) {
-                      if (value.isEmpty) return 'Phone number required';
-                      if (!RegExp(r'^[0-9]{13}$').hasMatch(value)) {
-                        return 'Enter a valid 13-digit number';
-                      }
+                      if (value.isEmpty) return 'Phone number is required';
+                      if (value.length < 10) return 'Phone number too short';
                       return null;
+                    },
+                    onCountryChanged: (country) {
+                      // Handle country change
+                      print('Selected: ${country.name} ${country.dialCode}');
                     },
                   ),
                   SizedBox(height: 25.h),

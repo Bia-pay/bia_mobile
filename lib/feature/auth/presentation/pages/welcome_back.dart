@@ -11,6 +11,7 @@ import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
+import '../../../../core/utils/biometric_helper.dart';
 import '../../authcontroller/authcontroller.dart';
 
 class WelcomeBackScreen extends ConsumerStatefulWidget {
@@ -21,8 +22,6 @@ class WelcomeBackScreen extends ConsumerStatefulWidget {
 }
 
 class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
-  final LocalAuthentication _auth = LocalAuthentication();
-
   bool _hasBiometric = false;
   bool _biometricEnabled = false;
   bool _isAuthenticating = false;
@@ -32,6 +31,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
   String? phone;
   String? fullname;
   String? savedPassword;
+  String? biometricTypeName;
   final TextEditingController passwordController = TextEditingController();
 
   @override
@@ -42,51 +42,42 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
   Future<void> _initializeSettings() async {
     final authBox = await Hive.openBox("authBox");
+    
+    // Check biometric availability using helper
+    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricEnabled = await BiometricHelper.isLoginBiometricEnabled();
+    
+    // Get saved login credentials
     final settingsBox = await Hive.openBox("settingsBox");
-
-    bool hasFingerprint = false;
-    try {
-      final canCheck = await _auth.canCheckBiometrics;
-      final isSupported = await _auth.isDeviceSupported();
-      final availableBiometrics = await _auth.getAvailableBiometrics();
-
-      hasFingerprint =
-          (canCheck && isSupported) &&
-          (availableBiometrics.contains(BiometricType.fingerprint) ||
-              availableBiometrics.isNotEmpty);
-
-      debugPrint("canCheckBiometrics: $canCheck");
-      debugPrint("isDeviceSupported: $isSupported");
-      debugPrint("availableBiometrics: $availableBiometrics");
-      debugPrint("hasFingerprint final: $hasFingerprint");
-    } catch (e) {
-      debugPrint("⚠Biometric detection failed: $e");
-    }
-
-    final biometricEnabled = settingsBox.get(
-      "login_biometric_enabled",
-      defaultValue: false,
-    );
     final savedPwd = settingsBox.get("biometric_login_password");
     final userPhone = authBox.get("phone");
     final userName = authBox.get("fullname") ?? "User";
 
     setState(() {
-      _hasBiometric = hasFingerprint;
+      _hasBiometric = availability.isAvailable;
       _biometricEnabled = biometricEnabled;
+      biometricTypeName = availability.biometricTypeName;
       phone = userPhone;
       fullname = userName;
       savedPassword = savedPwd;
     });
 
-    if (!hasFingerprint) {
+    // ✅ Logic flow
+    if (!availability.isAvailable) {
+      debugPrint("🚫 No biometric hardware detected. Showing password field.");
       setState(() => _showPasswordField = true);
       return;
     }
 
-    if (hasFingerprint && biometricEnabled) {
+    if (availability.isAvailable && biometricEnabled && savedPwd != null) {
+      debugPrint("🔐 ${availability.biometricTypeName} login enabled. Launching authentication...");
       Future.delayed(const Duration(milliseconds: 800), _authenticate);
     } else {
+      if (!biometricEnabled) {
+        debugPrint("🧾 Biometric available but not enabled for login. Showing password field.");
+      } else if (savedPwd == null) {
+        debugPrint("⚠️ No saved password found. Showing password field.");
+      }
       setState(() => _showPasswordField = true);
     }
   }
@@ -94,16 +85,14 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
   Future<void> _authenticate() async {
     try {
       setState(() => _isAuthenticating = true);
-      final didAuthenticate = await _auth.authenticate(
-        localizedReason: 'Authenticate to log in',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-          useErrorDialogs: true,
-        ),
+      
+      final didAuthenticate = await BiometricHelper.authenticate(
+        reason: 'Authenticate to log in',
+        biometricOnly: true,
       );
 
       if (!didAuthenticate) {
+        debugPrint("❌ Biometric authentication failed or cancelled");
         setState(() => _showPasswordField = true);
         return;
       }
@@ -174,7 +163,21 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                     children: [
                       GestureDetector(
                         onTap: _isAuthenticating ? null : _authenticate,
-                        child: SvgPicture.asset(fingerPrint, height: 100.h),
+                        child: Column(
+                          children: [
+                            SvgPicture.asset(fingerPrint, height: 100.h),
+                            SizedBox(height: 10.h),
+                            Text(
+                              _isAuthenticating 
+                                ? 'Authenticating...' 
+                                : 'Tap to use ${biometricTypeName ?? 'Biometric'}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: lightSecondaryText,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       SizedBox(height: 15.h),
                       TextButton(

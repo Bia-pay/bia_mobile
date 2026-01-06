@@ -22,8 +22,9 @@ class DashboardRepository {
   DashboardRepository(this._apiClient);
 
   //  Transfer money
+// sendMoney in dashboardRepository
   Future<ResponseModel> sendMoney(Map<String, dynamic> body) async {
-    print('📡 Attempting transfer...');
+    print('📡 Attempting transfer: $body');
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
@@ -37,9 +38,7 @@ class DashboardRepository {
         );
       }
 
-      // ✅ Make sure token is sent by ApiClient
       _apiClient.updateHeaders(token);
-
       final response = await _apiClient.postData(ApiConstant.TRANSER, body);
       final jsonResponse = jsonDecode(response.body);
       print("✅ API Response: $jsonResponse");
@@ -53,8 +52,7 @@ class DashboardRepository {
         );
       } else {
         return ResponseModel(
-          responseMessage:
-          jsonResponse["responseMessage"] ?? "Transfer failed",
+          responseMessage: jsonResponse["responseMessage"] ?? "Transfer failed",
           responseSuccessful: false,
           statusCode: response.statusCode,
         );
@@ -68,7 +66,6 @@ class DashboardRepository {
       );
     }
   }
-
   //  Set payment PIN
   Future<ResponseModel> setPin(Map<String, dynamic> body) async {
     print('📡 Setting PIN...');
@@ -267,6 +264,7 @@ class DashboardRepository {
       );
     }
   }
+
   Future<TransactionResponse> getTransactions() async {
     try {
       final box = await Hive.openBox("authBox");

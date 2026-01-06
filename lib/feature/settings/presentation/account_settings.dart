@@ -9,7 +9,8 @@ import 'package:hive/hive.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/pin_field.dart';
 import '../../../app/utils/colors.dart';
-import '../../../core/local/localStorage.dart';
+import '../../../core/local/transaction_cache.dart';
+import '../../../core/utils/biometric_helper.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
@@ -28,6 +29,7 @@ class _UProfileState extends ConsumerState<UProfile> {
   bool loginBiometricEnabled = false;
   UserResponse? _user;
   bool _isLoadingProfile = true;
+  String _biometricTypeName = 'Biometric';
 
   final List<Map<String, dynamic>> securityItems = [
     {
@@ -53,18 +55,18 @@ class _UProfileState extends ConsumerState<UProfile> {
     {'title': 'Log Out', 'image': 'assets/svg/logout.svg', 'hasDropdown': false},
   ];
 
-  final Map<String, List<Map<String, String>>> dropdownContent = {
+  Map<String, List<Map<String, String>>> get dropdownContent => {
     'Pin Settings': [
       {'title': 'Set Pin', 'image': 'assets/svg/key.svg'},
       {'title': 'Change Payment Pin', 'image': 'assets/svg/key.svg'},
       {'title': 'Forget Payment Pin', 'image': 'assets/svg/key.svg'},
-      {'title': 'Pay with Fingerprint', 'image': 'assets/svg/key.svg'},
+      {'title': 'Pay with $_biometricTypeName', 'image': 'assets/svg/key.svg'},
     ],
     'Login Settings': [
       {'title': 'Change Password', 'image': 'assets/svg/l-key.svg'},
       {'title': 'Forget Password', 'image': 'assets/svg/l-key.svg'},
       {'title': 'Auto Logout Settings', 'image': 'assets/svg/l-key.svg'},
-      {'title': 'Login with Fingerprint', 'image': 'assets/svg/l-key.svg'},
+      {'title': 'Login with $_biometricTypeName', 'image': 'assets/svg/l-key.svg'},
     ],
     'Help': [
       {'title': 'Help Center', 'image': 'assets/svg/cancel.svg'},
@@ -75,9 +77,10 @@ class _UProfileState extends ConsumerState<UProfile> {
   };
 
   final Map<String, String> routeMap = {
+    'Set Pin': RouteList.setTransactionPin,
+    'Change Payment Pin': RouteList.changePaymentPin,
     'Generate Qr Code': RouteList.qrScreen,
     'Help Center': RouteList.helpCenter,
-    'Change Payment Pin': RouteList.changePaymentPin,
     //'Forget Payment Pin': RouteList.forgetPaymentPin,
   };
 
@@ -86,6 +89,14 @@ class _UProfileState extends ConsumerState<UProfile> {
     super.initState();
     _loadBiometricSetting();
     _loadUserProfile();
+    _loadBiometricTypeName();
+  }
+
+  Future<void> _loadBiometricTypeName() async {
+    final availability = await BiometricHelper.checkBiometricAvailability();
+    setState(() {
+      _biometricTypeName = availability.biometricTypeName;
+    });
   }
 
   Future<void> _loadUserProfile() async {
@@ -135,13 +146,13 @@ class _UProfileState extends ConsumerState<UProfile> {
       final userId = authBox.get('userId', defaultValue: '');
 
       // Clear cached transactions for this user
-      await TransactionStorage.clearTransactions(userId);
+      if (userId.isNotEmpty) {
+        await TransactionCache.clearTransactions(userId);
+        await clearRecentBeneficiaries(userId);
+      }
 
       // Clear any saved profile
       await authBox.delete('saved_user_profile');
-
-      // Clear this user's saved beneficiaries if you have this function
-      await clearRecentBeneficiaries(token);
 
       // Clear token and other Hive data
       if (biometricEnabled) {
@@ -159,11 +170,6 @@ class _UProfileState extends ConsumerState<UProfile> {
 
       if (!mounted) return;
       context.go(biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen);
-      // Navigator.pushNamedAndRemoveUntil(
-      //   context,
-      //   biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen,
-      //       (route) => false,
-      // );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -182,9 +188,10 @@ class _UProfileState extends ConsumerState<UProfile> {
     }
   }
 
-  Future<void> clearRecentBeneficiaries(String token) async {
+  Future<void> clearRecentBeneficiaries(String userId) async {
     final box = await Hive.openBox('recentBeneficiaries');
-    await box.delete(token);
+    await box.delete('beneficiaries_$userId');
+    debugPrint('🗑️ Cleared beneficiaries for user $userId');
   }
 
   void _confirmLogout(BuildContext context) {
@@ -210,65 +217,24 @@ class _UProfileState extends ConsumerState<UProfile> {
   void _handleItemTap(BuildContext context, String title) {
     final route = routeMap[title];
     if (route != null) {
-      Navigator.pushNamed(context, route);
+      context.pushNamed(route);
     }
   }
 
-  /// ✅ NEW SET PIN MODAL
-  void _showSetPinModal(BuildContext context, WidgetRef ref) {
-    final pinController = TextEditingController();
-    final confirmPinController = TextEditingController();
-    final repo = ref.read(dashboardControllerProvider.notifier);
-
-    final textTheme = Theme.of(context).textTheme;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _buildBottomSheetContainer(
-        context,
-        title: "Set Transaction PIN",
-        message: "Enter and confirm your 4-digit transaction PIN.",
-        child: Column(
-          children: [
-            AppPinCodeField(controller: pinController, length: 4,  fillColor: keyAColor,
-              inactiveColor: keyAColor,
-              activeColor: primaryColor,
-              selectedColor: primaryColor,),
-            const SizedBox(height: 15),
-            AppPinCodeField(controller: confirmPinController, length: 4,  fillColor: keyAColor,
-                inactiveColor: keyAColor,
-                activeColor: primaryColor,
-                selectedColor: primaryColor),
-          ],
-        ),
-        onConfirm: () async {
-          final pin = pinController.text.trim();
-          final confirmPin = confirmPinController.text.trim();
-
-          if (pin.isEmpty || confirmPin.isEmpty) {
-            _showSnack(context, "Both fields are required", Colors.red);
-            return;
-          }
-          if (pin != confirmPin) {
-            _showSnack(context, "PINs do not match", Colors.red);
-            return;
-          }
-          final response = await repo.setPin(context, pin, confirmPin);
-
-          if (response != null && response.responseSuccessful) {
-            final box = await Hive.openBox('settingsBox');
-            await box.put('saved_pin', pin);
-            _showSnack(context, "PIN set successfully", Colors.green);
-            Navigator.pop(context);
-          }
-        },
-      ),
-    );
-  }
-
   /// ✅ Fingerprint modals preserved
-  void _showPinSetupModal(BuildContext context, Box box) {
+  void _showPinSetupModal(BuildContext context, Box box) async {
+    // First check if biometric is available
+    final availability = await BiometricHelper.checkBiometricAvailability();
+
+    if (!availability.isAvailable) {
+      _showSnack(
+        context,
+        'Biometric authentication is not available on this device',
+        Colors.orange,
+      );
+      return;
+    }
+
     final pinController = TextEditingController();
     final textTheme = Theme.of(context).textTheme;
     showModalBottomSheet(
@@ -277,8 +243,8 @@ class _UProfileState extends ConsumerState<UProfile> {
       backgroundColor: Colors.transparent,
       builder: (_) => _buildBottomSheetContainer(
         context,
-        title: "Enable Biometric Payment",
-        message: "Enter your 4-digit transaction PIN to link it to your fingerprint.",
+        title: "Enable ${availability.biometricTypeName} Payment",
+        message: "Enter your 4-digit transaction PIN to link it to your ${availability.biometricTypeName.toLowerCase()}.",
         child: AppPinCodeField(controller: pinController, length: 4,  fillColor: keyAColor,
             inactiveColor: keyAColor,
             activeColor: primaryColor,
@@ -293,48 +259,13 @@ class _UProfileState extends ConsumerState<UProfile> {
           await box.put('saved_pin', pin);
           Navigator.pop(context);
           setState(() => biometricEnabled = true);
-          _showSnack(context, "Fingerprint login enabled successfully", Colors.green);
+          _showSnack(context, "${availability.biometricTypeName} payment enabled successfully", Colors.green);
 
         },
       ),
     );
   }
 
-  void _showPasswordSetupModal(BuildContext context, Box box) {
-    final passwordController = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _buildBottomSheetContainer(
-        context,
-        title: "Enable Biometric Login",
-        message: "Enter your account password to save for fingerprint login.",
-        child: TextField(
-          controller: passwordController,
-          obscureText: true,
-          decoration: const InputDecoration(
-            labelText: "Password",
-            border: OutlineInputBorder(),
-          ),
-        ),
-        onConfirm: () async {
-          final password = passwordController.text.trim();
-          if (password.isEmpty) {
-            _showSnack(context, "Please enter your password", Colors.red);
-            return;
-          }
-
-          await box.put('biometric_login_password', password);
-          await box.put('login_biometric_enabled', true);
-
-          Navigator.pop(context);
-          setState(() => loginBiometricEnabled = true);
-          _showSnack(context, "Fingerprint login enabled successfully", Colors.green);
-        },
-      ),
-    );
-  }
 
   Widget _buildBottomSheetContainer(
       BuildContext context, {
@@ -452,7 +383,7 @@ class _UProfileState extends ConsumerState<UProfile> {
     final hasPin = settingsBox.get('saved_pin', defaultValue: null) != null;
     if (!hasPin) {
       // Pin not set — don't toggle, prompt user to set PIN
-      _showSnack(context, 'You must set a transaction PIN before enabling Scan to Receive.', Colors.orange);
+      _showSnack(context, 'You must set a transaction PIN before enabling Scan to Receive.', pendingColor);
       return;
     }
 
@@ -462,7 +393,7 @@ class _UProfileState extends ConsumerState<UProfile> {
       if (allowed == true) {
         await settingsBox.put('scan_to_receive', true);
         // Navigate to QR scanner screen
-        Navigator.pushNamed(context, RouteList.qrScannerScreen);
+        context.pushNamed(RouteList.qrScannerScreen);
         setState(() {});
       }
     } else {
@@ -475,6 +406,7 @@ class _UProfileState extends ConsumerState<UProfile> {
   // 🧱 UI
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -485,14 +417,14 @@ class _UProfileState extends ConsumerState<UProfile> {
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: Column(
                   children: [
-                    SizedBox(height: 30.h),
+                    SizedBox(height: 20.h),
                     Center(
                       child: Text(
                         'Settings',
-                       // style: context.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
+                        style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
                       ),
                     ),
-                    SizedBox(height: 30.h),
+                    SizedBox(height: 20.h),
                     _buildProfileHeader(context),
                     SizedBox(height: 24.h),
                     _divider(context),
@@ -511,6 +443,7 @@ class _UProfileState extends ConsumerState<UProfile> {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
+    final theme = Theme.of(context);
     final name = _user?.fullname ?? 'No Name';
     final username = _user?.phone ?? 'username';
     final avatarUrl = 'https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg';
@@ -518,15 +451,15 @@ class _UProfileState extends ConsumerState<UProfile> {
     return Column(
       children: [
         CircleAvatar(
-          radius: 50.r,
+          radius: 45.r,
           backgroundImage: NetworkImage(avatarUrl),
         ),
-        SizedBox(height: 10.h),
+        SizedBox(height: 5.h),
         Text(name,
-          //  style: context.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)
         ),
         Text('$username',
-         //   style: context.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)
+            style: theme.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)
         ),
         SizedBox(height: 15.h),
       ],
@@ -534,12 +467,13 @@ class _UProfileState extends ConsumerState<UProfile> {
   }
 
   Widget _buildSection(BuildContext context, String title, List<Map<String, dynamic>> items) {
+    final theme = Theme.of(context);
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
           Text(title,
-             // style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15.spMin)
+              style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15.spMin)
           ),
           ...items.map((item) => _buildSettingsTile(context, item)),
           _divider(context),
@@ -558,6 +492,7 @@ class _UProfileState extends ConsumerState<UProfile> {
     final hasDropdown = item['hasDropdown'];
     final isLogout = title == 'Log Out';
     final isExpanded = _expandedTile == title;
+    final theme = Theme.of(context);
 
     return Column(
       children: [
@@ -594,11 +529,11 @@ class _UProfileState extends ConsumerState<UProfile> {
                 Expanded(
                   child: Text(
                     title,
-                    // style: context.textTheme.bodyMedium?.copyWith(
-                    //   fontWeight: FontWeight.w500,
-                    //   fontSize: 15.spMin,
-                    //   color: isLogout ? Colors.red : Colors.grey.shade700,
-                    // ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15.spMin,
+                      color: isLogout ? Colors.red : Colors.grey.shade700,
+                    ),
                   ),
                 ),
                 if (hasDropdown)
@@ -636,21 +571,21 @@ class _UProfileState extends ConsumerState<UProfile> {
                         GestureDetector(
                           onTap: () async {
                             if (subTitle == 'Set Pin') {
-                              _showSetPinModal(context, ref);
+                              context.pushNamed(RouteList.setTransactionPin);
                             } if (subTitle == 'Change Payment Pin') {
-                              Navigator.pushNamed(context, RouteList.changePaymentPin);
+                              context.pushNamed(RouteList.changePaymentPin);
                             }
                           },
                           child: Text(
                             subTitle,
-                            // style: context.textTheme.bodyMedium?.copyWith(
-                            //   fontSize: 14.spMin,
-                            //   color: Colors.grey.shade700,
-                            // ),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 14.spMin,
+                              color: Colors.grey.shade700,
+                            ),
                           ),
                         ),
                       ]),
-                      if (subTitle == 'Pay with Fingerprint' || subTitle == 'Login with Fingerprint' || subTitle == 'Enable Scan to Receive')
+                      if (subTitle.startsWith('Pay with ') || subTitle.startsWith('Login with ') || subTitle == 'Enable Scan to Receive')
                         FutureBuilder<Box>(
                           future: Hive.openBox('settingsBox'),
                           builder: (context, snapshot) {
@@ -660,8 +595,8 @@ class _UProfileState extends ConsumerState<UProfile> {
                             final box = snapshot.data!;
 
                             // Decide which setting to read / write
-                            final isLoginSwitch = subTitle == 'Login with Fingerprint';
-                            final isFingerprintSwitch = subTitle == 'Pay with Fingerprint';
+                            final isLoginSwitch = subTitle.startsWith('Login with ');
+                            final isFingerprintSwitch = subTitle.startsWith('Pay with ');
 
                             bool isEnabled;
                             if (subTitle == 'Enable Scan to Receive') {
@@ -684,15 +619,26 @@ class _UProfileState extends ConsumerState<UProfile> {
 
                                   if (isLoginSwitch) {
                                     if (value) {
-                                      _showPasswordSetupModal(context, box);
+                                      final result = await context.pushNamed(RouteList.enableLoginFingerprint);
+                                      if (result == true) {
+                                        // Refresh the biometric setting state
+                                        await _loadBiometricSetting();
+                                      }
                                     } else {
                                       await box.put('login_biometric_enabled', false);
                                       await box.delete('biometric_login_password');
                                       setState(() => loginBiometricEnabled = false);
                                     }
                                   } else {
+                                    // TRANSACTION PIN BIOMETRIC
                                     if (value) {
-                                      _showPinSetupModal(context, box);
+                                      final result = await context.pushNamed(
+                                        RouteList.enableTransactionPinFingerprint,
+                                      );
+
+                                      if (result == true) {
+                                        await _loadBiometricSetting(); // refresh switch
+                                      }
                                     } else {
                                       await box.put('biometric_enabled', false);
                                       await box.delete('saved_pin');

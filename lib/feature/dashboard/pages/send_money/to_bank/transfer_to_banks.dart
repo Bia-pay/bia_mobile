@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/view/widget/app_bar.dart';
 import '../../../../../app/view/widget/app_search_field.dart';
 import '../widget/tabs.dart';
@@ -24,11 +25,9 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   }
 
   void _goToAmountPage(BuildContext context, String name, String account) {
-    Navigator.pushNamed(
-      context,
-      '/amountPage',
-      arguments: {
-        'controller': TextEditingController(),
+    context.pushNamed(
+      RouteList.amountPage,
+      extra: {
         'recipientName': name,
         'recipientAccount': account,
       },
@@ -108,13 +107,11 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                     {"name": "John Musa", "account": "0345678912"},
                   ],
                   onSelectBeneficiary: (name, account) {
-                    Navigator.pushNamed(
-                      context,
-                      '/amountPage',
-                      arguments: {
+                    context.pushNamed(
+                      RouteList.amountPage,
+                      extra: {
                         'recipientName': name,
                         'recipientAccount': account,
-                        'controller': TextEditingController(),
                       },
                     );
                   },

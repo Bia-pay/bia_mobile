@@ -17,7 +17,13 @@ class Constants {
   static const animationDuration = Duration(milliseconds: 600);
 }
 class AppConstants {
-  // 🌍 Base URL — replace with your real API base
-  static const String baseUrl = 'https://biabackend.onrender.com';
+  // 🌍 Base URL — Production API
+  static const String baseUrl = 'https://api.bia.com.ng';
+  
+  // WebSocket URL (if different from base URL)
+  static const String wsUrl = 'wss://api.bia.com.ng';
+
+  // WebSocket feature flag - disable if backend doesn't support it
+  static const bool enableWebSocket = true; // ✅ Enabled - backend supports WebSocket with header auth
 
 }
