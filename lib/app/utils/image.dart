@@ -27,6 +27,9 @@ const tiktok = 'assets/svg/tik.png';
 const bank = 'assets/svg/bank.png';
 const mic = 'assets/svg/mic.svg';
 const chatting = 'assets/svg/chatting.svg';
+const login = 'assets/images/login.png';
+const successWhiteBg = 'assets/images/successWhiteBg.png';
+const successs = 'assets/svg/successs.svg';
 
 
 

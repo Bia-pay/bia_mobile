@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/router/route_constant.dart';
+import '../../../../../app/utils/widgets/custom_text_field.dart';
 import '../../../authcontroller/authcontroller.dart';
 
 class ForgotPasswordScreen2 extends ConsumerStatefulWidget {
@@ -23,8 +25,8 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+  bool _obscureNewPassword = true;
 
   @override
   void dispose() {
@@ -106,167 +108,124 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
             // OTP Section
             Text(
               'Enter OPT',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w400,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 13.spMin,
               ),
             ),
             SizedBox(height: 12.h),
 
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: TextField(
-                      controller: _otpController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      decoration: InputDecoration(
-                        hintText: '123456',
-                        hintStyle: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16.sp,
-                        ),
-                        border: InputBorder.none,
-                        counterText: '',
-                      ),
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  child: CustomTextFormField(
+                    controller: _otpController,
+                    hintText: '123456',
+                    keyboardType: TextInputType.number, // 👈 if this is a PIN
+                    maxLength: 6, // 👈 hard limit
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(6), // 👈 blocks typing beyond 6
+                      FilteringTextInputFormatter.digitsOnly, // 👈 optional (numeric only)
+                    ],
+                    validator: (v) {
+                      if (v.isEmpty) return 'Password required';
+                      if (v.length != 6) return 'Password must be exactly 6 characters';
+                      if (v == '123456') return 'Password too weak';
+                      return null;
+                    },
+                    // suffixIcon: IconButton(
+                    //   icon: Icon(
+                    //     _obscureNewPassword
+                    //         ? Icons.visibility_off_outlined
+                    //         : Icons.visibility_outlined,
+                    //   ),
+                    //   onPressed: () {
+                    //     setState(() => _obscureNewPassword = !_obscureNewPassword);
+                    //   },
+                    // ),
                   ),
                 ),
                 SizedBox(width: 12.w),
-                ElevatedButton(
-                  onPressed: _handleResendOTP,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 32.w,
-                      vertical: 16.h,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                  child: Text(
-                    'Resend',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
+                SizedBox(
+                  width: 120.w,
+                  child: CustomButton(
+                    buttonColor: primaryColor,
+                    buttonTextColor: whiteBackground,
+                    buttonName: 'Resend',
+                    onPressed: _handleResendOTP,
+
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: 30.h),
+            SizedBox(height: 40.h),
 
+            CustomTextFormField(
+              label: 'Password',
+              controller: _newPasswordController,
+              hintText: 'Enter your password',
+              obscureText: _obscureNewPassword,
+              keyboardType: TextInputType.number, // 👈 if this is a PIN
+              maxLength: 6, // 👈 hard limit
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(6), // 👈 blocks typing beyond 6
+                FilteringTextInputFormatter.digitsOnly, // 👈 optional (numeric only)
+              ],
+              validator: (v) {
+                if (v.isEmpty) return 'Password required';
+                if (v.length != 6) return 'Password must be exactly 6 characters';
+                if (v == '123456') return 'Password too weak';
+                return null;
+              },
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureNewPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
+                onPressed: () {
+                  setState(() => _obscureNewPassword = !_obscureNewPassword);
+                },
+              ),
+            ),
+            SizedBox(height: 55.h),
+
+            CustomTextFormField(
+              label: 'Confirm Password',
+              controller: _confirmPasswordController,
+              hintText: 'Re-enter your password',
+              obscureText: _obscureConfirmPassword,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(6),
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              validator: (v) {
+                if (v.isEmpty) return 'Confirm password required';
+                if (v.length != 6) return 'Password must be exactly 6 characters';
+                if (v != _newPasswordController.text.trim()) {
+                  return 'Passwords do not match';
+                }
+                return null;
+              },
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscureConfirmPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
+                onPressed: () {
+                  setState(() =>
+                  _obscureConfirmPassword = !_obscureConfirmPassword);
+                },
+              ),
+            ),
+            SizedBox(height: 20.h),
             // New Password Section
-            Text(
-              'Enter new password',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            SizedBox(height: 12.h),
-
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: TextField(
-                controller: _newPasswordController,
-                obscureText: _obscureNewPassword,
-                decoration: InputDecoration(
-                  hintText: '••••••••••••',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 16.sp,
-                  ),
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureNewPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.grey.shade600,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureNewPassword = !_obscureNewPassword;
-                      });
-                    },
-                  ),
-                ),
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500),
-              ),
-            ),
-
-            SizedBox(height: 30.h),
-
-            // Confirm Password Section
-            Text(
-              'Confirm password',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            SizedBox(height: 12.h),
-
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: TextField(
-                controller: _confirmPasswordController,
-                obscureText: _obscureConfirmPassword,
-                decoration: InputDecoration(
-                  hintText: '••••••••••••',
-                  hintStyle: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 16.sp,
-                  ),
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.grey.shade600,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
-                  ),
-                ),
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500),
-              ),
-            ),
 
             SizedBox(height: 50.h),
 

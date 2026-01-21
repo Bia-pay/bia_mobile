@@ -8,12 +8,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
-import '../../../app/utils/custom_button.dart';
 import '../../../app/utils/image.dart';
-import '../../../app/utils/widgets/pin_field.dart';
 import '../../../core/helper/helper.dart';
-import '../../auth/authrepo/repo.dart';
-import '../dashboardcontroller/provider.dart';
+import '../../dashboard/dashboardcontroller/provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -78,28 +75,26 @@ class _HomePageState extends ConsumerState<HomePage> {
     final box = Hive.box('authBox');
     final hasPin = box.get('has_pin', defaultValue: false);
 
-    if (!hasPin) {
-      // Show bottom sheet for PIN
-      //Navigator.pushNamed(context, RouteList.setTransactionPin);
-      context.go( RouteList.setTransactionPin);
-
+    if (hasPin != true) {
+      if (!mounted) return;
+      context.go(RouteList.setTransactionPin);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'User');
-
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      child: Scaffold(
-        backgroundColor: offWhiteBackground,
-        resizeToAvoidBottomInset: false,
-        body: SafeArea(
+    final picture = box.get('picture');
+    return Scaffold(
+      backgroundColor: offWhiteBackground,
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
           child: ListView(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 1.h),
+            physics: const AlwaysScrollableScrollPhysics(),
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -107,13 +102,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Row(
                     children: [
                       Container(
-                        height: 40.h,
+                        height: 45.h,
                         width: 45.w,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(color: primaryColor),
                         ),
-                        child: Image.asset(appLogoPng),
+                        child: ClipOval(
+                          child: picture != null && picture.toString().isNotEmpty
+                              ? Image.network(
+                            picture,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Image.asset(appLogoPng),
+                          )
+                              : Image.asset(appLogoPng),
+                        ),
                       ),
                       SizedBox(width: 10.w),
                       Column(
@@ -375,85 +379,59 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ? (tx.senderName ?? (tx.provider ?? "Transfer"))
                               : (tx.receiverName ?? (tx.provider ?? "Transfer")));
                           return Container(
-                            margin: EdgeInsets.only(bottom: 6.h),
-                            decoration: BoxDecoration(
-                              color: offWhite,
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: ListTile(
-                              leading: Container(
-                                padding: EdgeInsets.all(8.r),
-                                decoration: BoxDecoration(
-                                  color: tx.status == "PENDING"
-                                      ? pendingColor.withOpacity(0.1)
-                                      : tx.isCredit
-                                      ? successColor.withOpacity(0.1)
-                                      : errorColor.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  tx.isCredit ? Icons.call_received : Icons.call_made,
-                                  color: tx.status == "PENDING"
-                                      ? pendingColor
-                                      : tx.isCredit
-                                      ? successColor
-                                      : errorColor,
-                                  size: 20.sp,
-                                ),
+                              margin: EdgeInsets.only(bottom: 6.h),
+                              decoration: BoxDecoration(
+                                color: offWhite,
+                                borderRadius: BorderRadius.circular(8.r),
                               ),
-                              title: Text(
-                                titleText,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.sp,
-                                  color: tx.status == "PENDING"
-                                      ? pendingColor
-                                      : lightSecondaryText,
-                                ),
-                              ),
-                              subtitle: Text(
-                                formatTransactionDate(tx.createdAt),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 10.sp,
-                                  color: lightSecondaryText,
-                                ),
-                              ),
-                              trailing: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13.sp,
-                                      color: tx.status == "PENDING"
-                                          ? pendingColor
-                                          : tx.isCredit
-                                          ? successTextColor
-                                          : errorColor,
-                                    ),
+                              child: ListTile(
+                                leading: Container(
+                                  padding: EdgeInsets.all(8.r),
+                                  decoration: BoxDecoration(
+                                    color: tx.status == "PENDING"
+                                        ? pendingColor.withOpacity(0.1)
+                                        : tx.isCredit
+                                        ? successColor.withOpacity(0.1)
+                                        : errorColor.withOpacity(0.1),
+                                    shape: BoxShape.circle,
                                   ),
-
-                                  SizedBox(height: 2.h),
-
-                                  /// BADGE
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
-                                    decoration: BoxDecoration(
-                                      color: tx.status == "PENDING"
-                                          ? pendingColor.withOpacity(0.1)
-                                          : tx.isCredit
-                                          ? successColor.withOpacity(0.1)
-                                          : errorColor.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4.r),
-                                    ),
-                                    child: Text(
-                                      tx.status ?? "",
+                                  child: Icon(
+                                    tx.isCredit ? Icons.call_received : Icons.call_made,
+                                    color: tx.status == "PENDING"
+                                        ? pendingColor
+                                        : tx.isCredit
+                                        ? successColor
+                                        : errorColor,
+                                    size: 20.sp,
+                                  ),
+                                ),
+                                title: Text(
+                                  titleText,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13.sp,
+                                    color: tx.status == "PENDING"
+                                        ? pendingColor
+                                        : lightSecondaryText,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  formatTransactionDate(tx.createdAt),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 10.sp,
+                                    color: lightSecondaryText,
+                                  ),
+                                ),
+                                trailing: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
                                       style: theme.textTheme.bodyMedium?.copyWith(
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 8.sp,
+                                        fontSize: 13.sp,
                                         color: tx.status == "PENDING"
                                             ? pendingColor
                                             : tx.isCredit
@@ -461,10 +439,36 @@ class _HomePageState extends ConsumerState<HomePage> {
                                             : errorColor,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            )
+
+                                    SizedBox(height: 2.h),
+
+                                    /// BADGE
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                                      decoration: BoxDecoration(
+                                        color: tx.status == "PENDING"
+                                            ? pendingColor.withOpacity(0.1)
+                                            : tx.isCredit
+                                            ? successColor.withOpacity(0.1)
+                                            : errorColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4.r),
+                                      ),
+                                      child: Text(
+                                        tx.status ?? "",
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 8.sp,
+                                          color: tx.status == "PENDING"
+                                              ? pendingColor
+                                              : tx.isCredit
+                                              ? successTextColor
+                                              : errorColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
                           );
                         },
                       );
@@ -500,12 +504,14 @@ class BalanceCard extends ConsumerWidget {
       error: (_, __) => null,
     );
 
-    final balance = wallet?.balance?.toString() ??
-        Hive.box('authBox').get('balance', defaultValue: '0').toString();
+    final rawBalance =
+        wallet?.balance ??
+            Hive.box('authBox').get('balance');
 
-    final formattedBalance = balance.isEmpty
+    final balance = (rawBalance == null || rawBalance.toString() == 'null')
         ? '0'
-        : balance.replaceAllMapped(
+        : rawBalance.toString();
+    final formattedBalance = balance.replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (m) => '${m[1]},',
     );
@@ -618,7 +624,7 @@ class ActionButton extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 11.w),
             decoration: BoxDecoration(
-             color: secondaryColor,
+              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
             child: icon,
@@ -662,7 +668,7 @@ class QuickActionButton extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 9.w),
             decoration: BoxDecoration(
-             color: secondaryColor,
+              color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
             ),
             child: icon,
@@ -675,91 +681,6 @@ class QuickActionButton extends StatelessWidget {
               fontWeight: FontWeight.w700,
               fontSize: 10.sp,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class SetPinSheet extends ConsumerStatefulWidget {
-  const SetPinSheet({super.key});
-
-  @override
-  ConsumerState<SetPinSheet> createState() => SetPinSheetState();
-}
-
-class SetPinSheetState extends ConsumerState<SetPinSheet> {
-  final pinController = TextEditingController();
-  bool isLoading = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 25,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 25,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Set Your Transaction PIN",
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 20),
-          AppPinCodeField(
-            controller: pinController,
-            length: 4,
-            activeColor: primaryColor,
-            selectedColor: primaryColor,
-            fillColor: keyAColor,
-          ),
-          SizedBox(height: 25),
-          CustomButton(
-            buttonName: isLoading ? "Saving..." : "Save PIN",
-            buttonColor: primaryColor,
-            buttonTextColor: Colors.white,
-            onPressed: isLoading ? null : () async {
-              final pin = pinController.text.trim();
-
-              if (pin.length != 4) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("PIN must be 4 digits")),
-                );
-                return;
-              }
-
-              setState(() => isLoading = true);
-
-              final authRepo = ref.read(authRepositoryProvider);
-              final res = await authRepo.setPin(pin, pin); // call backend
-
-              setState(() => isLoading = false);
-
-              if (!res.responseSuccessful) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(res.responseMessage)),
-                );
-                return;
-              }
-
-              // ✅ Save locally
-              final box = Hive.box('authBox');
-              await box.put('saved_pin', pin);
-              await box.put('has_pin', true);
-
-              Navigator.pop(context); // close sheet
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("PIN set successfully")),
-              );
-            },
           ),
         ],
       ),

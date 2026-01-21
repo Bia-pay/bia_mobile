@@ -1,5 +1,6 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -134,6 +135,10 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                       child: AppField.transparent(
                         hintText: 'Enter Account Number',
                         width: double.infinity,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         initialValue: verifiedAccount,
                         withClearButton: true,
                         onChanged: (value) {

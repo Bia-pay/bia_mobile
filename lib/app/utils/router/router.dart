@@ -21,7 +21,7 @@ import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner_onboar
 import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
-import '../../../feature/dashboard/pages/set_pin.dart';
+import '../../../feature/settings/presentation/set_pin.dart';
 import '../../../feature/dashboard/pages/transaction_history.dart';
 import '../../../feature/dashboard/pages/vtu/airtime/airtime.dart';
 import '../../../feature/dashboard/pages/vtu/data/data.dart';

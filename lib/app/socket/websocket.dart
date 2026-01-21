@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:bia/app/socket/socket_provider.dart';
 import 'package:bia/core/constants.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -14,18 +15,19 @@ class AppSocketListener extends ConsumerStatefulWidget {
 }
 
 class _AppSocketListenerState extends ConsumerState<AppSocketListener> with WidgetsBindingObserver {
-  
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
-    // Defer socket connection to avoid blocking startup
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(seconds: 3), () {
-        _checkAndConnect();
-      });
-    });
+
+    _listenForFcmTokenRefresh(); // 👈 ADD THIS
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   Future.delayed(const Duration(seconds: 3), () {
+    //     _checkAndConnect();
+    //   });
+    // });
   }
 
   @override
@@ -35,28 +37,46 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    final box = await Hive.openBox('authBox');
+    final token = box.get('token', defaultValue: '');
+
+    if (token == null || token.isEmpty) return;
+
     if (state == AppLifecycleState.resumed) {
-      // Reconnect when app comes to foreground
-      _checkAndConnect();
+      ref.read(socketNotifierProvider.notifier).connect();
     } else if (state == AppLifecycleState.paused) {
-      // Disconnect when app goes to background
       ref.read(socketNotifierProvider.notifier).disconnect();
     }
   }
+  void _listenForFcmTokenRefresh() {
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      print("🔄 FCM Token refreshed: $newToken");
 
+      final box = await Hive.openBox('authBox');
+      await box.put('fcmToken', newToken);
+
+      final socket = ref.read(socketProvider);
+      if (socket != null && socket.connected) {
+        socket.emit('registerFcmToken', {'fcmToken': newToken});
+        print("📤 Sent refreshed FCM token to backend via socket");
+      } else {
+        print("⚠️ Socket not connected, will send later");
+      }
+    });
+  }
   void _checkAndConnect() async {
     // Check if WebSocket is enabled
     if (!AppConstants.enableWebSocket) {
       print('⚠️ Socket.IO is disabled in app constants');
       return;
     }
-    
+
     try {
       // Open box asynchronously to avoid blocking
       final authBox = await Hive.openBox('authBox');
       final token = authBox.get('token', defaultValue: '');
-      
+
       if (token != null && token.isNotEmpty) {
         final socketNotifier = ref.read(socketNotifierProvider.notifier);
         if (!socketNotifier.isConnected) {
@@ -89,14 +109,14 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
     socket.on('deposit_success', (data) => _handleSocketEvent(context, {'event': 'deposit_success', ...data}));
     socket.on('deposit_completed', (data) => _handleSocketEvent(context, {'event': 'deposit_completed', ...data}));
     socket.on('deposit', (data) => _handleSocketEvent(context, {'event': 'deposit', ...data}));
-    
+
     socket.on('transfer_received', (data) => _handleSocketEvent(context, {'event': 'transfer_received', ...data}));
     socket.on('credit_alert', (data) => _handleSocketEvent(context, {'event': 'credit_alert', ...data}));
     socket.on('credit', (data) => _handleSocketEvent(context, {'event': 'credit', ...data}));
-    
+
     socket.on('balance_update', (data) => _handleSocketEvent(context, {'event': 'balance_update', ...data}));
     socket.on('balance', (data) => _handleSocketEvent(context, {'event': 'balance', ...data}));
-    
+
     socket.on('transaction_update', (data) => _handleSocketEvent(context, {'event': 'transaction_update', ...data}));
     socket.on('notification', (data) => _handleSocketEvent(context, {'event': 'notification', ...data}));
   }
@@ -185,9 +205,9 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
 
   void _showDepositNotification(BuildContext context, Map<String, dynamic> data) {
     final amount = data['amount'] ?? data['data']?['amount'] ?? '0';
-    
+
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("✅ Deposit of ₦$amount completed"),
@@ -207,9 +227,9 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
   void _showTransferNotification(BuildContext context, Map<String, dynamic> data) {
     final amount = data['amount'] ?? data['data']?['amount'] ?? '0';
     final sender = data['sender'] ?? data['senderName'] ?? data['data']?['sender'] ?? 'Someone';
-    
+
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("💰 You received ₦$amount from $sender"),
@@ -240,9 +260,9 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
   void _handleNotification(BuildContext context, Map<String, dynamic> data) {
     final message = data['message'] ?? data['data']?['message'] ?? 'New notification';
     final title = data['title'] ?? data['data']?['title'] ?? 'Notification';
-    
+
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Column(

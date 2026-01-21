@@ -1,30 +1,72 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
+import 'firebase_options.dart';
+
+final FlutterLocalNotificationsPlugin localNotifications =
+FlutterLocalNotificationsPlugin();
+
+Future<void> initLocalNotifications() async {
+  const AndroidInitializationSettings androidInit =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initSettings =
+  InitializationSettings(android: androidInit);
+
+  await localNotifications.initialize(initSettings);
+}
+
+void listenForForegroundMessages() {
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    final notification = message.notification;
+    final android = message.notification?.android;
+
+    if (notification != null && android != null) {
+      localNotifications.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'default_channel',
+            'Default',
+            importance: Importance.max,
+            priority: Priority.high,
+          ),
+        ),
+      );
+    }
+  });
+}
 
 // ==================== MAIN ENTRY ====================
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set orientation (lightweight operation)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await initLocalNotifications();   // 👈 REQUIRED
+  listenForForegroundMessages();    // 👈 REQUIRED
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
-  // Initialize Hive but don't wait for box opening
   await Hive.initFlutter();
 
-  // Start the app immediately - boxes will be opened lazily
   runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 }
 
@@ -70,22 +112,19 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     final themeMode = ref.watch(themeProvider);
 
     return ScreenUtilInit(
-      designSize: const Size(390, 844), // your Figma base frame
+      designSize: const Size(390, 844),
       minTextAdapt: true,
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
 
-          // Themes
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: themeMode,
 
-          // Routing
           routerConfig: AppRouter.router,
 
-          // Core UI
           builder: EasyLoading.init(),
         ),
       ),

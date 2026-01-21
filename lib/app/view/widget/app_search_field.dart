@@ -1,5 +1,6 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 🔍 Search Field Widget
@@ -142,7 +143,6 @@ class _AppSearchFieldState extends State<AppSearchField> {
     );
   }
 }
-
 /// 🧾 General App Field
 class AppField extends StatefulWidget {
   const AppField({
@@ -154,6 +154,8 @@ class AppField extends StatefulWidget {
     this.hintText,
     this.withClearButton = false,
     this.readOnly = false,
+    this.maxLength, // ✅ NEW
+    this.inputFormatters, // ✅ NEW
   }) : isBackgroundTransparent = false;
 
   const AppField.transparent({
@@ -165,6 +167,8 @@ class AppField extends StatefulWidget {
     this.hintText,
     this.withClearButton = false,
     this.readOnly = false,
+    this.maxLength, // ✅ NEW
+    this.inputFormatters, // ✅ NEW
   }) : isBackgroundTransparent = true;
 
   static const double defaultHeight = 58;
@@ -178,6 +182,9 @@ class AppField extends StatefulWidget {
   final bool withClearButton;
   final bool readOnly;
   final bool isBackgroundTransparent;
+
+  final int? maxLength; // ✅ NEW
+  final List<TextInputFormatter>? inputFormatters; // ✅ NEW
 
   @override
   State<AppField> createState() => _AppFieldState();
@@ -228,6 +235,19 @@ class _AppFieldState extends State<AppField> {
         onChanged: widget.onChanged,
         readOnly: widget.readOnly,
         maxLines: 1,
+
+        // ✅ NEW
+        maxLength: widget.maxLength,
+        inputFormatters: widget.inputFormatters,
+        buildCounter: (
+            context, {
+              required int currentLength,
+              required bool isFocused,
+              required int? maxLength,
+            }) {
+          return null; // hides counter
+        },
+
         style: theme.textTheme.bodyMedium?.copyWith(
           fontSize: 14.sp,
           color: textColor,
@@ -271,8 +291,10 @@ class _AppFieldState extends State<AppField> {
             ),
           )
               : null,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-        ),      ),
+          contentPadding:
+          EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+        ),
+      ),
     );
   }
 }

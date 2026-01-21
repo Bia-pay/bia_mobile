@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 
 /// 🌈 PRIMARY BRAND COLORS
 const primaryColor = Color(0xFF26B4DF);
+const inactiveColor = Color(0xFFBBE4F3);
+const inactiveColorOp = Color(0xFFF7FCFF);
 const secondaryColor = Color(0xFFE5FBFF);
 const accentColor = Color(0xFF0C284E);
 const whiteBackground = Color(0xFFFFFFFF);
 const lightgray = Color(0xFFF5F5F5);
+const blackColorOp = Color(0x0D000000);
 
 /// 🌤️ LIGHT THEME COLORS
 const lightBackground = Color(0xFFFFFFFF);
@@ -15,6 +18,7 @@ const lightSurface = Color(0xFFF9FAFB);
 const lightText = Color(0xFF0C284E);
 const lightSecondaryText = Color(0xFF475467);
 const lightBorderColor = Color(0xFFEAECF0);
+const pinBorderColor = Color(0xFFFAF7F7);
 const borderColor = Color(0xFFA9AAAC);
 const disabledBorderColor = Color(0xFFB6B7C3);
 const disabledTextColor = Color(0xFFB6B7C3);

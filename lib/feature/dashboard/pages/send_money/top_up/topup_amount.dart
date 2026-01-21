@@ -184,17 +184,31 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
               ),
             SizedBox(height: 75.h),
             SizedBox(
-              height: 400.h, // or whatever fits your screen
+              height: 400.h,
               child: CustomGridKeypad(
-                onKeyPressed: (key) {
-                  if (key == "x") {
-                    removeDigit();
-                  } else if (key == "ok") {
-                    _processTopUp();
-                  } else {
-                    addDigit(key);
-                  }
+                onNumberPressed: (value) {
+                  addDigit(value);
                 },
+
+                // Bottom-left → delete
+                leftAction: ActionKey(
+                  child: Icon(
+                    Icons.backspace,
+                    color: primaryColor,
+                  ),
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
+                ),
+
+                // Bottom-right → top up
+                rightAction: ActionKey(
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: primaryColor,
+                  onTap: _processTopUp,
+                ),
               ),
             ),
           ],

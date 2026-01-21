@@ -1,19 +1,13 @@
-import 'package:bia/app/utils/widgets/pin_field.dart';
 import 'package:bia/core/__core.dart';
 import 'package:bia/feature/dashboard/pages/send_money/input_transfer/transaction_pin.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:hive/hive.dart';
 
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/image.dart';
-import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../core/utils/biometric_helper.dart';
-import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class CompleteTransactionBottomSheet extends ConsumerStatefulWidget {
   final String amount;
@@ -37,17 +31,13 @@ class _CompleteTransactionBottomSheetState
   final TextEditingController pinController = TextEditingController();
   final LocalAuthentication auth = LocalAuthentication();
 
-  bool _hasBiometric = false;
-  bool _isAuthenticating = false;
-  bool _biometricEnabled = false;
   bool _saveAsBeneficiary = false;
-  bool _showPasswordField = false;
 
   String? savedPin;
   @override
   void initState() {
     super.initState();
-    _initializeSettings();
+    // _initializeSettings();
   }
 
   @override
@@ -56,115 +46,7 @@ class _CompleteTransactionBottomSheetState
     super.dispose();
   }
 
-  Future<void> _initializeSettings() async {
-    final availability = await BiometricHelper.checkBiometricAvailability();
-    final biometricEnabled = await BiometricHelper.isTransactionBiometricEnabled();
-    final savedPiin = await BiometricHelper.getSavedPin();
 
-    setState(() {
-      _hasBiometric = availability.isAvailable;
-      _biometricEnabled = biometricEnabled;
-      savedPin = savedPiin;
-    });
-
-    // ✅ Logic flow
-    if (!availability.isAvailable) {
-      debugPrint("🚫 No biometric hardware detected. Showing PIN only.");
-      setState(() => _showPasswordField = true);
-      return;
-    }
-
-    if (availability.isAvailable && biometricEnabled && savedPiin != null) {
-      debugPrint("🔐 ${availability.biometricTypeName} enabled for transactions. Launching authentication...");
-      Future.delayed(const Duration(milliseconds: 400), _authenticate);
-    } else {
-      if (!biometricEnabled) {
-        debugPrint("🧾 Biometric available but not enabled. Showing PIN field.");
-      } else if (savedPiin == null) {
-        debugPrint("⚠️ No saved PIN found. Showing PIN field.");
-      }
-      setState(() => _showPasswordField = true);
-    }
-  }
-
-  Future<void> _authenticate() async {
-    try {
-      setState(() => _isAuthenticating = true);
-
-      final didAuthenticate = await auth.authenticate(
-        localizedReason: 'Authenticate to transfer',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-          useErrorDialogs: true,
-        ),
-      );
-
-      if (!didAuthenticate) {
-        setState(() => _showPasswordField = true);
-        return;
-      }
-
-      const narration = 'Transfer';
-
-      // ✅ Use SAVED PIN for biometric transfers
-      final pin = savedPin;
-
-      if (pin == null || pin.isEmpty) {
-        _showError("No saved PIN found. Please use PIN instead.");
-        setState(() => _showPasswordField = true);
-        return;
-      }
-
-      final cleanAmount =
-          double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ??
-              0.0;
-
-      const double fee = 10.00;
-      final total = cleanAmount + fee;
-
-      final authController = ref.read(dashboardControllerProvider.notifier);
-
-      await authController.sendMoney(
-        context,
-        widget.recipientAccount, // ACCOUNT
-        total.toStringAsFixed(2), // AMOUNT
-        narration, // NARRATION
-        pin, // PIN (savedPin)
-        save: _saveAsBeneficiary,
-      );
-
-      final authBox = await Hive.openBox("authBox");
-      final token = authBox.get("token");
-
-      if (token != null && token.isNotEmpty && mounted) {
-        context.pushNamed(
-          RouteList.successScreen,
-          extra: {
-            "type": "transfer",
-            "amount": total.toStringAsFixed(2),
-            "recipientName": widget.recipientName,
-            "recipientAccount": widget.recipientAccount,
-            "reference": "",
-            "channel": "",
-          },
-        );
-      } else {
-        _showError("Something went wrong. Please try again.");
-      }
-    } catch (e) {
-      debugPrint("⚠️ Biometric error: $e");
-      setState(() => _showPasswordField = true);
-    } finally {
-      if (mounted) setState(() => _isAuthenticating = false);
-    }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,31 +131,6 @@ class _CompleteTransactionBottomSheetState
             _buildBeneficiaryToggle(primaryColor, textTheme),
             SizedBox(height: 10.h),
 
-            if (_hasBiometric && _biometricEnabled && !_showPasswordField)
-              Column(
-                children: [
-                  GestureDetector(
-                    onTap: _isAuthenticating ? null : _authenticate,
-                    child: SvgPicture.asset(
-                      fingerPrint,
-                      height: 100.h,
-                      colorFilter: ColorFilter.mode(
-                        primaryColor,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 15.h),
-                  TextButton(
-                    onPressed: () => setState(() => _showPasswordField = true),
-                    child: Text(
-                      'Use Pin Instead',
-                      // style: theme.textTheme.bodyMedium?.copyWith(color: primaryColor),
-                    ),
-                  ),
-                ],
-              )
-            else
               SizedBox(
                 width: double.infinity,
                 child: CustomButton(
@@ -356,7 +213,7 @@ class _CompleteTransactionBottomSheetState
                 _saveAsBeneficiary = value;
               });
             },
-            activeColor: primaryColor,
+            activeThumbColor: primaryColor,
           ),
         ),
       ],

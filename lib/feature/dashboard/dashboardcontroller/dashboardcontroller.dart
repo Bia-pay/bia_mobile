@@ -450,4 +450,45 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       return null;
     }
   }
+
+  Future<ResponseModel?> uploadProfileImage(
+      BuildContext context,
+      String imagePath,
+      ) async {
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response =
+      await dashboardRepository.uploadProfileImage(imagePath);
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Upload failed: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
 }

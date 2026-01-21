@@ -15,6 +15,11 @@ class PhoneInputWidget extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final CountryCode? initialCountry;
   final ValueChanged<CountryCode>? onCountryChanged;
+  final TextInputType? keyboardType;
+
+  // ✅ NEW
+  final Color? backgroundColor;
+  final Color? borderColor;
 
   const PhoneInputWidget({
     super.key,
@@ -28,6 +33,11 @@ class PhoneInputWidget extends StatefulWidget {
     this.readOnly = false,
     this.initialCountry,
     this.onCountryChanged,
+    this.keyboardType,
+
+    // ✅ NEW
+    this.backgroundColor,
+    this.borderColor,
   });
 
   @override
@@ -39,6 +49,9 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
   late CountryCode _selectedCountry;
   late final VoidCallback _controllerListener;
 
+  bool get _isKeyboardDisabled =>
+      widget.keyboardType == TextInputType.none;
+
   @override
   void initState() {
     super.initState();
@@ -49,20 +62,20 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
           orElse: () => CountryCodes.allCountries.first,
         );
 
-    // Listen to controller changes safely
     _controllerListener = () {
       final error = widget.validator(widget.controller.text);
-      if (!mounted) return; // Prevent setState after dispose
+      if (!mounted) return;
       if (error != _errorText) {
         setState(() => _errorText = error);
       }
     };
+
     widget.controller.addListener(_controllerListener);
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_controllerListener); // Remove listener
+    widget.controller.removeListener(_controllerListener);
     super.dispose();
   }
 
@@ -77,15 +90,12 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
   String get fullPhoneNumber {
     String phoneNumber = widget.controller.text.trim();
 
-    // Remove non-numeric characters
     phoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
 
-    // Limit to max 10 digits
     if (phoneNumber.length > 10) {
       phoneNumber = phoneNumber.substring(0, 10);
     }
 
-    // Remove leading 0
     if (phoneNumber.startsWith('0')) {
       phoneNumber = phoneNumber.substring(1);
     }
@@ -96,6 +106,10 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final defaultBackground = Colors.grey.shade100;
+    final defaultBorderColor =
+    _errorText != null ? Colors.red : Colors.grey[300]!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -112,10 +126,10 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
           ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
+            color: widget.backgroundColor ?? defaultBackground, // ✅
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _errorText != null ? Colors.red : Colors.grey[300]!,
+              color: widget.borderColor ?? defaultBorderColor, // ✅
               width: 1,
             ),
           ),
@@ -129,16 +143,22 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
               Expanded(
                 child: TextFormField(
                   controller: widget.controller,
-                  keyboardType: TextInputType.phone,
-                  maxLength: 10, // Limit input to 10 digits
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  keyboardType:
+                  widget.keyboardType ?? TextInputType.phone,
+                  maxLength: 10,
+                  inputFormatters: _isKeyboardDisabled
+                      ? null
+                      : [FilteringTextInputFormatter.digitsOnly],
                   onChanged: widget.onChanged,
                   onFieldSubmitted: widget.onSubmitted,
-                  readOnly: widget.readOnly,
+                  readOnly: widget.readOnly || _isKeyboardDisabled,
+                  enableInteractiveSelection: !_isKeyboardDisabled,
+                  showCursor: !_isKeyboardDisabled,
                   decoration: InputDecoration(
                     counterText: "",
                     hintText: widget.hintText,
-                    hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    hintStyle:
+                    Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: widget.hintColor ?? Colors.grey[400],
                       fontWeight: FontWeight.w400,
                       fontSize: 13.sp,

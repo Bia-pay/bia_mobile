@@ -1,5 +1,6 @@
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/scheduler.dart';
@@ -19,33 +20,59 @@ class _SplashScreenState extends ConsumerState<Splash> {
   @override
   void initState() {
     super.initState();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _checkAuthStatus();
+
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      await _handleFirstLaunch(); // ask notification permission
+      await _checkAuthStatus();   // navigate
     });
   }
 
+  Future<bool> requestNotificationPermission() async {
+    final messaging = FirebaseMessaging.instance;
+
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  Future<void> _handleFirstLaunch() async {
+    final box = await Hive.openBox('appBox');
+    final isFirstLaunch = box.get('first_launch', defaultValue: true);
+
+    if (isFirstLaunch) {
+      final granted = await requestNotificationPermission();
+
+      if (granted) {
+        final fcm = await FirebaseMessaging.instance.getToken();
+        final authBox = await Hive.openBox('authBox');
+        await authBox.put('fcmToken', fcm);
+      }
+
+      await box.put('first_launch', false);
+    }
+  }
+
   Future<void> _checkAuthStatus() async {
-    // Reduce artificial delay from 2 seconds to 1 second
     await Future.delayed(const Duration(milliseconds: 1500));
 
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token");
-      debugPrint("TOKEN → $token");
 
       if (!mounted) return;
 
       if (token != null && token.toString().isNotEmpty) {
-        // User already logged in
         context.go(RouteList.welcomeBackScreen);
       } else {
-        // No login found
         context.go(RouteList.getStarted);
       }
     } catch (e) {
-      debugPrint("Error checking auth status: $e");
       if (!mounted) return;
-      // Fallback to get started screen
       context.go(RouteList.getStarted);
     }
   }

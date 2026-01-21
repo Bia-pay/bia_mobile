@@ -19,10 +19,10 @@ class EnableTransactionPinFingerprint extends ConsumerStatefulWidget {
 
 class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransactionPinFingerprint> {
   final TextEditingController pinController = TextEditingController();
-  bool _obscurePassword = true;
+  bool _obscurepin = true;
   bool _isLoading = false;
   String _biometricTypeName = 'Biometric';
-  String password = ""; // Plain string password
+  String pin = ""; // Plain string pin
 
   @override
   void initState() {
@@ -39,17 +39,17 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
   // Add character from keypad
   void addDigit(String value) {
     setState(() {
-      password += value;
-      pinController.text = password;
+      pin += value;
+      pinController.text = pin;
     });
   }
 
   // Remove last character
   void removeDigit() {
     setState(() {
-      if (password.isNotEmpty) {
-        password = password.substring(0, password.length - 1);
-        pinController.text = password;
+      if (pin.isNotEmpty) {
+        pin = pin.substring(0, pin.length - 1);
+        pinController.text = pin;
       }
     });
   }
@@ -137,48 +137,91 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 10.h),
-            Center(
-              child: Column(
-                children: [
-                  SizedBox(height: 10.h),
-                  Text(
-                    'Enter your account pin to save for $_biometricTypeName login.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: lightSecondaryText),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 15.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    accentColor.withOpacity(0.4),
+                    primaryColor,
+                    primaryColor.withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(10.r)),
+              ),
+              child: Icon(Icons.lock, color: Colors.white, size: 30.sp),
+            ),
+            SizedBox(height: 20.h),
+            Text(
+              'Enter Transaction PIN',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
+            SizedBox(height: 15.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Text(
+                textAlign: TextAlign.center,'Enter your 4-digit transaction PIN to enable $_biometricTypeName for transfer.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            SizedBox(height: 15.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                final isFilled = index < pin.length;
+
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 16.w,
+                  height: 16.h,
+                  margin: EdgeInsets.symmetric(horizontal: 5.w),
+                  decoration: BoxDecoration(
+                    color: isFilled ? primaryColor : Colors.transparent,
+                    border: Border.all(
+                      color: isFilled ? inactiveColor : disabledTextColor,
+                      width: 2,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ),
             SizedBox(height: 80.h),
-            Text(
-              'Account Pin',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            SizedBox(height: 8.h),
-            AppPinCodeField(
-              controller: pinController,
-              length: 4,
-              fillColor: keyAColor,
-              inactiveColor: keyAColor,
-              activeColor: primaryColor,
-              selectedColor: primaryColor,
-            ),
-            const Spacer(),
             SizedBox(
               height: 400.h,
               child: CustomGridKeypad(
-                onKeyPressed: (key) {
-                  if (key == "x") {
-                    removeDigit();
-                  } else if (key == "ok") {
-                    _enableBiometricTransaction();
-                  } else {
-                    addDigit(key);
-                  }
+                onNumberPressed: (value) {
+                  addDigit(value);
                 },
+
+                // Bottom-left → delete
+                leftAction: ActionKey(
+                  child: Icon(
+                    Icons.backspace,
+                    color: primaryColor,
+                  ),
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
+                ),
+
+                // Bottom-right → enable biometric
+                rightAction: ActionKey(
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                  ),
+                  backgroundColor: primaryColor,
+                  onTap: _enableBiometricTransaction,
+                ),
               ),
             ),
           ],

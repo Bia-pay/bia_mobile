@@ -4,9 +4,11 @@ import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/send
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/router/route_constant.dart';
+import '../../../../../app/utils/widgets/phone_input_widget.dart';
 import '../../../../dashboard/widgets/keypad.dart';
 import '../../../modal/country_code.dart';
 import '../../../authcontroller/authcontroller.dart';
@@ -82,7 +84,6 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   @override
   void initState() {
     super.initState();
-    _phoneController.text = '08112345678'; // Example Nigerian number
     // Add listener to check when phone number is complete
     _phoneController.addListener(_checkPhoneNumberComplete);
   }
@@ -177,7 +178,9 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
             if (GoRouter.of(context).canPop()) {
               context.pop();
             } else {
-              context.goNamed(RouteList.loginScreen); // Navigate to login as fallback
+              context.goNamed(
+                RouteList.loginScreen,
+              ); // Navigate to login as fallback
             }
           },
           icon: Icon(Icons.arrow_back_ios, color: darkBackground),
@@ -197,101 +200,83 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!isSmallScreen) SizedBox(height: 20.h),
-
               // Header section
-              HeaderSection(screenWidth: screenWidth),
-              SizedBox(height: 30.h),
-
-              // Phone input section
-              PhoneInputSection(
-                screenWidth: screenWidth,
-                phoneController: _phoneController,
-                selectedCountry: _selectedCountry,
-                onCountryChanged: (CountryCode? newValue) {
-                  setState(() {
-                    _selectedCountry = newValue!;
-                  });
-                },
+              SizedBox(height: 20.h),Container(
+                padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 20.h),
+                decoration: BoxDecoration(
+                  color: lightBackground,
+                  borderRadius: BorderRadius.all(Radius.circular(10.r)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05), // very light shadow
+                      blurRadius: 8,
+                      offset: const Offset(0, 2), // slight downward shadow
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PhoneInputWidget(
+                      controller: _phoneController,
+                      label: 'Mobile Number',
+                      hintText: '8000000000',
+                      keyboardType: TextInputType.none,
+                      backgroundColor: lightBackground,
+                      borderColor: borderColor,
+                      validator: (value) {
+                        if (value.isEmpty) return 'Phone number is required';
+                        if (value.length < 10) return 'Phone number too short';
+                        return null;
+                      },
+                      onCountryChanged: (CountryCode? newValue) {
+                        setState(() {
+                          _selectedCountry = newValue!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 30.h),
+                    Text(
+                      "We'll send you a code to verify your phone number",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14.spMin,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 80.h),
-
-              // Show message only when phone number is complete
-              if (_isPhoneNumberComplete) ...[
-                Text(
-                  'We texted you a code to verify your phone number',
-                  style: TextStyle(
-                    fontSize: screenWidth < 375 ? 12 : 14,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 15),
-              ],
-
-              // Verification section - show when phone number is complete
-              // if (_isPhoneNumberComplete) ...[
-              //   VerificationSection(
-              //     screenWidth: screenWidth,
-              //     codeController: _codeController,
-              //   ),
-              //   const SizedBox(height: 30),
-              // ],
-
-              // Send button - enable/disable based on phone number completion
-              // SendButton(
-              //   screenWidth: screenWidth,
-              //   isEnabled: _isPhoneNumberComplete,
-              //   onPressed: _isPhoneNumberComplete
-              //       ? () async {
-              //           // Format phone number correctly
-              //           // Remove leading 0 if present and add country code without +
-              //           String phoneNumber = _phoneController.text.trim();
-              //           if (phoneNumber.startsWith('0')) {
-              //             phoneNumber = phoneNumber.substring(1);
-              //           }
-              //           // Remove + from dial code and concatenate
-              //           final dialCode = _selectedCountry.dialCode.replaceAll(
-              //             '+',
-              //             '',
-              //           );
-              //           final fullPhoneNumber = '$dialCode$phoneNumber';
-              //
-              //           debugPrint(
-              //             'Sending code to: $fullPhoneNumber (${_selectedCountry.name})',
-              //           );
-              //
-              //           // Call forgot password API
-              //           final authController = ref.read(
-              //             authControllerProvider.notifier,
-              //           );
-              //           final response = await authController.forgotPassword(
-              //             context,
-              //             fullPhoneNumber,
-              //           );
-              //
-              //           // Navigate to forgot_password2 screen if successful
-              //           if (response != null && response.responseSuccessful) {
-              //             if (!mounted) return;
-              //             context.pushNamed(
-              //               RouteList.forgotPasswordReset,
-              //               extra: fullPhoneNumber,
-              //             );
-              //           }
-              //         }
-              //       : null, // Disable button if phone not complete
-              // ),
-              SizedBox(height: 30),
               SizedBox(
-                height: 350.h, // adjust this to fit your keypad
+                height: 350.h,
                 child: CustomGridKeypad(
-                  onKeyPressed: (key) {
-                    if (key == "x") {
-                      removeDigit();
-                    } else if (key == "ok") {
-                      _sendForgotPasswordCode();
-                    } else {
-                      addDigit(key);
-                    }
+                  onNumberPressed: (value) {
+                    addDigit(value);
                   },
+
+                  // Bottom-left action → delete
+                  leftAction: ActionKey(
+                    child: SvgPicture.asset(
+                      'assets/svg/cancel.svg',
+                      height: 20.h,
+                      colorFilter: ColorFilter.mode(
+                        primaryColor,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    backgroundColor: primaryColor.withOpacity(0.1),
+                    onTap: removeDigit,
+                  ),
+
+                  // Bottom-right action → send code
+                  rightAction: ActionKey(
+                    child: const Icon(Icons.arrow_forward, color: Colors.white),
+                    backgroundColor: primaryColor,
+                    onTap: _isPhoneNumberComplete
+                        ? _sendForgotPasswordCode
+                        : () {}, // or null if you later add disabled support
+                  ),
                 ),
               ),
               // Number pad

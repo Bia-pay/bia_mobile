@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -6,9 +7,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/pin_field.dart';
 import '../../../app/utils/colors.dart';
+import '../../../app/utils/image.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../../../core/utils/biometric_helper.dart';
 import '../../auth/modal/reponse/response_modal.dart';
@@ -30,7 +33,6 @@ class _UProfileState extends ConsumerState<UProfile> {
   UserResponse? _user;
   bool _isLoadingProfile = true;
   String _biometricTypeName = 'Biometric';
-
   final List<Map<String, dynamic>> securityItems = [
     {
       'title': 'Pin Settings',
@@ -127,13 +129,90 @@ class _UProfileState extends ConsumerState<UProfile> {
       setState(() => _isLoadingProfile = false);
     }
   }
-
+  void _showEditAvatarSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text("Change photo"),
+            onTap: () {
+              Navigator.pop(context);
+              _pickAndUploadAvatar(context);
+            },
+          ),
+          if (_user?.picture != null)
+            ListTile(
+              leading: const Icon(Icons.visibility),
+              title: const Text("View photo"),
+              onTap: () {
+                Navigator.pop(context);
+                _previewAvatar(context);
+              },
+            ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
   Future<void> _loadBiometricSetting() async {
     final box = await Hive.openBox('settingsBox');
     setState(() {
       biometricEnabled = box.get('biometric_enabled', defaultValue: false);
       loginBiometricEnabled = box.get('login_biometric_enabled', defaultValue: false);
     });
+  }
+  void _previewAvatar(BuildContext context) {
+    final image = _user?.picture;
+    if (image == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(),
+          body: Center(
+            child: Image.network(image),
+          ),
+        ),
+      ),
+    );
+  }
+  Future<void> _pickAndUploadAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
+
+    if (picked == null) return;
+
+    // ✅ INSTANT PREVIEW
+    setState(() {
+      _user = _user?.copyWith(picture: picked.path);
+    });
+
+    final controller =
+    ref.read(dashboardControllerProvider.notifier);
+
+    final response = await controller.uploadProfileImage(
+      context,
+      picked.path,
+    );
+
+    if (response != null && response.responseSuccessful) {
+      // 🔄 replace local path with backend URL
+      await _loadUserProfile();
+    }
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
@@ -221,101 +300,7 @@ class _UProfileState extends ConsumerState<UProfile> {
     }
   }
 
-  /// ✅ Fingerprint modals preserved
-  void _showPinSetupModal(BuildContext context, Box box) async {
-    // First check if biometric is available
-    final availability = await BiometricHelper.checkBiometricAvailability();
 
-    if (!availability.isAvailable) {
-      _showSnack(
-        context,
-        'Biometric authentication is not available on this device',
-        Colors.orange,
-      );
-      return;
-    }
-
-    final pinController = TextEditingController();
-    final textTheme = Theme.of(context).textTheme;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _buildBottomSheetContainer(
-        context,
-        title: "Enable ${availability.biometricTypeName} Payment",
-        message: "Enter your 4-digit transaction PIN to link it to your ${availability.biometricTypeName.toLowerCase()}.",
-        child: AppPinCodeField(controller: pinController, length: 4,  fillColor: keyAColor,
-            inactiveColor: keyAColor,
-            activeColor: primaryColor,
-            selectedColor: primaryColor),
-        onConfirm: () async {
-          final pin = pinController.text.trim();
-          if (pin.length != 4) {
-            _showSnack(context, "Please enter a valid 4-digit PIN", Colors.red);
-            return;
-          }
-          await box.put('biometric_enabled', true);
-          await box.put('saved_pin', pin);
-          Navigator.pop(context);
-          setState(() => biometricEnabled = true);
-          _showSnack(context, "${availability.biometricTypeName} payment enabled successfully", Colors.green);
-
-        },
-      ),
-    );
-  }
-
-
-  Widget _buildBottomSheetContainer(
-      BuildContext context, {
-        required String title,
-        required String message,
-        required Widget child,
-        required VoidCallback onConfirm,
-      }) {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      decoration: BoxDecoration(
-        color: offWhite,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 50,
-            height: 5,
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(10)),
-          ),
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: primaryColor, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 15),
-          Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 25),
-          child,
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onConfirm,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text("Confirm", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showSnack(BuildContext context, String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
@@ -410,74 +395,122 @@ class _UProfileState extends ConsumerState<UProfile> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
-                  children: [
-                    SizedBox(height: 20.h),
-                    Center(
-                      child: Text(
-                        'Settings',
-                        style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    _buildProfileHeader(context),
-                    SizedBox(height: 24.h),
-                    _divider(context),
-                    SizedBox(height: 20.h),
-                  ],
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              children: [
+                SizedBox(height: 20.h),
+                Center(
+                  child: Text(
+                    'Settings',
+                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
+                  ),
                 ),
-              ),
+                SizedBox(height: 20.h),
+                _buildProfileHeader(context, theme.brightness == Brightness.light),
+                SizedBox(height: 24.h),
+                _divider(context),
+                SizedBox(height: 20.h),
+                _buildSectionContent(context, 'Security', securityItems),
+                _buildSectionContent(context, 'Others', othersItems),
+                SizedBox(height: 100.h),
+              ],
             ),
-            _buildSection(context, 'Security', securityItems),
-            _buildSection(context, 'Others', othersItems),
-            SliverToBoxAdapter(child: SizedBox(height: 60.h)),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    final name = _user?.fullname ?? 'No Name';
-    final username = _user?.phone ?? 'username';
-    final avatarUrl = 'https://www.bigfootdigital.co.uk/wp-content/uploads/2020/07/image-optimisation-scaled.jpg';
+  Widget _buildProfileHeader(BuildContext context, bool isLight) {
+    final user = _user;
 
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 45.r,
-          backgroundImage: NetworkImage(avatarUrl),
-        ),
-        SizedBox(height: 5.h),
-        Text(name,
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)
-        ),
-        Text('$username',
-            style: theme.textTheme.labelSmall?.copyWith(fontSize: 12.spMin)
-        ),
-        SizedBox(height: 15.h),
-      ],
+    return RepaintBoundary(
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              GestureDetector(
+                onTap: () => _showEditAvatarSheet(context),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: inactiveColor,
+                  ),
+                  child: ClipOval(
+                    child: _buildAvatarImage(user?.picture),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => _showEditAvatarSheet(context),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: primaryColor,
+                    child: const Icon(
+                      Icons.camera_alt,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(user?.fullname ?? 'Loading…'),
+          Text(user?.phone ?? ''),
+        ],
+      ),
     );
   }
 
-  Widget _buildSection(BuildContext context, String title, List<Map<String, dynamic>> items) {
+  Widget _buildAvatarImage(String? picture) {
+    if (picture == null || picture.isEmpty) {
+      return Image.asset(appLogoPng, fit: BoxFit.cover);
+    }
+
+    if (picture.startsWith('http')) {
+      return Image.network(
+        picture,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+        errorBuilder: (_, __, ___) => Image.asset(appLogoPng, fit: BoxFit.cover),
+      );
+    }
+
+    return Image.file(File(picture), fit: BoxFit.cover);
+  }
+
+  Widget _buildSectionContent(BuildContext context, String title, List<Map<String, dynamic>> items) {
     final theme = Theme.of(context);
-    return SliverPadding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-      sliver: SliverList(
-        delegate: SliverChildListDelegate([
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 10.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(title,
               style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15.spMin)
           ),
           ...items.map((item) => _buildSettingsTile(context, item)),
           _divider(context),
-        ]),
+        ],
       ),
     );
   }
@@ -494,169 +527,176 @@ class _UProfileState extends ConsumerState<UProfile> {
     final isExpanded = _expandedTile == title;
     final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        InkWell(
-          onTap: () {
-            if (isLogout) {
-              _confirmLogout(context);
-            } else if (hasDropdown && dropdownContent.containsKey(title)) {
-              setState(() => _expandedTile = isExpanded ? '' : title);
-            } else {
-              _handleItemTap(context, title);
-            }
-          },
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.h),
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isLogout ? Colors.red.shade100 : Colors.grey.shade200,
-                  ),
-                  child: SvgPicture.asset(
-                    item['image'],
-                    height: 15.h,
-                    colorFilter: ColorFilter.mode(
-                      isLogout ? Colors.red : Colors.grey.shade700,
-                      BlendMode.srcIn,
+    return RepaintBoundary(
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              if (isLogout) {
+                _confirmLogout(context);
+              } else if (hasDropdown && dropdownContent.containsKey(title)) {
+                setState(() => _expandedTile = isExpanded ? '' : title);
+              } else {
+                _handleItemTap(context, title);
+              }
+            },
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.h),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isLogout ? Colors.red.shade100 : Colors.grey.shade200,
+                    ),
+                    child: SvgPicture.asset(
+                      item['image'],
+                      height: 15.h,
+                      colorFilter: ColorFilter.mode(
+                        isLogout ? Colors.red : Colors.grey.shade700,
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: 20.w),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15.spMin,
-                      color: isLogout ? Colors.red : Colors.grey.shade700,
+                  SizedBox(width: 20.w),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15.spMin,
+                        color: isLogout ? Colors.red : Colors.grey.shade700,
+                      ),
                     ),
                   ),
-                ),
-                if (hasDropdown)
-                  Icon(
-                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: Colors.grey.shade700,
-                    size: 25.spMin,
-                  ),
-              ],
+                  if (hasDropdown)
+                    Icon(
+                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.grey.shade700,
+                      size: 25.spMin,
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-        if (isExpanded && dropdownContent[title] != null)
-          Padding(
-            padding: EdgeInsets.only(left: 55.w, top: 5.h),
-            child: Column(
-              children: dropdownContent[title]!.map((subItem) {
-                final subTitle = subItem['title']!;
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 6.h),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: [
-                        Container(
-                          padding: EdgeInsets.all(8.w),
-                          decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
-                          child: SvgPicture.asset(
-                            subItem['image']!,
-                            height: 15.h,
-                            colorFilter: ColorFilter.mode(Colors.grey.shade700, BlendMode.srcIn),
-                          ),
-                        ),
-                        SizedBox(width: 18.w),
-                        GestureDetector(
-                          onTap: () async {
-                            if (subTitle == 'Set Pin') {
-                              context.pushNamed(RouteList.setTransactionPin);
-                            } if (subTitle == 'Change Payment Pin') {
-                              context.pushNamed(RouteList.changePaymentPin);
-                            }
-                          },
-                          child: Text(
-                            subTitle,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: 14.spMin,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ),
-                      ]),
-                      if (subTitle.startsWith('Pay with ') || subTitle.startsWith('Login with ') || subTitle == 'Enable Scan to Receive')
-                        FutureBuilder<Box>(
-                          future: Hive.openBox('settingsBox'),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState != ConnectionState.done) {
-                              return const SizedBox(width: 40, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
-                            }
-                            final box = snapshot.data!;
-
-                            // Decide which setting to read / write
-                            final isLoginSwitch = subTitle.startsWith('Login with ');
-                            final isFingerprintSwitch = subTitle.startsWith('Pay with ');
-
-                            bool isEnabled;
-                            if (subTitle == 'Enable Scan to Receive') {
-                              isEnabled = box.get('scan_to_receive', defaultValue: false) as bool;
-                            } else if (isLoginSwitch) {
-                              isEnabled = box.get('login_biometric_enabled', defaultValue: false) as bool;
-                            } else {
-                              isEnabled = box.get('biometric_enabled', defaultValue: false) as bool;
-                            }
-
-                            return Transform.scale(
-                              scale: 0.55,
-                              child: Switch(
-                                value: isEnabled,
-                                onChanged: (value) async {
-                                  if (subTitle == 'Enable Scan to Receive') {
-                                    await _handleScanToggle(box, value);
-                                    return;
-                                  }
-
-                                  if (isLoginSwitch) {
-                                    if (value) {
-                                      final result = await context.pushNamed(RouteList.enableLoginFingerprint);
-                                      if (result == true) {
-                                        // Refresh the biometric setting state
-                                        await _loadBiometricSetting();
-                                      }
-                                    } else {
-                                      await box.put('login_biometric_enabled', false);
-                                      await box.delete('biometric_login_password');
-                                      setState(() => loginBiometricEnabled = false);
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: isExpanded && dropdownContent[title] != null
+                ? Padding(
+                    padding: EdgeInsets.only(left: 55.w, top: 5.h),
+                    child: Column(
+                      children: dropdownContent[title]!.map((subItem) {
+                        final subTitle = subItem['title']!;
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 6.h),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
+                                  child: SvgPicture.asset(
+                                    subItem['image']!,
+                                    height: 15.h,
+                                    colorFilter: ColorFilter.mode(Colors.grey.shade700, BlendMode.srcIn),
+                                  ),
+                                ),
+                                SizedBox(width: 18.w),
+                                GestureDetector(
+                                  onTap: () async {
+                                    if (subTitle == 'Set Pin') {
+                                      context.pushNamed(RouteList.setTransactionPin);
+                                    } if (subTitle == 'Change Payment Pin') {
+                                      context.pushNamed(RouteList.changePaymentPin);
                                     }
-                                  } else {
-                                    // TRANSACTION PIN BIOMETRIC
-                                    if (value) {
-                                      final result = await context.pushNamed(
-                                        RouteList.enableTransactionPinFingerprint,
-                                      );
-
-                                      if (result == true) {
-                                        await _loadBiometricSetting(); // refresh switch
-                                      }
-                                    } else {
-                                      await box.put('biometric_enabled', false);
-                                      await box.delete('saved_pin');
-                                      setState(() => biometricEnabled = false);
+                                  },
+                                  child: Text(
+                                    subTitle,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontSize: 14.spMin,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ]),
+                              if (subTitle.startsWith('Pay with ') || subTitle.startsWith('Login with ') || subTitle == 'Enable Scan to Receive')
+                                FutureBuilder<Box>(
+                                  future: Hive.openBox('settingsBox'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState != ConnectionState.done) {
+                                      return const SizedBox(width: 40, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
                                     }
-                                  }
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+                                    final box = snapshot.data!;
+
+                                    // Decide which setting to read / write
+                                    final isLoginSwitch = subTitle.startsWith('Login with ');
+                                    final isFingerprintSwitch = subTitle.startsWith('Pay with ');
+
+                                    bool isEnabled;
+                                    if (subTitle == 'Enable Scan to Receive') {
+                                      isEnabled = box.get('scan_to_receive', defaultValue: false) as bool;
+                                    } else if (isLoginSwitch) {
+                                      isEnabled = box.get('login_biometric_enabled', defaultValue: false) as bool;
+                                    } else {
+                                      isEnabled = box.get('biometric_enabled', defaultValue: false) as bool;
+                                    }
+
+                                    return Transform.scale(
+                                      scale: 0.55,
+                                      child: Switch(
+                                        value: isEnabled,
+                                        onChanged: (value) async {
+                                          if (subTitle == 'Enable Scan to Receive') {
+                                            await _handleScanToggle(box, value);
+                                            return;
+                                          }
+
+                                          if (isLoginSwitch) {
+                                            if (value) {
+                                              final result = await context.pushNamed(RouteList.enableLoginFingerprint);
+                                              if (result == true) {
+                                                // Refresh the biometric setting state
+                                                await _loadBiometricSetting();
+                                              }
+                                            } else {
+                                              await box.put('login_biometric_enabled', false);
+                                              await box.delete('biometric_login_password');
+                                              setState(() => loginBiometricEnabled = false);
+                                            }
+                                          } else {
+                                            // TRANSACTION PIN BIOMETRIC
+                                            if (value) {
+                                              final result = await context.pushNamed(
+                                                RouteList.enableTransactionPinFingerprint,
+                                              );
+
+                                              if (result == true) {
+                                                await _loadBiometricSetting(); // refresh switch
+                                              }
+                                            } else {
+                                              await box.put('biometric_enabled', false);
+                                              await box.delete('saved_pin');
+                                              setState(() => biometricEnabled = false);
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import '../../auth/data/api_constant.dart';
 import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
@@ -436,6 +438,71 @@ class DashboardRepository {
       print("🔥 Error updating PIN: $e");
       return ResponseModel(
         responseMessage: "Something went wrong. Please try again.",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+
+  Future<ResponseModel> uploadProfileImage(String imagePath) async {
+    try {
+      final box = await Hive.openBox('authBox');
+      final token = box.get('token') as String?;
+
+      debugPrint('🔐 UPLOAD TOKEN FROM HIVE: $token');
+
+      if (token == null || token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      final uri = Uri.parse(
+        '${ApiConstant.BASE_URL}${ApiConstant.UPDATE_AVATAR}',
+      );
+
+      final request = http.MultipartRequest('PATCH', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          imagePath,
+          contentType: MediaType('image', 'jpeg'), // 🔥 IMPORTANT
+        ),
+      );
+
+      debugPrint('📤 Uploading image: $imagePath');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("🟢 UPLOAD STATUS: ${response.statusCode}");
+      debugPrint("🟢 UPLOAD BODY: ${response.body}");
+
+      final json = jsonDecode(response.body);
+      if (json['responseSuccessful'] == true) {
+        final pictureUrl = json['responseBody']?['picture'];
+
+        if (pictureUrl != null) {
+          final box = Hive.box('authBox');
+          await box.put('picture', pictureUrl);
+        }
+      }
+      return ResponseModel(
+        responseMessage:
+        json['responseMessage'] ?? json['error'] ?? 'Upload failed',
+        responseSuccessful: json['responseSuccessful'] ?? false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      debugPrint("🔥 Upload exception: $e");
+      return ResponseModel(
+        responseMessage: 'Image upload failed',
         responseSuccessful: false,
         statusCode: 500,
       );

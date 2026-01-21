@@ -2,111 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/utils/colors.dart';
-import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../app/utils/widgets/pin_field.dart';
+import '../../../../../core/utils/biometric_helper.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/keypad.dart';
-
-// class TransactionPin extends ConsumerWidget {
-//   final String recipientAccount;
-//   final String recipientName;
-//   final double amount;
-//   final bool saveAsBeneficiary;
-//
-//   const TransactionPin({
-//     super.key,
-//     required this.recipientAccount,
-//     required this.recipientName,
-//     required this.amount,
-//     required this.saveAsBeneficiary,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     final TextEditingController pinController = TextEditingController();
-//
-//     return Column(
-//       children: [
-//         SizedBox(
-//           width: 250.w,
-//           child: AppPinCodeField(
-//             controller: pinController,
-//             length: 4,
-//             fillColor: keyAColor,
-//             inactiveColor: keyAColor,
-//             activeColor: primaryColor,
-//             selectedColor: primaryColor,
-//           ),
-//         ),
-//         SizedBox(height: 20.h),
-//         SizedBox(
-//           width: double.infinity,
-//           child: CustomButton(
-//             buttonName: 'Send Money',
-//             buttonColor: primaryColor,
-//             buttonTextColor: Colors.white,
-//             onPressed: () async {
-//               final pin = pinController.text.trim();
-//
-//               if (pin.length != 4 || int.tryParse(pin) == null) {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   const SnackBar(
-//                     content: Text("PIN must be 4 digits"),
-//                     backgroundColor: Colors.red,
-//                   ),
-//                 );
-//                 return;
-//               }
-//
-//               final authController = ref.read(dashboardControllerProvider.notifier);
-//
-//               // Build request body
-//               final body = {
-//                 'account': recipientAccount.trim(),
-//                 'amount': amount.toStringAsFixed(2),
-//                 'narration': 'Transfer',
-//                 'pin': pin,
-//                 'save': saveAsBeneficiary.toString(),
-//               };
-//
-//               final response = await authController.sendMoney(body);
-//
-//               if (response.responseSuccessful) {
-//                 if (!context.mounted) return;
-//
-//                 Navigator.pop(context); // close PIN screen
-//                 context.pushNamed(
-//                   RouteList.successScreen,
-//                   extra: {
-//                     "type": "transfer",
-//                     "amount": amount.toStringAsFixed(2),
-//                     "recipientName": recipientName,
-//                     "recipientAccount": recipientAccount,
-//                     "reference": "",
-//                     "channel": "",
-//                   },
-//                 );
-//               } else {
-//                 ScaffoldMessenger.of(context).showSnackBar(
-//                   SnackBar(
-//                     content: Text(response.responseMessage ??
-//                         "Transfer failed. Check your PIN."),
-//                     backgroundColor: Colors.red,
-//                   ),
-//                 );
-//               }
-//             },
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
 
 class TransactionPin extends ConsumerStatefulWidget {
   final String recipientAccount;
@@ -118,9 +22,9 @@ class TransactionPin extends ConsumerStatefulWidget {
     super.key,
     required this.recipientAccount,
     required this.recipientName,
-    required this.amount, required this.saveAsBeneficiary,
+    required this.amount,
+    required this.saveAsBeneficiary,
   });
-
 
   @override
   ConsumerState<TransactionPin> createState() => _TransactionPinState();
@@ -131,10 +35,37 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
   bool showPinWarning = false;
   late final TextEditingController pinController;
 
+  bool _hasBiometric = false;
+  bool _biometricEnabled = false;
+  bool _isAuthenticating = false;
+  String? _savedPin;
+  String _biometricTypeName = 'Biometric';
+
   @override
   void initState() {
     super.initState();
     pinController = TextEditingController();
+    _initializeBiometric();
+  }
+
+  Future<void> _initializeBiometric() async {
+    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricEnabled =
+        await BiometricHelper.isTransactionBiometricEnabled();
+    final savedPin = await BiometricHelper.getSavedPin();
+
+    setState(() {
+      _hasBiometric = availability.isAvailable;
+      _biometricEnabled = biometricEnabled;
+      _savedPin = savedPin;
+      _biometricTypeName = availability.biometricTypeName;
+    });
+
+    debugPrint('🔐 Biometric initialized:');
+    debugPrint('   - Available: $_hasBiometric');
+    debugPrint('   - Enabled: $_biometricEnabled');
+    debugPrint('   - Has saved PIN: ${savedPin != null}');
+    debugPrint('   - Type: $_biometricTypeName');
   }
 
   @override
@@ -160,12 +91,70 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
     });
   }
 
+  Future<void> _authenticateWithBiometric() async {
+    if (_isAuthenticating) return;
+
+    if (!_hasBiometric || !_biometricEnabled || _savedPin == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$_biometricTypeName authentication is not enabled'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isAuthenticating = true);
+
+    try {
+      final authenticated = await BiometricHelper.authenticate(
+        reason: 'Authenticate to complete transaction',
+        biometricOnly: true,
+      );
+
+      if (authenticated && _savedPin != null) {
+        debugPrint(
+          '✅ Biometric authentication successful, processing transfer...',
+        );
+        await _processTransferWithPin(_savedPin!);
+      } else {
+        debugPrint('❌ Biometric authentication failed');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Authentication failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Biometric error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Authentication error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isAuthenticating = false);
+      }
+    }
+  }
+
   Future<void> _processTransfer() async {
     if (pin.length != 4) {
       setState(() => showPinWarning = true);
       return;
     }
 
+    await _processTransferWithPin(pin);
+  }
+
+  Future<void> _processTransferWithPin(String transactionPin) async {
     final controller = ref.read(dashboardControllerProvider.notifier);
 
     final response = await controller.sendMoney(
@@ -173,7 +162,7 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
       widget.recipientAccount,
       widget.amount.toStringAsFixed(2),
       'Transfer',
-      pin,
+      transactionPin,
       save: widget.saveAsBeneficiary,
     );
 
@@ -192,15 +181,10 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
     } else {
       // ❌ Show error if PIN is wrong or transfer failed
       final msg =
-          response?.responseMessage ??
-              "Transfer failed. Check your PIN.";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red,
-        ),
-      );
-
+          response?.responseMessage ?? "Transfer failed. Check your PIN.";
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
     }
   }
 
@@ -209,13 +193,9 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: offWhiteBackground,
+      backgroundColor: lightBackground,
       appBar: AppBar(
-        title: Text(
-          'Enter Transaction PIN',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: offWhiteBackground,
+        backgroundColor: lightBackground,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -225,43 +205,122 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 50.h),
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 15.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    accentColor.withOpacity(0.4),
+                    primaryColor,
+                    primaryColor.withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.all(Radius.circular(10.r)),
+              ),
+              child: Icon(Icons.lock, color: Colors.white, size: 30.sp),
+            ),
+            SizedBox(height: 20.h),
             Text(
-              'Enter PIN',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              'Enter Transaction PIN',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            SizedBox(height: 10.h),
-            AppPinCodeField(
-              controller: pinController,
-              length: 4,
-              fillColor: keyAColor,
-              inactiveColor: keyAColor,
-              activeColor: primaryColor,
-              selectedColor: primaryColor,
-            ),
-            if (showPinWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h),
-                child: Text(
-                  "PIN must be 4 digits",
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: errorColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+            SizedBox(height: 15.h),
+            if (_hasBiometric && _biometricEnabled)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Text(
+                textAlign: TextAlign.center,
+                _hasBiometric && _biometricEnabled
+                    ? 'You can use your $_biometricTypeName for a faster and secure confirmation'
+                    : 'Enter your 4-digit transaction PIN to authorize this transfer.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            SizedBox(height: 50.h),
+            ),
+            SizedBox(height: 15.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                final isFilled = index < pin.length;
+
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 16,
+                  height: 16,
+                  margin: EdgeInsets.symmetric(horizontal: 5.w),
+                  decoration: BoxDecoration(
+                    color: isFilled ? primaryColor : Colors.transparent,
+                    border: Border.all(
+                      color: isFilled ? inactiveColor : disabledTextColor,
+                      width: 2,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  onEnd: _processTransfer,
+                );
+              }),
+            ),
+            SizedBox(height: 70.h),
             Expanded(
               child: CustomGridKeypad(
-                onKeyPressed: (key) {
-                  if (key == "x") removeDigit();
-                  else if (key == "ok") _processTransfer();
-                  else addDigit(key);
+                onNumberPressed: (value) {
+                  addDigit(value);
                 },
+
+                // Bottom-left → delete
+                leftAction: ActionKey(
+                  child: _hasBiometric && _biometricEnabled
+                      ? (_isAuthenticating
+                            ? SizedBox(
+                                width: 30.w,
+                                height: 30.h,
+                                child: CircularProgressIndicator(
+                                  color: primaryColor,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : SvgPicture.asset(fingerPrint, height: 75.h))
+                      : Icon(Icons.check, color: Colors.white, size: 30.sp),
+                  backgroundColor: _hasBiometric && _biometricEnabled
+                      ? Colors.transparent
+                      : primaryColor,
+                  onTap: _hasBiometric && _biometricEnabled
+                      ? _authenticateWithBiometric
+                      : _processTransfer,
+                ),
+
+                // Bottom-right → biometric or confirm transfer
+                rightAction: ActionKey(
+                  child: Icon(Icons.backspace, color: primaryColor),
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: GestureDetector(
+                onTap: () => context.go(RouteList.forgotPassword),
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: Text(
+                    'Forget Pin?',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: lightText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

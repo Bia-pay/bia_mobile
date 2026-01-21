@@ -6,22 +6,31 @@ class AppPinCodeField extends StatelessWidget {
   final TextEditingController controller;
   final int length;
   final bool obscure;
+  final String obscuringCharacter;
+
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onCompleted;
 
-  // Customization options
+  // 🎨 Customization
   final Color? fillColor;
   final Color? inactiveColor;
   final Color? activeColor;
   final Color? selectedColor;
+
+  final double? fieldHeight;
+  final double? fieldWidth;
+
   final BorderRadius? borderRadius;
-  final EdgeInsetsGeometry? fieldPadding; // new
+  final EdgeInsetsGeometry? fieldPadding;
+
+  final PinCodeFieldShape shape;
 
   const AppPinCodeField({
     super.key,
     required this.controller,
     this.length = 4,
     this.obscure = false,
+    this.obscuringCharacter = "●",
     this.onChanged,
     this.onCompleted,
     this.fillColor,
@@ -29,34 +38,56 @@ class AppPinCodeField extends StatelessWidget {
     this.activeColor,
     this.selectedColor,
     this.borderRadius,
-    this.fieldPadding, // new
+    this.fieldPadding,
+    this.fieldHeight,
+    this.fieldWidth,
+    this.shape = PinCodeFieldShape.box,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final h = fieldHeight ?? 45.h;
+
     return PinCodeTextField(
       appContext: context,
       controller: controller,
       length: length.clamp(2, 6),
       animationType: AnimationType.fade,
-      keyboardType: TextInputType.number,
+      keyboardType: TextInputType.none,
       obscureText: obscure,
+      obscuringCharacter: obscuringCharacter,
       autoFocus: false,
       enableActiveFill: true,
+      readOnly: true,
+      enablePinAutofill: false,
+
+      // 🔥 THIS CONTROLS CENTERING
+      textStyle: TextStyle(
+        fontSize: h * 0.6,
+        fontWeight: FontWeight.w600,
+        height: 1,
+      ),
+
+      mainAxisAlignment: MainAxisAlignment.center,
+
       pinTheme: PinTheme(
-        shape: PinCodeFieldShape.box,
+        shape: shape,
         borderRadius: borderRadius ?? BorderRadius.circular(10.r),
-        fieldHeight: 45.h,
-        fieldWidth: 45.w,
+        fieldHeight: h,
+        fieldWidth: fieldWidth ?? 45.w,
+
         activeColor: activeColor ?? theme.colorScheme.primary,
         selectedColor: selectedColor ?? theme.colorScheme.primary,
-        inactiveColor: inactiveColor ?? Colors.grey.shade900,
-        activeFillColor: fillColor ?? Colors.grey.shade500,
-        selectedFillColor: fillColor ?? Colors.grey.shade500,
-        inactiveFillColor: fillColor ?? Colors.grey.shade500,
-        fieldOuterPadding: fieldPadding ?? EdgeInsets.symmetric(horizontal: 5.w),
+        inactiveColor: inactiveColor ?? Colors.grey.shade400,
+
+        activeFillColor: fillColor ?? Colors.grey.shade200,
+        selectedFillColor: fillColor ?? Colors.grey.shade200,
+        inactiveFillColor: fillColor ?? Colors.grey.shade200,
+
+        fieldOuterPadding:
+        fieldPadding ?? EdgeInsets.symmetric(horizontal: 2.w),
       ),
       onChanged: onChanged,
       onCompleted: onCompleted,

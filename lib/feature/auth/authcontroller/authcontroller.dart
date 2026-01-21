@@ -55,6 +55,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       EasyLoading.dismiss();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+
         return true;
       } else {
         ToastHelper.showToast(

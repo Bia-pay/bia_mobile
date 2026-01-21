@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import '../../../core/services/auth_flow_service.dart';
 import '../data/api_constant.dart';
 import '../data/api_data.dart';
 import '../modal/reponse/response_modal.dart';
@@ -10,43 +12,21 @@ import 'package:local_auth/local_auth.dart';
 
 final authRepositoryProvider = Provider((ref) {
   final apiClient = ref.read(apiClientProvider);
-  return AuthRepository(apiClient);
+  return AuthRepository(apiClient, ref);
 });
 
 class AuthRepository {
   final ApiClient _apiClient;
   final LocalAuthentication _localAuth = LocalAuthentication();
+  final Ref _ref;
 
-  AuthRepository(this._apiClient);
+  AuthRepository(this._apiClient, this._ref);
 
   Future<ResponseModel> logIn(Map<String, dynamic> body, {bool fromBiometric = false}) async {
     print('📡 Attempting login...');
 
     try {
-      // --- FIX: Normalize phone before sending ---
-      if (body.containsKey("phone")) {
-        String phone = body["phone"].toString().trim();
 
-        // Remove all spaces
-        phone = phone.replaceAll(" ", "");
-
-        // Remove leading "+"
-        if (phone.startsWith("+")) {
-          phone = phone.substring(1);
-        }
-
-        // Remove leading 0
-        if (phone.startsWith("0")) {
-          phone = phone.substring(1);
-        }
-
-        // Add country code if missing
-        if (!phone.startsWith("234")) {
-          phone = "234$phone";
-        }
-
-        body["phone"] = phone;
-      }
 
       print("📤 Final body sent to backend: $body");
 
@@ -71,14 +51,34 @@ class AuthRepository {
         await box.put("phone", userJson['phone'] ?? '');
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
-        await box.put("has_pin", userJson['pin'] != null);
-
+        await box.put(
+          "has_pin",
+          userJson['pin'] != null && userJson['pin'].toString().isNotEmpty,
+        );
+        await box.put("picture", userJson['picture']);
         if (!fromBiometric && body.containsKey('password')) {
           await box.put("password", body['password']);
           await box.put("login_biometric_enabled", true);
         }
+        final picture = userJson['picture'];
+        final fcmToken = await FirebaseMessaging.instance.getToken();
 
+        debugPrint('🔥 RAW FCM TOKEN FROM FIREBASE: $fcmToken');
+        final authBox = await Hive.openBox('authBox');
+        await authBox.put('fcmToken', fcmToken);
+
+        print('💾 FCM token saved to Hive');
+        if (picture is String) {
+          await box.put('picture', picture);
+        } else {
+          await box.delete('picture');
+        }
+        print('User Picture✅ $picture');
         _apiClient.updateHeaders(accessToken);
+
+        // Complete the auth flow (connect socket with tokens)
+        final authFlowService = _ref.read(authFlowServiceProvider);
+        await authFlowService.completeAuthFlow();
 
         return ResponseModel(
           responseMessage: jsonResponse['responseMessage'] ?? 'Login successful',
@@ -176,32 +176,7 @@ class AuthRepository {
   // ---------------- REGISTER STEP ONE ----------------
   Future<ResponseModel> registerStepOne(body) async {
     try {
-      // --- FIX: Normalize phone before sending ---
-      if (body.containsKey("phone")) {
-        String phone = body["phone"].toString().trim();
 
-        // Remove all spaces
-        phone = phone.replaceAll(" ", "");
-
-        // Remove leading "+"
-        if (phone.startsWith("+")) {
-          phone = phone.substring(1);
-        }
-
-        // Remove leading zero
-        if (phone.startsWith("0")) {
-          phone = phone.substring(1);
-        }
-
-        // Add country code if missing
-        if (!phone.startsWith("234")) {
-          phone = "234$phone";
-        }
-
-        body["phone"] = phone;
-      }
-
-      print("📤 Final registration body: $body");
 
       // --- API CALL ---
       http.Response response =
@@ -267,10 +242,23 @@ class AuthRepository {
         await box.put("userId", userJson['id']?.toString() ?? '');
         await box.put("fullname", userJson['fullname']);
         await box.put("phone", userJson['phone']);
-        await box.put("pin", userJson['pin']);
+        await box.put(
+          "has_pin",
+          userJson['pin'] != null && userJson['pin'].toString().isNotEmpty,
+        );
         await box.put("balance", walletJson['balance']);
 
+        // Generate and save FCM token after successful registration
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        debugPrint('🔥 FCM TOKEN GENERATED: $fcmToken');
+        await box.put('fcmToken', fcmToken);
+        print('💾 FCM token saved to Hive');
+
         _apiClient.updateHeaders(accessToken);
+
+        // Complete the auth flow (connect socket with tokens)
+        final authFlowService = _ref.read(authFlowServiceProvider);
+        await authFlowService.completeAuthFlow();
 
         return ResponseModel(
           responseMessage:
@@ -322,7 +310,13 @@ class AuthRepository {
         await box.put("userId", responseModel.responseBody?.user?.id?.toString() ?? '');
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("has_pin", false);
+        await box.put("picture", responseModel.responseBody?.user?.picture);
+        await box.put("phone", responseModel.responseBody?.user?.phone);
+        await box.put("pin", responseModel.responseBody?.user?.pin);
+        await box.put("balance", responseModel.responseBody?.wallet?.balance ?? 0);
 
+        final picture = box.get('picture', defaultValue: 'picture');
+        print('User Picture✅ $picture');
         return responseModel;
       }
 

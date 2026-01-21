@@ -57,6 +57,7 @@ class UserResponse {
   final String? tier;
   final String? roles;
   final String? pin;
+  final String? picture;
   final bool? isVerified;
   final String? createdAt;
   final String? updatedAt;
@@ -70,6 +71,7 @@ class UserResponse {
     this.tier,
     this.roles,
     this.pin,
+    this.picture,
     this.isVerified,
     this.createdAt,
     this.updatedAt,
@@ -85,6 +87,7 @@ class UserResponse {
       tier: json['tier'],
       roles: json['roles'],
       pin: json['pin'],
+      picture: json['picture'],
       isVerified: json['isVerified'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
@@ -100,11 +103,36 @@ class UserResponse {
     'tier': tier,
     'roles': roles,
     'pin': pin,
+    'picture': picture,
     'isVerified': isVerified,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
-}class WalletResponse {
+  UserResponse copyWith({
+    String? fullname,
+    String? email,
+    String? phone,
+    String? picture,
+  }) {
+    return UserResponse(
+      id: id,
+      fullname: fullname ?? this.fullname,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      status: status,
+      tier: tier,
+      roles: roles,
+      pin: pin,
+      picture: picture ?? this.picture,
+      isVerified: isVerified,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
+}
+
+class WalletResponse {
   final int? id;
   final int? userId;
   final dynamic balance;

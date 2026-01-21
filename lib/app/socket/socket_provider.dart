@@ -12,6 +12,7 @@ enum SocketState { idle, connecting, connected, disconnected, error }
 class SocketNotifier extends StateNotifier<SocketState> {
   IO.Socket? _socket;
   String? _token;
+  String? fcmToken;
   Timer? _reconnectTimer;
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
@@ -37,10 +38,10 @@ class SocketNotifier extends StateNotifier<SocketState> {
       print('🔌 Attempting Socket.IO connection...');
 
       // Get user token from Hive
-      final authBox = Hive.box('authBox');
+      final authBox = await Hive.openBox('authBox');
       _token = authBox.get('token', defaultValue: '');
-
-      if (_token == null || _token!.isEmpty) {
+      this.fcmToken = authBox.get('fcmToken');
+      if (_token == null || this.fcmToken == null || _token!.isEmpty || this.fcmToken!.isEmpty) {
         print('⚠️ No token found, Socket.IO cannot connect');
         state = SocketState.idle;
         return;
@@ -48,7 +49,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
       // Build Socket.IO URL
       String socketUrl = AppConstants.baseUrl;
-      
+
       // Remove trailing slash if present
       if (socketUrl.endsWith('/')) {
         socketUrl = socketUrl.substring(0, socketUrl.length - 1);
@@ -56,6 +57,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
       print('🔌 Connecting to: $socketUrl');
       print('🔑 Using token: ${_token!.substring(0, 20)}...');
+      print('🔑 Using fcmToken: ${fcmToken!.substring(0, 20)}...');
 
       // Disconnect existing socket if any
       await _disconnect();
@@ -71,15 +73,17 @@ class SocketNotifier extends StateNotifier<SocketState> {
           .setTimeout(30000) // Increased timeout
           .enableForceNew() // Force new connection
           .setExtraHeaders({
-            'Authorization': 'Bearer $_token',
-          })
+        'Authorization': 'Bearer $_token',
+        'x-fcm-token': fcmToken,
+      })
           .setAuth({
-            'token': _token,
+        'token': _token,
+        'fcmToken': fcmToken,
           })
           .build());
 
       _setupSocketListeners();
-      
+
       // Connect the socket
       _socket!.connect();
 
@@ -99,9 +103,13 @@ class SocketNotifier extends StateNotifier<SocketState> {
       print('✅ Socket.IO connected successfully');
       state = SocketState.connected;
       _reconnectAttempts = 0;
-      
+
       // Send authentication after connection
-      _socket!.emit('authenticate', {'token': _token});
+      _socket!.emit('registerFcmToken', {
+        'accessToken': _token,
+        'fcmToken': fcmToken,
+      });
+
     });
 
     // Connection error
@@ -115,7 +123,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
     _socket!.onDisconnect((reason) {
       print('🔌 Socket.IO disconnected: $reason');
       state = SocketState.disconnected;
-      
+
       // Handle different disconnect reasons
       switch (reason) {
         case 'io client disconnect':
@@ -209,12 +217,12 @@ class SocketNotifier extends StateNotifier<SocketState> {
     }
 
     _reconnectAttempts++;
-    
+
     // Exponential backoff: 5s, 10s, 15s, 20s, 25s
     final delay = Duration(seconds: 5 * _reconnectAttempts);
-    
+
     print('🔄 Scheduling reconnection attempt $_reconnectAttempts/$_maxReconnectAttempts in ${delay.inSeconds}s...');
-    
+
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
       if (_shouldReconnect && state != SocketState.connected) {
