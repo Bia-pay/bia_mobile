@@ -11,6 +11,7 @@ import '../dashboard_repo/repo.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 import '../model/deposit.dart';
+import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
 import '../model/recent_transfer.dart';
 import '../model/verify_transactions.dart';
@@ -230,6 +231,23 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     }
   }
 
+  // Future<List<FavouriteBeneficiaryItem>>
+  // getFavouriteBeneficiary(BuildContext context) async {
+  //   try {
+  //     final response =
+  //     await dashboardRepository.getFavouriteBeneficiary();
+  //
+  //     if (response.responseSuccessful) {
+  //       return response.beneficiaries;
+  //     }
+  //
+  //     return [];
+  //   } catch (e) {
+  //     debugPrint("❌ Error fetching favourites: $e");
+  //     return [];
+  //   }
+  // }
+
   Future<List<RecentBeneficiaryItem>> getRecentBeneficiary(BuildContext context) async {
     try {
       final box = await Hive.openBox('recentBeneficiaries');
@@ -266,6 +284,23 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     }
   }
 
+  Future<List<FavouriteBeneficiaryItem>> getFavouriteBeneficiary(
+      BuildContext context) async {
+    try {
+      final response =
+      await dashboardRepository.getFavouriteBeneficiary();
+
+      if (response.responseSuccessful) {
+        return response.beneficiaries;
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint("❌ Error fetching favourites: $e");
+      return [];
+    }
+  }
+
 // Helper method to fetch from API and save
   Future<List<RecentBeneficiaryItem>> _fetchAndSaveRecentBeneficiaries(Box box, String userId) async {
     try {
@@ -284,6 +319,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       return [];
     }
   }
+// Helper method to fetch from API and save
+//
 
   Future<void> loadWalletBalance() async {
     // Load saved balance immediately from Hive first

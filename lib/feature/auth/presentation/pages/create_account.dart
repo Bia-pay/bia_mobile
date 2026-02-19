@@ -26,7 +26,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
   TextEditingController();
-
+  final FocusNode nameFocus = FocusNode();
+  final FocusNode emailFocus = FocusNode();
+  final FocusNode passwordFocus = FocusNode();
+  final FocusNode confirmPasswordFocus = FocusNode();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -110,6 +113,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                           CustomTextFormField(
                             label: 'Full Name',
                             controller: nameController,
+                            focusNode: nameFocus,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) =>
+                                FocusScope.of(context).requestFocus(emailFocus),
                             hintText: 'Enter your full name',
                             validator: (v) =>
                             v.isEmpty ? 'Full name required' : null,
@@ -119,12 +126,15 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                           CustomTextFormField(
                             label: 'Email Address',
                             controller: emailController,
+                            focusNode: emailFocus,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) =>
+                                FocusScope.of(context).requestFocus(passwordFocus),
                             hintText: 'Enter your email address',
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v.isEmpty) return 'Email required';
-                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                  .hasMatch(v)) {
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
                                 return 'Invalid email';
                               }
                               return null;
@@ -135,6 +145,11 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                           CustomTextFormField(
                             label: 'Password',
                             controller: passwordController,
+                            focusNode: passwordFocus,
+                            textInputAction: TextInputAction.next,
+                            onSubmitted: (_) =>
+                                FocusScope.of(context)
+                                    .requestFocus(confirmPasswordFocus),
                             hintText: 'Enter your password',
                             obscureText: _obscurePassword,
                             keyboardType: TextInputType.number,
@@ -145,12 +160,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                             ],
                             validator: (v) {
                               if (v.isEmpty) return 'Password required';
-                              if (v.length != 6) {
-                                return 'Password must be 6 digits';
-                              }
-                              if (v == '123456') {
-                                return 'Password too weak';
-                              }
+                              if (v.length != 6) return 'Password must be 6 digits';
+                              if (v == '123456') return 'Password too weak';
                               return null;
                             },
                             suffixIcon: IconButton(
@@ -170,6 +181,68 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                           CustomTextFormField(
                             label: 'Confirm Password',
                             controller: confirmPasswordController,
+                            focusNode: confirmPasswordFocus,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) async {
+                              if (!_canSubmit || _isLoading) return;
+
+                              FocusScope.of(context).unfocus();
+
+                              final fullname = nameController.text.trim();
+                              final email = emailController.text.trim();
+                              final password = passwordController.text.trim();
+                              final confirmPassword =
+                              confirmPasswordController.text.trim();
+
+                              if (password.length < 6 || password == '123456') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Password is too weak'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              if (password != confirmPassword) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Passwords do not match'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setState(() => _isLoading = true);
+
+                              final authState =
+                              ref.read(authControllerProvider.notifier);
+
+                              final response =
+                              await authState.registerStepThree(
+                                context,
+                                fullname,
+                                email,
+                                password,
+                              );
+
+                              setState(() => _isLoading = false);
+
+                              if (response?.responseSuccessful == true) {
+                                context.pushNamed(RouteList.bottomNavBar);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      response?.responseMessage ??
+                                          'Registration failed',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
                             hintText: 'Re-enter your password',
                             obscureText: _obscureConfirmPassword,
                             keyboardType: TextInputType.number,
@@ -179,11 +252,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                             validator: (v) {
-                              if (v.isEmpty) {
-                                return 'Confirm password required';
-                              }
-                              if (v !=
-                                  passwordController.text.trim()) {
+                              if (v.isEmpty) return 'Confirm password required';
+                              if (v != passwordController.text.trim()) {
                                 return 'Passwords do not match';
                               }
                               return null;
@@ -219,6 +289,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                             (!_canSubmit || _isLoading)
                                 ? null
                                 : () async {
+                              FocusScope.of(context).unfocus();
+
                               final fullname =
                               nameController.text.trim();
                               final email =

@@ -129,178 +129,178 @@ class _CreateAccountVerifyOtpScreenState
             MediaQuery.of(context).viewInsets.bottom + 0.h,
           ),
           child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start, // CENTERED
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Container(
-                        padding: EdgeInsets.all(1.w),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          shape: BoxShape.circle,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start, // CENTERED
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: Container(
+                            padding: EdgeInsets.all(1.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.arrow_back_ios_new,
+                              size: 20.sp,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new,
-                          size: 20.sp,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20.h,),
-                    Text('Enter 6-digit code', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    )),
-                    SizedBox(height: 8.h),
-                    Text("We've sent a verification code to",   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: borderColor,
-                      fontWeight: FontWeight.w600,
-                    ),),
-                    SizedBox(height: 2.h),
-                    RichText(
-                      text: TextSpan(
-                        text: 'Your phone number ',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        SizedBox(height: 20.h,),
+                        Text('Enter 6-digit code', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        )),
+                        SizedBox(height: 8.h),
+                        Text("We've sent a verification code to",   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: borderColor,
                           fontWeight: FontWeight.w600,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: widget.phone,
+                        ),),
+                        SizedBox(height: 2.h),
+                        RichText(
+                          text: TextSpan(
+                            text: 'Your phone number ',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12.spMin
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 25.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w),
-                      child: AppPinCodeField(
-                          controller: otpController,
-                          length: 6,
-                          fillColor: lightBackground,
-                          inactiveColor: pinBorderColor,
-                          activeColor: primaryColor,
-                          selectedColor: primaryColor,
-                          onCompleted: (code) async {
-                            final otp = otpController.text.trim();
-                            final authState = ref.watch(
-                              authControllerProvider.notifier,
-                            );
-
-                            final response = await authState.registerStepTwo(
-                              context,
-                              otp,
-                              widget.phone,
-                            );
-
-                            if (response?.responseSuccessful == true) {
-                              context.pushNamed(
-                                RouteList.createAccountScreen,
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    response?.responseMessage ??
-                                        'Registration failed',
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                      ),
-                    ),
-                    SizedBox(height: 15.h),
-                    Center(
-                      child: RichText(
-                        text: TextSpan(
-                          text: "You didn't received any code? ",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:  borderColor,
-                            fontWeight: FontWeight.w600,
-                          ),                  children: [
-                          TextSpan(
-                            text: _canResend
-                                ? 'Resend code'
-                                : 'Resend code in $_secondsRemaining s',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: _canResend ? primaryColor : keyAColor,
+                              color: borderColor,
                               fontWeight: FontWeight.w600,
                             ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = _canResend ? _resendOtp : null,
+                            children: [
+                              TextSpan(
+                                text: widget.phone,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12.spMin
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
+                        SizedBox(height: 25.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w),
+                          child: AppPinCodeField(
+                              controller: otpController,
+                              length: 6,
+                              fillColor: lightBackground,
+                              inactiveColor: pinBorderColor,
+                              activeColor: primaryColor,
+                              selectedColor: primaryColor,
+                              onCompleted: (code) async {
+                                final otp = otpController.text.trim();
+                                final authState = ref.watch(
+                                  authControllerProvider.notifier,
+                                );
+
+                                final response = await authState.registerStepTwo(
+                                  context,
+                                  otp,
+                                  widget.phone,
+                                );
+
+                                if (response?.responseSuccessful == true) {
+                                  context.pushNamed(
+                                    RouteList.createAccountScreen,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        response?.responseMessage ??
+                                            'Registration failed',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                          ),
+                        ),
+                        SizedBox(height: 15.h),
+                        Center(
+                          child: RichText(
+                            text: TextSpan(
+                              text: "You didn't received any code? ",
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color:  borderColor,
+                                fontWeight: FontWeight.w600,
+                              ),                  children: [
+                              TextSpan(
+                                text: _canResend
+                                    ? 'Resend code'
+                                    : 'Resend code in $_secondsRemaining s',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: _canResend ? primaryColor : keyAColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = _canResend ? _resendOtp : null,
+                              ),
+                            ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 100.h),
+                      ]),
+                ),
+
+                SizedBox(
+                  height: 350.h,
+                  child: CustomGridKeypad(
+                    onNumberPressed: (value) {
+                      addDigit(value);
+                    },
+
+                    leftAction: ActionKey(
+                      child: SvgPicture.asset(
+                        'assets/svg/cancel.svg',
+                        height: 20.h,
+                        colorFilter: ColorFilter.mode(
+                          primaryColor,
+                          BlendMode.srcIn,
                         ),
                       ),
+                      backgroundColor: primaryColor.withOpacity(0.1),
+                      onTap: removeDigit,
                     ),
-                    SizedBox(height: 100.h),
-                  ]),
-              ),
 
-              SizedBox(
-                height: 350.h,
-                child: CustomGridKeypad(
-                  onNumberPressed: (value) {
-                    addDigit(value);
-                  },
+                    rightAction: ActionKey(
+                      child:  Icon(Icons.arrow_forward, color: lightBackground),
+                      backgroundColor: primaryColor,
+                      onTap: () async {
+                        final otp = otpController.text.trim();
+                        final authState = ref.watch(authControllerProvider.notifier);
 
-                  leftAction: ActionKey(
-                    child: SvgPicture.asset(
-                      'assets/svg/cancel.svg',
-                      height: 20.h,
-                      colorFilter: ColorFilter.mode(
-                        primaryColor,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    backgroundColor: primaryColor.withOpacity(0.1),
-                    onTap: removeDigit,
-                  ),
-
-                  rightAction: ActionKey(
-                    child:  Icon(Icons.arrow_forward, color: lightBackground),
-                    backgroundColor: primaryColor,
-                    onTap: () async {
-                      final otp = otpController.text.trim();
-                      final authState = ref.watch(authControllerProvider.notifier);
-
-                      final response = await authState.registerStepTwo(
-                        context,
-                        otp,
-                        widget.phone,
-                      );
-
-                      if (response?.responseSuccessful == true) {
-                        context.pushNamed(RouteList.createAccountScreen);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              response?.responseMessage ?? 'Registration failed',
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
+                        final response = await authState.registerStepTwo(
+                          context,
+                          otp,
+                          widget.phone,
                         );
-                      }
-                    },
+
+                        if (response?.responseSuccessful == true) {
+                          context.pushNamed(RouteList.createAccountScreen);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                response?.responseMessage ?? 'Registration failed',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );

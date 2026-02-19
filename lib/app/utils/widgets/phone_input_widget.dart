@@ -16,7 +16,8 @@ class PhoneInputWidget extends StatefulWidget {
   final CountryCode? initialCountry;
   final ValueChanged<CountryCode>? onCountryChanged;
   final TextInputType? keyboardType;
-
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
   // ✅ NEW
   final Color? backgroundColor;
   final Color? borderColor;
@@ -34,7 +35,8 @@ class PhoneInputWidget extends StatefulWidget {
     this.initialCountry,
     this.onCountryChanged,
     this.keyboardType,
-
+    this.focusNode,
+    this.textInputAction,
     // ✅ NEW
     this.backgroundColor,
     this.borderColor,
@@ -150,6 +152,8 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                       ? null
                       : [FilteringTextInputFormatter.digitsOnly],
                   onChanged: widget.onChanged,
+                  focusNode: widget.focusNode,              // ✅
+                  textInputAction: widget.textInputAction,  // ✅
                   onFieldSubmitted: widget.onSubmitted,
                   readOnly: widget.readOnly || _isKeyboardDisabled,
                   enableInteractiveSelection: !_isKeyboardDisabled,

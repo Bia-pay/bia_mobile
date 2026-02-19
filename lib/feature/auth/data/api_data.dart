@@ -211,4 +211,65 @@ class ApiClient {
 
     return response;
   }
+  // ---------------- DELETE ----------------
+  Future<http.Response> deleteData(String url) async {
+    return _authorizedRequest(() async {
+      final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
+
+      debugPrint(" DELETE $fullUrl");
+      debugPrint(" Headers: $_mainHeaders");
+
+      final response = await http.delete(
+        fullUrl,
+        headers: _mainHeaders,
+      );
+
+      return apiHelper.handleResponse(response);
+    });
+  }
+
+  Future<http.Response> multipartRequest({
+    required String url,
+    required String method,
+    required Map<String, String> fields,
+    required String fileField,
+    required String filePath,
+  }) async {
+    final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
+
+    final request = http.MultipartRequest(method, fullUrl);
+
+    // ⚠️ DO NOT ADD full _mainHeaders
+    request.headers['Authorization'] = 'Bearer $token';
+    request.headers['Accept'] = 'application/json';
+
+    request.fields.addAll(fields);
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        fileField,
+        filePath,
+      ),
+    );
+
+    debugPrint("📤 MULTIPART $method $fullUrl");
+    debugPrint("📤 Headers: ${request.headers}");
+
+    http.StreamedResponse streamedResponse = await request.send();
+
+    if (streamedResponse.statusCode == 401) {
+      final refreshed = await _refreshToken();
+      if (refreshed) {
+        request.headers['Authorization'] = 'Bearer $token';
+        streamedResponse = await request.send();
+      }
+    }
+
+    final response = await http.Response.fromStream(streamedResponse);
+
+    debugPrint("🟢 STATUS: ${response.statusCode}");
+    debugPrint("🟢 BODY: ${response.body}");
+
+    return response;
+  }
 }

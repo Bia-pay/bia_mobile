@@ -19,66 +19,116 @@ class GetStarted extends ConsumerStatefulWidget {
 class _GetStartedState extends ConsumerState<GetStarted> {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.centerRight,
-            colors: [
-              primaryColor,
-              accentColor,
-            ],
-            stops: const [0.0, 0.6],
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(top: 180.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                qrCodeSvg,
-                height: 200.h,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenHeight = constraints.maxHeight;
+          final screenWidth = constraints.maxWidth;
+
+          double illustrationSize;
+          if (screenWidth < 350) {
+            illustrationSize = screenWidth * 0.65;
+          } else if (screenWidth < 600) {
+            illustrationSize = screenWidth * 0.56;
+          } else {
+            illustrationSize = 264; // tablet cap
+          }
+
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  primaryColor,
+                  accentColor,
+                ],
               ),
-              SizedBox(height: 50.h),
-              Text(
-                'Pay your Keke fare instantly by\n just scanning a QR code',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: 19.sp,
-                  color: offWhiteBackground,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
+            ),
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.08,
+                    ),
+                    child: Column(
+                      children: [
+
+                        SizedBox(height: screenHeight * 0.08),
+
+                        /// 🔥 Floating Illustration Card
+                        Container(
+                          padding: EdgeInsets.all(24.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(28.r),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.15),
+                            ),
+                          ),
+                          child: SvgPicture.asset(
+                            qrCodeSvg,
+                            height: illustrationSize,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+
+                        SizedBox(height: screenHeight * 0.06),
+
+                        /// 🔥 Headline
+                        Text(
+                          'Scan. Pay. Move.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontSize: 28.spMin,
+                            fontWeight: FontWeight.w800,
+                            color: offWhiteBackground,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+
+                        SizedBox(height: 18.h),
+
+                        /// 🔥 Supporting Text
+                        Text(
+                          'Pay your Keke fare instantly\nwith secure QR payments.\nNo cash. No stress.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontSize: 16.spMin,
+                            height: 1.6,
+                            color: offWhiteBackground.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+
+                        const Spacer(),
+
+                        /// 🔥 CTA Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: CustomButton(
+                            buttonColor: secondaryColor,
+                            buttonTextColor: primaryColor,
+                            buttonName: 'Get Started',
+                            onPressed: () {
+                              context.go(RouteList.onBoardingScreen);
+                            },
+                          ),
+                        ),
+
+                        SizedBox(height: screenHeight * 0.12),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(height: 30.h),
-              Text(
-                'No cash, no delays\n just scan, pay, and move',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: 18.sp,
-                  color: offWhiteBackground,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
-              ),
-              SizedBox(height: 50.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40.w),
-                child: CustomButton(
-                  buttonColor: secondaryColor,
-                  buttonTextColor: primaryColor,
-                  buttonName: 'Get Started',
-                  onPressed: () {
-                    context.go(RouteList.onBoardingScreen);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

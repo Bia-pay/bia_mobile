@@ -9,11 +9,13 @@ import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../app/utils/widgets/pin_field.dart';
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/image.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../../../core/utils/biometric_helper.dart';
+import '../../auth/authrepo/repo.dart';
+import '../../auth/data/api_constant.dart';
+import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
@@ -41,12 +43,12 @@ class _UProfileState extends ConsumerState<UProfile> {
     },
     {
       'title': 'Login Settings',
-      'image': 'assets/svg/l-key.svg',
+      'image': 'assets/svg/blocked.svg',
       'hasDropdown': true,
     },
     {
       'title': 'Payment Settings',
-      'image': 'assets/svg/l-key.svg',
+      'image': 'assets/svg/invoice.svg',
       'hasDropdown': true,
     },
   ];
@@ -59,7 +61,7 @@ class _UProfileState extends ConsumerState<UProfile> {
 
   Map<String, List<Map<String, String>>> get dropdownContent => {
     'Pin Settings': [
-      {'title': 'Set Pin', 'image': 'assets/svg/key.svg'},
+      {'title': 'Set Pin', 'image': 'assets/svg/l-key.svg'},
       {'title': 'Change Payment Pin', 'image': 'assets/svg/key.svg'},
       {'title': 'Forget Payment Pin', 'image': 'assets/svg/key.svg'},
       {'title': 'Pay with $_biometricTypeName', 'image': 'assets/svg/key.svg'},
@@ -215,47 +217,49 @@ class _UProfileState extends ConsumerState<UProfile> {
     }
   }
 
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+  Future<void> _logout(BuildContext context) async {
     try {
       EasyLoading.show(status: "Logging out...");
 
-      final authBox = await Hive.openBox('authBox');
-      final token = authBox.get('token', defaultValue: '');
-      final biometricEnabled = authBox.get('login_biometric_enabled', defaultValue: false);
-      final userId = authBox.get('userId', defaultValue: '');
-
-      // Clear cached transactions for this user
-      if (userId.isNotEmpty) {
-        await TransactionCache.clearTransactions(userId);
-        await clearRecentBeneficiaries(userId);
-      }
-
-      // Clear any saved profile
-      await authBox.delete('saved_user_profile');
-
-      // Clear token and other Hive data
-      if (biometricEnabled) {
-        await authBox.delete('token');
-        await authBox.delete('refreshToken');
-      } else {
-        await authBox.clear();
-      }
-
-      // Reset providers to initial state
-      ref.invalidate(recentTransactionsProvider);
-      ref.invalidate(dashboardControllerProvider);
+      final authRepo = ref.read(authRepositoryProvider);
+      final result = await authRepo.logout();
 
       EasyLoading.dismiss();
 
       if (!mounted) return;
-      context.go(biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Logged out successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (result.responseSuccessful) {
+        ref.invalidate(recentTransactionsProvider);
+        ref.invalidate(dashboardControllerProvider);
+
+        // SHOW SNACKBAR FIRST
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.responseMessage),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        final box = await Hive.openBox('authBox');
+        final biometricEnabled =
+        box.get('login_biometric_enabled', defaultValue: false);
+
+        // THEN NAVIGATE
+        if (!mounted) return;
+
+        context.go(
+          biometricEnabled
+              ? RouteList.welcomeBackScreen
+              : RouteList.loginScreen,
+        );
+      }else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.responseMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       EasyLoading.dismiss();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -274,22 +278,105 @@ class _UProfileState extends ConsumerState<UProfile> {
   }
 
   void _confirmLogout(BuildContext context) {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Confirm Logout"),
-        content: const Text("Are you sure you want to log out?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _logout(context, ref );
-            },
-            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+      barrierDismissible: true,
+      barrierLabel: "Logout",
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      transitionBuilder: (context, animation, _, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.scale(
+            scale: 0.95 + (0.05 * animation.value),
+            child: Center(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+
+                  return Container(
+                    width: width > 600 ? 360 : width * 0.88,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 20.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        /// Title
+                        Text(
+                          "Confirm Logout",
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+
+                        SizedBox(height: 10.h),
+
+                        /// Message
+                        Text(
+                          "Are you sure you want to log out?",
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+
+                        SizedBox(height: 20.h),
+
+                        /// Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(),
+                                child: const Text("Cancel"),
+                              ),
+                            ),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+
+                                  Future.microtask(() {
+                                    _logout(this.context);
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                    BorderRadius.circular(10.r),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Logout",
+                                  style:
+                                  TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -299,8 +386,6 @@ class _UProfileState extends ConsumerState<UProfile> {
       context.pushNamed(route);
     }
   }
-
-
 
   void _showSnack(BuildContext context, String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
@@ -392,85 +477,396 @@ class _UProfileState extends ConsumerState<UProfile> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              children: [
-                SizedBox(height: 20.h),
-                Center(
-                  child: Text(
-                    'Settings',
-                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 24.spMin),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
+            final screenWidth = constraints.maxWidth;
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: screenHeight,
+                ),
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      maxWidth: 600, // 🔥 prevents stretch on tablets
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.05,
+                    ),
+                    child: Column(
+                      children: [
+                        SizedBox(height: screenHeight * 0.04),
+
+                        /// TITLE
+                        Text(
+                          "Settings",
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22.spMin,
+                          ),
+                        ),
+
+                        SizedBox(height: screenHeight * 0.04),
+
+                        /// PROFILE
+                        _buildPremiumProfile(),
+
+                        SizedBox(height: screenHeight * 0.04),
+
+                        /// SECURITY
+                        _buildGroupedSection(securityItems),
+
+                        SizedBox(height: screenHeight * 0.03),
+
+                        /// OTHERS
+                        _buildGroupedSection(othersItems),
+
+                        SizedBox(height: screenHeight * 0.05),
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(height: 20.h),
-                _buildProfileHeader(context, theme.brightness == Brightness.light),
-                SizedBox(height: 24.h),
-                _divider(context),
-                SizedBox(height: 20.h),
-                _buildSectionContent(context, 'Security', securityItems),
-                _buildSectionContent(context, 'Others', othersItems),
-                SizedBox(height: 100.h),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, bool isLight) {
+  Widget _buildPremiumProfile() {
+    final theme = Theme.of(context);
     final user = _user;
 
-    return RepaintBoundary(
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              GestureDetector(
-                onTap: () => _showEditAvatarSheet(context),
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: inactiveColor,
-                  ),
-                  child: ClipOval(
+    return GestureDetector(
+      onTap: () => _showEditAvatarSheet(context),
+      child: Container(
+        padding: EdgeInsets.all(18.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18.r),
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                ClipOval(
+                  child: SizedBox(
+                    width: 65.w,
+                    height: 65.w,
                     child: _buildAvatarImage(user?.picture),
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => _showEditAvatarSheet(context),
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: primaryColor,
-                    child: const Icon(
-                      Icons.camera_alt,
-                      size: 16,
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: primaryColor,
+                    ),
+                    child: Icon(
+                      Icons.edit,
+                      size: 14.spMin,
                       color: Colors.white,
                     ),
                   ),
                 ),
+              ],
+            ),
+
+            SizedBox(width: 16.w),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user?.fullname ?? "Loading...",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    user?.phone ?? "",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(user?.fullname ?? 'Loading…'),
-          Text(user?.phone ?? ''),
-        ],
+            ),
+
+            Icon(Icons.chevron_right, size: 22.spMin),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _buildGroupedSection(List<Map<String, dynamic>> items) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+      ),
+      child: Column(
+        children: List.generate(items.length, (index) {
+          final item = items[index];
+          final isLast = index == items.length - 1;
+          return Column(
+            children: [
+              _buildModernTile(item),
+              if (!isLast)
+                Divider(
+                  height: 1,
+                  indent: 60.w,
+                  color: Colors.grey.shade200,
+                ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildModernTile(Map<String, dynamic> item) {
+    final title = item['title'];
+    final hasDropdown = item['hasDropdown'];
+    final isLogout = title == 'Log Out';
+    final isExpanded = _expandedTile == title;
+
+    return Column(
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(18.r),
+          onTap: () {
+            if (isLogout) {
+              _confirmLogout(context);
+            } else if (hasDropdown && dropdownContent.containsKey(title)) {
+              setState(() => _expandedTile = isExpanded ? '' : title);
+            } else {
+              _handleItemTap(context, title);
+            }
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            child: Row(
+              children: [
+                Container(
+                  width: 36.w,
+                  height: 36.w,
+                  decoration: BoxDecoration(
+                    color: isLogout
+                        ? Colors.red.withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Center(
+                    child: SvgPicture.asset(
+                      item['image'],
+                      height: 18.h,
+                      colorFilter: ColorFilter.mode(
+                        isLogout ? Colors.red : Colors.black87,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15.spMin,
+                      fontWeight: FontWeight.w500,
+                      color: isLogout ? Colors.red : Colors.black87,
+                    ),
+                  ),
+                ),
+                if (hasDropdown)
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20.spMin,
+                  )
+                else
+                  Icon(Icons.chevron_right, size: 20.spMin),
+              ],
+            ),
+          ),
+        ),
+
+        /// 🔥 DROPDOWN CONTENT (THIS WAS MISSING)
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: isExpanded && dropdownContent[title] != null
+              ? Padding(
+            padding: EdgeInsets.only(left: 20.w, right: 16.w, bottom: 12.h),
+            child: Column(
+              children: dropdownContent[title]!.map((subItem) {
+                final subTitle = subItem['title']!;
+                final subIcon = subItem['image']!;
+
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Row(
+                    children: [
+                      /// ICON
+                      Container(
+                        width: 30.w,
+                        height: 30.w,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Center(
+                          child: SvgPicture.asset(
+                            subIcon,
+                            height: 14.h,
+                            colorFilter: const ColorFilter.mode(
+                              Colors.black87,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(width: 14.w),
+
+                      /// TITLE
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (subTitle == 'Set Pin') {
+                              context.pushNamed(RouteList.setTransactionPin);
+                            } else if (subTitle == 'Change Payment Pin') {
+                              context.pushNamed(RouteList.changePaymentPin);
+                            }
+                          },
+                          child: Text(
+                            subTitle,
+                            style: TextStyle(
+                              fontSize: 14.spMin,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      /// SWITCHES (if needed)
+                      if (subTitle.startsWith('Pay with ') ||
+                          subTitle.startsWith('Login with ') ||
+                          subTitle == 'Enable Scan to Receive')
+                        FutureBuilder<Box>(
+                          future: Hive.openBox('settingsBox'),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return SizedBox(
+                                width: 24.w,
+                                height: 24.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              );
+                            }
+
+                            final box = snapshot.data!;
+                            final isLoginSwitch =
+                            subTitle.startsWith('Login with ');
+
+                            bool isEnabled;
+
+                            if (subTitle == 'Enable Scan to Receive') {
+                              isEnabled = box.get(
+                                'scan_to_receive',
+                                defaultValue: false,
+                              );
+                            } else if (isLoginSwitch) {
+                              isEnabled = box.get(
+                                'login_biometric_enabled',
+                                defaultValue: false,
+                              );
+                            } else {
+                              isEnabled = box.get(
+                                'biometric_enabled',
+                                defaultValue: false,
+                              );
+                            }
+
+                            return Transform.scale(
+                              scale: 0.75,
+                              child: Switch(
+                                value: isEnabled,
+                                onChanged: (value) async {
+                                  if (subTitle ==
+                                      'Enable Scan to Receive') {
+                                    await _handleScanToggle(box, value);
+                                    return;
+                                  }
+
+                                  if (isLoginSwitch) {
+                                    if (value) {
+                                      final result = await context.pushNamed(
+                                        RouteList.enableLoginFingerprint,
+                                      );
+                                      if (result == true) {
+                                        await _loadBiometricSetting();
+                                      }
+                                    } else {
+                                      await box.put(
+                                          'login_biometric_enabled', false);
+                                      await box.delete(
+                                          'biometric_login_password');
+                                      setState(() =>
+                                      loginBiometricEnabled = false);
+                                    }
+                                  } else {
+                                    if (value) {
+                                      final result = await context.pushNamed(
+                                        RouteList
+                                            .enableTransactionPinFingerprint,
+                                      );
+                                      if (result == true) {
+                                        await _loadBiometricSetting();
+                                      }
+                                    } else {
+                                      await box.put(
+                                          'biometric_enabled', false);
+                                      await box.delete('saved_pin');
+                                      setState(() =>
+                                      biometricEnabled = false);
+                                    }
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildAvatarImage(String? picture) {
     if (picture == null || picture.isEmpty) {
@@ -498,205 +894,4 @@ class _UProfileState extends ConsumerState<UProfile> {
     return Image.file(File(picture), fit: BoxFit.cover);
   }
 
-  Widget _buildSectionContent(BuildContext context, String title, List<Map<String, dynamic>> items) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 15.spMin)
-          ),
-          ...items.map((item) => _buildSettingsTile(context, item)),
-          _divider(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _divider(BuildContext context) => Divider(
-    color: Theme.of(context).brightness == Brightness.light ? lightBorderColor : darkBorderColor,
-    thickness: 2,
-  );
-
-  Widget _buildSettingsTile(BuildContext context, Map<String, dynamic> item) {
-    final title = item['title'];
-    final hasDropdown = item['hasDropdown'];
-    final isLogout = title == 'Log Out';
-    final isExpanded = _expandedTile == title;
-    final theme = Theme.of(context);
-
-    return RepaintBoundary(
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () {
-              if (isLogout) {
-                _confirmLogout(context);
-              } else if (hasDropdown && dropdownContent.containsKey(title)) {
-                setState(() => _expandedTile = isExpanded ? '' : title);
-              } else {
-                _handleItemTap(context, title);
-              }
-            },
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.h),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(12.w),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isLogout ? Colors.red.shade100 : Colors.grey.shade200,
-                    ),
-                    child: SvgPicture.asset(
-                      item['image'],
-                      height: 15.h,
-                      colorFilter: ColorFilter.mode(
-                        isLogout ? Colors.red : Colors.grey.shade700,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 20.w),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 15.spMin,
-                        color: isLogout ? Colors.red : Colors.grey.shade700,
-                      ),
-                    ),
-                  ),
-                  if (hasDropdown)
-                    Icon(
-                      isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                      color: Colors.grey.shade700,
-                      size: 25.spMin,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: isExpanded && dropdownContent[title] != null
-                ? Padding(
-                    padding: EdgeInsets.only(left: 55.w, top: 5.h),
-                    child: Column(
-                      children: dropdownContent[title]!.map((subItem) {
-                        final subTitle = subItem['title']!;
-                        return Padding(
-                          padding: EdgeInsets.symmetric(vertical: 6.h),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(children: [
-                                Container(
-                                  padding: EdgeInsets.all(8.w),
-                                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
-                                  child: SvgPicture.asset(
-                                    subItem['image']!,
-                                    height: 15.h,
-                                    colorFilter: ColorFilter.mode(Colors.grey.shade700, BlendMode.srcIn),
-                                  ),
-                                ),
-                                SizedBox(width: 18.w),
-                                GestureDetector(
-                                  onTap: () async {
-                                    if (subTitle == 'Set Pin') {
-                                      context.pushNamed(RouteList.setTransactionPin);
-                                    } if (subTitle == 'Change Payment Pin') {
-                                      context.pushNamed(RouteList.changePaymentPin);
-                                    }
-                                  },
-                                  child: Text(
-                                    subTitle,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 14.spMin,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ),
-                              ]),
-                              if (subTitle.startsWith('Pay with ') || subTitle.startsWith('Login with ') || subTitle == 'Enable Scan to Receive')
-                                FutureBuilder<Box>(
-                                  future: Hive.openBox('settingsBox'),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState != ConnectionState.done) {
-                                      return const SizedBox(width: 40, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
-                                    }
-                                    final box = snapshot.data!;
-
-                                    // Decide which setting to read / write
-                                    final isLoginSwitch = subTitle.startsWith('Login with ');
-                                    final isFingerprintSwitch = subTitle.startsWith('Pay with ');
-
-                                    bool isEnabled;
-                                    if (subTitle == 'Enable Scan to Receive') {
-                                      isEnabled = box.get('scan_to_receive', defaultValue: false) as bool;
-                                    } else if (isLoginSwitch) {
-                                      isEnabled = box.get('login_biometric_enabled', defaultValue: false) as bool;
-                                    } else {
-                                      isEnabled = box.get('biometric_enabled', defaultValue: false) as bool;
-                                    }
-
-                                    return Transform.scale(
-                                      scale: 0.55,
-                                      child: Switch(
-                                        value: isEnabled,
-                                        onChanged: (value) async {
-                                          if (subTitle == 'Enable Scan to Receive') {
-                                            await _handleScanToggle(box, value);
-                                            return;
-                                          }
-
-                                          if (isLoginSwitch) {
-                                            if (value) {
-                                              final result = await context.pushNamed(RouteList.enableLoginFingerprint);
-                                              if (result == true) {
-                                                // Refresh the biometric setting state
-                                                await _loadBiometricSetting();
-                                              }
-                                            } else {
-                                              await box.put('login_biometric_enabled', false);
-                                              await box.delete('biometric_login_password');
-                                              setState(() => loginBiometricEnabled = false);
-                                            }
-                                          } else {
-                                            // TRANSACTION PIN BIOMETRIC
-                                            if (value) {
-                                              final result = await context.pushNamed(
-                                                RouteList.enableTransactionPinFingerprint,
-                                              );
-
-                                              if (result == true) {
-                                                await _loadBiometricSetting(); // refresh switch
-                                              }
-                                            } else {
-                                              await box.put('biometric_enabled', false);
-                                              await box.delete('saved_pin');
-                                              setState(() => biometricEnabled = false);
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
-  }
 }

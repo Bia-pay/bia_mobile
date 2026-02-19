@@ -21,6 +21,7 @@ import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner_onboar
 import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
+import '../../../feature/settings/presentation/confirm_SetPin.dart';
 import '../../../feature/settings/presentation/set_pin.dart';
 import '../../../feature/dashboard/pages/transaction_history.dart';
 import '../../../feature/dashboard/pages/vtu/airtime/airtime.dart';
@@ -69,22 +70,69 @@ class AppRouter {
       GoRoute(path: '/scanner-onboarding', name: RouteList.scannerOnboarding, builder: (context, state) => const ScannerOnboarding()),
       GoRoute(path: '/qr-scanner', name: RouteList.qrScannerScreen, builder: (context, state) => const QrScannerScreen()),
       GoRoute(path: '/qr-code', name: RouteList.qrScreen, builder: (context, state) => const QrScreen()),
-      GoRoute(path: '/change-pin', name: RouteList.changePaymentPin, builder: (context, state) => const ChangePaymentPin()),
+      GoRoute(path: '/set-pin', name: RouteList.setTransactionPin, builder: (context, state) => const SetPin()),
+      //Enter OLD PIN
       GoRoute(
-        path: '/set-pin',
-        name: RouteList.setTransactionPin,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final oldPin = extra?['oldPin'] as String?;
+        path: '/change-pin',
+        name: RouteList.changePaymentPin,
+        builder: (context, state) => const ChangePaymentPin(),
+      ),
 
-          // If oldPin is provided, show NewPaymentPin (change flow)
-          // Otherwise show SetPin (first time setup)
-          if (oldPin != null && oldPin.isNotEmpty) {
-            return NewPaymentPin(oldPin: oldPin);
-          }
-          return const SetPin();
+// Enter NEW PIN (after old pin)
+      GoRoute(
+        path: '/change-pin/new',
+        name: RouteList.changeNewPaymentPin,
+        builder: (context, state) {
+          final oldPin = state.extra as String;
+          return SetNewPin(oldPin: oldPin);
         },
       ),
+
+// Confirm NEW PIN
+      GoRoute(
+        path: '/change-pin/confirm',
+        name: RouteList.confirmChangeNewPaymentPin,
+        builder: (context, state) {
+          final data = state.extra as Map<String, String>;
+          return ConfirmSetNewPin(
+            oldPin: data['oldPin']!,
+            newPin: data['newPin']!,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/confirm-SetPin',
+        name: RouteList.confirmSetPin,
+        builder: (context, state) {
+          final originalPin = state.extra as String;
+
+          return ConfirmSetPin(
+            originalPin: originalPin,
+          );
+        },
+      ),      // GoRoute(
+      //   path: '/set-pin',
+      //   name: RouteList.setTransactionPin,
+      //   builder: (context, state) {
+      //     final extra = state.extra as Map<String, dynamic>?;
+      //
+      //     final oldPin = extra?['oldPin'] as String?;
+      //     final originalPin = extra?['originalPin'] as String?;
+      //
+      //     // 🔁 Change PIN flow
+      //     if (oldPin != null && oldPin.isNotEmpty) {
+      //       return NewPaymentPin(oldPin: oldPin);
+      //     }
+      //
+      //     // 🔐 Confirm PIN step
+      //     if (originalPin != null && originalPin.isNotEmpty) {
+      //       return ConfirmSetPin(originalPin: originalPin);
+      //     }
+      //
+      //     // 🆕 First-time setup
+      //     return const SetPin();
+      //   },
+      // ),
       GoRoute(path: '/deposit-screen', name: RouteList.depositScreen, builder: (context, state) => const TopUpAmountPage()),
       GoRoute(path: '/enable-login-fingerprint', name: RouteList.enableLoginFingerprint, builder: (context, state) => const EnableLoginFingerprint()),
       GoRoute(path: '/enable-transaction-fingerprint', name: RouteList.enableTransactionPinFingerprint, builder: (context, state) => const EnableTransactionPinFingerprint()),

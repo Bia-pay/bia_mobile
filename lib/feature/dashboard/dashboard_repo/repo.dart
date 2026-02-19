@@ -10,6 +10,7 @@ import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 import '../../settings/model/qr_code.dart';
 import '../model/deposit.dart';
+import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
 import '../model/recent_transfer.dart';
 import '../model/verify_transactions.dart';
@@ -267,6 +268,37 @@ class DashboardRepository {
     }
   }
 
+  // Future<FavouriteBeneficiaryResponse>
+  // getFavouriteBeneficiary() async {
+  //   try {
+  //     final box = await Hive.openBox("authBox");
+  //     final token = box.get("token", defaultValue: "");
+  //
+  //     if (token.isEmpty) {
+  //       return FavouriteBeneficiaryResponse(
+  //         responseSuccessful: false,
+  //         responseMessage: "No token found",
+  //         beneficiaries: [],
+  //       );
+  //     }
+  //
+  //     _apiClient.updateHeaders(token);
+  //
+  //     final response =
+  //     await _apiClient.getData(ApiConstant.FAVOURITE_TRANSFER);
+  //
+  //     final jsonResponse = jsonDecode(response.body);
+  //
+  //     return FavouriteBeneficiaryResponse.fromJson(jsonResponse);
+  //   } catch (e) {
+  //     return FavouriteBeneficiaryResponse(
+  //       responseSuccessful: false,
+  //       responseMessage: "Error: $e",
+  //       beneficiaries: [],
+  //     );
+  //   }
+  // }
+
   Future<TransactionResponse> getTransactions() async {
     try {
       final box = await Hive.openBox("authBox");
@@ -327,6 +359,42 @@ class DashboardRepository {
       return RecentBeneficiaryResponse.fromJson(jsonResponse);
     } catch (e) {
       return RecentBeneficiaryResponse(
+        responseSuccessful: false,
+        responseMessage: "Error: $e",
+        beneficiaries: [],
+      );
+    }
+  }
+
+  Future<FavouriteBeneficiaryResponse> getFavouriteBeneficiary() async {
+    try {
+      debugPrint("🔥 CALLING FAVOURITE ENDPOINT");
+
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return FavouriteBeneficiaryResponse(
+          responseSuccessful: false,
+          responseMessage: "No token found",
+          beneficiaries: [],
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final response =
+      await _apiClient.getData(ApiConstant.FAVOURITE_TRANSFER);
+
+      debugPrint("🔥 FAV RAW RESPONSE: ${response.body}");
+
+      final jsonResponse = jsonDecode(response.body);
+
+      return FavouriteBeneficiaryResponse.fromJson(jsonResponse);
+    } catch (e) {
+      debugPrint("❌ Favourite API error: $e");
+
+      return FavouriteBeneficiaryResponse(
         responseSuccessful: false,
         responseMessage: "Error: $e",
         beneficiaries: [],
@@ -444,13 +512,74 @@ class DashboardRepository {
     }
   }
 
+  // Future<ResponseModel> uploadProfileImage(String imagePath) async {
+  //   try {
+  //     final box = await Hive.openBox('authBox');
+  //     final token = box.get('token') as String?;
+  //
+  //     debugPrint('🔐 UPLOAD TOKEN FROM HIVE: $token');
+  //
+  //     if (token == null || token.isEmpty) {
+  //       return ResponseModel(
+  //         responseMessage: "No token found",
+  //         responseSuccessful: false,
+  //         statusCode: 401,
+  //       );
+  //     }
+  //
+  //     final uri = Uri.parse(
+  //       '${ApiConstant.BASE_URL}${ApiConstant.UPDATE_AVATAR}',
+  //     );
+  //
+  //     final request = http.MultipartRequest('PATCH', uri);
+  //     request.headers['Authorization'] = 'Bearer $token';
+  //     request.headers['Accept'] = 'application/json';
+  //
+  //     request.files.add(
+  //       await http.MultipartFile.fromPath(
+  //         'image',
+  //         imagePath,
+  //         contentType: MediaType('image', 'jpeg'), // 🔥 IMPORTANT
+  //       ),
+  //     );
+  //
+  //     debugPrint('📤 Uploading image: $imagePath');
+  //
+  //     final streamedResponse = await request.send();
+  //     final response = await http.Response.fromStream(streamedResponse);
+  //
+  //     debugPrint("🟢 UPLOAD STATUS: ${response.statusCode}");
+  //     debugPrint("🟢 UPLOAD BODY: ${response.body}");
+  //
+  //     final json = jsonDecode(response.body);
+  //     if (json['responseSuccessful'] == true) {
+  //       final pictureUrl = json['responseBody']?['picture'];
+  //
+  //       if (pictureUrl != null) {
+  //         final box = Hive.box('authBox');
+  //         await box.put('picture', pictureUrl);
+  //       }
+  //     }
+  //     return ResponseModel(
+  //       responseMessage:
+  //       json['responseMessage'] ?? json['error'] ?? 'Upload failed',
+  //       responseSuccessful: json['responseSuccessful'] ?? false,
+  //       statusCode: response.statusCode,
+  //     );
+  //   } catch (e) {
+  //     debugPrint("🔥 Upload exception: $e");
+  //     return ResponseModel(
+  //       responseMessage: 'Image upload failed',
+  //       responseSuccessful: false,
+  //       statusCode: 500,
+  //     );
+  //   }
+  // }
 
   Future<ResponseModel> uploadProfileImage(String imagePath) async {
     try {
       final box = await Hive.openBox('authBox');
       final token = box.get('token') as String?;
-
-      debugPrint('🔐 UPLOAD TOKEN FROM HIVE: $token');
 
       if (token == null || token.isEmpty) {
         return ResponseModel(
@@ -464,6 +593,12 @@ class DashboardRepository {
         '${ApiConstant.BASE_URL}${ApiConstant.UPDATE_AVATAR}',
       );
 
+      final mimeType = lookupMimeType(imagePath) ?? 'image/jpeg';
+      final mimeSplit = mimeType.split('/');
+
+      debugPrint("📤 Uploading image: $imagePath");
+      debugPrint("📤 MIME TYPE: $mimeType");
+
       final request = http.MultipartRequest('PATCH', uri);
       request.headers['Authorization'] = 'Bearer $token';
       request.headers['Accept'] = 'application/json';
@@ -472,27 +607,18 @@ class DashboardRepository {
         await http.MultipartFile.fromPath(
           'image',
           imagePath,
-          contentType: MediaType('image', 'jpeg'), // 🔥 IMPORTANT
+          contentType: MediaType(mimeSplit[0], mimeSplit[1]),
         ),
       );
-
-      debugPrint('📤 Uploading image: $imagePath');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("🟢 UPLOAD STATUS: ${response.statusCode}");
-      debugPrint("🟢 UPLOAD BODY: ${response.body}");
+      debugPrint("🟢 STATUS: ${response.statusCode}");
+      debugPrint("🟢 BODY: ${response.body}");
 
       final json = jsonDecode(response.body);
-      if (json['responseSuccessful'] == true) {
-        final pictureUrl = json['responseBody']?['picture'];
 
-        if (pictureUrl != null) {
-          final box = Hive.box('authBox');
-          await box.put('picture', pictureUrl);
-        }
-      }
       return ResponseModel(
         responseMessage:
         json['responseMessage'] ?? json['error'] ?? 'Upload failed',

@@ -30,7 +30,7 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
       slidePath: onboardingFirstSvg,
     ),
     OnboardingData(
-      title: 'Bia Pay\nKeeps',
+      title: 'Bia Pay Keeps',
       titleColor: 'You Moving',
       subtitle: 'Secure your wallet now and enjoy smooth,\nstress-free trips.',
       imagePath: onboardingSecondPng,
@@ -95,87 +95,129 @@ class _OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 30.w),
-      color: lightBackground,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 300.h),
-            Center(
-              child: Image.asset(
-                data.imagePath,
-                height: 170.h,
+    final theme = Theme.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenHeight = constraints.maxHeight;
+        final screenWidth = constraints.maxWidth;
+
+        double imageHeight;
+        if (screenWidth < 350) {
+          imageHeight = screenHeight * 0.22;
+        } else if (screenWidth < 600) {
+          imageHeight = screenHeight * 0.25;
+        } else {
+          imageHeight = 260; // tablet cap
+        }
+
+        return Container(
+          color: lightBackground,
+          child: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.08,
+                  ),
+                  child: Column(
+                    children: [
+
+                      SizedBox(height: screenHeight * 0.32),
+
+                      /// IMAGE
+                      Image.asset(
+                        data.imagePath,
+                        height: imageHeight,
+                        fit: BoxFit.contain,
+                      ),
+
+                      const Spacer(),
+                      /// TITLE
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data.title,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: lightText,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 26.spMin,
+                              ),
+                            ),
+                            Text(
+                              data.titleColor,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: primaryColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 28.spMin,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      /// SUBTITLE
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          data.subtitle,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: lightSecondaryText,
+                            fontSize: 15.spMin,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+
+
+
+                      /// INDICATOR + BUTTON
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SvgPicture.asset(
+                            data.slidePath,
+                            height: 6.h,
+                          ),
+                          SizedBox(
+                            width: screenWidth * 0.28,
+                            child: CustomButton(
+                              buttonColor: primaryColor,
+                              buttonTextColor: secondaryColor,
+                              buttonName:
+                              isLastPage ? 'Done' : 'Next',
+                              onPressed: () {
+                                if (isLastPage) {
+                                  context.go(
+                                      RouteList.phoneRegScreen);
+                                } else {
+                                  pageController.nextPage(
+                                    duration: const Duration(
+                                        milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: screenHeight * 0.05),
+                    ],
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 60.h),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  data.title,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: lightText,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 35.sp,
-                  ),
-                ),
-                Text(
-                  data.titleColor,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 35.sp,
-                  ),
-                ),
-                SizedBox(height: 13.h),
-                SizedBox(
-                  width: 810.w,
-                  child: Text(
-                    data.subtitle,
-                    textAlign: TextAlign.start,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: lightSecondaryText,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 40.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SvgPicture.asset(
-                  data.slidePath,
-                  height: 6.h,
-                ),
-                SizedBox(
-                  height: 50.h,
-                  width: 100.w,
-                  child: CustomButton(
-                    buttonColor: primaryColor,
-                    buttonTextColor: secondaryColor,
-                    buttonName: isLastPage ? 'Done' : 'Skip',
-                    onPressed: () {
-                      if (isLastPage) {
-                        context.go(RouteList.phoneRegScreen);
-                      } else {
-                        pageController.nextPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeIn,
-                        );
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

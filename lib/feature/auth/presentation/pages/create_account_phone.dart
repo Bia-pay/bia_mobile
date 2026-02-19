@@ -1,11 +1,9 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/widgets/phone_input_widget.dart';
 import '../../authcontroller/authcontroller.dart';
@@ -24,7 +22,7 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
   bool _agreed = false;
   final bool _isLoading = false;
   String _countryDialCode = '234';
-
+  final FocusNode phoneFocusNode = FocusNode();
 
   bool get _canProceed =>
       phoneController.text.trim().isNotEmpty && _agreed;
@@ -41,66 +39,136 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
   @override
   void dispose() {
     phoneController.dispose();
+    phoneFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(login),
-                fit: BoxFit.cover,
-              ),
+          /// 🔥 Background Image
+          Positioned.fill(
+            child: Image.asset(
+              login,
+              fit: BoxFit.cover,
             ),
           ),
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Colors.black.withOpacity(0.05),
+
+          /// 🔥 Light Overlay
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.05),
+            ),
           ),
+
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                return Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    18.w,
-                    15.h,
-                    18.w,
-                    MediaQuery.of(context).viewInsets.bottom,
-                  ),
+                final screenHeight = constraints.maxHeight;
+                final screenWidth = constraints.maxWidth;
+
+                return Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
+                    constraints: const BoxConstraints(
+                      maxWidth: 500, // tablet support
                     ),
-                    child: IntrinsicHeight(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        screenWidth * 0.06,
+                        screenHeight * 0.08,
+                        screenWidth * 0.06,
+                        MediaQuery.of(context).viewInsets.bottom + 20.h,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          /// 🔹 Title
                           Text(
                             'Create Your Account',
+                            textAlign: TextAlign.center,
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineLarge
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                                ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 26.spMin,
+                            ),
                           ),
-                          SizedBox(height: 5.h),
+
+                          SizedBox(height: 8.h),
+
                           Text(
                             'Enter your phone number',
-                            style:
-                            Theme.of(context).textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(fontSize: 16.spMin),
                           ),
-                          SizedBox(height: 20.h),
 
+                          SizedBox(height: screenHeight * 0.05),
+
+                          /// 🔹 Phone Input (UNCHANGED)
                           PhoneInputWidget(
                             controller: phoneController,
+                            focusNode: phoneFocusNode,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) async {
+                              if (!_canProceed) return;
+
+                              FocusScope.of(context).unfocus();
+
+                              if (!_agreed) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'You must agree to the Terms & Conditions'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final rawPhone = phoneController.text.trim();
+                              final normalizedPhone =
+                              rawPhone.startsWith('0')
+                                  ? rawPhone.substring(1)
+                                  : rawPhone;
+
+                              final fullPhoneNumber =
+                                  '$_countryDialCode$normalizedPhone';
+
+                              final authState =
+                              ref.read(authControllerProvider.notifier);
+
+                              final response =
+                              await authState.registerStepOne(
+                                context,
+                                fullPhoneNumber,
+                              );
+
+                              if (response?.responseSuccessful == true) {
+                                context.pushNamed(
+                                  RouteList.createAccountVerifyOtpScreen,
+                                  extra: fullPhoneNumber,
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      response?.responseMessage ??
+                                          'Registration failed',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
                             label: 'Mobile Number',
                             hintText: '8012345678',
                             validator: (value) {
@@ -118,9 +186,11 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                             },
                           ),
 
-                          SizedBox(height: 15.h),
+                          SizedBox(height: 20.h),
 
+                          /// 🔹 Checkbox
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Checkbox(
                                 value: _agreed,
@@ -129,115 +199,132 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                                 activeColor: primaryColor,
                               ),
                               Expanded(
-                                child: Text.rich(
-                                  TextSpan(
-                                    text: 'I agree with ',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall,
-                                    children: [
-                                      TextSpan(
-                                        text: 'Terms & Conditions',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                          color: primaryColor,
-                                          fontWeight: FontWeight.w500,
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 12.h),
+                                  child: Text.rich(
+                                    TextSpan(
+                                      text: 'I agree with ',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                      children: [
+                                        TextSpan(
+                                          text: 'Terms & Conditions',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                            color: primaryColor,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
 
-                          SizedBox(height: 10.h),
-
-                          CustomButton(
-                            buttonColor: _canProceed
-                                ? primaryColor
-                                : inactiveColor,
-                            buttonTextColor: Colors.white,
-                            buttonName:
-                            _isLoading ? 'Please wait...' : 'Next',
-                            buttonBorderColor: Colors.transparent,
-                            onPressed: (!_canProceed || _isLoading)
-                                ? null
-                                : () async {
-                              FocusScope.of(context).unfocus(); // 👈 hides keyboard
-                              if (!_agreed) {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'You must agree to the Terms & Conditions'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                                return;
-                              }
-
-                              final rawPhone =
-                              phoneController.text.trim();
-                              final normalizedPhone =
-                              rawPhone.startsWith('0')
-                                  ? rawPhone.substring(1)
-                                  : rawPhone;
-
-                              final fullPhoneNumber =
-                                  '$_countryDialCode$normalizedPhone';
-
-                              final authState = ref.read(
-                                  authControllerProvider.notifier);
-
-                              final response =
-                              await authState.registerStepOne(
-                                context,
-                                fullPhoneNumber,
-                              );
-
-                              if (response?.responseSuccessful ==
-                                  true) {
-                                context.pushNamed(
-                                  RouteList
-                                      .createAccountVerifyOtpScreen,
-                                  extra: fullPhoneNumber,
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      response?.responseMessage ??
-                                          'Registration failed',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
-                          ),
                           SizedBox(height: 20.h),
+
+                          /// 🔹 Button (UNCHANGED LOGIC)
+                          SizedBox(
+                            width: double.infinity,
+                            child: CustomButton(
+                              buttonColor:
+                              _canProceed ? primaryColor : inactiveColor,
+                              buttonTextColor: Colors.white,
+                              buttonName:
+                              _isLoading ? 'Please wait...' : 'Next',
+                              buttonBorderColor: Colors.transparent,
+                              onPressed: (!_canProceed || _isLoading)
+                                  ? null
+                                  : () async {
+                                FocusScope.of(context).unfocus();
+
+                                if (!_agreed) {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'You must agree to the Terms & Conditions'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final rawPhone =
+                                phoneController.text.trim();
+                                final normalizedPhone =
+                                rawPhone.startsWith('0')
+                                    ? rawPhone.substring(1)
+                                    : rawPhone;
+
+                                final fullPhoneNumber =
+                                    '$_countryDialCode$normalizedPhone';
+
+                                final authState = ref.read(
+                                    authControllerProvider.notifier);
+
+                                final response =
+                                await authState.registerStepOne(
+                                  context,
+                                  fullPhoneNumber,
+                                );
+
+                                if (response?.responseSuccessful ==
+                                    true) {
+                                  context.pushNamed(
+                                    RouteList
+                                        .createAccountVerifyOtpScreen,
+                                    extra: fullPhoneNumber,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        response?.responseMessage ??
+                                            'Registration failed',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+
+                          SizedBox(height: 30.h),
+
+                          /// 🔹 Sign In
                           RichText(
+                            textAlign: TextAlign.center,
                             text: TextSpan(
                               text: "Already have an account?  ",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                //color:  borderColor,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
                                 fontWeight: FontWeight.w600,
-                              ),                  children: [
-                              TextSpan(
-                                text: 'Sign In',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color:  primaryColor ,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () => context.pushNamed(
-                                      RouteList.loginScreen),
                               ),
-                            ],
+                              children: [
+                                TextSpan(
+                                  text: 'Sign In',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                    color: primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () => context.pushNamed(
+                                        RouteList.loginScreen),
+                                ),
+                              ],
                             ),
                           ),
                         ],

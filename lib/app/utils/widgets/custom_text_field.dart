@@ -10,6 +10,7 @@ class CustomTextFormField extends StatefulWidget {
   final bool obscureText;
   final bool readOnly; // 👈 Added this line
   final IconData? icons;
+  final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
   final String? images;
   final Color? hintColor;
@@ -18,7 +19,7 @@ class CustomTextFormField extends StatefulWidget {
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
   final int? maxLength;
-
+  final TextInputAction? textInputAction;
   const CustomTextFormField({
     super.key,
     required this.controller,
@@ -35,7 +36,9 @@ class CustomTextFormField extends StatefulWidget {
     this.maxLength,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
-    this.readOnly = false, // 👈 Default false
+    this.readOnly = false,
+    this.textInputAction,
+    this.focusNode,//
   });
 
   @override
@@ -81,10 +84,12 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           obscureText: widget.obscureText,
           keyboardType: widget.keyboardType,
           maxLength: widget.maxLength,
+          focusNode: widget.focusNode,
           inputFormatters: widget.inputFormatters,
           onChanged: widget.onChanged,
           onFieldSubmitted: widget.onSubmitted,
-          readOnly: widget.readOnly, // 👈 Now supported
+          textInputAction: widget.textInputAction,
+          readOnly: widget.readOnly,
           decoration: InputDecoration(
             counterText: "",
             prefixIcon: widget.icons != null

@@ -18,6 +18,7 @@ class ApiConstant {
   static const WALLET = '/api/v1/wallet';
   static const TRANSER = '/api/v1/wallet/transfer';
   static const TRANSACTION = '/api/v1/wallet/transactions';
+  static const FAVOURITE_TRANSFER = "/api/v1/wallet/beneficiaries?page=1&limit=10";
   static const WALLET_BALANCE = '/api/v1/wallet/balance';
   static const VERIFY_ACCOUNT = '/api/v1/wallet/transfer/verify';
   static const GENERATE_QR_CODE = '/api/v1/user/qr-code';
@@ -27,6 +28,7 @@ class ApiConstant {
   static const DEPOSIT = '/api/v1/payment/deposit';
   static const VERIFY_PAYMENT = '/api/v1/payment/verify';
   static const UPDATE_AVATAR = '/api/v1/user/profile/image';
+  static const String LOGOUT = "/api/v1/auth/logout";
   // static const TRANSER = '/api/v1/wallet/transfer';
   // static const TRANSACTION = '/api/v1/wallet/transactions?page=1&limit=10';
 

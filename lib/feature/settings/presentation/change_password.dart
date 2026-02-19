@@ -3,144 +3,155 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import '../../../app/utils/colors.dart';
-import '../../../app/utils/widgets/pin_field.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../dashboard/dashboard_repo/repo.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../dashboard/widgets/keypad.dart';
 
 class ChangePaymentPin extends ConsumerStatefulWidget {
-  const ChangePaymentPin({super.key, this.title = "Change Payment Pin"});
-  final String title;
+  const ChangePaymentPin({super.key});
 
   @override
-  ConsumerState<ChangePaymentPin> createState() => _ChangePaymentPinState();
+  ConsumerState<ChangePaymentPin> createState() =>
+      _ChangePaymentPinState();
 }
 
 class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
-  int _selectedIndex = -1;
-  bool showMinWarning = false;
-
-  final TextEditingController oldPin = TextEditingController();
-
-  @override
-  void dispose() {
-    oldPin.dispose();
-    super.dispose();
-  }
+  String pin = "";
+  bool showWarning = false;
 
   void addDigit(String value) {
+    if (pin.length >= 4) return;
+
     setState(() {
-      if (oldPin.text.length < 4) oldPin.text += value;
-      _checkMinLimit();
+      pin += value;
+      showWarning = false;
     });
   }
 
   void removeDigit() {
+    if (pin.isEmpty) return;
+
     setState(() {
-      if (oldPin.text.isNotEmpty) {
-        oldPin.text = oldPin.text.substring(0, oldPin.text.length - 1);
-      }
-      _checkMinLimit();
+      pin = pin.substring(0, pin.length - 1);
     });
   }
 
-  void _checkMinLimit() {
-    showMinWarning = oldPin.text.length < 4 && oldPin.text.isNotEmpty;
-  }
-
-  void _goToNewPinPage() {
-    if (oldPin.text.length != 4) {
-      setState(() => showMinWarning = true);
+  void _goNext() {
+    if (pin.length != 4) {
+      setState(() => showWarning = true);
       return;
     }
+
     context.pushNamed(
-      RouteList.setTransactionPin,
-      extra: {'oldPin': oldPin.text},
+      RouteList.changeNewPaymentPin,
+      extra: pin,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: offWhiteBackground,
+      backgroundColor: lightBackground,
       appBar: AppBar(
-        title: Text(widget.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        backgroundColor: offWhiteBackground,
+        backgroundColor: lightBackground,
         elevation: 0,
         centerTitle: true,
       ),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
         child: Column(
           children: [
-            SizedBox(height: 65.h),
-            Text('Enter OLD PIN', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            SizedBox(height: 15.h),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 40),
-              child: AppPinCodeField(
-                controller: oldPin,
-                length: 4,
-                fillColor: offWhiteBackground,
-                inactiveColor: keyAColor,
-                activeColor: primaryColor,
-                selectedColor: primaryColor,
-              ),
-            ),
-            if (showMinWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h),
-                child: Text("PIN must be 4 digits", style: theme.textTheme.bodySmall?.copyWith(color: errorColor)),
-              ),
-            SizedBox(height: 120.h),
+            SizedBox(height: 50.h),
 
-            /// Keypad
-            Expanded(
-              child: GridView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 25.w),
-                itemCount: 12,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 16.h,
-                  crossAxisSpacing: 35.w,
-                  mainAxisExtent: 70.h,
+            /// Lock Card (same as transaction pin)
+            Container(
+              padding: EdgeInsets.all(15.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accentColor.withOpacity(0.4),
+                    primaryColor,
+                    primaryColor.withOpacity(0.9),
+                  ],
                 ),
-                itemBuilder: (context, index) {
-                  List<String> keys = ["1","2","3","4","5","6","7","8","9","x","0","ok"];
-                  String key = keys[index];
-                  Color keyColor = keyAColor;
-                  Color textColor = lightSecondaryText;
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child:
+              Icon(Icons.lock, color: Colors.white, size: 30.sp),
+            ),
 
-                  if (key == "x") { keyColor = primaryColor.withOpacity(0.1); textColor = primaryColor; }
-                  else if (key == "ok") { keyColor = primaryColor; textColor = whiteBackground; }
+            SizedBox(height: 20.h),
 
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(50.r),
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      setState(() => _selectedIndex = index);
-                      if (key == "x") removeDigit();
-                      else if (key == "ok") _goToNewPinPage();
-                      else addDigit(key);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _selectedIndex == index ? Colors.white : keyColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _selectedIndex == index ? primaryColor : Colors.transparent, width: 2),
-                      ),
-                      alignment: Alignment.center,
-                      child: key == "x"
-                          ? SvgPicture.asset('assets/svg/cancel.svg', height: 20.h, colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn))
-                          : key == "ok"
-                          ? Icon(Icons.arrow_forward, color: _selectedIndex == index ? primaryColor : textColor, size: 24.sp)
-                          : Text(key, style: theme.textTheme.headlineSmall?.copyWith(color: _selectedIndex == index ? primaryColor : lightText, fontWeight: FontWeight.w500, fontSize: 24.sp)),
+            Text(
+              "Enter Old PIN",
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+
+            SizedBox(height: 40.h),
+
+            /// PIN dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                final filled = index < pin.length;
+
+                return AnimatedContainer(
+                  duration:
+                  const Duration(milliseconds: 150),
+                  width: 16,
+                  height: 16,
+                  margin:
+                  EdgeInsets.symmetric(horizontal: 6.w),
+                  decoration: BoxDecoration(
+                    color: filled
+                        ? primaryColor
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: filled
+                          ? inactiveColor
+                          : disabledTextColor,
+                      width: 2,
                     ),
-                  );
-                },
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ),
+
+            if (showWarning)
+              Padding(
+                padding: EdgeInsets.only(top: 15.h),
+                child: Text(
+                  "PIN must be 4 digits",
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+
+            SizedBox(height: 70.h),
+
+            Expanded(
+              child: CustomGridKeypad(
+                onNumberPressed: addDigit,
+                leftAction: ActionKey(
+                  child: Icon(Icons.check,
+                      color: Colors.white),
+                  backgroundColor: primaryColor,
+                  onTap: _goNext,
+                ),
+                rightAction: ActionKey(
+                  child: Icon(Icons.backspace,
+                      color: primaryColor),
+                  backgroundColor:
+                  primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
+                ),
               ),
             ),
           ],
@@ -151,99 +162,226 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
 }
 
 
-class NewPaymentPin extends ConsumerStatefulWidget {
+
+class SetNewPin extends ConsumerStatefulWidget {
   final String oldPin;
-  const NewPaymentPin({super.key, required this.oldPin});
+
+  const SetNewPin({super.key, required this.oldPin});
 
   @override
-  ConsumerState<NewPaymentPin> createState() => _NewPaymentPinState();
+  ConsumerState<SetNewPin> createState() => _SetNewPinState();
 }
 
-class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
-  int _selectedIndex = -1;
-  bool showMinWarning = false;
-
-  final TextEditingController newPin = TextEditingController();
-  final TextEditingController confirmPin = TextEditingController();
-  late TextEditingController activeController;
-
-  @override
-  void initState() {
-    super.initState();
-    activeController = newPin;
-  }
-
-  @override
-  void dispose() {
-    newPin.dispose();
-    confirmPin.dispose();
-    // Don't dispose activeController as it's just a reference to newPin or confirmPin
-    super.dispose();
-  }
+class _SetNewPinState extends ConsumerState<SetNewPin> {
+  String pin = "";
+  bool showWarning = false;
 
   void addDigit(String value) {
+    if (pin.length >= 4) return;
+
     setState(() {
-      if (activeController.text.length < 4) activeController.text += value;
-      _checkMinLimit();
+      pin += value;
+      showWarning = false;
     });
+
+    if (pin.length == 4) {
+      context.pushNamed(
+        RouteList.confirmChangeNewPaymentPin,
+        extra: {
+          "oldPin": widget.oldPin,
+          "newPin": pin,
+        },
+      );
+    }
   }
 
   void removeDigit() {
+    if (pin.isEmpty) return;
     setState(() {
-      if (activeController.text.isNotEmpty) activeController.text = activeController.text.substring(0, activeController.text.length - 1);
-      _checkMinLimit();
+      pin = pin.substring(0, pin.length - 1);
     });
   }
 
-  void _checkMinLimit() {
-    showMinWarning = (newPin.text.length < 4 || confirmPin.text.length < 4) && newPin.text.isNotEmpty && confirmPin.text.isNotEmpty;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: lightBackground,
+      appBar: AppBar(
+        backgroundColor: lightBackground,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
+        child: Column(
+          children: [
+            SizedBox(height: 50.h),
+
+            /// Lock icon card
+            Container(
+              padding: EdgeInsets.all(15.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accentColor.withOpacity(0.4),
+                    primaryColor,
+                    primaryColor.withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(Icons.lock, color: Colors.white, size: 30.sp),
+            ),
+
+            SizedBox(height: 20.h),
+
+            Text(
+              "Set Transaction PIN",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            SizedBox(height: 15.h),
+
+            Text(
+              "Enter a new 4-digit PIN",
+              style: theme.textTheme.bodySmall,
+            ),
+
+            SizedBox(height: 40.h),
+
+            /// PIN dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                final filled = index < pin.length;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 16,
+                  height: 16,
+                  margin: EdgeInsets.symmetric(horizontal: 6.w),
+                  decoration: BoxDecoration(
+                    color: filled ? primaryColor : Colors.transparent,
+                    border: Border.all(
+                      color: filled ? inactiveColor : disabledTextColor,
+                      width: 2,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ),
+
+            if (showWarning)
+              Padding(
+                padding: EdgeInsets.only(top: 15.h),
+                child: Text(
+                  "PIN must be 4 digits",
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+
+            SizedBox(height: 70.h),
+
+            Expanded(
+              child: CustomGridKeypad(
+                onNumberPressed: addDigit,
+                leftAction: ActionKey(
+                  child: Icon(Icons.check, color: Colors.white),
+                  backgroundColor: primaryColor,
+                  onTap: () {
+                    if (pin.length == 4) {
+                      context.pushNamed(
+                        RouteList.confirmChangeNewPaymentPin,
+                        extra: pin,
+                      );
+                    } else {
+                      setState(() => showWarning = true);
+                    }
+                  },
+                ),
+                rightAction: ActionKey(
+                  child: Icon(Icons.backspace, color: primaryColor),
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class ConfirmSetNewPin extends ConsumerStatefulWidget {
+  final String oldPin;
+  final String newPin;
+
+  const ConfirmSetNewPin({
+    super.key,
+    required this.oldPin,
+    required this.newPin,
+  });
+
+  @override
+  ConsumerState<ConfirmSetNewPin> createState() => _ConfirmSetNewPinState();
+}
+
+class _ConfirmSetNewPinState extends ConsumerState<ConfirmSetNewPin> {
+  String pin = "";
+  bool showError = false;
+
+  void addDigit(String value) {
+    if (pin.length >= 4) return;
+
+    setState(() {
+      pin += value;
+      showError = false;
+    });
+
+    if (pin.length == 4) {
+      _submit();
+    }
   }
 
-  Future<void> _confirmNewPin() async {
-    if (newPin.text.length != 4 || confirmPin.text.length != 4) {
-      setState(() => showMinWarning = true);
-      return;
-    }
-    if (newPin.text != confirmPin.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("New PIN and Confirm PIN do not match"),
-          backgroundColor: Colors.red,
-        ),
-      );
+  void removeDigit() {
+    if (pin.isEmpty) return;
+    setState(() {
+      pin = pin.substring(0, pin.length - 1);
+    });
+  }
+
+  Future<void> _submit() async {
+    if (pin != widget.newPin) {
+      setState(() {
+        pin = "";
+        showError = true;
+      });
       return;
     }
 
-    // Validate old PIN is different from new PIN
-    if (widget.oldPin == newPin.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("New PIN must be different from old PIN"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final controller = ref.read(dashboardControllerProvider.notifier);
+    final controller =
+    ref.read(dashboardControllerProvider.notifier);
 
     final response = await controller.changePin(
       context,
       widget.oldPin,
-      newPin.text,
-      confirmPin.text,
+      widget.newPin,
+      pin,
     );
 
-    if (response != null && response.responseSuccessful && mounted) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("✅ PIN changed successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
-      
-      // Navigate back to home
+    if (response != null &&
+        response.responseSuccessful &&
+        mounted) {
       context.goNamed(RouteList.bottomNavBar);
     }
   }
@@ -253,106 +391,102 @@ class _NewPaymentPinState extends ConsumerState<NewPaymentPin> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: offWhiteBackground,
+      backgroundColor: lightBackground,
       appBar: AppBar(
-        title: Text("Set New PIN", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        backgroundColor: offWhiteBackground,
+        backgroundColor: lightBackground,
         elevation: 0,
         centerTitle: true,
       ),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 30.h),
-            _buildPinField("Enter NEW PIN", newPin),
-            SizedBox(height: 20.h),
-            _buildPinField("Confirm NEW PIN", confirmPin),
-            if (showMinWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h),
-                child: Text("PIN must be 4 digits", style: theme.textTheme.bodySmall?.copyWith(color: errorColor)),
-              ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 50.h),
 
-            /// Keypad
-            Expanded(
-              child: GridView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 25.w),
-                itemCount: 12,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 16.h,
-                  crossAxisSpacing: 35.w,
-                  mainAxisExtent: 70.h,
+            Container(
+              padding: EdgeInsets.all(15.w),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    accentColor.withOpacity(0.4),
+                    primaryColor,
+                    primaryColor.withOpacity(0.9),
+                  ],
                 ),
-                itemBuilder: (context, index) {
-                  List<String> keys = ["1","2","3","4","5","6","7","8","9","x","0","ok"];
-                  String key = keys[index];
-                  Color keyColor = keyAColor;
-                  Color textColor = lightSecondaryText;
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(Icons.lock_outline,
+                  color: Colors.white, size: 30.sp),
+            ),
 
-                  if (key == "x") { keyColor = primaryColor.withOpacity(0.1); textColor = primaryColor; }
-                  else if (key == "ok") { keyColor = primaryColor; textColor = whiteBackground; }
+            SizedBox(height: 20.h),
 
-                  return InkWell(
-                    borderRadius: BorderRadius.circular(50.r),
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    onTap: () {
-                      setState(() => _selectedIndex = index);
-                      if (key == "x") removeDigit();
-                      else if (key == "ok") _confirmNewPin();
-                      else addDigit(key);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _selectedIndex == index ? Colors.white : keyColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: _selectedIndex == index ? primaryColor : Colors.transparent, width: 2),
-                      ),
-                      alignment: Alignment.center,
-                      child: key == "x"
-                          ? SvgPicture.asset('assets/svg/cancel.svg', height: 20.h, colorFilter: ColorFilter.mode(primaryColor, BlendMode.srcIn))
-                          : key == "ok"
-                          ? Icon(Icons.arrow_forward, color: _selectedIndex == index ? primaryColor : textColor, size: 24.sp)
-                          : Text(key, style: theme.textTheme.headlineSmall?.copyWith(color: _selectedIndex == index ? primaryColor : lightText, fontWeight: FontWeight.w500, fontSize: 24.sp)),
+            Text(
+              "Confirm PIN",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            SizedBox(height: 15.h),
+
+            Text(
+              "Re-enter your 4-digit PIN",
+              style: theme.textTheme.bodySmall,
+            ),
+
+            SizedBox(height: 40.h),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(4, (index) {
+                final filled = index < pin.length;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 16,
+                  height: 16,
+                  margin: EdgeInsets.symmetric(horizontal: 6.w),
+                  decoration: BoxDecoration(
+                    color: filled ? primaryColor : Colors.transparent,
+                    border: Border.all(
+                      color: filled ? inactiveColor : disabledTextColor,
+                      width: 2,
                     ),
-                  );
-                },
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ),
+
+            if (showError)
+              Padding(
+                padding: EdgeInsets.only(top: 15.h),
+                child: Text(
+                  "PINs do not match",
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+
+            SizedBox(height: 70.h),
+
+            Expanded(
+              child: CustomGridKeypad(
+                onNumberPressed: addDigit,
+                leftAction: ActionKey(
+                  child: Icon(Icons.check, color: Colors.white),
+                  backgroundColor: primaryColor,
+                  onTap: _submit,
+                ),
+                rightAction: ActionKey(
+                  child: Icon(Icons.backspace, color: primaryColor),
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPinField(String label, TextEditingController controller) {
-    return Column(
-      children: [
-        Text(label, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-        SizedBox(height: 10.h),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              activeController = controller;
-            });
-          },
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40),
-            child: AppPinCodeField(
-              controller: controller,
-              length: 4,
-              fillColor: offWhiteBackground,
-              inactiveColor: keyAColor,
-              activeColor: primaryColor,
-              selectedColor: primaryColor,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

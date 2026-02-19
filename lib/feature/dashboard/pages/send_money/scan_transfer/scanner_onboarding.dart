@@ -15,51 +15,130 @@ class ScannerOnboarding extends ConsumerStatefulWidget {
 }
 
 class _ScannerOnboardingState extends ConsumerState<ScannerOnboarding> {
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 60.h),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              /// 🔹 QR Illustration
-              SvgPicture.asset(
-                'assets/svg/qr-code.svg', // 🔸 Change to .svg → use flutter_svg if needed
-                height: 200.h,
-                fit: BoxFit.contain,
-              ),
-
-              SizedBox(height: 50.h),
-
-              /// 🔹 Instruction Text
-              Text(
-                'The QR code will be automatically\n detected when you place\n it inside the frame.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  fontSize: 16.sp,
-                  height: 1.6,
-                ),
-              ),
-
-              SizedBox(height: 100.h),
-
-              /// 🔹 Scan Button
-              SizedBox(
-                width: double.infinity,
-                child: CustomButton(
-                  buttonName: 'Scan Item',
-                  buttonColor: theme.colorScheme.primary,
-                  buttonTextColor: Colors.white,
-                  onPressed: () => context.pushNamed(RouteList.qrScannerScreen),
-                ),
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF8F9FC),
+              Color(0xFFEFF2F8),
             ],
+          ),
+        ),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final height = constraints.maxHeight;
+              final width = constraints.maxWidth;
+
+              // Dynamic illustration size
+              final illustrationHeight =
+                  height * 0.28; // scales based on device height
+
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: height,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Center(
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          maxWidth: 500, // Better for tablets
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 24.w),
+                        child: Column(
+                          children: [
+                            SizedBox(height: height * 0.06),
+
+                            /// TITLE
+                            Text(
+                              "Scan to Pay",
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontSize: 24.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+
+                            SizedBox(height: 12.h),
+
+                            Text(
+                              "Quick, secure and contactless payments",
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey.shade600,
+                                fontSize: 14.sp,
+                              ),
+                            ),
+
+                            SizedBox(height: height * 0.06),
+
+                            /// ILLUSTRATION CARD
+                            Container(
+                              padding: EdgeInsets.all(24.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 25,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: SvgPicture.asset(
+                                'assets/svg/qr-code.svg',
+                                height: illustrationHeight.clamp(140, 260),
+                              ),
+                            ),
+
+                            SizedBox(height: height * 0.06),
+
+                            /// DESCRIPTION
+                            Text(
+                              'Place the QR code inside the frame and it will be detected automatically.',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontSize: 15.sp,
+                                height: 1.6,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+
+                            const Spacer(),
+
+                            /// PRIMARY BUTTON
+                            SizedBox(
+                              width: double.infinity,
+                              child: CustomButton(
+                                buttonName: 'Start Scanning',
+                                buttonColor: theme.colorScheme.primary,
+                                buttonTextColor: Colors.white,
+                                onPressed: () => context.pushNamed(
+                                  RouteList.qrScannerScreen,
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: height * 0.14),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

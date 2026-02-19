@@ -9,6 +9,7 @@ class RouteList {
   static const String getStarted = '/get-started';
   static const String bottomNavBar = '/home';
   static const String phoneRegScreen = '/phone-registration';
+  static const String confirmSetPin = '/confirm-SetPin';
   static const String welcomeBackScreen = '/welcome-back';
   static const String forgotPassword = '/forgot-password';
   static const String forgotPasswordReset = '/forgot-password-reset';
@@ -56,6 +57,8 @@ class RouteList {
   static const String confirmWalletPinScreen = '/confirmWalletPinScreen';
   static const String transactionHistory = '/transaction-history';
   static const String changePaymentPin = '/change-pin';
+  static const String changeNewPaymentPin = '/change-pin/new';
+  static const String confirmChangeNewPaymentPin = '/change-pin/confirm';
   static const String setTransactionPin = '/set-pin';
   static const String depositScreen = '/deposit-screen';
   static const String enableLoginFingerprint = '/enable-login-fingerprint';

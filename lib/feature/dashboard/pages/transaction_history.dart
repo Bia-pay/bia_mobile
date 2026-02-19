@@ -11,16 +11,17 @@ class TransactionHistory extends ConsumerStatefulWidget {
   const TransactionHistory({super.key});
 
   @override
-  ConsumerState<TransactionHistory> createState() => _TransactionHistoryState();
+  ConsumerState<TransactionHistory> createState() =>
+      _TransactionHistoryState();
 }
 
-class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
+class _TransactionHistoryState
+    extends ConsumerState<TransactionHistory> {
 
   Future<void> _handleRefresh() async {
-    final txFuture = ref.read(allTransactionsProvider.notifier).refresh();
-
-
-    await Future.wait([txFuture,] as Iterable<Future<dynamic>>);
+    await ref
+        .read(allTransactionsProvider.notifier)
+        .refresh();
   }
 
   @override
@@ -28,146 +29,259 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
     final theme = Theme.of(context);
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'User');
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      child: Scaffold(
-        backgroundColor: offWhiteBackground,
-        resizeToAvoidBottomInset: false,
-        body: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-            children: [
-              CustomHeader(title: 'Transaction History'),
-              SizedBox(height: 20.h),
-              Consumer(
-                builder: (context, ref, _) {
-                  final asyncTx = ref.watch(allTransactionsProvider);
 
-                  return asyncTx.when(
-                    data: (transactions) {
-                      if (transactions.isEmpty) {
-                        return const Center(child: Text("No recent transactions"));
-                      }
+    final asyncTx = ref.watch(allTransactionsProvider);
 
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: transactions.length,
-                        itemBuilder: (context, index) {
-                          final tx = transactions[index];
+    return Scaffold(
+      backgroundColor: offWhiteBackground,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: asyncTx.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            error: (e, _) => Center(
+              child: Text("Error: $e"),
+            ),
+            data: (transactions) {
 
-                          final titleText = tx.serviceType == "TOPUP"
-                              ? (tx.serviceType ?? "Top Up")
-                              : (tx.isCredit
-                              ? (tx.senderName ?? (tx.provider ?? "Transfer"))
-                              : (tx.receiverName ?? (tx.provider ?? "Transfer")));
+              if (transactions.isEmpty) {
+                return ListView(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 40.h),
+                  children: [
+                    CustomHeader(title: 'Transaction History'),
+                    SizedBox(height: 100.h),
+                    Icon(
+                      Icons.receipt_long_rounded,
+                      size: 60.sp,
+                      color:
+                      lightSecondaryText.withOpacity(.4),
+                    ),
+                    SizedBox(height: 15.h),
+                    Center(
+                      child: Text(
+                        "No transactions yet",
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: lightSecondaryText,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 5.h),
+                    Center(
+                      child: Text(
+                        "Your activity will appear here",
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(
+                          color: lightSecondaryText
+                              .withOpacity(.7),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
 
-                          return Container(
-                            margin: EdgeInsets.only(bottom: 6.h),
-                            decoration: BoxDecoration(
-                              color: offWhite,
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: ListTile(
-                              leading: Container(
-                                padding: EdgeInsets.all(8.r),
-                                decoration: BoxDecoration(
-                                  color: tx.status == "PENDING"
-                                      ? pendingColor.withOpacity(0.1)
-                                      : tx.isCredit
-                                      ? successColor.withOpacity(0.1)
-                                      : errorColor.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  tx.isCredit ? Icons.call_received : Icons.call_made,
-                                  color: tx.status == "PENDING"
-                                      ? pendingColor
-                                      : tx.isCredit
-                                      ? successColor
-                                      : errorColor,
-                                  size: 20.sp,
-                                ),
-                              ),
+              return ListView.builder(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 10.h),
+                itemCount: transactions.length + 1,
+                itemBuilder: (context, index) {
 
-                              /// TITLE
-                              title: Text(
+                  if (index == 0) {
+                    return Column(
+                      children: [
+                        CustomHeader(
+                            title: 'Transaction History'),
+                        SizedBox(height: 20.h),
+                      ],
+                    );
+                  }
+
+                  final tx = transactions[index - 1];
+
+                  final isPending =
+                      tx.status == "PENDING";
+                  final isCredit = tx.isCredit;
+
+                  final amountColor = isPending
+                      ? pendingColor
+                      : isCredit
+                      ? successColor
+                      : errorColor;
+
+                  final titleText =
+                  tx.serviceType == "TOPUP"
+                      ? (tx.serviceType ??
+                      "Top Up")
+                      : (isCredit
+                      ? (tx.senderName ??
+                      (tx.provider ??
+                          "Transfer"))
+                      : (tx.receiverName ??
+                      (tx.provider ??
+                          "Transfer")));
+
+                  return Container(
+                    margin:
+                    EdgeInsets.only(bottom: 14.h),
+                    padding: EdgeInsets.all(14.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                      BorderRadius.circular(16.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withOpacity(.03),
+                          blurRadius: 20,
+                          offset:
+                          const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+
+                        /// ICON
+                        Container(
+                          height: 45.w,
+                          width: 45.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: amountColor
+                                .withOpacity(.08),
+                          ),
+                          child: Icon(
+                            isCredit
+                                ? Icons
+                                .arrow_downward_rounded
+                                : Icons
+                                .arrow_upward_rounded,
+                            color: amountColor,
+                            size: 20.sp,
+                          ),
+                        ),
+
+                        SizedBox(width: 14.w),
+
+                        /// TITLE + DATE
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment
+                                .start,
+                            children: [
+                              Text(
                                 titleText,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.sp,
-                                  color: tx.status == "PENDING"
-                                      ? pendingColor
-                                      : lightSecondaryText,
+                                maxLines: 1,
+                                overflow:
+                                TextOverflow
+                                    .ellipsis,
+                                style: theme
+                                    .textTheme
+                                    .bodyLarge
+                                    ?.copyWith(
+                                  fontWeight:
+                                  FontWeight
+                                      .w600,
+                                  fontSize:
+                                  14.sp,
+                                  color:
+                                  darkBackground,
                                 ),
                               ),
-
-                              subtitle: Text(
-                                formatTransactionDate(tx.createdAt),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 10.sp,
-                                  color: lightSecondaryText,
+                              SizedBox(
+                                  height: 4.h),
+                              Text(
+                                formatTransactionDate(
+                                    tx.createdAt),
+                                style: theme
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                  fontSize:
+                                  11.sp,
+                                  color:
+                                  lightSecondaryText,
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
 
-                              trailing: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  /// AMOUNT
-                                  Text(
-                                    "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13.sp,
-                                      color: tx.status == "PENDING"
-                                          ? pendingColor
-                                          : tx.isCredit
-                                          ? successTextColor
-                                          : errorColor,
-                                    ),
-                                  ),
-
-                                  SizedBox(height: 2.h),
-
-                                  /// BADGE
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
-                                    decoration: BoxDecoration(
-                                      color: tx.status == "PENDING"
-                                          ? pendingColor.withOpacity(0.1)
-                                          : tx.isCredit
-                                          ? successColor.withOpacity(0.1)
-                                          : errorColor.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4.r),
-                                    ),
-                                    child: Text(
-                                      tx.status ?? "",
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 8.sp,
-                                        color: tx.status == "PENDING"
-                                            ? pendingColor
-                                            : tx.isCredit
-                                            ? successTextColor
-                                            : errorColor,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        /// AMOUNT + STATUS
+                        Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment
+                              .end,
+                          children: [
+                            Text(
+                              "${isCredit ? '+' : '-'}₦${tx.amount}",
+                              style: theme
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                fontWeight:
+                                FontWeight
+                                    .w700,
+                                fontSize:
+                                15.sp,
+                                color:
+                                amountColor,
                               ),
-                            )
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text("Error: $e")),
+                            ),
+                            SizedBox(
+                                height: 6.h),
+                            Container(
+                              padding:
+                              EdgeInsets
+                                  .symmetric(
+                                horizontal:
+                                10.w,
+                                vertical:
+                                4.h,
+                              ),
+                              decoration:
+                              BoxDecoration(
+                                color:
+                                amountColor
+                                    .withOpacity(
+                                    .08),
+                                borderRadius:
+                                BorderRadius
+                                    .circular(
+                                    50.r),
+                              ),
+                              child: Text(
+                                tx.status ?? "",
+                                style: theme
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                  fontWeight:
+                                  FontWeight
+                                      .w600,
+                                  fontSize:
+                                  9.sp,
+                                  color:
+                                  amountColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   );
                 },
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

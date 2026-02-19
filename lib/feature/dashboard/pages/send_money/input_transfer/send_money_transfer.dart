@@ -8,6 +8,7 @@ import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/view/widget/app_bar.dart';
 import '../../../../../app/view/widget/app_search_field.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../model/favourite_beneficiary.dart';
 import '../../../model/recent_transfer.dart';
 import '../widget/tabs.dart';
 
@@ -70,6 +71,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
       _goToAmountPage(context);
     }
   }
+
   void _goToAmountPage(BuildContext context) {
     if (verifiedName == null || verifiedAccount == null) return;
 
@@ -85,34 +87,39 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: offWhiteBackground,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomHeader(
-                  title: 'Send Money',
-                  onBackPressed: () => Navigator.of(context).pop(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomHeader(
+                title: 'Send Money',
+                onBackPressed: () => Navigator.of(context).pop(),
+              ),
+
+              SizedBox(height: 10.h),
+
+              Text(
+                'Make new transfer',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                SizedBox(height: 10.h),
-                Text(
-                  'Make new transfer',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 20.h),
+              ),
+
+              SizedBox(height: 20.h),
+
+              /// 🔹 Account Input Card (FIXED)
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 12.w),
                 decoration: BoxDecoration(
                   color: whiteBackground,
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(15.r),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,89 +130,74 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     SizedBox(height: 10.h),
-
-                    Container(
-                      height: 55.h,
-                      decoration: BoxDecoration(
-                        color: whiteBackground,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: AppField.transparent(
-                        hintText: 'Enter Account Number',
-                        width: double.infinity,
-                        maxLength: 10,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        initialValue: verifiedAccount,
-                        withClearButton: true,
-                        onChanged: (value) {
-                          if (value.length == 10) {
-                            _verifyAccountFromInput(context, value.trim());
-                          } else {
-                            setState(() => isVerified = false);
-                          }
-                        },
-                      ),
+                    AppField.transparent(
+                      hintText: 'Enter Account Number',
+                      width: double.infinity,
+                      maxLength: 10,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      initialValue: verifiedAccount,
+                      withClearButton: true,
+                      onChanged: (value) {
+                        if (value.length == 10) {
+                          _verifyAccountFromInput(context, value.trim());
+                        } else {
+                          setState(() => isVerified = false);
+                        }
+                      },
                     ),
-
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      child: isVerified
-                          ? InkWell(
-                            onTap: () => _goToAmountPage(context),
-                            borderRadius: BorderRadius.circular(15),
-                            child: Container(
-                              width: double.infinity,
-                              key: ValueKey("verified_card"),
-                              padding: EdgeInsets.all(15.w),
-                              child: Row(
+                    SizedBox(height: 10.h),
+                    if (isVerified)
+                      InkWell(
+                        onTap: () => _goToAmountPage(context),
+                        borderRadius: BorderRadius.circular(15),
+                        child: Container(
+                          padding: EdgeInsets.all(15.w),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(),
+                              SizedBox(width: 10.w),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  CircleAvatar(),
-                                  SizedBox(width: 10.w),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Name: $verifiedName",
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: lightText,
-                                        ),
-                                      ),
-                                      Text(
-                                        "Account: $verifiedPhone",
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: lightSecondaryText,
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    verifiedName ?? '',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    verifiedPhone ?? '',
+                                    style: theme.textTheme.bodySmall,
                                   ),
                                 ],
                               ),
-                            ),
-                          )
-                          : SizedBox.shrink(),
-                    )
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-                SizedBox(height: 25.h),
 
-                Text(
-                  'Beneficiaries',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              SizedBox(height: 25.h),
+
+              Text(
+                'Beneficiaries',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-                SizedBox(height: 20.h),
-                CardThree(),
-              ],
-            ),
+              ),
+
+              SizedBox(height: 15.h),
+
+              /// 🔥 ONLY THIS PART SCROLLS
+              Expanded(
+                child: CardThree(),
+              ),
+            ],
           ),
         ),
       ),
@@ -222,29 +214,36 @@ class CardThree extends ConsumerStatefulWidget {
 
 class _CardThreeState extends ConsumerState<CardThree> {
   List<RecentBeneficiaryItem> recentBeneficiaries = [];
+  List<FavouriteBeneficiaryItem> favouriteBeneficiaries = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadBeneficiaries();
+    _loadAll();
   }
 
-  Future<void> _loadBeneficiaries() async {
+  Future<void> _loadAll() async {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
 
-    recentBeneficiaries = await dashboardCtrl.getRecentBeneficiary(context);
-    setState(() => isLoading = false);
+    final recent =
+    await dashboardCtrl.getRecentBeneficiary(context);
 
-    final freshList = await dashboardCtrl.getRecentBeneficiary(context);
-    setState(() => recentBeneficiaries = freshList);
+    final favourites =
+    await dashboardCtrl.getFavouriteBeneficiary(context);
+
+    setState(() {
+      recentBeneficiaries = recent;
+      favouriteBeneficiaries = favourites;
+      isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-
-    if (isLoading) return const Center(child: CircularProgressIndicator());
-    if (recentBeneficiaries.isEmpty) return const Center(child: Text("No recent transfers found"));
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -253,15 +252,23 @@ class _CardThreeState extends ConsumerState<CardThree> {
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: BeneficiaryTabSection(
-        favorites: const [],
+        favorites: favouriteBeneficiaries
+            .map((r) => {
+          "name": r.name,
+          "account": r.phone, // IN_APP has no account number
+        })
+            .toList(),
         recents: recentBeneficiaries
-            .map((r) => {"name": r.fullname, "account": r.phone})
+            .map((r) => {
+          "name": r.fullname,
+          "account": r.phone,
+        })
             .toList(),
         showLogo: true,
         showProgress: false,
-        key: UniqueKey(),
         onSelectBeneficiary: (name, account) {
-          final parent = context.findAncestorStateOfType<_SendMoneyTransferState>();
+          final parent =
+          context.findAncestorStateOfType<_SendMoneyTransferState>();
           if (parent != null) {
             parent._verifyAccountSilently(context, account);
           }

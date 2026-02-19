@@ -3,6 +3,7 @@
 // --------------- SVG IMAGES ------------------
 const appLogoPng = 'assets/svg/logo-two.png';
 const splashLogo = 'assets/svg/logo.png';
+const biaBLogo = 'assets/svg/logo-bia.png';
 const faceIdSvg = 'assets/svg/scan-face.svg';
 const qrCodeSvg = 'assets/svg/qr-code.svg';
 const fingerPrint = 'assets/svg/fingerprint.svg';

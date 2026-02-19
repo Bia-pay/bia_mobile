@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import '../../../core/local/transaction_cache.dart';
 import '../../../core/services/auth_flow_service.dart';
 import '../data/api_constant.dart';
 import '../data/api_data.dart';
@@ -21,6 +22,56 @@ class AuthRepository {
   final Ref _ref;
 
   AuthRepository(this._apiClient, this._ref);
+
+// ---------------- LOGOUT ----------------
+  Future<ResponseModel> logout() async {
+    try {
+      final box = await Hive.openBox('authBox');
+      final userId = box.get('userId', defaultValue: '');
+      final biometricEnabled =
+      box.get('login_biometric_enabled', defaultValue: false);
+
+      // 🔹 Call backend logout
+      try {
+        await _apiClient.deleteData(ApiConstant.LOGOUT);
+      } catch (_) {
+        // Continue even if backend fails
+      }
+
+      // 🔹 Stop token refresh timer
+      _apiClient.dispose();
+
+      // 🔹 Clear user-specific cache
+      if (userId.isNotEmpty) {
+        await TransactionCache.clearTransactions(userId);
+        final recentBox = await Hive.openBox('recentBeneficiaries');
+        await recentBox.delete('beneficiaries_$userId');
+      }
+
+      // 🔹 Clear saved profile
+      await box.delete('saved_user_profile');
+
+      // 🔹 Clear Hive storage
+      if (biometricEnabled) {
+        await box.delete('token');
+        await box.delete('refreshToken');
+      } else {
+        await box.clear();
+      }
+
+      return ResponseModel(
+        responseMessage: "Logged out successfully",
+        responseSuccessful: true,
+        statusCode: 200,
+      );
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: "Logout failed",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
 
   Future<ResponseModel> logIn(Map<String, dynamic> body, {bool fromBiometric = false}) async {
     print('📡 Attempting login...');

@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:media_store_plus/media_store_plus.dart';
 import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
@@ -57,7 +58,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+  await MediaStore.ensureInitialized(); // 👈 REQUIRED
+// 👇 REQUIRED
+  MediaStore.appFolder = "Bia";
   await initLocalNotifications();   // 👈 REQUIRED
   listenForForegroundMessages();    // 👈 REQUIRED
 

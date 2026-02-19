@@ -31,25 +31,23 @@ class BeneficiaryTabSection extends ConsumerStatefulWidget {
       _BeneficiaryTabSectionState();
 }
 
-class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
+class _BeneficiaryTabSectionState
+    extends ConsumerState<BeneficiaryTabSection> {
   String selectedTab = "Recent";
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final listToShow =
     selectedTab == "Favorites" ? widget.favorites : widget.recents;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tabs + Search Bar
+
+        /// 🔹 TABS (Fixed)
         Container(
           width: double.infinity,
-          decoration: BoxDecoration(
-           // color: Theme.of(context)Context.pinfieldTextColor,
-            borderRadius: BorderRadius.circular(15.r),
-          ),
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -68,75 +66,87 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
             ],
           ),
         ),
-        SizedBox(height: 20.h),
 
-        // Beneficiaries List
-        ...listToShow.map((beneficiary) {
-          final name = beneficiary['name'] ?? '';
-          final account = beneficiary['account'] ?? '';
+        SizedBox(height: 10.h),
 
-          return Padding(
-            padding: EdgeInsets.only(bottom: 12.h),
-            child: GestureDetector(
-              onTap: () => widget.onSelectBeneficiary?.call(name, account),
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 13.h, horizontal: 15.w),
-                decoration: BoxDecoration(
-                  color: lightSurface,
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        if (widget.showProgress)
-                          CircularPercentageIndicator(
-                            percentage: widget.progressValue,
-                            size: 50.h,
-                            color: primaryColor,
+        /// 🔥 SCROLLABLE LIST ONLY
+        Expanded(
+          child: ListView.separated(
+            itemCount: listToShow.length,
+            separatorBuilder: (_, __) => SizedBox(height: 12.h),
+            itemBuilder: (context, index) {
+              final beneficiary = listToShow[index];
+              final name = beneficiary['name'] ?? '';
+              final account = beneficiary['account'] ?? '';
+
+              return GestureDetector(
+                onTap: () =>
+                    widget.onSelectBeneficiary?.call(name, account),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: 13.h, horizontal: 15.w),
+                  decoration: BoxDecoration(
+                    color: lightSurface,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          if (widget.showProgress)
+                            CircularPercentageIndicator(
+                              percentage: widget.progressValue,
+                              size: 50.h,
+                              color: primaryColor,
+                            ),
+                          if (widget.showProgress)
+                            SizedBox(width: 20.w),
+                          Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: lightText,
+                                ),
+                              ),
+                              Text(
+                                account,
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(
+                                  color: lightSecondaryText,
+                                ),
+                              ),
+                            ],
                           ),
-                        if (widget.showProgress) SizedBox(width: 20.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: lightText,
-                                fontWeight: FontWeight.w600,
+                        ],
+                      ),
+                      if (widget.showLogo)
+                        widget.customLogo ??
+                            CircleAvatar(
+                              radius: 18.r,
+                              backgroundColor:
+                              primaryColor.withOpacity(0.1),
+                              child: Image.asset(
+                                'assets/svg/logo-two.png',
+                                height: 25.h,
                               ),
                             ),
-                            Text(
-                              account,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: lightSecondaryText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    if (widget.showLogo)
-                      widget.customLogo ??
-                          CircleAvatar(
-                            radius: 18.r,
-                            backgroundColor: primaryColor.withOpacity(0.1),
-                            child: Image.asset(
-                              'assets/svg/logo-two.png',
-                              height: 25.h,
-                            ),
-                          ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
-          );
-        }),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
-
   Widget _buildTab(BuildContext context, String label) {
     final isSelected = selectedTab == label;
     final theme = Theme.of(context);
