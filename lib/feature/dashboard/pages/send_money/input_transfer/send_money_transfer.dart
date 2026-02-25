@@ -134,6 +134,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                     AppField.transparent(
                       hintText: 'Enter Account Number',
                       width: double.infinity,
+                      keyboardType: TextInputType.number,
                       maxLength: 10,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,

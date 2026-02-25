@@ -13,11 +13,13 @@ import '../../../feature/auth/presentation/pages/forgot_password/forgot_password
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password2.dart';
 import '../../../feature/bottom_nav_bar/bottom_nav.dart';
 import '../../../feature/dashboard/pages/homepage.dart';
+import '../../../feature/dashboard/pages/notification.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/amount.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/send_money_transfer.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/success.dart';
 import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner.dart';
 import '../../../feature/dashboard/pages/send_money/scan_transfer/scanner_onboarding.dart';
+import '../../../feature/dashboard/pages/send_money/to_bank/bank_amount.dart';
 import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
@@ -54,6 +56,7 @@ class AppRouter {
       GoRoute(path: '/transaction-history', name: RouteList.transactionHistory, builder: (context, state) => const TransactionHistory()),
       GoRoute(path: '/airtime', name: RouteList.airtime, builder: (context, state) => const Airtime()),
       GoRoute(path: '/data', name: RouteList.data, builder: (context, state) => const Data()),
+      GoRoute(path: '/notification', name: RouteList.notification, builder: (context, state) => const NotificationPage()),
       GoRoute(path: '/cable', name: RouteList.cable, builder: (context, state) => const CableTv()),
       GoRoute(path: '/electricity', name: RouteList.electricity, builder: (context, state) => const Electricity()),
       GoRoute(path: '/top-up', name: RouteList.topUp, builder: (context, state) => const AddMoney()),
@@ -63,6 +66,22 @@ class AppRouter {
         final args = state.extra as Map<String, dynamic>? ?? {};
         return AmountPage(controller: args['controller'] ?? TextEditingController(), recipientName: args['recipientName'] ?? '', recipientAccount: args['recipientAccount'] ?? '');
       }),
+      GoRoute(
+        path: '/bankAmountPage',
+        name: RouteList.bankAmountPage,
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>? ?? {};
+
+          return BankAmountPage(
+            controller: args['controller'] ?? TextEditingController(),
+            recipientName: args['recipientName'] ?? '',
+            recipientAccount: args['recipientAccount'] ?? '',
+            bankCode: args['bankCode'] ?? '', // ✅ ADD
+            bankName: args['bankName'] ?? '', // ✅ ADD
+            recipientIconPath: args['recipientIconPath'],
+          );
+        },
+      ),
       GoRoute(path: '/success', name: RouteList.successScreen, builder: (context, state) {
         final args = state.extra as Map<String, dynamic>? ?? {};
         return SuccessScreen(type: args['type'] ?? '', amount: args['amount'] ?? '', recipientName: args['recipientName'] ?? '', recipientAccount: args['recipientAccount'] ?? '', reference: args['reference'] ?? '', channel: args['channel'] ?? '');

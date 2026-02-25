@@ -20,6 +20,7 @@ class CustomTextFormField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final int? maxLength;
   final TextInputAction? textInputAction;
+  final Iterable<String>? autofillHints;
   const CustomTextFormField({
     super.key,
     required this.controller,
@@ -39,6 +40,7 @@ class CustomTextFormField extends StatefulWidget {
     this.readOnly = false,
     this.textInputAction,
     this.focusNode,//
+    this.autofillHints, // 🔥 ADD THIS LINE
   });
 
   @override
@@ -47,20 +49,32 @@ class CustomTextFormField extends StatefulWidget {
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   String? _errorText;
+  late VoidCallback _listener;
 
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(() {
+
+    _listener = () {
+      if (!mounted) return;
+
       final error = widget.validator(widget.controller.text);
+
       if (error != _errorText) {
         setState(() {
           _errorText = error;
         });
       }
-    });
+    };
+
+    widget.controller.addListener(_listener);
   }
 
+  @override
+  void dispose() {
+    widget.controller.removeListener(_listener);
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -81,6 +95,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           ),
         TextFormField(
           controller: widget.controller,
+          autofillHints: widget.autofillHints, // 🔥 ADD THIS
           obscureText: widget.obscureText,
           keyboardType: widget.keyboardType,
           maxLength: widget.maxLength,

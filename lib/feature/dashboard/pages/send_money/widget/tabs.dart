@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../../../../app/utils/colors.dart';
 
 class BeneficiaryTabSection extends ConsumerStatefulWidget {
@@ -44,8 +43,7 @@ class _BeneficiaryTabSectionState
 
     return Column(
       children: [
-
-        /// 🔹 TABS (Fixed)
+        /// 🔹 TABS
         Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
@@ -61,7 +59,7 @@ class _BeneficiaryTabSectionState
               ),
               GestureDetector(
                 onTap: widget.onSearchTap,
-                child: Icon(Icons.search, color: primaryColor),
+                child: Icon(Icons.search, color: primaryColor, size: 22.sp),
               ),
             ],
           ),
@@ -69,9 +67,10 @@ class _BeneficiaryTabSectionState
 
         SizedBox(height: 10.h),
 
-        /// 🔥 SCROLLABLE LIST ONLY
+        /// 🔥 LIST
         Expanded(
           child: ListView.separated(
+            physics: const BouncingScrollPhysics(),
             itemCount: listToShow.length,
             separatorBuilder: (_, __) => SizedBox(height: 12.h),
             itemBuilder: (context, index) {
@@ -84,48 +83,63 @@ class _BeneficiaryTabSectionState
                     widget.onSelectBeneficiary?.call(name, account),
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                      vertical: 13.h, horizontal: 15.w),
+                    vertical: 13.h,
+                    horizontal: 15.w,
+                  ),
                   decoration: BoxDecoration(
                     color: lightSurface,
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          if (widget.showProgress)
-                            CircularPercentageIndicator(
-                              percentage: widget.progressValue,
-                              size: 50.h,
-                              color: primaryColor,
+                      /// LEFT SIDE
+                      Expanded(
+                        child: Row(
+                          children: [
+                            if (widget.showProgress)
+                              CircularPercentageIndicator(
+                                percentage: widget.progressValue,
+                                size: 50.w,
+                                color: primaryColor,
+                              ),
+                            if (widget.showProgress)
+                              SizedBox(width: 20.w),
+
+                            /// TEXT
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: lightText,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    account,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall
+                                        ?.copyWith(
+                                      color: lightSecondaryText,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          if (widget.showProgress)
-                            SizedBox(width: 20.w),
-                          Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: lightText,
-                                ),
-                              ),
-                              Text(
-                                account,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(
-                                  color: lightSecondaryText,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+
+                      /// RIGHT SIDE
                       if (widget.showLogo)
                         widget.customLogo ??
                             CircleAvatar(
@@ -135,6 +149,7 @@ class _BeneficiaryTabSectionState
                               child: Image.asset(
                                 'assets/svg/logo-two.png',
                                 height: 25.h,
+                                fit: BoxFit.contain,
                               ),
                             ),
                     ],
@@ -147,6 +162,7 @@ class _BeneficiaryTabSectionState
       ],
     );
   }
+
   Widget _buildTab(BuildContext context, String label) {
     final isSelected = selectedTab == label;
     final theme = Theme.of(context);
@@ -155,9 +171,6 @@ class _BeneficiaryTabSectionState
       onTap: () => setState(() => selectedTab = label),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.r),
-        ),
         child: Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -195,14 +208,14 @@ class CircularPercentageIndicator extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           CircularProgressIndicator(
-            value: 1.0,
-            strokeWidth: strokeWidth,
+            value: 1,
+            strokeWidth: strokeWidth.w,
             valueColor:
             AlwaysStoppedAnimation<Color>(kGray.withOpacity(0.2)),
           ),
           CircularProgressIndicator(
             value: progress,
-            strokeWidth: strokeWidth,
+            strokeWidth: strokeWidth.w,
             valueColor: AlwaysStoppedAnimation<Color>(color),
             backgroundColor: Colors.transparent,
           ),
@@ -210,7 +223,7 @@ class CircularPercentageIndicator extends StatelessWidget {
             "${percentage.toStringAsFixed(0)}%",
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: size * 0.25,
+              fontSize: (size * 0.25).sp,
               color: lightText,
             ),
           ),

@@ -402,12 +402,10 @@ class WelcomeBackScreen extends ConsumerStatefulWidget {
   const WelcomeBackScreen({super.key});
 
   @override
-  ConsumerState<WelcomeBackScreen> createState() =>
-      _WelcomeBackScreenState();
+  ConsumerState<WelcomeBackScreen> createState() => _WelcomeBackScreenState();
 }
 
-class _WelcomeBackScreenState
-    extends ConsumerState<WelcomeBackScreen> {
+class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
   bool _hasBiometric = false;
   bool _biometricEnabled = false;
   bool _isAuthenticating = false;
@@ -419,8 +417,7 @@ class _WelcomeBackScreenState
   String? savedPassword;
   String? pictureUrl;
 
-  final TextEditingController passwordController =
-  TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   void initState() {
@@ -431,14 +428,11 @@ class _WelcomeBackScreenState
   Future<void> _initializeSettings() async {
     final authBox = await Hive.openBox("authBox");
 
-    final availability =
-    await BiometricHelper.checkBiometricAvailability();
-    final biometricEnabled =
-    await BiometricHelper.isLoginBiometricEnabled();
+    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricEnabled = await BiometricHelper.isLoginBiometricEnabled();
 
     final settingsBox = await Hive.openBox("settingsBox");
-    final savedPwd =
-    settingsBox.get("biometric_login_password");
+    final savedPwd = settingsBox.get("biometric_login_password");
 
     setState(() {
       _hasBiometric = availability.isAvailable;
@@ -449,13 +443,10 @@ class _WelcomeBackScreenState
       savedPassword = savedPwd;
     });
 
-    if (!availability.isAvailable ||
-        !biometricEnabled ||
-        savedPwd == null) {
+    if (!availability.isAvailable || !biometricEnabled || savedPwd == null) {
       setState(() => _showPasswordField = true);
     } else {
-      Future.delayed(
-          const Duration(milliseconds: 600), _authenticate);
+      Future.delayed(const Duration(milliseconds: 600), _authenticate);
     }
   }
 
@@ -463,26 +454,21 @@ class _WelcomeBackScreenState
     try {
       setState(() => _isAuthenticating = true);
 
-      final didAuthenticate =
-      await BiometricHelper.authenticate(
+      final didAuthenticate = await BiometricHelper.authenticate(
         reason: 'Authenticate to log in',
         biometricOnly: true,
       );
 
       if (!didAuthenticate) return;
 
-      final authController =
-      ref.read(authControllerProvider.notifier);
+      final authController = ref.read(authControllerProvider.notifier);
 
-      await authController.logIn(
-          context, phone!, savedPassword!.trim());
+      await authController.logIn(context, phone!, savedPassword!.trim());
 
       final box = Hive.box("authBox");
       final token = box.get("token");
 
-      if (token != null &&
-          token.isNotEmpty &&
-          mounted) {
+      if (token != null && token.isNotEmpty && mounted) {
         context.go(RouteList.bottomNavBar);
       }
     } finally {
@@ -495,8 +481,7 @@ class _WelcomeBackScreenState
   Future<void> _loginWithPassword() async {
     FocusScope.of(context).unfocus();
 
-    final authState =
-    ref.read(authControllerProvider.notifier);
+    final authState = ref.read(authControllerProvider.notifier);
 
     final success = await authState.logIn(
       context,
@@ -509,149 +494,144 @@ class _WelcomeBackScreenState
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-  final theme = Theme.of(context);
-  // Grab the bottom padding (keyboard height)
-  final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final theme = Theme.of(context);
+    // Grab the bottom padding (keyboard height)
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-  return Scaffold(
-  // Keep this true so the Scaffold pushes content up
-  resizeToAvoidBottomInset: true,
-  backgroundColor: lightBackground,
-  body: SafeArea(
-  child: LayoutBuilder(
-  builder: (context, constraints) {
-  return SingleChildScrollView(
-  // This allows the view to bounce and scroll when keyboard is active
-  physics: const AlwaysScrollableScrollPhysics(),
-  child: Padding(
-  padding: EdgeInsets.symmetric(horizontal: 30.w),
-  child: ConstrainedBox(
-  constraints: BoxConstraints(
-  // Ensure the column is at least as tall as the screen
-  minHeight: constraints.maxHeight,
-  ),
-  child: Column(
-  children: [
-  SizedBox(height: 60.h),
+    return Scaffold(
+      // Keep this true so the Scaffold pushes content up
+      resizeToAvoidBottomInset: true,
+      backgroundColor: lightBackground,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenHeight = constraints.maxHeight;
+            final screenWidth = constraints.maxWidth;
+            return SingleChildScrollView(
+              // This allows the view to bounce and scroll when keyboard is active
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 30.w),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    // Ensure the column is at least as tall as the screen
+                    minHeight: constraints.maxHeight,
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(height: screenHeight * 0.19),
 
-  /// 🔹 Card Container
-  Container(
-  width: double.infinity,
-  padding: EdgeInsets.symmetric(
-  horizontal: 24.w,
-  vertical: 32.h,
-  ),
-  decoration: BoxDecoration(
-  color: Colors.white,
-  borderRadius: BorderRadius.circular(20.r),
-  boxShadow: [
-  BoxShadow(
-  color: Colors.black.withOpacity(0.02),
-  blurRadius: 20,
-  offset: const Offset(0, 4),
-  ),
-  ],
-  ),
-  child: Column(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-  Image.asset(appLogoFull, height: 60.h),
-  SizedBox(height: 25.h),
-  _buildProfileAvatar(),
-  SizedBox(height: 20.h),
-  Text(
-  "Welcome Back",
-  style: theme.textTheme.headlineSmall?.copyWith(
-  fontWeight: FontWeight.w600,
-  ),
-  ),
-  SizedBox(height: 6.h),
-  Text(
-  fullname?.toUpperCase() ?? "USER",
-  style: theme.textTheme.titleMedium?.copyWith(
-  color: primaryColor,
-  fontWeight: FontWeight.bold,
-  ),
-  ),
-  SizedBox(height: 30.h),
+                      /// 🔹 Card Container
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.w,
+                          vertical: 32.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 20,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(appLogoFull, height: screenHeight * 0.070.h),
+                            SizedBox(height: 25.h),
+                            _buildProfileAvatar(),
+                            SizedBox(height: 20.h),
+                            Text(
+                              "Welcome Back",
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              fullname?.toUpperCase() ?? "USER",
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 30.h),
 
-  if (_hasBiometric &&
-  _biometricEnabled &&
-  !_showPasswordField)
-  _buildBiometricSection()
-  else
-  _buildPasswordSection(),
-  ],
-  ),
-  ),
+                            if (_hasBiometric &&
+                                _biometricEnabled &&
+                                !_showPasswordField)
+                              _buildBiometricSection()
+                            else
+                              _buildPasswordSection(),
+                          ],
+                        ),
+                      ),
 
-  SizedBox(height: 30.h),
+                      SizedBox(height: 30.h),
 
-  GestureDetector(
-  onTap: () => context.go(RouteList.loginScreen),
-  child: Text(
-  "Switch Account",
-  style: theme.textTheme.bodyMedium?.copyWith(
-  color: lightSecondaryText,
-  ),
-  ),
-  ),
+                      GestureDetector(
+                        onTap: () => context.go(RouteList.loginScreen),
+                        child: Text(
+                          "Switch Account",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: lightSecondaryText,
+                          ),
+                        ),
+                      ),
 
-  // 🔹 CRITICAL: This adds space at the bottom when keyboard is up
-  // so you can scroll the content above the keyboard line.
-  SizedBox(height: bottomInset > 0 ? 20.h : 50.h),
-  ],
-  ),
-  ),
-  ),
-  );
-  },
-  ),
-  ),
-  );
+                      // 🔹 CRITICAL: This adds space at the bottom when keyboard is up
+                      // so you can scroll the content above the keyboard line.
+                      SizedBox(height: bottomInset > 0 ? 20.h : 50.h),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   Widget _buildProfileAvatar() {
-  return Container(
-  padding: EdgeInsets.all(3.r),
-  decoration: BoxDecoration(
-  shape: BoxShape.circle,
-  border: Border.all(color: primaryColor, width: 2),
-  ),
-  child: CircleAvatar(
-  radius: 45.r,
-  backgroundColor: Colors.grey.shade200,
-  backgroundImage: (pictureUrl != null && pictureUrl!.isNotEmpty)
-  ? NetworkImage(pictureUrl!)
-      : null,
-  child: pictureUrl == null
-  ? Icon(Icons.person, size: 40.sp, color: Colors.white)
-      : null,
-  ),
-  );
+    return Container(
+      padding: EdgeInsets.all(3.r),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: primaryColor, width: 2),
+      ),
+      child: CircleAvatar(
+        radius: 45.r,
+        backgroundColor: Colors.grey.shade200,
+        backgroundImage: (pictureUrl != null && pictureUrl!.isNotEmpty)
+            ? NetworkImage(pictureUrl!)
+            : null,
+        child: pictureUrl == null
+            ? Icon(Icons.person, size: 40.sp, color: Colors.white)
+            : null,
+      ),
+    );
   }
 
   Widget _buildBiometricSection() {
     return Column(
       children: [
         GestureDetector(
-          onTap:
-          _isAuthenticating ? null : _authenticate,
+          onTap: _isAuthenticating ? null : _authenticate,
           child: Container(
             padding: EdgeInsets.all(20.r),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: primaryColor
-                  .withOpacity(0.08),
+              color: primaryColor.withOpacity(0.08),
             ),
-            child: SvgPicture.asset(
-              fingerPrint,
-              height: 40.h,
-            ),
+            child: SvgPicture.asset(fingerPrint, height: 40.h),
           ),
         ),
         SizedBox(height: 16.h),
@@ -659,14 +639,11 @@ class _WelcomeBackScreenState
           buttonName: "Authenticate",
           buttonColor: primaryColor,
           buttonTextColor: lightBackground,
-          onPressed:
-          _isAuthenticating ? null : _authenticate,
+          onPressed: _isAuthenticating ? null : _authenticate,
         ),
         SizedBox(height: 10.h),
         TextButton(
-          onPressed: () =>
-              setState(() =>
-              _showPasswordField = true),
+          onPressed: () => setState(() => _showPasswordField = true),
           child: const Text("Use Password Instead"),
         ),
       ],
@@ -685,10 +662,7 @@ class _WelcomeBackScreenState
           maxLength: 6,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _loginWithPassword(),
-          validator: (value) =>
-          value.isEmpty
-              ? "Password is required"
-              : null,
+          validator: (value) => value.isEmpty ? "Password is required" : null,
           suffixIcon: IconButton(
             icon: Icon(
               _obscurePassword
@@ -697,23 +671,19 @@ class _WelcomeBackScreenState
             ),
             onPressed: () {
               setState(() {
-                _obscurePassword =
-                !_obscurePassword;
+                _obscurePassword = !_obscurePassword;
               });
             },
           ),
-        ),         SizedBox(height: 10.h),
+        ),
+        SizedBox(height: 10.h),
         GestureDetector(
-          onTap: () =>
-              context.go(RouteList.forgotPassword),
+          onTap: () => context.go(RouteList.forgotPassword),
           child: Align(
             alignment: Alignment.bottomRight,
             child: Text(
               'Forget Password?',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: lightText,
                 fontWeight: FontWeight.w500,
               ),

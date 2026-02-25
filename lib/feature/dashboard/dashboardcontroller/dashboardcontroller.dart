@@ -6,10 +6,12 @@ import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
 import '../../../core/helper/helper.dart';
 import '../../auth/modal/reponse/response_modal.dart' hide WalletResponse;
+import '../../auth/modal/verify_bank.dart';
 import '../../settings/model/qr_code.dart';
 import '../dashboard_repo/repo.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
+import '../model/bank_model.dart';
 import '../model/deposit.dart';
 import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
@@ -386,8 +388,9 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         dismissOnTap: false,
       );
 
-      final response = await dashboardRepository.depositMoney({"amount": amount});
-      EasyLoading.dismiss();
+      final response = await dashboardRepository.depositMoney({
+        "amount": amount.toInt().toString(),
+      });      EasyLoading.dismiss();
 
       if (response.responseSuccessful && response.data != null) {
         print(response.data);
@@ -527,5 +530,302 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       );
       return null;
     }
+  }
+
+  // Future<ResponseModel?> verifyBankAccount(
+  //     BuildContext context,
+  //     String account,
+  //     String bankCode,
+  //     ) async {
+  //   if (account.length != 10 || bankCode.isEmpty) {
+  //     ToastHelper.showToast(
+  //       context: context,
+  //       message: "Invalid account details",
+  //       icon: Icons.error,
+  //       iconColor: Colors.red,
+  //     );
+  //     return null;
+  //   }
+  //
+  //   EasyLoading.show(
+  //     indicator: const CustomLoader(),
+  //     maskType: EasyLoadingMaskType.black,
+  //   );
+  //
+  //   final result =
+  //   await dashboardRepository.verifyBankAccount({
+  //     "account": account.trim(),
+  //     "bankCode": bankCode,
+  //   });
+  //
+  //   EasyLoading.dismiss();
+  //
+  //   return result;
+  // }
+  //
+  // Future<ResponseModel?> sendMoneyToBank(
+  //     BuildContext context,
+  //     String account,
+  //     String bankCode,
+  //     String amount,
+  //     String narration,
+  //     String pin,
+  //     {required bool save},
+  //     ) async {
+  //   if (account.isEmpty ||
+  //       bankCode.isEmpty ||
+  //       amount.isEmpty ||
+  //       narration.isEmpty ||
+  //       pin.isEmpty) {
+  //     ToastHelper.showToast(
+  //       context: context,
+  //       message: "All fields are required",
+  //       icon: Icons.error,
+  //       iconColor: Colors.red,
+  //     );
+  //     return null;
+  //   }
+  //
+  //   EasyLoading.show(
+  //     indicator: const CustomLoader(),
+  //     maskType: EasyLoadingMaskType.black,
+  //   );
+  //
+  //   final result =
+  //   await dashboardRepository.transferToBank({
+  //     "account": account.trim(),
+  //     "bankCode": bankCode,
+  //     "amount": num.tryParse(amount) ?? 0,
+  //     "narration": narration,
+  //     "pin": pin,
+  //     "save": save.toString(),
+  //   });
+  //
+  //   EasyLoading.dismiss();
+  //
+  //   return result;
+  // }
+// Add to DashboardController
+
+  // Bank List Cache
+  List<BankModel> _cachedBanks = [];
+
+  Future<List<BankModel>> getBanks(BuildContext context) async {
+    try {
+      // Return cached banks if available
+      if (_cachedBanks.isNotEmpty) return _cachedBanks;
+
+      final banks = await dashboardRepository.getBanks();
+      _cachedBanks = banks;
+      return banks;
+    } catch (e) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Error loading banks: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return [];
+    }
+  }
+
+  // Verify Bank Account
+  Future<BankAccountVerifyResponse?> verifyBankAccount(
+      BuildContext context, {
+        required String accountNumber,
+        required String bankCode,
+      }) async {
+    if (accountNumber.isEmpty || accountNumber.length != 10) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Enter a valid 10-digit account number",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    if (bankCode.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Please select a bank",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response = await dashboardRepository.verifyBankAccount(
+        accountNumber: accountNumber,
+        bankCode: bankCode,
+      );
+
+      EasyLoading.dismiss();
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<BankTransferResponse?> sendMoneyToBank(
+      BuildContext context, {
+        required String accountNumber,
+        required String bankCode,
+        required String bankName, // ✅ ADD
+        required String amount,
+        required String narration,
+        required String pin,
+        required bool saveBeneficiary,
+      }) async {
+    if (accountNumber.isEmpty ||
+        bankCode.isEmpty ||
+        amount.isEmpty ||
+        narration.isEmpty ||
+        pin.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields are required.",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response = await dashboardRepository.sendMoneyToBank(
+        accountNumber: accountNumber,
+        bankCode: bankCode,
+        bankName: bankName, // ✅ ADD
+        amount: amount,
+        narration: narration,
+        pin: pin,
+        saveBeneficiary: saveBeneficiary,
+      );
+
+      EasyLoading.dismiss();
+
+      if (response.responseSuccessful &&
+          response.responseBody != null) {
+
+        final paymentRef = response.responseBody!.txnRef;
+
+        print("🧾 Payment Reference: $paymentRef");
+
+        await verifyBankTransfer(context, paymentRef);
+      }
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> verifyBankTransfer(
+      BuildContext context,
+      String reference,
+      ) async {
+
+    if (reference.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Invalid transaction reference",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response =
+      await dashboardRepository.verifyBankTransfer(reference);
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return response;
+
+    } catch (e) {
+      EasyLoading.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Verification failed: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+  Future<List<Map<String, dynamic>>> getRecentBankTransfers(
+      BuildContext context) async {
+    return await dashboardRepository.getRecentBankTransfers();
+  }
+
+  Future<List<Map<String, dynamic>>> getBankBeneficiaries(
+      BuildContext context) async {
+    return await dashboardRepository.getBankBeneficiaries();
   }
 }

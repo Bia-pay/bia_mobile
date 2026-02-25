@@ -7,12 +7,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:pin_code_fields/pin_code_fields.dart';
-import '../../../../app/utils/image.dart';
 import '../../../../app/utils/widgets/pin_field.dart';
 import '../../../dashboard/widgets/keypad.dart';
 import '../../authcontroller/authcontroller.dart';
-import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 
 class CreateAccountVerifyOtpScreen extends ConsumerStatefulWidget {

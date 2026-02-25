@@ -11,17 +11,12 @@ class TransactionHistory extends ConsumerStatefulWidget {
   const TransactionHistory({super.key});
 
   @override
-  ConsumerState<TransactionHistory> createState() =>
-      _TransactionHistoryState();
+  ConsumerState<TransactionHistory> createState() => _TransactionHistoryState();
 }
 
-class _TransactionHistoryState
-    extends ConsumerState<TransactionHistory> {
-
+class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
   Future<void> _handleRefresh() async {
-    await ref
-        .read(allTransactionsProvider.notifier)
-        .refresh();
+    await ref.read(allTransactionsProvider.notifier).refresh();
   }
 
   @override
@@ -38,66 +33,46 @@ class _TransactionHistoryState
         child: RefreshIndicator(
           onRefresh: _handleRefresh,
           child: asyncTx.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(),
-            ),
-            error: (e, _) => Center(
-              child: Text("Error: $e"),
-            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text("Error: $e")),
             data: (transactions) {
-
               if (transactions.isEmpty) {
                 return ListView(
                   padding: EdgeInsets.symmetric(
-                      horizontal: 20.w,
-                      vertical: 40.h),
+                    horizontal: 20.w,
+                    vertical: 40.h,
+                  ),
                   children: [
                     CustomHeader(title: 'Transaction History'),
-                    SizedBox(height: 100.h),
-                    Icon(
-                      Icons.receipt_long_rounded,
-                      size: 60.sp,
-                      color:
-                      lightSecondaryText.withOpacity(.4),
-                    ),
-                    SizedBox(height: 15.h),
+                    SizedBox(height: 205.h),
                     Center(
-                      child: Text(
-                        "No transactions yet",
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: lightSecondaryText,
-                        ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.receipt, size: 60, color: inactiveColor),
+                          Text("No recent transactions"),
+                          Text(
+                            "Your activity will appear here",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: lightSecondaryText.withOpacity(.7),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(height: 5.h),
-                    Center(
-                      child: Text(
-                        "Your activity will appear here",
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(
-                          color: lightSecondaryText
-                              .withOpacity(.7),
-                        ),
-                      ),
-                    ),
+
                   ],
                 );
               }
 
               return ListView.builder(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 20.w,
-                    vertical: 10.h),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
                 itemCount: transactions.length + 1,
                 itemBuilder: (context, index) {
-
                   if (index == 0) {
                     return Column(
                       children: [
-                        CustomHeader(
-                            title: 'Transaction History'),
+                        CustomHeader(title: 'Transaction History'),
                         SizedBox(height: 20.h),
                       ],
                     );
@@ -105,8 +80,7 @@ class _TransactionHistoryState
 
                   final tx = transactions[index - 1];
 
-                  final isPending =
-                      tx.status == "PENDING";
+                  final isPending = tx.status == "PENDING";
                   final isCredit = tx.isCredit;
 
                   final amountColor = isPending
@@ -115,54 +89,40 @@ class _TransactionHistoryState
                       ? successColor
                       : errorColor;
 
-                  final titleText =
-                  tx.serviceType == "TOPUP"
-                      ? (tx.serviceType ??
-                      "Top Up")
+                  final titleText = tx.serviceType == "TOPUP"
+                      ? (tx.serviceType ?? "Top Up")
                       : (isCredit
-                      ? (tx.senderName ??
-                      (tx.provider ??
-                          "Transfer"))
-                      : (tx.receiverName ??
-                      (tx.provider ??
-                          "Transfer")));
+                            ? (tx.senderName ?? (tx.provider ?? "Transfer"))
+                            : (tx.receiverName ?? (tx.provider ?? "Transfer")));
 
                   return Container(
-                    margin:
-                    EdgeInsets.only(bottom: 14.h),
+                    margin: EdgeInsets.only(bottom: 14.h),
                     padding: EdgeInsets.all(14.w),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                      BorderRadius.circular(16.r),
+                      borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black
-                              .withOpacity(.03),
+                          color: Colors.black.withOpacity(.03),
                           blurRadius: 20,
-                          offset:
-                          const Offset(0, 8),
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
-
                         /// ICON
                         Container(
                           height: 45.w,
                           width: 45.w,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: amountColor
-                                .withOpacity(.08),
+                            color: amountColor.withOpacity(.08),
                           ),
                           child: Icon(
                             isCredit
-                                ? Icons
-                                .arrow_downward_rounded
-                                : Icons
-                                .arrow_upward_rounded,
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
                             color: amountColor,
                             size: 20.sp,
                           ),
@@ -173,42 +133,24 @@ class _TransactionHistoryState
                         /// TITLE + DATE
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 titleText,
                                 maxLines: 1,
-                                overflow:
-                                TextOverflow
-                                    .ellipsis,
-                                style: theme
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                  fontWeight:
-                                  FontWeight
-                                      .w600,
-                                  fontSize:
-                                  14.sp,
-                                  color:
-                                  darkBackground,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14.sp,
+                                  color: darkBackground,
                                 ),
                               ),
-                              SizedBox(
-                                  height: 4.h),
+                              SizedBox(height: 4.h),
                               Text(
-                                formatTransactionDate(
-                                    tx.createdAt),
-                                style: theme
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                  fontSize:
-                                  11.sp,
-                                  color:
-                                  lightSecondaryText,
+                                formatTransactionDate(tx.createdAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontSize: 11.sp,
+                                  color: lightSecondaryText,
                                 ),
                               ),
                             ],
@@ -217,60 +159,32 @@ class _TransactionHistoryState
 
                         /// AMOUNT + STATUS
                         Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment
-                              .end,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               "${isCredit ? '+' : '-'}₦${tx.amount}",
-                              style: theme
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                fontWeight:
-                                FontWeight
-                                    .w700,
-                                fontSize:
-                                15.sp,
-                                color:
-                                amountColor,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15.sp,
+                                color: amountColor,
                               ),
                             ),
-                            SizedBox(
-                                height: 6.h),
+                            SizedBox(height: 6.h),
                             Container(
-                              padding:
-                              EdgeInsets
-                                  .symmetric(
-                                horizontal:
-                                10.w,
-                                vertical:
-                                4.h,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10.w,
+                                vertical: 4.h,
                               ),
-                              decoration:
-                              BoxDecoration(
-                                color:
-                                amountColor
-                                    .withOpacity(
-                                    .08),
-                                borderRadius:
-                                BorderRadius
-                                    .circular(
-                                    50.r),
+                              decoration: BoxDecoration(
+                                color: amountColor.withOpacity(.08),
+                                borderRadius: BorderRadius.circular(50.r),
                               ),
                               child: Text(
                                 tx.status ?? "",
-                                style: theme
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                  fontWeight:
-                                  FontWeight
-                                      .w600,
-                                  fontSize:
-                                  9.sp,
-                                  color:
-                                  amountColor,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 9.sp,
+                                  color: amountColor,
                                 ),
                               ),
                             ),

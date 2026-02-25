@@ -293,44 +293,40 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
     if (_hasVerified) return;
     _hasVerified = true;
 
-    print("📡 Verifying payment... $reference");
-
     try {
       final res = await ref
           .read(dashboardControllerProvider.notifier)
           .verifyDeposit(context, reference);
 
-      if (res != null && res.responseSuccessful && res.data?.status == "success") {
-        print("🎉 Payment verified: ${res.responseMessage}");
+      if (res != null &&
+          res.responseSuccessful &&
+          res.data != null &&
+          res.data!.description.toLowerCase() == "successful") {
 
         if (!mounted) return;
 
-        // Close WebView
         Navigator.pop(context);
-        print("🎉 Payment verified: ${res.data?.amount.toString()}");
-        // Go to success screen
+
         context.pushNamed(
           RouteList.successScreen,
           extra: {
             "type": "deposit",
-            "amount": res.data?.amount.toString() ?? "0",
-            "recipientName": "",
-            "recipientAccount": "",
-            "reference": res.data?.reference ?? "",
-            "channel": res.data?.channel ?? "Paystack",
+            "amount": res.data!.amount.toString(),
+            "reference": res.data!.reference,
           },
         );
 
-        return;
       } else {
-        print("⚠️ Payment not completed");
+        _hasVerified = false;
         _showDialog("Failed", "Payment was not completed.");
       }
+
     } catch (e) {
-      print("❌ Verification error: $e");
-      _showDialog("Error", "An error occurred while verifying payment.");
+      _hasVerified = false;
+      _showDialog("Error", "Verification failed.");
     }
   }
+
   Future<bool> _onWillPop() async {
     if (await _controller.canGoBack()) {
       _controller.goBack();

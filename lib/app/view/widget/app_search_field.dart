@@ -156,6 +156,7 @@ class AppField extends StatefulWidget {
     this.readOnly = false,
     this.maxLength, // ✅ NEW
     this.inputFormatters, // ✅ NEW
+    this.keyboardType, // ✅ NEW
   }) : isBackgroundTransparent = false;
 
   const AppField.transparent({
@@ -169,6 +170,7 @@ class AppField extends StatefulWidget {
     this.readOnly = false,
     this.maxLength, // ✅ NEW
     this.inputFormatters, // ✅ NEW
+    this.keyboardType, // ✅ NEW
   }) : isBackgroundTransparent = true;
 
   static const double defaultHeight = 58;
@@ -185,6 +187,7 @@ class AppField extends StatefulWidget {
 
   final int? maxLength; // ✅ NEW
   final List<TextInputFormatter>? inputFormatters; // ✅ NEW
+  final TextInputType? keyboardType; // ✅ NEW
 
   @override
   State<AppField> createState() => _AppFieldState();
@@ -239,6 +242,7 @@ class _AppFieldState extends State<AppField> {
         // ✅ NEW
         maxLength: widget.maxLength,
         inputFormatters: widget.inputFormatters,
+        keyboardType: widget.keyboardType, // ✅ NEW
         buildCounter: (
             context, {
               required int currentLength,

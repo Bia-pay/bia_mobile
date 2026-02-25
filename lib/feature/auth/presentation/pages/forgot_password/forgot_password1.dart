@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/header_section.dart';
 import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/phone_input_section.dart';
 import 'package:bia/feature/auth/presentation/pages/forgot_password/widgets/send_button.dart';
@@ -25,7 +27,7 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
 
-  int _selectedIndex = -1;
+  String _countryDialCode = '234';
   bool showMinWarning = false;
 
   void addDigit(String value) {
@@ -172,121 +174,172 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            if (GoRouter.of(context).canPop()) {
-              context.pop();
-            } else {
-              context.goNamed(
-                RouteList.loginScreen,
-              ); // Navigate to login as fallback
-            }
-          },
-          icon: Icon(Icons.arrow_back_ios, color: darkBackground),
-        ),
-        title: const Text('Forgot password'),
-        backgroundColor: offWhiteBackground,
-        elevation: 0,
-        foregroundColor: darkBackground,
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: _getHorizontalPadding(screenWidth),
-            vertical: _getVerticalPadding(screenHeight),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isSmallScreen) SizedBox(height: 20.h),
-              // Header section
-              SizedBox(height: 20.h),Container(
-                padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 20.h),
-                decoration: BoxDecoration(
-                  color: lightBackground,
-                  borderRadius: BorderRadius.all(Radius.circular(10.r)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05), // very light shadow
-                      blurRadius: 8,
-                      offset: const Offset(0, 2), // slight downward shadow
-                    ),
-                  ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = constraints.maxWidth;
+            final screenHeight = constraints.maxHeight;
+            final isSmallScreen = screenHeight < 650;
+
+            return ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(
+                  _getHorizontalPadding(screenWidth),
+                  8.h, // 👈 small controlled top padding
+                  _getHorizontalPadding(screenWidth),
+                  24.h, // bottom padding
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    PhoneInputWidget(
-                      controller: _phoneController,
-                      label: 'Mobile Number',
-                      hintText: '8000000000',
-                      keyboardType: TextInputType.none,
-                      backgroundColor: lightBackground,
-                      borderColor: borderColor,
-                      validator: (value) {
-                        if (value.isEmpty) return 'Phone number is required';
-                        if (value.length < 10) return 'Phone number too short';
-                        return null;
-                      },
-                      onCountryChanged: (CountryCode? newValue) {
-                        setState(() {
-                          _selectedCountry = newValue!;
-                        });
-                      },
+
+                    /// 🔹 Custom Header
+                    _buildCustomHeader(),
+
+                    SizedBox(height: isSmallScreen ? 50.h : 60.h),
+
+                    /// 🔹 Glass Card
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 40.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: lightBackground,
+                            borderRadius: BorderRadius.circular(16.r),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.25),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 25,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              PhoneInputWidget(
+                                controller: _phoneController,
+                                label: 'Mobile Number',
+                                hintText: '8000000000',
+                                keyboardType: TextInputType.none,
+                                backgroundColor:
+                                Colors.white.withOpacity(0.2),
+                                borderColor: primaryColor,
+                                validator: (value) {
+                                  if (value.isEmpty)
+                                    return 'Phone number is required';
+                                  if (value.length < 10)
+                                    return 'Phone number too short';
+                                  return null;
+                                },
+                                onCountryChanged:
+                                    (CountryCode? newValue) {
+                                  setState(() {
+                                    _selectedCountry = newValue!;
+                                  });
+                                },
+                              ),
+                              SizedBox(height: 20.h),
+                              Text(
+                                "We'll send you a code to verify your phone number",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14.spMin,
+                                  color: darkBackground,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                    SizedBox(height: 30.h),
-                    Text(
-                      "We'll send you a code to verify your phone number",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14.spMin,
+
+                    SizedBox(height: isSmallScreen ? 30.h : 60.h),
+
+                    /// 🔹 Keypad
+                    SizedBox(
+                      height: screenHeight * 0.45,
+                      child: CustomGridKeypad(
+                        onNumberPressed: addDigit,
+                        leftAction: ActionKey(
+                          child: SvgPicture.asset(
+                            'assets/svg/cancel.svg',
+                            height: 20.h,
+                            colorFilter: ColorFilter.mode(
+                              primaryColor,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          backgroundColor:
+                          primaryColor.withOpacity(0.1),
+                          onTap: removeDigit,
+                        ),
+                        rightAction: ActionKey(
+                          child: const Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                          ),
+                          backgroundColor: primaryColor,
+                          onTap: _isPhoneNumberComplete
+                              ? () => _sendForgotPasswordCode()
+                              : () {},
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 80.h),
-              SizedBox(
-                height: 350.h,
-                child: CustomGridKeypad(
-                  onNumberPressed: (value) {
-                    addDigit(value);
-                  },
-
-                  // Bottom-left action → delete
-                  leftAction: ActionKey(
-                    child: SvgPicture.asset(
-                      'assets/svg/cancel.svg',
-                      height: 20.h,
-                      colorFilter: ColorFilter.mode(
-                        primaryColor,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    backgroundColor: primaryColor.withOpacity(0.1),
-                    onTap: removeDigit,
-                  ),
-
-                  // Bottom-right action → send code
-                  rightAction: ActionKey(
-                    child: const Icon(Icons.arrow_forward, color: Colors.white),
-                    backgroundColor: primaryColor,
-                    onTap: _isPhoneNumberComplete
-                        ? _sendForgotPasswordCode
-                        : () {}, // or null if you later add disabled support
-                  ),
-                ),
-              ),
-              // Number pad
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
+  Widget _buildCustomHeader() {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () {
+            if (GoRouter.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.goNamed(RouteList.loginScreen);
+            }
+          },
+          child: Icon(
+            Icons.arrow_back_ios_new,
+            size: 18.sp,
+            color: darkBackground,
+          ),
+        ),
 
+        SizedBox(width: 46.w),
+
+        Expanded(
+          child: Text(
+            "Forgot Password",
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
   double _getHorizontalPadding(double screenWidth) {
     if (screenWidth < 375) return 16.0;
     if (screenWidth < 600) return 24.0;
@@ -295,9 +348,9 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   }
 
   double _getVerticalPadding(double screenHeight) {
-    if (screenHeight < 600) return 12.0;
-    if (screenHeight < 700) return 16.0;
-    if (screenHeight < 900) return 20.0;
+    if (screenHeight < 600) return 2.0;
+    if (screenHeight < 700) return 6.0;
+    if (screenHeight < 900) return 10.0;
     return 24.0;
   }
 }

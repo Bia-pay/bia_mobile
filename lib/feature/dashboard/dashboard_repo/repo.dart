@@ -8,7 +8,9 @@ import 'package:mime/mime.dart';
 import '../../auth/data/api_constant.dart';
 import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
+import '../../auth/modal/verify_bank.dart';
 import '../../settings/model/qr_code.dart';
+import '../model/bank_model.dart';
 import '../model/deposit.dart';
 import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
@@ -455,16 +457,23 @@ class DashboardRepository {
   }
 
   Future<VerifyTransactionResponse?> verifyPayment(String reference) async {
-    final url = "${ApiConstant.VERIFY_PAYMENT}/$reference";
-    print('📡 Verifying payment... $reference');
     try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      _apiClient.updateHeaders(token);
+
+      final url = "${ApiConstant.VERIFY_PAYMENT}/$reference";
+
+      print('📡 Verifying payment... $url');
+
       final response = await _apiClient.getData(url);
+
+      print("➡️ Status: ${response.statusCode}");
+      print("➡️ Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        print("🔍 Verify Payment Response: $jsonResponse");
-
-        // ✅ Only pass the JSON map
         return VerifyTransactionResponse.fromJson(jsonResponse);
       }
 
@@ -632,6 +641,254 @@ class DashboardRepository {
         responseSuccessful: false,
         statusCode: 500,
       );
+    }
+  }
+
+  Future<List<BankModel>> getBanks() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+      final response = await _apiClient.getData(ApiConstant.GET_BANKS);
+      final jsonResponse = jsonDecode(response.body);
+
+      print("🏦 Banks Response: $jsonResponse");
+
+      if (response.statusCode == 200 && jsonResponse['responseSuccessful'] == true) {
+        // FIX: Access the nested 'data' array inside 'responseBody'
+        final responseBody = jsonResponse['responseBody'] ?? {};
+        final List<dynamic> banksJson = responseBody['data'] ?? [];
+
+        return banksJson.map((e) => BankModel.fromJson(e)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('🔥 Error fetching banks: $e');
+      return [];
+    }
+  }
+
+  // Verify Bank Account
+  Future<BankAccountVerifyResponse> verifyBankAccount({
+    required String accountNumber,
+    required String bankCode,
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return BankAccountVerifyResponse(
+          responseSuccessful: false,
+          responseMessage: "No token found. Please log in again.",
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "account": accountNumber.trim(),
+        "bankCode": bankCode.trim(),
+      };
+
+      print("🔍 Verifying bank account: $body");
+
+      final response = await _apiClient.postData(ApiConstant.VERIFY_BANK_ACCOUNT, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      print("✅ Verify Response: $jsonResponse");
+
+      return BankAccountVerifyResponse.fromJson(jsonResponse);
+    } catch (e) {
+      print('🔥 Error verifying account: $e');
+      return BankAccountVerifyResponse(
+        responseSuccessful: false,
+        responseMessage: "Something went wrong. Please try again.",
+      );
+    }
+  }
+
+  // Send Money to Bank
+  Future<BankTransferResponse> sendMoneyToBank({
+    required String accountNumber,
+    required String bankCode,
+    required String bankName, // ✅ ADD THIS
+    required String amount,
+    required String narration,
+    required String pin,
+    required bool saveBeneficiary,
+  }) async {
+    print('📡 Initiating bank transfer...');
+
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return BankTransferResponse(
+          responseSuccessful: false,
+          responseMessage: "No token found. Please log in again.",
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "account": accountNumber.trim(),
+        "bankCode": bankCode.trim(),
+        "bankName": bankName.trim(), // ✅ ADDED
+        "amount": amount.trim(),
+        "narration": narration.trim(),
+        "pin": pin.trim(),
+        "save": saveBeneficiary,
+      };
+
+      print("➡️ Bank transfer payload: $body");
+
+      final response =
+      await _apiClient.postData(ApiConstant.BANK_TRANSFER, body);
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("✅ Transfer Response: $jsonResponse");
+
+      return BankTransferResponse.fromJson(
+        jsonResponse,
+        response.statusCode,
+      );
+    } catch (e) {
+      print('🔥 Exception during bank transfer: $e');
+
+      return BankTransferResponse(
+        responseSuccessful: false,
+        responseMessage: "Something went wrong. Please try again.",
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> verifyBankTransfer(String reference) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found. Please log in again.",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final url =
+          "${ApiConstant.VERIFY_BANK_TRANSFER}/$reference";
+
+      print("🔎 Verifying bank transfer: $url");
+
+      final response = await _apiClient.getData(url);
+
+      print("➡️ Status: ${response.statusCode}");
+      print("➡️ Body: ${response.body}");
+
+      if (response.headers['content-type']
+          ?.contains('application/json') ??
+          false) {
+        final jsonResponse = jsonDecode(response.body);
+
+        return ResponseModel(
+          responseMessage:
+          jsonResponse['responseMessage'] ?? '',
+          responseSuccessful:
+          jsonResponse['responseSuccessful'] ?? false,
+          statusCode: response.statusCode,
+        );
+      } else {
+        return ResponseModel(
+          responseMessage: "Invalid server response",
+          responseSuccessful: false,
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      print("🔥 Verify bank transfer error: $e");
+      return ResponseModel(
+        responseMessage: "Something went wrong",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentBankTransfers() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response =
+      await _apiClient.getData(ApiConstant.RECENT_BANK_TRANSFERS);
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (jsonResponse['responseSuccessful'] == true) {
+        final List<dynamic> data = jsonResponse['responseBody'] ?? [];
+
+        return data.map<Map<String, dynamic>>((e) => {
+          "name": e['accountName'],
+          "account": e['accountNumber'],
+          "bankCode": e['bankCode'],
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print("🔥 Bank recent error: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getBankBeneficiaries() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData(
+        "${ApiConstant.BENEFICIARIES}?page=1&limit=10",
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (jsonResponse['responseSuccessful'] == true) {
+        final List<dynamic> data =
+            jsonResponse['responseBody']?['data'] ?? [];
+
+        return data
+            .where((e) => e['type'] == "BANK")
+            .map<Map<String, dynamic>>((e) => {
+          "name": e['bank']?['accountName'],
+          "account": e['bank']?['accountNumber'],
+          "bankCode": e['bank']?['bankCode'],
+        })
+            .toList();
+      }
+
+      return [];
+    } catch (e) {
+      print("🔥 Bank beneficiaries error: $e");
+      return [];
     }
   }
 }

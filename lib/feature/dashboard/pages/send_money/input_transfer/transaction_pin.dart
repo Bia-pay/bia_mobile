@@ -175,7 +175,7 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
           "recipientName": widget.recipientName,
           "recipientAccount": widget.recipientAccount,
           "reference": "",
-          "channel": "",
+          "channel": "Bia Wallet",
         },
       );
     } else {

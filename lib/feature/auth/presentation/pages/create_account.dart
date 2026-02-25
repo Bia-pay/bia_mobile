@@ -26,10 +26,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
   TextEditingController();
+
   final FocusNode nameFocus = FocusNode();
   final FocusNode emailFocus = FocusNode();
   final FocusNode passwordFocus = FocusNode();
   final FocusNode confirmPasswordFocus = FocusNode();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -58,57 +60,70 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    nameFocus.dispose();
+    emailFocus.dispose();
+    passwordFocus.dispose();
+    confirmPasswordFocus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true, // 🔥 allow resize
       body: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(login),
-                fit: BoxFit.cover,
-              ),
+          /// Background
+          Positioned.fill(
+            child: Image.asset(
+              login,
+              fit: BoxFit.cover,
             ),
           ),
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: blackColorOp,
+
+          /// Overlay
+          Positioned.fill(
+            child: Container(
+              color: blackColorOp,
+            ),
           ),
+
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                return Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    18.w,
-                    15.h,
-                    18.w,
-                    MediaQuery.of(context).viewInsets.bottom,
-                  ),
+                final screenWidth = constraints.maxWidth;
+                final screenHeight = constraints.maxHeight;
+
+                return Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
+                    constraints: const BoxConstraints(
+                      maxWidth: 480, // tablet support
                     ),
-                    child: IntrinsicHeight(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        screenWidth * 0.08,
+                        screenHeight * 0.05,
+                        screenWidth * 0.08,
+                        bottomInset + 30.h, // 🔥 keyboard safe
+                      ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          SizedBox(height: 20.h),
+
                           Text(
                             'Complete Registration',
+                            textAlign: TextAlign.center,
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineLarge
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
-                          SizedBox(height: 5.h),
+
+                          SizedBox(height: 25.h),
 
                           CustomTextFormField(
                             label: 'Full Name',
@@ -121,7 +136,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                             validator: (v) =>
                             v.isEmpty ? 'Full name required' : null,
                           ),
-                          SizedBox(height: 5.h),
+
+                          SizedBox(height: 18.h),
 
                           CustomTextFormField(
                             label: 'Email Address',
@@ -129,18 +145,21 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                             focusNode: emailFocus,
                             textInputAction: TextInputAction.next,
                             onSubmitted: (_) =>
-                                FocusScope.of(context).requestFocus(passwordFocus),
+                                FocusScope.of(context)
+                                    .requestFocus(passwordFocus),
                             hintText: 'Enter your email address',
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v.isEmpty) return 'Email required';
-                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v)) {
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                  .hasMatch(v)) {
                                 return 'Invalid email';
                               }
                               return null;
                             },
                           ),
-                          SizedBox(height: 5.h),
+
+                          SizedBox(height: 18.h),
 
                           CustomTextFormField(
                             label: 'Password',
@@ -160,8 +179,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                             ],
                             validator: (v) {
                               if (v.isEmpty) return 'Password required';
-                              if (v.length != 6) return 'Password must be 6 digits';
-                              if (v == '123456') return 'Password too weak';
+                              if (v.length != 6)
+                                return 'Password must be 6 digits';
+                              if (v == '123456')
+                                return 'Password too weak';
                               return null;
                             },
                             suffixIcon: IconButton(
@@ -176,73 +197,14 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               },
                             ),
                           ),
-                          SizedBox(height: 5.h),
+
+                          SizedBox(height: 18.h),
 
                           CustomTextFormField(
                             label: 'Confirm Password',
                             controller: confirmPasswordController,
                             focusNode: confirmPasswordFocus,
                             textInputAction: TextInputAction.done,
-                            onSubmitted: (_) async {
-                              if (!_canSubmit || _isLoading) return;
-
-                              FocusScope.of(context).unfocus();
-
-                              final fullname = nameController.text.trim();
-                              final email = emailController.text.trim();
-                              final password = passwordController.text.trim();
-                              final confirmPassword =
-                              confirmPasswordController.text.trim();
-
-                              if (password.length < 6 || password == '123456') {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Password is too weak'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                                return;
-                              }
-
-                              if (password != confirmPassword) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Passwords do not match'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                                return;
-                              }
-
-                              setState(() => _isLoading = true);
-
-                              final authState =
-                              ref.read(authControllerProvider.notifier);
-
-                              final response =
-                              await authState.registerStepThree(
-                                context,
-                                fullname,
-                                email,
-                                password,
-                              );
-
-                              setState(() => _isLoading = false);
-
-                              if (response?.responseSuccessful == true) {
-                                context.pushNamed(RouteList.bottomNavBar);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      response?.responseMessage ??
-                                          'Registration failed',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
                             hintText: 'Re-enter your password',
                             obscureText: _obscureConfirmPassword,
                             keyboardType: TextInputType.number,
@@ -252,7 +214,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                             validator: (v) {
-                              if (v.isEmpty) return 'Confirm password required';
+                              if (v.isEmpty)
+                                return 'Confirm password required';
                               if (v != passwordController.text.trim()) {
                                 return 'Passwords do not match';
                               }
@@ -271,10 +234,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               },
                             ),
                           ),
-                          SizedBox(height: 5.h),
 
-
-                          SizedBox(height: 10.h),
+                          SizedBox(height: 30.h),
 
                           CustomButton(
                             buttonColor: _canSubmit
@@ -298,8 +259,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               final password =
                               passwordController.text.trim();
                               final confirmPassword =
-                              confirmPasswordController
-                                  .text
+                              confirmPasswordController.text
                                   .trim();
 
                               if (password.length < 6 ||
@@ -316,8 +276,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                                 return;
                               }
 
-                              if (password !=
-                                  confirmPassword) {
+                              if (password != confirmPassword) {
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(
                                   const SnackBar(
@@ -330,8 +289,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                                 return;
                               }
 
-                              setState(() =>
-                              _isLoading = true);
+                              setState(
+                                      () => _isLoading = true);
 
                               final authState = ref.read(
                                   authControllerProvider
@@ -346,15 +305,14 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                                 password,
                               );
 
-                              setState(() =>
-                              _isLoading = false);
+                              setState(
+                                      () => _isLoading = false);
 
                               if (response
                                   ?.responseSuccessful ==
                                   true) {
                                 context.pushNamed(
-                                    RouteList
-                                        .bottomNavBar);
+                                    RouteList.bottomNavBar);
                               } else {
                                 ScaffoldMessenger.of(context)
                                     .showSnackBar(
@@ -370,6 +328,41 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
                               }
                             },
                           ),
+
+
+                          SizedBox(height: 25.h),
+
+                          /// 🔹 Already have account
+                          GestureDetector(
+                            onTap: () =>
+                                context.go(RouteList.loginScreen),
+                            child: RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                text: "Already have an account? ",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: "Sign In",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: 20.h),
                         ],
                       ),
                     ),

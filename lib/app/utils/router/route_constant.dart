@@ -20,6 +20,7 @@ class RouteList {
   static const String sendMoneyTransfer = '/send-money';
   static const String sendMoneyToBank = '/send-to-bank';
   static const String amountPage = '/amount';
+  static const String bankAmountPage = '/bankAmountPage';
   static const String successScreen = '/success';
   static const String scannerOnboarding = '/scanner-onboarding';
   static const String qrScannerScreen = '/qr-scanner';

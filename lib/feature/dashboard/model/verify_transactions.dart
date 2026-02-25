@@ -1,7 +1,7 @@
 class VerifyTransactionResponse {
   final bool responseSuccessful;
   final String responseMessage;
-  final verifyTransactionResponseBody? data;
+  final VerifyDepositData? data;
 
   VerifyTransactionResponse({
     required this.responseSuccessful,
@@ -14,8 +14,37 @@ class VerifyTransactionResponse {
       responseSuccessful: json["responseSuccessful"] ?? false,
       responseMessage: json["responseMessage"] ?? "",
       data: json["responseBody"] != null
-          ? verifyTransactionResponseBody.fromJson(json["responseBody"])
+          ? VerifyDepositData.fromJson(json["responseBody"])
           : null,
+    );
+  }
+}
+
+class VerifyDepositData {
+  final String status;
+  final String description;
+  final String txnType;
+  final double amount;
+  final String reference;
+  final String senderName;
+
+  VerifyDepositData({
+    required this.status,
+    required this.description,
+    required this.txnType,
+    required this.amount,
+    required this.reference,
+    required this.senderName,
+  });
+
+  factory VerifyDepositData.fromJson(Map<String, dynamic> json) {
+    return VerifyDepositData(
+      status: json["status"] ?? "",
+      description: json["description"] ?? "",
+      txnType: json["txnType"] ?? "",
+      amount: double.tryParse(json["amount"].toString()) ?? 0.0,
+      reference: json["reference"] ?? "",
+      senderName: json["senderName"] ?? "",
     );
   }
 }

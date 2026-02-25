@@ -26,10 +26,14 @@ class ApiConstant {
   static const PROFILE_UPDATE = '/api/v1/user/profile';
   static const REFRESH_TOKEN = '/api/v1/auth/refresh/token';
   static const DEPOSIT = '/api/v1/payment/deposit';
-  static const VERIFY_PAYMENT = '/api/v1/payment/verify';
+  static const VERIFY_PAYMENT = '/api/v1/payment/deposit/verify';
   static const UPDATE_AVATAR = '/api/v1/user/profile/image';
   static const String LOGOUT = "/api/v1/auth/logout";
-  // static const TRANSER = '/api/v1/wallet/transfer';
-  // static const TRANSACTION = '/api/v1/wallet/transactions?page=1&limit=10';
+  static const BANK_TRANSFER = '/api/v1/payment/bank/transfer';
+  static const GET_BANKS= '/api/v1/payment/banks';
+  static const VERIFY_BANK_ACCOUNT= '/api/v1/payment/account/verify';
+  static const String VERIFY_BANK_TRANSFER = "/api/v1/payment/bank/transfer/verify";
+  static const String RECENT_BANK_TRANSFERS = "/api/v1/payment/recent-transfers";
+  static const String BENEFICIARIES = "/api/v1/payment/beneficiaries/";
 
 }

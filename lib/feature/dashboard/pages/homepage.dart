@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/image.dart';
+import '../../../app/view/widget/app_bar.dart';
 import '../../../core/helper/helper.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
 
@@ -143,12 +144,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-                  Container(
-                    height: 45.h,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(100),
+                  GestureDetector(
+                    onTap: () => context.pushNamed(RouteList.notification),
+                    child: Container(
+                      height: 45.h,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: SvgPicture.asset(bell),
                     ),
-                    child: SvgPicture.asset(bell),
                   ),
                 ],
               ),
@@ -206,7 +210,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                     ActionButton(
-                      label: 'Other Banks',
+                      label: 'Withdrawal',
                       icon: Image.asset(atm, height: 21.h),
                       onTap: () => context.pushNamed(
                         RouteList.sendMoneyToBank,
@@ -365,110 +369,137 @@ class _HomePageState extends ConsumerState<HomePage> {
                   return asyncTx.when(
                     data: (transactions) {
                       if (transactions.isEmpty) {
-                        return const Center(child: Text("No recent transactions"));
+                        return const Center(child: Column(
+                          children: [
+                            Icon(Icons.receipt, size: 60, color: inactiveColor,),
+                            Text("No recent transactions")
+]
+                        ));
                       }
                       return ListView.builder(
                         shrinkWrap: true,
+                        itemCount: transactions.length > 2 ? 2 : transactions.length,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: transactions.length > 2 ? 2 : transactions.length, // Show only 2 most recent
+                        padding: EdgeInsets.symmetric(
+                          vertical: 10.h,
+                        ),
                         itemBuilder: (context, index) {
+
                           final tx = transactions[index];
+
+                          final isPending = tx.status == "PENDING";
+                          final isCredit = tx.isCredit;
+
+                          final amountColor = isPending
+                              ? pendingColor
+                              : isCredit
+                              ? successColor
+                              : errorColor;
+
                           final titleText = tx.serviceType == "TOPUP"
                               ? (tx.serviceType ?? "Top Up")
-                              : (tx.isCredit
+                              : (isCredit
                               ? (tx.senderName ?? (tx.provider ?? "Transfer"))
                               : (tx.receiverName ?? (tx.provider ?? "Transfer")));
+
                           return Container(
-                              margin: EdgeInsets.only(bottom: 6.h),
-                              decoration: BoxDecoration(
-                                color: offWhite,
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: ListTile(
-                                leading: Container(
-                                  padding: EdgeInsets.all(8.r),
+                            margin: EdgeInsets.only(bottom: 14.h),
+                            padding: EdgeInsets.all(14.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(.03),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+
+                                /// ICON
+                                Container(
+                                  height: 45.w,
+                                  width: 45.w,
                                   decoration: BoxDecoration(
-                                    color: tx.status == "PENDING"
-                                        ? pendingColor.withOpacity(0.1)
-                                        : tx.isCredit
-                                        ? successColor.withOpacity(0.1)
-                                        : errorColor.withOpacity(0.1),
                                     shape: BoxShape.circle,
+                                    color: amountColor.withOpacity(.08),
                                   ),
                                   child: Icon(
-                                    tx.isCredit ? Icons.call_received : Icons.call_made,
-                                    color: tx.status == "PENDING"
-                                        ? pendingColor
-                                        : tx.isCredit
-                                        ? successColor
-                                        : errorColor,
+                                    isCredit
+                                        ? Icons.arrow_downward_rounded
+                                        : Icons.arrow_upward_rounded,
+                                    color: amountColor,
                                     size: 20.sp,
                                   ),
                                 ),
-                                title: Text(
-                                  titleText,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13.sp,
-                                    color: tx.status == "PENDING"
-                                        ? pendingColor
-                                        : lightSecondaryText,
+
+                                SizedBox(width: 14.w),
+
+                                /// TITLE + DATE
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        titleText,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14.sp,
+                                          color: darkBackground,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        formatTransactionDate(tx.createdAt),
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontSize: 11.sp,
+                                          color: lightSecondaryText,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                subtitle: Text(
-                                  formatTransactionDate(tx.createdAt),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 10.sp,
-                                    color: lightSecondaryText,
-                                  ),
-                                ),
-                                trailing: Column(
+
+                                /// AMOUNT + STATUS
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
-                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      "${tx.isCredit ? '+' : '-'}₦${tx.amount}",
-                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                      "${isCredit ? '+' : '-'}₦${tx.amount}",
+                                      style: theme.textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 13.sp,
-                                        color: tx.status == "PENDING"
-                                            ? pendingColor
-                                            : tx.isCredit
-                                            ? successTextColor
-                                            : errorColor,
+                                        fontSize: 15.sp,
+                                        color: amountColor,
                                       ),
                                     ),
-
-                                    SizedBox(height: 2.h),
-
-                                    /// BADGE
+                                    SizedBox(height: 6.h),
                                     Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 10.w,
+                                        vertical: 4.h,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: tx.status == "PENDING"
-                                            ? pendingColor.withOpacity(0.1)
-                                            : tx.isCredit
-                                            ? successColor.withOpacity(0.1)
-                                            : errorColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(4.r),
+                                        color: amountColor.withOpacity(.08),
+                                        borderRadius: BorderRadius.circular(50.r),
                                       ),
                                       child: Text(
                                         tx.status ?? "",
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 8.sp,
-                                          color: tx.status == "PENDING"
-                                              ? pendingColor
-                                              : tx.isCredit
-                                              ? successTextColor
-                                              : errorColor,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 9.sp,
+                                          color: amountColor,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              )
+                              ],
+                            ),
                           );
                         },
                       );

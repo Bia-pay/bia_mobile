@@ -22,19 +22,16 @@ class DepositResponseModel {
 
 class DepositData {
   final String authorizationUrl;
-  final String accessCode;
   final String reference;
 
   DepositData({
     required this.authorizationUrl,
-    required this.accessCode,
     required this.reference,
   });
 
   factory DepositData.fromJson(Map<String, dynamic> json) {
     return DepositData(
-      authorizationUrl: json["authorization_url"] ?? "",
-      accessCode: json["access_code"] ?? "",
+      authorizationUrl: json["authorizationUrl"] ?? "",
       reference: json["reference"] ?? "",
     );
   }
