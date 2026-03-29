@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:media_store_plus/media_store_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
@@ -39,72 +40,136 @@ class SuccessScreen extends StatefulWidget {
 
 class _SuccessScreenState extends State<SuccessScreen> {
   final GlobalKey _boundaryKey = GlobalKey();
+  bool _isProcessing = false;
 
-  Future<File> _captureAndSave() async {
-    final boundary =
-    _boundaryKey.currentContext!.findRenderObject()
-    as RenderRepaintBoundary;
+  Future<File?> _captureAndSave() async {
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+      as RenderRepaintBoundary?;
 
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-    ByteData? byteData =
-    await image.toByteData(format: ui.ImageByteFormat.png);
+      if (boundary == null) {
+        _showError('Unable to capture screenshot');
+        return null;
+      }
 
-    Uint8List pngBytes = byteData!.buffer.asUint8List();
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-    final directory = await getTemporaryDirectory();
-    final file =
-    File('${directory.path}/transaction_success.png');
-    await file.writeAsBytes(pngBytes);
+      if (byteData == null) {
+        _showError('Failed to process image');
+        return null;
+      }
 
-    return file;
+      final pngBytes = byteData.buffer.asUint8List();
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/transaction_success.png');
+      await file.writeAsBytes(pngBytes);
+
+      return file;
+    } catch (e) {
+      debugPrint("Capture error: $e");
+      _showError('Failed to capture receipt');
+      return null;
+    }
   }
 
-
   Future<void> _downloadToGallery() async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
     try {
-      final boundary = _boundaryKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+      as RenderRepaintBoundary?;
 
-      if (boundary == null) return;
+      if (boundary == null) {
+        _showError('Unable to capture image');
+        return;
+      }
 
-      final image =
-      await boundary.toImage(pixelRatio: 3.0);
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-      final byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        _showError('Failed to process image');
+        return;
+      }
 
-      if (byteData == null) return;
-
-      final Uint8List pngBytes =
-      byteData.buffer.asUint8List();
-
+      final pngBytes = byteData.buffer.asUint8List();
+      final tempPath = await _writeTempFile(pngBytes);
       final mediaStore = MediaStore();
 
       await mediaStore.saveFile(
-        tempFilePath: await _writeTempFile(pngBytes),
+        tempFilePath: tempPath,
         dirType: DirType.photo,
         dirName: DirName.pictures,
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Saved to gallery"),
-          ),
-        );
+        _showSuccess('Saved to gallery');
       }
     } catch (e) {
       debugPrint("Download error: $e");
+      _showError('Failed to save to gallery');
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
   }
 
   Future<String> _writeTempFile(Uint8List bytes) async {
-    final tempDir = await Directory.systemTemp.createTemp();
-    final file =
-    File('${tempDir.path}/payment_success.png');
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/payment_success_${DateTime.now().millisecondsSinceEpoch}.png');
     await file.writeAsBytes(bytes);
     return file.path;
   }
+
+  Future<void> _handleShare() async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
+    try {
+      final file = await _captureAndSave();
+      if (file != null && mounted) {
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: "Payment Successful - ₦${widget.amount ?? '0.00'}",
+        );
+      }
+    } catch (e) {
+      debugPrint("Share error: $e");
+      _showError('Failed to share receipt');
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: successColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+      ),
+    );
+  }
+
+  String get _formattedDate {
+    return DateFormat('MMM dd, yyyy • HH:mm').format(DateTime.now());
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -116,188 +181,66 @@ class _SuccessScreenState extends State<SuccessScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final screenWidth = constraints.maxWidth;
-            final badgeSize = screenWidth * 0.32;
+            final screenHeight = constraints.maxHeight;
+            final isSmallHeight = screenHeight < 700;
+            final isNarrow = screenWidth < 360;
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
+            // Responsive calculations
+            final badgeSize = isSmallHeight
+                ? screenWidth * 0.22
+                : (isNarrow ? screenWidth * 0.28 : screenWidth * 0.32);
 
-                      SizedBox(height: 30.h),
+            final verticalSpacing = isSmallHeight ? 10.h : 20.h;
+            final horizontalPadding = isNarrow ? 16.w : screenWidth * 0.05;
 
-                      /// ===== SUCCESS BADGE =====
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: badgeSize,
-                            height: badgeSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  successColor,
-                                  successColor.withOpacity(.8),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: successColor.withOpacity(.25),
-                                  blurRadius: 40,
-                                  spreadRadius: 8,
-                                )
-                              ],
-                            ),
-                          ),
-                          SvgPicture.asset(
-                            successs,
-                            height: badgeSize * 1.2,
-                          ),
-                        ],
-                      ),
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Column(
+                children: [
+                  SizedBox(height: isSmallHeight ? 12.h : 24.h),
 
-                      SizedBox(height: 25.h),
+                  // Success Badge
+                  _buildSuccessBadge(badgeSize),
 
-                      /// ================= CAPTURE AREA =================
-                      RepaintBoundary(
-                        key: _boundaryKey,
-                        child: Container(
-                          color: Colors.white,
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(vertical: 10.h),
-                          child: Column(
-                            children: [
+                  SizedBox(height: verticalSpacing),
 
-                              Text(
-                                "Payment Successful",
-                                style: textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 20.spMin,
-                                  color: darkBackground,
-                                ),
-                              ),
-
-                              SizedBox(height: 12.h),
-
-                              Text(
-                                "₦${widget.amount ?? "0.00"}",
-                                style: textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 34.spMin,
-                                  color: darkBackground,
-                                ),
-                              ),
-
-                              SizedBox(height: 20.h),
-
-                              Container(
-                                margin: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.05,
-                                ),
-                                padding: EdgeInsets.all(20.w),
-                                decoration: BoxDecoration(
-                                  borderRadius:
-                                  BorderRadius.circular(24.r),
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black
-                                          .withOpacity(.05),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    )
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    _lightRow("Recipient",
-                                        widget.recipientName ?? "-"),
-                                    _lightDivider(),
-                                    _lightRow("Account",
-                                        widget.recipientAccount ?? "-"),
-                                    _lightDivider(),
-                                    _lightRow("Reference",
-                                        widget.reference ?? "-"),
-                                    _lightDivider(),
-                                    _lightRow("Channel",
-                                        widget.channel ?? "Transfer"),
-                                    _lightDivider(),
-                                    _lightRow(
-                                      "Date",
-                                      DateTime.now()
-                                          .toString()
-                                          .substring(0, 16),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              SizedBox(height: 30.h),
-                            ],
-                          ),
-                        ),
-                      ),
-                      /// ================= END CAPTURE AREA =================
-
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenWidth * 0.05,
-                          vertical: 10.h,
-                        ),
-                        child: Row(
+                  // Capture Area
+                  Expanded(
+                    child: RepaintBoundary(
+                      key: _boundaryKey,
+                      child: Container(
+                        color: Colors.white, // Ensure white background for capture
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: _lightActionButton(
-                                icon: Icons.share,
-                                label: "Share",
-                                onTap: () async {
-                                  final file =
-                                  await _captureAndSave();
-                                  await Share.shareXFiles(
-                                    [XFile(file.path)],
-                                    text:
-                                    "Payment Successful",
-                                  );
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 15.w),
-                            Expanded(
-                              child: _lightActionButton(
-                                icon: Icons.download,
-                                label: "Download",
-                                onTap: _downloadToGallery,
-                              ),
-                            ),
+                            _buildTitle(textTheme, isSmallHeight),
+                            SizedBox(height: 8.h),
+                            _buildAmount(textTheme, isSmallHeight),
+                            SizedBox(height: verticalSpacing),
+                            _buildDetailsCard(isSmallHeight, isNarrow),
                           ],
                         ),
                       ),
-
-                      const Spacer(),
-
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenWidth * 0.05,
-                        ),
-                        child: CustomButton(
-                          buttonName: "Done",
-                          buttonColor: primaryColor,
-                          buttonTextColor: Colors.white,
-                          onPressed: () =>
-                              context.pushNamed(
-                                  RouteList.bottomNavBar),
-                        ),
-                      ),
-
-                      SizedBox(height: 25.h),
-                    ],
+                    ),
                   ),
-                ),
+
+                  SizedBox(height: verticalSpacing),
+
+                  // Action Buttons
+                  _buildActionButtons(),
+
+                  SizedBox(height: verticalSpacing),
+
+                  // Done Button
+                  CustomButton(
+                    buttonName: "Done",
+                    buttonColor: primaryColor,
+                    buttonTextColor: Colors.white,
+                    onPressed: () => context.pushNamed(RouteList.bottomNavBar),
+                  ),
+
+                  SizedBox(height: 16.h),
+                ],
               ),
             );
           },
@@ -306,72 +249,241 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-
-  Widget _lightRow(String title, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 14.h),
-      child: Row(
-        mainAxisAlignment:
-        MainAxisAlignment.spaceBetween,
+  Widget _buildSuccessBadge(double badgeSize) {
+    return Hero(
+      tag: 'success_badge',
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 14.sp,
+          Container(
+            width: badgeSize,
+            height: badgeSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  successColor,
+                  successColor.withOpacity(0.7),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: successColor.withOpacity(0.3),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
           ),
-          Flexible(
+          SvgPicture.asset(
+            successs,
+            height: badgeSize * 1.1,
+            width: badgeSize * 1.1,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitle(TextTheme textTheme, bool isSmallHeight) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        "Payment Successful",
+        style: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          fontSize: isSmallHeight ? 18.sp : 22.sp,
+          color: darkBackground,
+          letterSpacing: -0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAmount(TextTheme textTheme, bool isSmallHeight) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        "₦${widget.amount ?? "0.00"}",
+        style: textTheme.headlineMedium?.copyWith(
+          fontWeight: FontWeight.w900,
+          fontSize: isSmallHeight ? 28.sp : 36.sp,
+          color: darkBackground,
+          letterSpacing: -1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailsCard(bool isSmallHeight, bool isNarrow) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isSmallHeight ? 12.w : 20.w),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20.r),
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDetailRow("Recipient", widget.recipientName ?? "-", isNarrow),
+          _buildDivider(),
+          _buildDetailRow("Account", widget.recipientAccount ?? "-", isNarrow),
+          _buildDivider(),
+          _buildDetailRow("Reference", widget.reference ?? "-", isNarrow),
+          _buildDivider(),
+          _buildDetailRow("Channel", widget.channel ?? "Transfer", isNarrow),
+          _buildDivider(),
+          _buildDetailRow("Date", _formattedDate, isNarrow),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String title, String value, bool isNarrow) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: isNarrow ? 10.h : 14.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              title,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: isNarrow ? 12.sp : 14.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
             child: Text(
               value,
               textAlign: TextAlign.right,
               style: TextStyle(
                 color: darkBackground,
-                fontSize: 15.sp,
+                fontSize: isNarrow ? 13.sp : 15.sp,
                 fontWeight: FontWeight.w600,
+                height: 1.3,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
       ),
     );
   }
-  Widget _lightDivider() {
+
+  Widget _buildDivider() {
     return Divider(
-      color: Colors.grey.shade200,
+      color: Colors.grey.shade100,
       thickness: 1,
+      height: 1,
     );
   }
-  Widget _lightActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14.r),
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(
-            color: primaryColor,
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: _ActionButton(
+            icon: Icons.share_outlined,
+            label: "Share",
+            onTap: _isProcessing ? null : _handleShare,
+            isLoading: _isProcessing,
           ),
-          color: secondaryColor,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: darkBackground),
-            SizedBox(width: 8.w),
-            Text(
-              label,
-              style: TextStyle(
-                color: darkBackground,
-                fontWeight: FontWeight.w600,
+        SizedBox(width: 12.w),
+        Expanded(
+          child: _ActionButton(
+            icon: Icons.download_outlined,
+            label: "Download",
+            onTap: _isProcessing ? null : _downloadToGallery,
+            isLoading: _isProcessing,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12.r),
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: onTap == null ? Colors.grey.shade300 : primaryColor,
+              width: 1.5,
+            ),
+            color: onTap == null ? Colors.grey.shade50 : secondaryColor,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  height: 18.w,
+                  width: 18.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      onTap == null ? Colors.grey : darkBackground,
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  icon,
+                  color: onTap == null ? Colors.grey : darkBackground,
+                  size: 18.sp,
+                ),
+              SizedBox(width: 8.w),
+              Text(
+                label,
+                style: TextStyle(
+                  color: onTap == null ? Colors.grey : darkBackground,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.sp,
+                ),
               ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

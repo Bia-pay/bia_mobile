@@ -5,11 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/image.dart';
-import '../../../app/view/widget/app_bar.dart';
 import '../../../core/helper/helper.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
 
@@ -22,28 +20,31 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   bool showMore = false;
+
   Future<void> _handleRefresh() async {
     final txFuture = ref.read(recentTransactionsProvider.notifier).refresh();
-    final walletFuture = ref.read(dashboardControllerProvider.notifier)
+    final walletFuture = ref
+        .read(dashboardControllerProvider.notifier)
         .refreshWalletBalance();
 
     await Future.wait([txFuture, walletFuture] as Iterable<Future<dynamic>>);
   }
+
   List<Map<String, dynamic>> _quickActions(BuildContext context) => [
     {
       'label': 'Airtime',
       'icon': Icon(Icons.bar_chart, color: primaryColor),
-      'onTap': () => context.pushReplacementNamed(RouteList.airtime),
+      'onTap': () => context.pushNamed(RouteList.airtime),
     },
     {
       'label': 'Data',
       'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
-      'onTap': () => context.pushReplacementNamed(RouteList.data),
+      'onTap': () => context.pushNamed(RouteList.data),
     },
     {
       'label': 'Cable TV',
       'icon': Icon(Icons.tv, color: primaryColor),
-      'onTap': () => context.pushReplacementNamed(RouteList.cable),
+      'onTap': () => context.pushNamed(RouteList.cable),
     },
     {
       'label': 'Tiktok Coin',
@@ -62,7 +63,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     },
   ];
 
-
   @override
   void initState() {
     super.initState();
@@ -72,6 +72,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       });
     });
   }
+
   Future<void> _checkPinStatus() async {
     final box = Hive.box('authBox');
     final hasPin = box.get('has_pin', defaultValue: false);
@@ -81,452 +82,502 @@ class _HomePageState extends ConsumerState<HomePage> {
       context.go(RouteList.setTransactionPin);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'User');
     final picture = box.get('picture');
+
     return Scaffold(
       backgroundColor: offWhiteBackground,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _handleRefresh,
-          child: ListView(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 1.h),
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: 45.h,
-                        width: 45.w,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(100),
-                          border: Border.all(color: primaryColor),
-                        ),
-                        child: ClipOval(
-                          child: picture != null && picture.toString().isNotEmpty
-                              ? Image.network(
-                            picture,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                Image.asset(appLogoPng),
-                          )
-                              : Image.asset(appLogoPng),
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hello,',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: lightSecondaryText,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                          Text(
-                            fullname,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: lightText,
-                              fontSize: 13.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return RefreshIndicator(
+              onRefresh: _handleRefresh,
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                    maxHeight: constraints.maxHeight,
                   ),
-                  GestureDetector(
-                    onTap: () => context.pushNamed(RouteList.notification),
-                    child: Container(
-                      height: 45.h,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: SvgPicture.asset(bell),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10.h),
-              BalanceCard(),
-              SizedBox(height: 10.h),
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 14.h, ),
-                decoration: BoxDecoration(
-                  color: offWhite,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ActionButton(
-                      label: 'Send TP      ',
-                      icon: SvgPicture.asset(send),
-                      onTap: () => context.pushNamed(
-                        RouteList.sendMoneyTransfer,
-                      ),
-                    ),
-                    Stack(
-                      clipBehavior: Clip.none,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 8.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ActionButton(
-                          label: 'Bia Trike',
-                          icon: Icon(Icons.car_crash_sharp, color: primaryColor),
-                          onTap: () {
-                            // Optional: show a SnackBar
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Bia Trike coming soon!')),
-                            );
-                          },
-                        ),
-                        Positioned(
-                          top: -5.h,
-                          right: -20.w,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: primaryGreenColor,
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: Text(
-                              'Coming Soon',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 6.sp,
-                                color: whiteBackground,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    ActionButton(
-                      label: 'Withdrawal',
-                      icon: Image.asset(atm, height: 21.h),
-                      onTap: () => context.pushNamed(
-                        RouteList.sendMoneyToBank,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'Quick Actions',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13.sp,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 15.w),
-                decoration: BoxDecoration(
-                  color: offWhite,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    // FIRST ROW (exactly 4 items)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset(mic,height: 50.h,
-                          color: primaryColor,
-                        ), SvgPicture.asset(chatting,height: 50.h,
-                          color: primaryColor,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5.h),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Bia AI',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13.sp,
-                            color: primaryColor,
-
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () => context.pushNamed(
-                            RouteList.transactionHistory,
-                          ),
-                          child:Icon(Icons.arrow_forward_ios_sharp,size: 12.sp, color: primaryColor ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 10.h),
-
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 5.w),
-                decoration: BoxDecoration(
-                  color: offWhite,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    // FIRST ROW (exactly 4 items)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: _quickActions(context)
-                          .take(4)
-                          .map((item) => QuickActionButton(
-                        label: item['label'],
-                        icon: item['icon'],
-                        onTap: item['onTap'],
-                      ))
-                          .toList(),
-                    ),
-
-                    SizedBox(height: 5.h),
-
-                    // SECOND ROW (only visible if showMore)
-                    if (showMore)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: _quickActions(context)
-                            .skip(4)
-                            .map((item) => QuickActionButton(
-                          label: item['label'],
-                          icon: item['icon'],
-                          onTap: item['onTap'],
-                        ))
-                            .toList(),
-                      ),
-
-
-                    // MORE / LESS TOGGLE
-                    GestureDetector(
-                      onTap: () => setState(() => showMore = !showMore),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            showMore ? "Less" : "More",
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: primaryColor,
-                            ),
-                          ),
-                          Icon(
-                            showMore ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            color: primaryColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Transaction History',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13.sp,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => context.pushNamed(
-                      RouteList.transactionHistory,
-                    ),
-                    child: Text(
-                      'View all',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w300,
-                        fontSize: 10.sp,
-                        color: lightSecondaryText,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              Consumer(
-                builder: (context, ref, _) {
-                  final asyncTx = ref.watch(recentTransactionsProvider);
-                  return asyncTx.when(
-                    data: (transactions) {
-                      if (transactions.isEmpty) {
-                        return const Center(child: Column(
+                        // Header Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.receipt, size: 60, color: inactiveColor,),
-                            Text("No recent transactions")
-]
-                        ));
-                      }
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: transactions.length > 2 ? 2 : transactions.length,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          vertical: 10.h,
-                        ),
-                        itemBuilder: (context, index) {
-
-                          final tx = transactions[index];
-
-                          final isPending = tx.status == "PENDING";
-                          final isCredit = tx.isCredit;
-
-                          final amountColor = isPending
-                              ? pendingColor
-                              : isCredit
-                              ? successColor
-                              : errorColor;
-
-                          final titleText = tx.serviceType == "TOPUP"
-                              ? (tx.serviceType ?? "Top Up")
-                              : (isCredit
-                              ? (tx.senderName ?? (tx.provider ?? "Transfer"))
-                              : (tx.receiverName ?? (tx.provider ?? "Transfer")));
-
-                          return Container(
-                            margin: EdgeInsets.only(bottom: 14.h),
-                            padding: EdgeInsets.all(14.w),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(.03),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Row(
+                            Row(
                               children: [
-
-                                /// ICON
                                 Container(
-                                  height: 45.w,
-                                  width: 45.w,
+                                  height: 45.r,
+                                  width: 45.r,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: amountColor.withOpacity(.08),
+                                    border: Border.all(color: primaryColor),
                                   ),
-                                  child: Icon(
-                                    isCredit
-                                        ? Icons.arrow_downward_rounded
-                                        : Icons.arrow_upward_rounded,
-                                    color: amountColor,
-                                    size: 20.sp,
-                                  ),
-                                ),
-
-                                SizedBox(width: 14.w),
-
-                                /// TITLE + DATE
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        titleText,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.bodyLarge?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14.sp,
-                                          color: darkBackground,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.h),
-                                      Text(
-                                        formatTransactionDate(tx.createdAt),
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontSize: 11.sp,
-                                          color: lightSecondaryText,
-                                        ),
-                                      ),
-                                    ],
+                                  child: ClipOval(
+                                    child:
+                                        picture != null &&
+                                            picture.toString().isNotEmpty
+                                        ? Image.network(
+                                            picture,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Image.asset(appLogoPng),
+                                          )
+                                        : Image.asset(appLogoPng),
                                   ),
                                 ),
-
-                                /// AMOUNT + STATUS
+                                SizedBox(width: 10.w),
                                 Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "${isCredit ? '+' : '-'}₦${tx.amount}",
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 15.sp,
-                                        color: amountColor,
-                                      ),
+                                      'Hello,',
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            color: lightSecondaryText,
+                                            fontSize: 12.sp,
+                                          ),
                                     ),
-                                    SizedBox(height: 6.h),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 10.w,
-                                        vertical: 4.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: amountColor.withOpacity(.08),
-                                        borderRadius: BorderRadius.circular(50.r),
-                                      ),
-                                      child: Text(
-                                        tx.status ?? "",
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 9.sp,
-                                          color: amountColor,
-                                        ),
-                                      ),
+                                    Text(
+                                      fullname,
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            color: lightText,
+                                            fontSize: 13.sp,
+                                          ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text("Error: $e")),
-                  );
-                },
+                            GestureDetector(
+                              onTap: () =>
+                                  context.pushNamed(RouteList.notification),
+                              child: Container(
+                                height: 45.h,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                child: SvgPicture.asset(bell),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10.h),
+
+                        // Balance Card
+                        BalanceCard(),
+                        SizedBox(height: 15.h),
+
+                        // Action Buttons Row
+                        buildContainer(context, theme),
+                        SizedBox(height: 13.h),
+
+                        // Quick Actions Title
+                        Text(
+                          'Quick Actions',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+
+                        // Bia AI Section
+                        buildContainerTwo(theme, context),
+                        SizedBox(height: 15.h),
+
+                        // Quick Actions Grid
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 15.h,
+                            horizontal: 5.w,
+                          ),
+                          decoration: BoxDecoration(
+                            color: offWhite,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // First Row
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: _quickActions(context)
+                                    .take(4)
+                                    .map(
+                                      (item) => QuickActionButton(
+                                        label: item['label'],
+                                        icon: item['icon'],
+                                        onTap: item['onTap'],
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                              SizedBox(height: 5.h),
+
+                              // Second Row (conditional)
+                              if (showMore)
+                                Padding(
+                                  padding: EdgeInsets.only(top: 10.h),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: _quickActions(context)
+                                        .skip(4)
+                                        .map(
+                                          (item) => QuickActionButton(
+                                            label: item['label'],
+                                            icon: item['icon'],
+                                            onTap: item['onTap'],
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+
+                              // Toggle
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => showMore = !showMore),
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 10.h),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        showMore ? "Less" : "More",
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: primaryColor,
+                                        ),
+                                      ),
+                                      Icon(
+                                        showMore
+                                            ? Icons.keyboard_arrow_up
+                                            : Icons.keyboard_arrow_down,
+                                        color: primaryColor,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
+
+                        // Transaction History Header
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Transaction History',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.sp,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => context.pushNamed(
+                                RouteList.transactionHistory,
+                              ),
+                              child: Text(
+                                'View all',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w300,
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8.h),
+
+                        // Transaction List - Takes remaining space
+                        buildExpanded(theme),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
+
+  Container buildContainerTwo(ThemeData theme, BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 15.w),
+      decoration: BoxDecoration(
+        color: offWhite,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(mic, height: 50.h, color: primaryColor),
+              SvgPicture.asset(chatting, height: 50.h, color: primaryColor),
+            ],
+          ),
+          SizedBox(height: 5.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Bia AI',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.sp,
+                  color: primaryColor,
+                ),
+              ),
+              GestureDetector(
+                onTap: () => context.pushNamed(RouteList.transactionHistory),
+                child: Icon(
+                  Icons.arrow_forward_ios_sharp,
+                  size: 12.sp,
+                  color: primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Container buildContainer(BuildContext context, ThemeData theme) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 14.h),
+      decoration: BoxDecoration(
+        color: offWhite,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ActionButton(
+            label: 'Send TP      ',
+            icon: SvgPicture.asset(send),
+            onTap: () => context.pushNamed(RouteList.sendMoneyTransfer),
+          ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ActionButton(
+                label: 'Bia Trike',
+                icon: Icon(Icons.car_crash_sharp, color: primaryColor),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bia Trike coming soon!')),
+                  );
+                },
+              ),
+              Positioned(
+                top: -5.h,
+                right: -20.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: primaryGreenColor,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    'Coming Soon',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 6.sp,
+                      color: whiteBackground,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          ActionButton(
+            label: 'Withdrawal',
+            icon: Image.asset(atm, height: 21.h),
+            onTap: () => context.pushNamed(RouteList.sendMoneyToBank),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Expanded buildExpanded(ThemeData theme) {
+    return Expanded(
+      child: Consumer(
+        builder: (context, ref, _) {
+          final asyncTx = ref.watch(recentTransactionsProvider);
+          return asyncTx.when(
+            data: (transactions) {
+              if (transactions.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.receipt, size: 60, color: inactiveColor),
+                      Text("No recent transactions"),
+                    ],
+                  ),
+                );
+              }
+              return ListView.builder(
+                shrinkWrap: true,
+                itemCount: transactions.length > 2 ? 2 : transactions.length,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemBuilder: (context, index) {
+                  final tx = transactions[index];
+                  final isPending = tx.status == "PENDING";
+                  final isCredit = tx.isCredit;
+                  final amountColor = isPending
+                      ? pendingColor
+                      : isCredit
+                      ? successColor
+                      : errorColor;
+                  final titleText = tx.serviceType == "TOPUP"
+                      ? (tx.serviceType ?? "Top Up")
+                      : (isCredit
+                            ? (tx.senderName ?? (tx.provider ?? "Transfer"))
+                            : (tx.receiverName ?? (tx.provider ?? "Transfer")));
+
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 7.h),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 9.h,
+                      horizontal: 10.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: offWhite,
+                      borderRadius: BorderRadius.circular(16.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(.03),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 40.w,
+                          width: 40.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: amountColor.withOpacity(.08),
+                          ),
+                          child: Icon(
+                            isCredit
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: amountColor,
+                            size: 18.sp,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                titleText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12.sp,
+                                  color: darkBackground,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                formatTransactionDate(tx.createdAt),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              "${isCredit ? '+' : '-'}₦${tx.amount}",
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14.sp,
+                                color: amountColor,
+                              ),
+                            ),
+                            SizedBox(height: 5.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: amountColor.withOpacity(.08),
+                                borderRadius: BorderRadius.circular(50.r),
+                              ),
+                              child: Text(
+                                tx.status ?? "",
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 7.sp,
+                                  color: amountColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text("Error: $e")),
+          );
+        },
+      ),
+    );
+  }
 }
+
 class BalanceCard extends ConsumerWidget {
   const BalanceCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-
-    // Wallet visibility state
     final isVisible = ref.watch(balanceVisibilityProvider);
-
-    // Wallet balance from controller
     final walletState = ref.watch(dashboardControllerProvider);
 
     final wallet = walletState.when(
@@ -535,16 +586,13 @@ class BalanceCard extends ConsumerWidget {
       error: (_, __) => null,
     );
 
-    final rawBalance =
-        wallet?.balance ??
-            Hive.box('authBox').get('balance');
-
+    final rawBalance = wallet?.balance ?? Hive.box('authBox').get('balance');
     final balance = (rawBalance == null || rawBalance.toString() == 'null')
         ? '0'
         : rawBalance.toString();
     final formattedBalance = balance.replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
+      (m) => '${m[1]},',
     );
 
     return Container(
@@ -556,7 +604,6 @@ class BalanceCard extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// Left side: Label + Balance + Eye Icon
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -570,24 +617,20 @@ class BalanceCard extends ConsumerWidget {
                     ),
                   ),
                   SizedBox(width: 8.w),
-
-                  /// 👁 Visibility Toggle
                   GestureDetector(
                     onTap: () {
                       ref.read(balanceVisibilityProvider.notifier).state =
-                      !isVisible;
+                          !isVisible;
                     },
                     child: Icon(
                       isVisible ? Icons.visibility : Icons.visibility_off,
                       size: 16.sp,
                       color: Colors.white,
                     ),
-                  )
+                  ),
                 ],
               ),
               SizedBox(height: 4.h),
-
-              /// Balance display
               Text(
                 isVisible
                     ? '${Constants.nairaCurrencySymbol}$formattedBalance'
@@ -600,8 +643,6 @@ class BalanceCard extends ConsumerWidget {
               ),
             ],
           ),
-
-          /// ➕ Add Money Button
           GestureDetector(
             onTap: () => context.pushNamed(RouteList.topUp),
             child: Container(
@@ -631,7 +672,7 @@ class BalanceCard extends ConsumerWidget {
     );
   }
 }
-/// 🔹 Extracted Action Button Widget
+
 class ActionButton extends StatelessWidget {
   final String label;
   final Widget icon;
@@ -675,7 +716,6 @@ class ActionButton extends StatelessWidget {
   }
 }
 
-/// 🔹 Extracted Quick Action Widget
 class QuickActionButton extends StatelessWidget {
   final String label;
   final Widget icon;

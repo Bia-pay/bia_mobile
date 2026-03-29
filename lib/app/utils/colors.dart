@@ -11,6 +11,19 @@ const whiteBackground = Color(0xFFFFFFFF);
 const lightgray = Color(0xFFF5F5F5);
 const blackColorOp = Color(0x0D000000);
 
+/// 🌤️ GREY THEME COLORS
+const grey =  Color(0xFF9E9E9E);
+const grey50 = Color(0xFFFAFAFA);
+const grey100 =  Color(0xFFF5F5F5);
+const grey200 = Color(0xFFEEEEEE);
+const grey300 = Color(0xFFE0E0E0);
+const grey400 = Color(0xFFBDBDBD);
+const grey500 = Color(0xFF9E9E9E);
+const grey600 = Color(0xFF757575);
+const grey700 = Color(0xFF616161);
+const grey800 = Color(0xFF424242);
+const grey900 = Color(0xFF212121);
+
 /// 🌤️ LIGHT THEME COLORS
 const lightBackground = Color(0xFFFFFFFF);
 const offWhiteBackground = Color(0xFFF6F6F6);
@@ -33,6 +46,7 @@ const errorColor = Color(0xFFEF4444); // bright red
 const successColor = Color(0xFF22C55E);
 const Color pendingColor = Color(0xFFFFA000);
 const primaryGreenColor = Color(0xFF49C25B);
+const primaryGreenColor600 = Color(0xFF43A047);
 const successTextColor = Color(0xFF1A9C47); // main green for success messages, icons
 const successLight = Color(0xFFD1FAE5); // light green background for containers, badges,
 const errorLight = Color(0xFFFEE2E2); // light red background for icons, containers, etc.
@@ -42,6 +56,10 @@ const darkSurface = Color(0xFF1A1A1A);
 const darkText = Color(0xFFF9FAFB);
 const darkSecondaryText = Color(0xFFD0D5DD);
 const darkBorderColor = Color(0xFF2E2E2E);
+const transparent = Color(0x00000000);
+const semiTransparentBlack = Color(0xDD000000);
+const transparentBlack54 = Color(0x8A000000);
+const transparentBlack87 = Color(0xDD000000);
 
 /// ⚙️ SHARED NEUTRALS
 const Color kGray = Color(0xFF757575);

@@ -1,5 +1,3 @@
-import '../../../dashboard/model/dashboard_model.dart';
-
 class ResponseModel {
   final String responseMessage;
   final bool responseSuccessful;
@@ -30,12 +28,26 @@ class ResponseBody {
   final WalletResponse? wallet;
   final String? accessToken;
   final String? refreshToken;
+  final String? status;
+
+  // ✅ ADD THESE
+  final String? reference;
+  final int? transactionId;
+  final dynamic amount;
+  final dynamic senderBalance;
+  final String? receiverName;
 
   ResponseBody({
     this.user,
     this.wallet,
     this.accessToken,
     this.refreshToken,
+    this.reference,
+    this.transactionId,
+    this.amount,
+    this.senderBalance,
+    this.receiverName,
+    this.status,
   });
 
   factory ResponseBody.fromJson(Map<String, dynamic> json) {
@@ -44,6 +56,14 @@ class ResponseBody {
       wallet: json['wallet'] != null ? WalletResponse.fromJson(json['wallet']) : null,
       accessToken: json['accessToken'],
       refreshToken: json['refreshToken'],
+
+      // ✅ ADD THESE
+      reference: json['reference'],
+      status: json['status'],
+      transactionId: json['transactionId'],
+      amount: json['amount'],
+      senderBalance: json['senderBalance'],
+      receiverName: json['receiverName'],
     );
   }
 }

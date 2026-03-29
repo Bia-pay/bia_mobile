@@ -155,6 +155,7 @@ class _CompleteTransactionBottomSheetState
                           recipientName: widget.recipientName,
                           amount: total,
                           saveAsBeneficiary: _saveAsBeneficiary,
+                          type: "transfer",
                         ),
                       ),
                     );

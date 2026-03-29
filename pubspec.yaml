@@ -42,6 +42,12 @@ dependencies:
   flutter_easyloading: ^3.0.5
   flutter_riverpod:
   hive: ^2.2.3
+  local_auth_android: ^1.0.46  # Android-specific
+  local_auth_darwin: ^1.4.2    # iOS/macOS
+  flutter_secure_storage: ^9.2.2  # Secure credential storage
+  crypto: ^3.0.6
+  device_info_plus: ^10.1.0
+  network_info_plus: ^4.1.0
   pin_code_fields: ^8.0.0
   hive_flutter: ^1.1.0
   flutter_screenutil: ^5.9.3
@@ -70,6 +76,7 @@ dependencies:
   flutter_animate: ^4.5.2
   google_fonts: ^7.0.2
   pinput: ^6.0.1
+  flutter_contacts: ^1.1.9+2
 dev_dependencies:
   flutter_test:
     sdk: flutter

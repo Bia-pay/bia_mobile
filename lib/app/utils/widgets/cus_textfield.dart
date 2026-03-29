@@ -22,7 +22,7 @@ class CustomTextField extends StatefulWidget {
   final double? borderRadius;
   final int? maxLines;
   final int? minLines;
-
+  final int? maxLength;
   const CustomTextField({
     super.key,
     this.label,
@@ -44,6 +44,8 @@ class CustomTextField extends StatefulWidget {
     this.borderRadius,
     this.maxLines = 1,
     this.minLines,
+    this.maxLength,
+
   });
 
   @override

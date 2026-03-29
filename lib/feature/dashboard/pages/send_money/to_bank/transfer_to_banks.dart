@@ -9,8 +9,6 @@ import '../../../../../app/view/widget/app_bar.dart';
 import '../../../../../app/view/widget/app_search_field.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../model/bank_model.dart';
-import '../../../model/favourite_beneficiary.dart';
-import '../../../model/recent_transfer.dart';
 import '../widget/tabs.dart';
 
 class SendMoneyToBank extends ConsumerStatefulWidget {
@@ -27,7 +25,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   List<BankModel> banks = [];
   List<BankModel> filteredBanks = []; // For search
   bool isLoadingBanks = true;
-
+  String? accountError;
   // Verification state (same pattern as your Bia-to-Bia)
   bool isVerified = false;
   String? verifiedName;
@@ -71,28 +69,14 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
     });
   }
 
-  void _filterBanks(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        filteredBanks = banks;
-      } else {
-        filteredBanks = banks
-            .where((bank) =>
-        bank.bankName.toLowerCase().contains(query.toLowerCase()) ||
-            bank.bankCode.contains(query))
-            .toList();
-      }
-    });
-  }
-
   Future<void> _verifyAccountFromInput(String accountNumber) async {
     if (selectedBank == null) {
-      // Show bank selector first if no bank selected
       _showBankSelector();
       return;
     }
 
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
+
     final result = await dashboardCtrl.verifyBankAccount(
       context,
       accountNumber: accountNumber.trim(),
@@ -106,6 +90,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
         verifiedAccount = result?.responseBody?.accountNumber;
         verifiedBankCode = selectedBank?.bankCode;
         verifiedBankName = selectedBank?.bankName;
+        accountError = null;
       });
     } else {
       setState(() {
@@ -114,10 +99,29 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
         verifiedAccount = null;
         verifiedBankCode = null;
         verifiedBankName = null;
+        String errorMessage = "Account not found";
+
+        final backendMessage = result?.responseMessage ?? "";
+
+        if (backendMessage.contains("400")) {
+          errorMessage = "Account number not found for this bank";
+        } else if (backendMessage.toLowerCase().contains("timeout")) {
+          errorMessage = "Verification failed. Check your connection.";
+        } else if (backendMessage.isNotEmpty) {
+          errorMessage = "Unable to verify account";
+        }
+
+        setState(() {
+          isVerified = false;
+          verifiedName = null;
+          verifiedAccount = null;
+          verifiedBankCode = null;
+          verifiedBankName = null;
+          accountError = errorMessage;
+        });
       });
     }
   }
-
   void _goToAmountPage(BuildContext context, String name, String account) {
     context.pushNamed(
       RouteList.bankAmountPage,
@@ -140,7 +144,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
           return Container(
@@ -179,7 +183,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                   child: Container(
                     height: 50.h,
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: grey100,
                       borderRadius: BorderRadius.circular(12.r),
                       border: Border.all(color: lightBorderColor),
                     ),
@@ -187,7 +191,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                       autofocus: true,
                       decoration: InputDecoration(
                         hintText: 'Search banks...',
-                        prefixIcon: Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: Icon(Icons.search, color: grey),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16.w,
@@ -221,7 +225,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                       ? Center(
                     child: Text(
                       'No banks found',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: grey),
                     ),
                   )
                       : ListView.builder(
@@ -234,13 +238,13 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                       return ListTile(
                         leading: Icon(
                           Icons.account_balance,
-                          color: isSelected ? primaryColor : Colors.grey,
+                          color: isSelected ? primaryColor : grey,
                         ),
                         title: Text(
                           bank.bankName,
                           style: TextStyle(
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            color: isSelected ? primaryColor : Colors.black,
+                            color: isSelected ? primaryColor : darkBackground,
                           ),
                         ),
                         trailing: isSelected
@@ -290,8 +294,11 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
               /// 🔹 Header (YOUR ORIGINAL)
               CustomHeader(
                 title: 'Transfer to Bank',
-                onBackPressed: () => Navigator.of(context).pop(),
-              ),
+                  onBackPressed: () async {
+                    FocusScope.of(context).unfocus();
+                    await Future.delayed(const Duration(milliseconds: 150));
+                    context.pop();
+                  }              ),
               SizedBox(height: 20.h),
               /// 🔹 Section Title (YOUR ORIGINAL)
 
@@ -318,11 +325,11 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                       onTap: _showBankSelector,
                       child: Container(
                         width: double.infinity,
-                        height: 60.h,
+                        height: 45.h,
                         margin: EdgeInsets.only(bottom: 15.h),
                         decoration: BoxDecoration(
                           color: whiteBackground,
-                          borderRadius: BorderRadius.circular(15.r),
+                          borderRadius: BorderRadius.circular(10.r),
                           border: Border.all(color: lightBorderColor),
                         ),
                         alignment: Alignment.centerLeft,
@@ -335,11 +342,11 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                               child: Text(
                                 selectedBank?.bankName ?? 'Select Bank',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: selectedBank != null ? lightText : Colors.grey,
+                                  color: selectedBank != null ? lightText : grey,
                                 ),
                               ),
                             ),
-                            Icon(Icons.arrow_drop_down, color: Colors.grey),
+                            Icon(Icons.arrow_drop_down, color: grey),
                           ],
                         ),
                       ),
@@ -356,53 +363,98 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                       withClearButton: true,
 
                       onChanged: (value) {
+                        setState(() {
+                          accountError = null;
+                        });
+
                         if (value.length == 10 && selectedBank != null) {
                           _verifyAccountFromInput(value);
                         } else {
                           setState(() => isVerified = false);
                         }
                       },
-                    ),   SizedBox(height: 10.h),
+                    ),
+                    if (accountError != null)
+                      Padding(
+                        padding: EdgeInsets.only(top: 6.h),
+                        child: Text(
+                          accountError!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: errorColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 10.h),
                     /// 🔹 Verification Result (YOUR PATTERN - matching Bia-to-Bia style)
                     if (isVerified)
                       InkWell(
                         onTap: () => _goToAmountPage(context, verifiedName!, verifiedAccount!),
                         borderRadius: BorderRadius.circular(15),
                         child: Container(
+                          width: double.infinity,
                           padding: EdgeInsets.all(15.w),
                           decoration: BoxDecoration(
                             color: primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: primaryColor.withOpacity(0.3)),
+                            border: Border.all(
+                              color: primaryColor.withOpacity(0.3),
+                            ),
                           ),
                           child: Row(
                             children: [
+
+                              /// Avatar
                               CircleAvatar(
+                                radius: 20.r,
                                 backgroundColor: primaryColor,
                                 child: Text(
                                   (verifiedName ?? '')[0].toUpperCase(),
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
+
                               SizedBox(width: 10.w),
+
+                              /// Name + account
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       verifiedName ?? '',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: theme.textTheme.bodyMedium?.copyWith(
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
+
+                                    SizedBox(height: 2.h),
+
                                     Text(
-                                      '${verifiedBankName} • ${verifiedAccount}',
+                                      '${verifiedBankName}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: theme.textTheme.bodySmall,
                                     ),
                                   ],
                                 ),
                               ),
-                              Icon(Icons.check_circle, color: Colors.green),
+
+                              SizedBox(width: 6.w),
+
+                              /// Verified icon
+                              Icon(
+                                Icons.check_circle,
+                                color: successColor,
+                                size: 20.sp,
+                              ),
                             ],
                           ),
                         ),
@@ -513,10 +565,10 @@ class _CardThreeBankState extends ConsumerState<CardThreeBank> {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
       decoration: BoxDecoration(
         color: whiteBackground,
-        borderRadius: BorderRadius.circular(15.r),
+        borderRadius: BorderRadius.circular(12.r),
       ),
       child: BeneficiaryTabSection(
         favorites: bankBeneficiaries

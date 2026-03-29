@@ -1,14 +1,17 @@
 import 'package:bia/core/__core.dart';
-import 'package:bia/core/constraint.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-
-
-import '../../../../../app/utils/colors.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
+import '../../../../../app/view/widget/quick_access_app_bar.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class CableTv extends StatefulWidget {
   const CableTv({super.key});
-  static const String routeName = '/cableTv';
 
   @override
   State<CableTv> createState() => _CableTvState();
@@ -20,64 +23,42 @@ class _CableTvState extends State<CableTv> {
     return Scaffold(
       backgroundColor: lightBackground,
       resizeToAvoidBottomInset: true,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(62.h(context)),
-        child: Container(
-          padding: padR(context, horizontal: 120.w(context)),
-          //  color: Theme.of(context)Context.grayWhiteBg,
-          alignment: Alignment.center,
-          child: RRow(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              RRow(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: SizedBox(
-                      height: 45.h(context),
-                      width: 100.w(context),
-                      child: const Icon(Icons.arrow_back_ios),
-                    ),
-                  ),
-                  5.hSpace(context),
-                  Text(
-                    'CableTv',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 18),
-                  ),
-                ],
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: const Icon(Icons.receipt_long_outlined),
-              ),
-            ],
+      appBar: CustomAppBar(
+        title: 'Cable',
+        onBackPressed: () async {
+          FocusScope.of(context).unfocus();
+          await Future.delayed(const Duration(milliseconds: 150));
+          if (!context.mounted) return;
+          if (context.canPop()) {
+            context.pop();
+          }
+        },
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 18.w),
+            child: SvgPicture.asset(bell),
           ),
-        ),
+        ],
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: padR(context, horizontal: 120.w(context)),
+            padding: EdgeInsets.symmetric(horizontal: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// ─── Top Header ───
                 Container(
-                  height: 50.h(context),
-                  padding: padR(context, horizontal: 42),
+                  height: 50,
+                  padding: EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    //color: Theme.of(context)Context.offWhiteBg,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      RImage('assets/svg/bank.png', height: 20.h(context)),
-                      20.hSpace(context),
+                      Image.asset('assets/svg/bank.png', height: 20),
+                      SizedBox(width: 20),
                       Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -86,8 +67,7 @@ class _CableTvState extends State<CableTv> {
                             Text(
                               '${Constants.nairaCurrencySymbol}100',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                //color: primaryColor,
-                                fontSize: 15.sp(context),
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -98,34 +78,24 @@ class _CableTvState extends State<CableTv> {
                         children: [
                           Text(
                             '(1)',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              //color: Theme.of(context)Context.secondaryTextColor,
-                            ),
+                            style: Theme.of(context).textTheme.labelMedium,
                           ),
-                          10.hSpace(context),
+                          SizedBox(width: 10),
                           Icon(
                             Icons.arrow_forward_ios_outlined,
-                            size: 12.sp(context),
-                            // color: Theme.of(context)Context.secondaryTextColor,
+                            size: 12,
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-
-                20.vSpace(context),
-
-                /// ─── Card One ───
+                SizedBox(height: 20),
                 const CardOne(),
-
-                20.vSpace(context),
-
-                /// ─── CableTv Service Section ───
+                SizedBox(height: 20),
                 Container(
-                  padding: padR(context, vertical: 17, horizontal: 35),
+                  padding: EdgeInsets.symmetric(vertical: 17, horizontal: 10),
                   decoration: BoxDecoration(
-                    //  color: Theme.of(context)Context.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
@@ -137,12 +107,11 @@ class _CableTvState extends State<CableTv> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      10.vSpace(context),
+                      SizedBox(height: 10),
                     ],
                   ),
                 ),
-
-                20.vSpace(context),
+                SizedBox(height: 20),
               ],
             ),
           ),
@@ -152,55 +121,120 @@ class _CableTvState extends State<CableTv> {
   }
 }
 
-/// ─── CARD ONE ───
-class CardOne extends StatefulWidget {
+class CardOne extends ConsumerStatefulWidget {
   const CardOne({super.key});
 
   @override
-  State<CardOne> createState() => _CardOneState();
+  ConsumerState<CardOne> createState() => _CardOneState();
 }
 
-class _CardOneState extends State<CardOne> {
+class _CardOneState extends ConsumerState<CardOne> {
   Map<String, dynamic>? _selectedProvider;
   String _smartcardNumber = '';
+  List<Map<String, dynamic>> _plans = [];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: padR(context, vertical: 17, horizontal: 25),
+      padding: EdgeInsets.symmetric(vertical: 17, horizontal: 15),
       decoration: BoxDecoration(
-        // color: Theme.of(context)Context.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
-      child: Padding(
-        padding: padR(context, horizontal: 10),
-        child: Column(
-          children: [
-            CableProviderDropdown(
-              onChanged: (provider) {
-                setState(() => _selectedProvider = provider);
-              },
-              onSmartcardChanged: (number) {
-                setState(() => _smartcardNumber = number);
-              },
-            ),
-            Divider(color: Colors.grey.shade300),
-            CableTvAmountSelector(
-              selectedProvider: _selectedProvider,
-              phoneNumber: _smartcardNumber,
-              onAmountSelected: (amount) {
-                debugPrint('Selected amount: ₦$amount');
-              },
-            ),
-          ],
-        ),
+      child: Column(
+        children: [
+          CableProviderDropdown(
+            onChanged: (provider) async {
+              setState(() => _selectedProvider = provider);
+
+              final controller = ref.read(dashboardControllerProvider.notifier);
+              final plans = await controller.fetchCablePlans(
+                context,
+                provider['serviceID'],
+              );
+
+              setState(() {
+                _plans = plans;
+              });
+            },
+            onSmartcardChanged: (number) {
+              setState(() => _smartcardNumber = number);
+            },
+          ),
+          Divider(color: Colors.grey.shade300),
+          CableTvAmountSelector(
+            selectedProvider: _selectedProvider,
+            phoneNumber: _smartcardNumber,
+            plans: _plans,
+              onAmountSelected: (amount, variationCode) async {
+                final controller = ref.read(dashboardControllerProvider.notifier);
+
+                final result = await controller.verifyCable(
+                  context,
+                  serviceId: _selectedProvider!['serviceID'],
+                  smartcard: _smartcardNumber,
+                );
+                if (variationCode.isEmpty) {
+                  print("❌ variationCode is empty");
+                  return;
+                }
+                if (result == null) return;
+
+                final selectedPlan = _plans.firstWhere(
+                      (p) => p['variation_code'] == variationCode,
+                  orElse: () => {},
+                );
+
+                final packageName = selectedPlan['name'] ?? variationCode;
+
+                ConfirmationBottomSheet.show(
+                  context: context,
+                  config: BottomSheetConfig(
+                    title: "Confirm Cable Purchase",
+                    subtitle: "Cable Subscription",
+                    amount: amount.toDouble(),
+                    details: [
+                      BottomSheetDetailItem(
+                        label: "Provider",
+                        value: _selectedProvider!['name'],
+                      ),
+                      BottomSheetDetailItem(
+                        label: "Smartcard",
+                        value: _smartcardNumber,
+                      ),
+                      BottomSheetDetailItem(
+                        label: "Customer",
+                        value: result['Customer_Name'],
+                      ),
+                      BottomSheetDetailItem(
+                        label: "Variation Code", // ✅ CRITICAL
+                        value: variationCode,
+                      ),
+                      BottomSheetDetailItem(
+                        label: "Package",
+                        value: packageName,
+                      ),
+                      BottomSheetDetailItem(
+                        label: "Amount",
+                        value: "₦$amount",
+                        isHighlighted: true,
+                      ),
+                      BottomSheetDetailItem(
+                        label: "serviceId",
+                        value: _selectedProvider!['serviceID'], // ✅ CRITICAL
+                      ),
+                    ],
+                  ),
+                  onConfirm: (pin) {},
+                );
+              }
+          ),
+        ],
       ),
     );
   }
 }
 
-/// ─── CABLE PROVIDER DROPDOWN ───
-class CableProviderDropdown extends StatefulWidget {
+class CableProviderDropdown extends ConsumerStatefulWidget {
   final Function(Map<String, dynamic>)? onChanged;
   final Function(String)? onSmartcardChanged;
 
@@ -211,166 +245,114 @@ class CableProviderDropdown extends StatefulWidget {
   });
 
   @override
-  State<CableProviderDropdown> createState() => _CableProviderDropdownState();
+  ConsumerState<CableProviderDropdown> createState() => _CableProviderDropdownState();
 }
 
-class _CableProviderDropdownState extends State<CableProviderDropdown> {
-  final List<Map<String, dynamic>> _providers = [
-    {'name': 'DStv', 'logo': 'assets/svg/dstv.png'},
-    {'name': 'GOtv', 'logo': 'assets/svg/gotv.png'},
-    {'name': 'Showmax', 'logo': 'assets/svg/showmax.png'},
-    {'name': 'Startimes', 'logo': 'assets/svg/startimes.png'},
-  ];
-
+class _CableProviderDropdownState extends ConsumerState<CableProviderDropdown> {
+  List<Map<String, dynamic>> _providers = [];
   Map<String, dynamic>? _selectedProvider;
-  final TextEditingController _smartcardController = TextEditingController();
+  bool isLoading = true;
+  final TextEditingController _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _selectedProvider = _providers.first;
+    loadProviders();
+  }
+
+  Future<void> loadProviders() async {
+    final controller = ref.read(dashboardControllerProvider.notifier);
+    final result = await controller.fetchCableProviders(context);
+
+    setState(() {
+      _providers = result;
+      _selectedProvider = _providers.isNotEmpty ? _providers.first : null;
+      isLoading = false;
+    });
+
+    if (_selectedProvider != null) {
+      widget.onChanged?.call(_selectedProvider!);
+    }
+  }
+
+  String getProviderLogo(String name) {
+    switch (name.toLowerCase()) {
+      case 'dstv':
+        return 'assets/svg/logo.png';
+      case 'gotv':
+        return 'assets/svg/logo.png';
+      case 'startimes':
+        return 'assets/svg/logo.png';
+      case 'showmax':
+        return 'assets/svg/logo.png';
+      default:
+        return 'assets/svg/logo.png';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            flex: 2,
-            fit: FlexFit.loose,
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<Map<String, dynamic>>(
-                padding: EdgeInsets.zero,
-                isExpanded: false,
-                alignment: Alignment.center,
-                menuMaxHeight: 250,
-                borderRadius: BorderRadius.circular(12),
-                dropdownColor: Colors.white,
-                value: _selectedProvider,
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Colors.black54,
-                  size: 20,
-                ),
-                selectedItemBuilder: (BuildContext context) {
-                  return _providers.map<Widget>((provider) {
-                    return Container(
-                      height: 24.h(context),
-                      width: 24.h(context),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: AssetImage(provider['logo']),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    );
-                  }).toList();
-                },
-                items: _providers.map((provider) {
-                  return DropdownMenuItem(
-                    value: provider,
-                    child: Row(
-                      children: [
-                        Container(
-                          height: 30.h(context),
-                          width: 30.h(context),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(100),
-                            image: DecorationImage(
-                              image: AssetImage(provider['logo']),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        8.hSpace(context),
-                        Text(
-                          provider['name'],
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontSize: 11.sp(context),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedProvider = value);
-                  widget.onChanged?.call(value!);
-                },
-              ),
-            ),
-          ),
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-          // 📺 Smartcard Number Input — FULLY BORDERLESS
-          Expanded(
-            flex: 5,
-            child: TextField(
-              controller: _smartcardController,
-              keyboardType: TextInputType.number,
-              cursorColor: primaryColor,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              decoration: const InputDecoration(
-                hintText: 'Enter Smartcard Number',
-                hintStyle: TextStyle(color: Colors.black38),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isCollapsed: true,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onChanged: (value) {
-                widget.onSmartcardChanged?.call(value);
-              },
-            ),
-          ),
+    if (_providers.isEmpty) {
+      return const Text("No providers available");
+    }
 
-          135.hSpace(context),
-
-          // 👤 Save/Beneficiary Icon
-          Container(
-            height: 30.h(context),
-            width: 60.w(context),
-            decoration: BoxDecoration(
-              //  color: Theme.of(context)Context.kSecondary,
-              borderRadius: const BorderRadius.all(Radius.circular(5)),
+    return Row(
+      children: [
+        DropdownButton<Map<String, dynamic>>(
+          value: _selectedProvider,
+          items: _providers.map((provider) {
+            return DropdownMenuItem(
+              value: provider,
+              child: Row(
+                children: [
+                  Image.asset(
+                    getProviderLogo(provider['name']),
+                    height: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(provider['name']),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() => _selectedProvider = value);
+            widget.onChanged?.call(value!);
+          },
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: 'Smartcard Number',
+              border: OutlineInputBorder(),
             ),
-            child: Icon(
-              Icons.person_rounded,
-              // color: primaryColor,
-              size: 18,
-            ),
+            onChanged: widget.onSmartcardChanged,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-/// ─── CABLE TV SELECTOR (DSTV-style staggered grid) ───
 class CableTvAmountSelector extends StatefulWidget {
-  final Function(int amount)? onAmountSelected;
+  final Function(int amount, String variationCode)? onAmountSelected;
   final Map<String, dynamic>? selectedProvider;
   final String? phoneNumber;
+  final List<Map<String, dynamic>> plans;
 
   const CableTvAmountSelector({
     super.key,
     this.onAmountSelected,
     this.selectedProvider,
     this.phoneNumber,
+    required this.plans,
   });
 
   @override
@@ -378,62 +360,168 @@ class CableTvAmountSelector extends StatefulWidget {
 }
 
 class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+
+  late TabController _tabController;
   int? selectedAmount;
-
-  final List<String> _tabs = ['Hot Offers', '1 Month', '2 Months', '3 Months'];
-  late final TabController _tabController;
-
-  final List<Map<String, dynamic>> hotOffers = [
-    {
-      'title': 'Yanga / month',
-      'price': 6000,
-      'cashback': '₦20 Cashback',
-      'channels': 'Enjoy over 85+ channels, great movies, sports and more.',
-      'image': 'assets/images/yanga.jpg',
-      'tag': 'Hot',
-    },
-    {
-      'title': 'Confam / month',
-      'price': 11000,
-      'cashback': '₦20 Cashback',
-      'channels':
-          'Family time comes first with over 105+ channels, entertainment and sports.',
-      'image': 'assets/images/confam.jpg',
-    },
-    {
-      'title': 'Compact / month',
-      'price': 19000,
-      'cashback': '₦20 Cashback',
-      'channels': 'Get your entertainment kicks with DStv Compact.',
-      'image': 'assets/images/compact.png',
-    },
-    {
-      'title': 'Padi / month',
-      'price': 4400,
-      'cashback': '₦20 Cashback',
-      'channels':
-          'Enjoy over 45+ channels, thrilling Nollywood movies and dramas.',
-      'image': 'assets/images/padi.jpg',
-    },
-    {
-      'title': 'Compact Plus / month',
-      'price': 26000,
-      'cashback': '₦20 Cashback',
-      'channels':
-          'Get more action with Premier League, movies and local series.',
-      'image': 'assets/images/compact_plus.png',
-    },
-  ];
+  String? selectedVariationCode;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(CableTvAmountSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.selectedProvider?['serviceID'] !=
+        widget.selectedProvider?['serviceID']) {
+      selectedAmount = null;
+      selectedVariationCode = null;
+    }
+
+    final oldExtracted = _extractPlans(oldWidget.plans);
+    final newExtracted = _extractPlans(widget.plans);
+
+    if (oldExtracted.length != newExtracted.length && newExtracted.isNotEmpty) {
+      final newTabs = _buildTabs();
+      final newLength = newTabs.length;
+
+      if (newLength != _tabController.length) {
+        final oldIndex = _tabController.index;
+        _tabController.dispose();
+        _tabController = TabController(
+          length: newLength,
+          vsync: this,
+          initialIndex: oldIndex < newLength ? oldIndex : 0,
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  // Extract plans from nested API response
+  List<Map<String, dynamic>> get _plans {
+    return _extractPlans(widget.plans);
+  }
+
+  List<Map<String, dynamic>> _extractPlans(List<Map<String, dynamic>> rawPlans) {
+    if (rawPlans.isEmpty) return [];
+
+    final first = rawPlans.first;
+
+    // Check if it's the raw API response with responseBody
+    if (first.containsKey('responseBody')) {
+      final responseBody = first['responseBody'];
+      if (responseBody is Map && responseBody.containsKey('variations')) {
+        final variations = responseBody['variations'];
+        if (variations is List) {
+          return variations.cast<Map<String, dynamic>>();
+        }
+      }
+      return [];
+    }
+
+    // Already flat structure
+    return rawPlans;
+  }
+
+  String _extractDuration(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('1 year') || lower.contains('year')) return '1 Year';
+    if (lower.contains('3 month') || lower.contains('3months')) return '3 Months';
+    if (lower.contains('weekly') || lower.contains('1 week')) return 'Weekly';
+    if (lower.contains('month') || lower.contains('monthly')) return 'Monthly';
+    return 'Monthly';
+  }
+
+  String _getPlanImage(Map<String, dynamic> plan) {
+    final code = plan['variation_code']?.toString().toLowerCase() ?? '';
+
+    if (code.contains('padi')) return 'assets/images/padi.jpg';
+    if (code.contains('yanga')) return 'assets/images/yanga.jpg';
+    if (code.contains('confam')) return 'assets/images/confam.jpg';
+    if (code.contains('compact') && code.contains('plus')) return 'assets/images/compact_plus.png';
+    if (code.contains('compact')) return 'assets/images/compact.png';
+    if (code.contains('premium')) return 'assets/images/premium.jpg';
+    if (code.contains('asia')) return 'assets/images/asia.jpg';
+    if (code.contains('french')) return 'assets/images/french.jpg';
+    if (code.contains('jolli')) return 'assets/images/yanga.jpg';
+    if (code.contains('jinja')) return 'assets/images/padi.jpg';
+    if (code.contains('max')) return 'assets/images/compact.png';
+    if (code.contains('supa')) return 'assets/images/compact_plus.png';
+    if (code.contains('lite')) return 'assets/images/padi.jpg';
+
+    return 'assets/images/compact.png';
+  }
+
+  List<String> _buildTabs() {
+    if (_plans.isEmpty) return ['Hot Offers'];
+
+    final durations = _plans
+        .map((p) => _extractDuration(p['name']?.toString() ?? ''))
+        .toSet()
+        .toList();
+
+    durations.sort((a, b) {
+      final order = {'Monthly': 0, 'Weekly': 1, '3 Months': 2, '1 Year': 3};
+      return (order[a] ?? 99).compareTo(order[b] ?? 99);
+    });
+
+    return ['Hot Offers', ...durations];
+  }
+
+  String _getPlanDescription(String? code) {
+    final descriptions = {
+      'dstv-padi': 'Enjoy over 45+ channels, thrilling Nollywood movies and dramas.',
+      'dstv-yanga': 'Enjoy over 85+ channels, great movies, sports and more.',
+      'dstv-confam': 'Family time comes first with over 105+ channels, entertainment and sports.',
+      'dstv79': 'Get your entertainment kicks with DStv Compact.',
+      'dstv3': 'Premium entertainment with 175+ channels.',
+      'dstv6': 'Asian content and entertainment.',
+      'dstv7': 'Get more action with Premier League, movies and local series.',
+      'dstv9': 'Premium French content and entertainment.',
+      'gotv-jolli': 'Great entertainment for the whole family.',
+      'gotv-jinja': 'Affordable entertainment with great channels.',
+      'gotv-max': 'Maximum entertainment experience.',
+      'gotv-lite': 'Basic entertainment at affordable price.',
+      'gotv-supa-plus': 'Supa plus entertainment package.',
+    };
+    return descriptions[code?.toLowerCase()] ??
+        'Enjoy great entertainment with premium channels.';
+  }
+
+  String _formatPrice(dynamic amount) {
+    if (amount == null) return '0';
+    final str = amount.toString();
+    // Remove trailing .00 or .0
+    if (str.contains('.')) {
+      final parts = str.split('.');
+      if (parts[1] == '00' || parts[1] == '0') {
+        return parts[0];
+      }
+    }
+    return str;
   }
 
   @override
   Widget build(BuildContext context) {
+    final tabs = _buildTabs();
+
+    if (_plans.isEmpty) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: Text('Select a provider to see available plans')),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -443,36 +531,52 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
           labelColor: primaryColor,
           unselectedLabelColor: Colors.grey,
           indicatorColor: primaryColor,
-          tabs: _tabs.map((e) => Tab(text: e)).toList(),
+          tabs: tabs.map((e) => Tab(text: e)).toList(),
         ),
-
-        10.vSpace(context),
-
+        const SizedBox(height: 10),
         SizedBox(
-          height: 520.h(context),
+          height: 520,
           child: TabBarView(
             controller: _tabController,
-            children: [
-              // HOT OFFERS TAB (staggered grid)
-              MasonryGridView.count(
-                padding: padR(context, all: 10),
+            children: tabs.map((tab) {
+              List<Map<String, dynamic>> displayPlans;
+              if (tab == 'Hot Offers') {
+                displayPlans = _plans;
+              } else {
+                displayPlans = _plans.where((p) =>
+                _extractDuration(p['name']?.toString() ?? '') == tab
+                ).toList();
+              }
+
+              if (displayPlans.isEmpty) {
+                return const Center(child: Text('No packages available'));
+              }
+
+              return MasonryGridView.count(
+                padding: const EdgeInsets.all(10),
                 physics: const BouncingScrollPhysics(),
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                itemCount: hotOffers.length,
+                itemCount: displayPlans.length,
                 itemBuilder: (context, index) {
-                  final plan = hotOffers[index];
-                  final isSelected = selectedAmount == plan['price'];
+                  final plan = displayPlans[index];
+                  final price = double.tryParse(plan['variation_amount']?.toString() ?? '0')?.toInt() ?? 0;
+                  final isSelected = selectedVariationCode == plan['variation_code'];
 
                   return GestureDetector(
                     onTap: () {
-                      setState(() => selectedAmount = plan['price']);
-                      widget.onAmountSelected?.call(plan['price']);
-                    },
+                      setState(() {
+                        selectedAmount = price;
+                        selectedVariationCode = plan['variation_code']?.toString();
+                      });
+                      widget.onAmountSelected?.call(
+                          price,
+                          plan['variation_code']?.toString() ?? ''
+                      );                    },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      height: index.isEven ? 250.h(context) : 300.h(context),
+                      height: index.isEven ? 250 : 300,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -480,7 +584,7 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                           width: 1.5,
                         ),
                         image: DecorationImage(
-                          image: AssetImage(plan['image']),
+                          image: AssetImage(_getPlanImage(plan)),
                           fit: BoxFit.cover,
                           colorFilter: ColorFilter.mode(
                             Colors.black.withOpacity(0.25),
@@ -489,7 +593,7 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                         ),
                       ),
                       child: Container(
-                        padding: padR(context, all: 20),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           gradient: LinearGradient(
@@ -504,7 +608,7 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (plan['tag'] == 'Hot')
+                            if (index == 0 && tab == 'Hot Offers')
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -514,50 +618,53 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                                   color: Colors.redAccent,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   'Hot',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 10.sp(context),
+                                    fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             const Spacer(),
                             Text(
-                              plan['title'],
-                              style: TextStyle(
+                              plan['name']?.toString() ?? 'Unknown Plan',
+                              style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 15.sp(context),
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            4.vSpace(context),
+                            const SizedBox(height: 4),
+                            // FIXED: Use _formatPrice to handle the amount properly
                             Text(
-                              '₦${plan['price']}',
+                              '₦${_formatPrice(plan['variation_amount'])}',
                               style: TextStyle(
                                 color: primaryColor,
-                                fontSize: 14.sp(context),
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            4.vSpace(context),
-                            Text(
-                              plan['cashback'],
+                            const SizedBox(height: 4),
+                            const Text(
+                              '₦20 Cashback',
                               style: TextStyle(
                                 color: Colors.greenAccent,
-                                fontSize: 11.sp(context),
+                                fontSize: 11,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            4.vSpace(context),
+                            const SizedBox(height: 4),
                             Text(
-                              plan['channels'],
+                              _getPlanDescription(plan['variation_code']?.toString()),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white70,
-                                fontSize: 11.sp(context),
+                                fontSize: 11,
                               ),
                             ),
                           ],
@@ -566,12 +673,8 @@ class _CableTvAmountSelectorState extends State<CableTvAmountSelector>
                     ),
                   );
                 },
-              ),
-
-              const Center(child: Text('1 Month packages coming soon')),
-              const Center(child: Text('2 Months packages coming soon')),
-              const Center(child: Text('3 Months packages coming soon')),
-            ],
+              );
+            }).toList(),
           ),
         ),
       ],

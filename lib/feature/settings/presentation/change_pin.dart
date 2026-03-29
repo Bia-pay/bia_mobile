@@ -2,25 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
-
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/router/route_constant.dart';
-import '../../../core/services/biometric_service.dart';
-import '../../../feature/dashboard/widgets/keypad.dart';
-import '../../dashboard/dashboard_repo/repo.dart';
+import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../dashboard/widgets/keypad.dart';
 
-class SetPin extends ConsumerStatefulWidget {
-  const SetPin({super.key});
+class RestoreNewPin extends ConsumerStatefulWidget {
+
+  const RestoreNewPin({super.key,});
 
   @override
-  ConsumerState<SetPin> createState() => _SetPinState();
+  ConsumerState<RestoreNewPin> createState() => _RestoreNewPinState();
 }
 
-class _SetPinState extends ConsumerState<SetPin> {
+class _RestoreNewPinState extends ConsumerState<RestoreNewPin> {
   String pin = "";
   bool showWarning = false;
-
   void addDigit(String value) {
     if (pin.length >= 4) return;
 
@@ -31,7 +28,7 @@ class _SetPinState extends ConsumerState<SetPin> {
 
     if (pin.length == 4) {
       context.pushNamed(
-        RouteList.confirmSetPin,
+        RouteList.confirmRestoreNewPin,
         extra: pin,
       );
     }
@@ -141,7 +138,7 @@ class _SetPinState extends ConsumerState<SetPin> {
                   onTap: () {
                     if (pin.length == 4) {
                       context.pushNamed(
-                        RouteList.confirmSetPin,
+                        RouteList.confirmRestoreNewPin,
                         extra: pin,
                       );
                     } else {
@@ -164,16 +161,19 @@ class _SetPinState extends ConsumerState<SetPin> {
 }
 
 
-class ConfirmSetPin extends ConsumerStatefulWidget {
-  final String originalPin;
+class ConfirmRestoreNewPin extends ConsumerStatefulWidget {
+  final String newPin;
 
-  const ConfirmSetPin({super.key, required this.originalPin});
+  const ConfirmRestoreNewPin({
+    super.key,
+    required this.newPin,
+  });
 
   @override
-  ConsumerState<ConfirmSetPin> createState() => _ConfirmSetPinState();
+  ConsumerState<ConfirmRestoreNewPin> createState() => _ConfirmRestoreNewPinState();
 }
 
-class _ConfirmSetPinState extends ConsumerState<ConfirmSetPin> {
+class _ConfirmRestoreNewPinState extends ConsumerState<ConfirmRestoreNewPin> {
   String pin = "";
   bool showError = false;
 
@@ -198,7 +198,7 @@ class _ConfirmSetPinState extends ConsumerState<ConfirmSetPin> {
   }
 
   Future<void> _submit() async {
-    if (pin != widget.originalPin) {
+    if (pin != widget.newPin) {
       setState(() {
         pin = "";
         showError = true;
@@ -206,29 +206,18 @@ class _ConfirmSetPinState extends ConsumerState<ConfirmSetPin> {
       return;
     }
 
-    final repo = ref.read(dashboardRepositoryProvider);
+    final controller =
+    ref.read(dashboardControllerProvider.notifier);
 
-    final response = await repo.setPin({
-      "pin": pin,
-      "confirmPin": pin,
-    });
+    final response = await controller.resetForgotPin(
+      context,
+      widget.newPin,
+      pin,
+    );
 
-    if (response.responseSuccessful) {
-      final box = Hive.box('authBox');
-      await box.put('has_pin', true);
-
-      // Save PIN securely for biometric use
-      final userId = box.get('userId', defaultValue: '');
-      final phone = box.get('phone', defaultValue: '');
-      final effectiveUserId = userId.isNotEmpty ? userId : phone;
-
-      if (effectiveUserId.isNotEmpty) {
-        final biometricService = BiometricService();
-        await biometricService.saveTransactionPin(effectiveUserId, pin);
-        debugPrint('🔐 Transaction PIN saved securely for user: $effectiveUserId');
-      }
-
-      if (!mounted) return;
+    if (response != null &&
+        response.responseSuccessful &&
+        mounted) {
       context.goNamed(RouteList.bottomNavBar);
     }
   }

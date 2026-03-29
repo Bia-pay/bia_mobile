@@ -1,16 +1,24 @@
+import 'dart:async';
+
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
+import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
+import '../../../../../app/view/widget/quick_access_app_bar.dart';
+import '../../../dashboard_repo/repo.dart';
+import '../../../dashboardcontroller/provider.dart';
 import '../../../widgets/transaction.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../airtime/airtime.dart';
-
 
 class Electricity extends StatefulWidget {
   const Electricity({super.key});
@@ -20,164 +28,135 @@ class Electricity extends StatefulWidget {
 }
 
 class _ElectricityState extends State<Electricity> {
+  Map<String, dynamic>? _selectedProvider;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: lightBackground,
       resizeToAvoidBottomInset: true,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(62.h),
-        child: Container(
-          padding: EdgeInsets.symmetric( horizontal: 10.w,vertical: 40.h),
-        //  color: Theme.of(context)Context.grayWhiteBg,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: SizedBox(
-                      height: 45.h,
-                      width: 100.w,
-                      child: const Icon(Icons.arrow_back_ios),
-                    ),
-                  ),
-                  SizedBox(height: 5.h,),
-                  Text(
-                    'Electricity',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                "History",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 18,
-                ),
-              ),
-            ],
+      appBar: CustomAppBar(
+        title: 'Electricity',
+        onBackPressed: () async {
+          FocusScope.of(context).unfocus();
+          await Future.delayed(const Duration(milliseconds: 150));
+          if (!context.mounted) return;
+          if (context.canPop()) {
+            context.pop();
+          }
+        },
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 18.w),
+            child: SvgPicture.asset(bell),
           ),
-        ),
+        ],
       ),
-
-      /// ✅ FIXED BODY (scrollable)
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.symmetric( horizontal: 20.w),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // 🔥 ADD THIS - prevents infinite height
               children: [
+                /// ─── Card Two ───
+                CardTwo(
+                  onChanged: (provider) {
+                    setState(() {
+                      _selectedProvider = provider;
+                    });
+                  },
+                ),
+                SizedBox(height: 20.h),
+
                 /// ─── Card One ───
-                const CardTwo(),
-                SizedBox(height: 20.h,),
-                const CardOne(),
-                SizedBox(height: 20.h,),
-                const CardThree(),
-                SizedBox(height: 20.h,),
+                CardOne(
+                  selectedProvider: _selectedProvider,
+                ),
+                SizedBox(height: 20.h),
+
+                /// ─── Card Three ───
+                // 🔥 FIX: Wrap in ConstrainedBox or remove if BeneficiarySelector has issues
+                // const CardThree(), // Comment out temporarily to test
+                // SizedBox(height: 20.h),
 
                 /// ─── Electricity Service Section ───
                 Container(
-                  padding: EdgeInsets.symmetric( vertical: 17, horizontal: 10),
+                  padding: EdgeInsets.symmetric(vertical: 17, horizontal: 10),
                   decoration: BoxDecoration(
-                   // color: Theme.of(context)Context.tertiaryBackgroundColor,
                     borderRadius: const BorderRadius.all(Radius.circular(15)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min, // 🔥 ADD THIS
                     children: [
-                      Text('Electricity Service',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          )),
-                      SizedBox(height: 10.h,),
+                      Text(
+                        'Electricity Service',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
 
-                      SizedBox(
-                        height: 180.h,
-                        child: ListView.builder(
-                          padding: EdgeInsets.symmetric( vertical: 8, horizontal: 0),
-                          shrinkWrap: true,
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: dataPlans.length,
-                          itemBuilder: (context, index) {
-                            final tx = dataPlans[index];
-                            return Container(
-                              padding:
-                              EdgeInsets.symmetric( vertical: 8, horizontal: 18),
-                              margin: EdgeInsets.symmetric( vertical: 6, horizontal: 7),
-                              height: 70.h,
+                      // 🔥 FIX: Replace ListView.builder with Column + List.generate
+                      // or use shrinkWrap properly with physics: NeverScrollableScrollPhysics
+                      ...dataPlans.map((tx) => Container(
+                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 18),
+                        margin: EdgeInsets.symmetric(vertical: 6, horizontal: 7),
+                        height: 70.h,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              height: 35.h,
+                              width: 35.w,
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
-                               // color: Theme.of(context)Context.kSecondary,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(),
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                              child: Image.asset(
+                                'assets/svg/bank.png',
+                                height: 20.h,
+                              ),
+                            ),
+                            SizedBox(width: 15.h),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    height: 35.h,
-                                    width: 35.w,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(
-                                       // color: Theme.of(context)Context.kPrimary,
-                                      ),
-                                    ),
-                                    child: Image.asset(
-                                      'assets/svg/bank.png',
-                                      height: 20.h,
+                                  Text(
+                                    tx.name,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(width: 15.h,),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          tx.name,
-                                          style: Theme.of(context).textTheme.bodyMedium
-                                              ?.copyWith(
-                                            // color: context
-                                            //     .themeContext.titleTextColor,
-                                            fontSize: 15.sp,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        Text(
-                                          tx.dateTime,
-                                          style: Theme.of(context).textTheme.bodySmall
-                                              ?.copyWith(
-                                            fontSize: 11.sp,
-                                            // color: Theme.of(context)Context
-                                            //     .secondaryTextColor,
-                                          ),
-                                        ),
-                                      ],
+                                  Text(
+                                    tx.dateTime,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontSize: 11.sp,
                                     ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_forward_ios_outlined,
-                                    size: 12.sp,
                                   ),
                                 ],
                               ),
-                            );
-                          },
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios_outlined,
+                              size: 12.sp,
+                            ),
+                          ],
                         ),
-                      ),
+                      )).toList(),
                     ],
                   ),
                 ),
-
-                SizedBox(height: 25.h,),
+                SizedBox(height: 25.h),
               ],
             ),
           ),
@@ -192,7 +171,13 @@ class CardOne extends StatefulWidget {
   final Function(int amount)? onAmountSelected;
   final Map<String, dynamic>? selectedProvider;
   final String? phoneNumber;
-  const CardOne({super.key, this.onAmountSelected, this.selectedProvider, this.phoneNumber});
+
+  const CardOne({
+    super.key,
+    this.onAmountSelected,
+    this.selectedProvider,
+    this.phoneNumber,
+  });
 
   @override
   State<CardOne> createState() => _CardOneState();
@@ -201,33 +186,90 @@ class CardOne extends StatefulWidget {
 class _CardOneState extends State<CardOne> {
   Map<String, dynamic>? _selectedProvider;
   String _phoneNumber = '';
+  Timer? _debounce;
+  String? _customerName;
+  String? _address;
+  bool _isVerifying = false;
+
+  void _onMeterChanged(String value) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      if (value.length < 10) return; // avoid premature calls
+      _verifyMeter(value);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant CardOne oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.selectedProvider != oldWidget.selectedProvider) {
+      final meter = _meterController.text.trim();
+      if (meter.isNotEmpty) {
+        _verifyMeter(meter);
+      }
+    }
+  }
+
+  Future<void> _verifyMeter(String meter) async {
+    final serviceId = widget.selectedProvider?['serviceID'];
+
+    if (serviceId == null) return;
+
+    setState(() {
+      _isVerifying = true;
+      _customerName = null;
+      _address = null;
+    });
+
+    final repo = ProviderScope.containerOf(context)
+        .read(dashboardRepositoryProvider);
+
+    final result = await repo.verifyElectricityMeter(
+      serviceId: serviceId,
+      meterNumber: meter,
+      type: "prepaid",
+    );
+
+    if (!mounted) return;
+
+    if (result != null) {
+      setState(() {
+        _customerName = result['Customer_Name'];
+        _address = result['Address'];
+        _isVerifying = false;
+      });
+    } else {
+      setState(() {
+        _customerName = "Invalid meter";
+        _address = "";
+        _isVerifying = false;
+      });
+    }
+  }
+  final TextEditingController _meterController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric( vertical: 17, horizontal: 25),
+      padding: EdgeInsets.symmetric(vertical: 17, horizontal: 25),
       decoration: BoxDecoration(
-       // color: Theme.of(context)Context.tertiaryBackgroundColor,
         borderRadius: const BorderRadius.all(Radius.circular(15)),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric( horizontal: 1.w,vertical: 5.h),
+        padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 5.h),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [    /// 💰 Amount Grid (matching your image layout)
+          mainAxisSize: MainAxisSize.min, // 🔥 ADD THIS
+          children: [
             Text(
               'Enter Meter Number',
               textAlign: TextAlign.start,
-              // style: textTheme.titleMedium?.copyWith(
-              //   fontWeight: FontWeight.w600,
-              // ),
             ),
-            SizedBox(height: 10.h,),
-
-            /// 🔹 Pay Button
-
+            SizedBox(height: 10.h),
             Row(
               children: [
                 Expanded(
@@ -235,23 +277,24 @@ class _CardOneState extends State<CardOne> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w,),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
                       decoration: BoxDecoration(
-                          border: Border.all(
-                            //  color: Theme.of(context)Context.checkboxBorderColor
-                          ),
-                          borderRadius: BorderRadius.all(Radius.circular(10.r))
+                        border: Border.all(),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          /// 📞 Input field
                           Expanded(
                             child: CustomTextField(
-                              hint: 'Phone Number',
-                              controller: _amountController,
+                              hint: 'Meter Number',
+                              controller: _meterController,
+                              onChanged: (value) {
+                                _onMeterChanged(value);
+                              },
                             ),
                           ),
+
                         ],
                       ),
                     ),
@@ -259,18 +302,51 @@ class _CardOneState extends State<CardOne> {
                 ),
               ],
             ),
-            SizedBox(height: 20.h,),
+            if (_isVerifying)
+              Padding(
+                padding: EdgeInsets.only(top: 8.h),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 14.w,
+                      height: 14.h,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10.w),
+                    Text("Verifying meter..."),
+                  ],
+                ),
+              ),
+
+            if (_customerName != null)
+              Padding(
+                padding: EdgeInsets.only(top: 10.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _customerName!,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: _customerName == "Invalid meter"
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                    ),
+                    if (_address != null && _address!.isNotEmpty)
+                      Text(
+                        _address!,
+                        style: TextStyle(fontSize: 12.sp),
+                      ),
+                  ],
+                ),
+              ),
+            SizedBox(height: 20.h),
             Text(
               'Amount',
               textAlign: TextAlign.start,
-              // style: textTheme.titleMedium?.copyWith(
-              //   fontWeight: FontWeight.w600,
-              // ),
             ),
-            SizedBox(height: 10.h,),
-
-            /// 🔹 Pay Button
-
+            SizedBox(height: 10.h),
             Row(
               children: [
                 Expanded(
@@ -278,21 +354,19 @@ class _CardOneState extends State<CardOne> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w,),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
                       decoration: BoxDecoration(
-                          border: Border.all(
-                             // color: Theme.of(context)Context.checkboxBorderColor
-                          ),
-                          borderRadius: BorderRadius.all(Radius.circular(10.r))
+                        border: Border.all(),
+                        borderRadius: BorderRadius.all(Radius.circular(10.r)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          /// 📞 Input field
                           Expanded(
                             child: CustomTextField(
-                              hint: 'Phone Number',
+                              hint: 'Amount',
                               controller: _amountController,
+                              keyboardType: TextInputType.number,
                             ),
                           ),
                         ],
@@ -302,24 +376,85 @@ class _CardOneState extends State<CardOne> {
                 ),
               ],
             ),
-            SizedBox(height: 20.h,),
+            SizedBox(height: 20.h),
             CustomButton(
               buttonName: 'PAY',
               buttonColor: Colors.lightBlueAccent,
               buttonTextColor: Colors.white,
-              onPressed: () {
-                final amountText = _amountController.text.trim();
-                if (amountText.isEmpty) return;
-                final amount = int.tryParse(amountText) ?? 0;
+                onPressed: () {
+                  final serviceId = widget.selectedProvider?['serviceID'];
+                  final meter = _meterController.text.trim();
+                  final amountText = _amountController.text.trim();
 
-                showAirtimeConfirmationSheet(
-                  context,
-                  amount: amount,
-                  networkName: widget.selectedProvider?['name'] ?? 'MTN',
-                  networkLogo: widget.selectedProvider?['logo'] ?? 'assets/svg/mtn.jpg',
-                  recipientNumber: widget.phoneNumber ?? '',
-                );
-              },
+                  if (serviceId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Select provider")),
+                    );
+                    return;
+                  }
+
+                  if (meter.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Enter meter number")),
+                    );
+                    return;
+                  }
+
+                  if (_customerName == null || _customerName == "Invalid meter") {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Invalid meter")),
+                    );
+                    return;
+                  }
+
+                  if (amountText.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Enter amount")),
+                    );
+                    return;
+                  }
+
+                  final amount = int.tryParse(amountText) ?? 0;
+
+                  ConfirmationBottomSheet.show(
+                    context: context,
+                    config: BottomSheetConfig(
+                      title: "Confirm Electricity",
+                      subtitle: "electricity",
+                      amount: amount.toDouble(),
+                      details: [
+                        BottomSheetDetailItem(
+                          label: "Provider",
+                          value: widget.selectedProvider?['name'] ?? "",
+                        ),
+                        BottomSheetDetailItem(
+                          label: "Meter Number",
+                          value: meter,
+                        ),
+                        BottomSheetDetailItem(
+                          label: "Customer",
+                          value: _customerName ?? "",
+                          isHighlighted: true,
+                        ),
+                        BottomSheetDetailItem(
+                          label: "Amount",
+                          value: "₦$amount",
+                        ),
+
+                        /// 🔥 VERY IMPORTANT (THIS IS WHAT YOUR PIN SCREEN USES)
+                        BottomSheetDetailItem(
+                          label: "serviceId",
+                          value: serviceId,
+                        ),
+                        BottomSheetDetailItem(
+                          label: "variationCode",
+                          value: "prepaid",
+                        ),
+                      ],
+                    ),
+                    onConfirm: (pin) {},
+                  );
+                }
             ),
           ],
         ),
@@ -328,38 +463,40 @@ class _CardOneState extends State<CardOne> {
   }
 }
 
-class CardThree extends ConsumerStatefulWidget {
-  const CardThree({super.key});
+// 🔥 CardThree is commented out - fix BeneficiarySelector first or provide its code
+// class CardThree extends ConsumerStatefulWidget {
+//   const CardThree({super.key});
 
-  @override
-  ConsumerState<CardThree> createState() => _CardThreeState();
-}
+//   @override
+//   ConsumerState<CardThree> createState() => _CardThreeState();
+// }
 
-class _CardThreeState extends ConsumerState<CardThree> {
-  Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+// class _CardThreeState extends ConsumerState<CardThree> {
+//   Map<String, dynamic>? _selectedProvider;
+//   String _phoneNumber = '';
 
-  @override
-  Widget build(BuildContext context) {
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      decoration: BoxDecoration(
-       // color: themeContext.tertiaryBackgroundColor,
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BeneficiarySelector()
-        ],
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.circular(15.r),
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           BeneficiarySelector()
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 class CardTwo extends ConsumerStatefulWidget {
-  const CardTwo({super.key});
+  final ValueChanged<Map<String, dynamic>>? onChanged;
+
+  const CardTwo({super.key, this.onChanged});
 
   @override
   ConsumerState<CardTwo> createState() => _CardTwoState();
@@ -371,36 +508,33 @@ class _CardTwoState extends ConsumerState<CardTwo> {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h),
       decoration: BoxDecoration(
-       // color: themeContext.tertiaryBackgroundColor,
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // 🔥 ADD THIS
         children: [
           Text(
             'Select Service Provider',
             textAlign: TextAlign.start,
-            // style: textTheme.titleMedium?.copyWith(
-            //   fontWeight: FontWeight.w600,
-            // ),
           ),
-          SizedBox(height: 10.h,),
+          SizedBox(height: 10.h),
           NetworkDropdown(
-            onChanged: (provider) => setState(() => _selectedProvider = provider),
-            onPhoneChanged: (number) =>
-                setState(() => _phoneNumber = number),
+            onChanged: (provider) {
+              setState(() => _selectedProvider = provider);
+              widget.onChanged?.call(provider); // 🔥 propagate up
+            },
           ),
         ],
       ),
     );
   }
 }
-/// ─── NETWORK DROPDOWN ───
 
+/// ─── NETWORK DROPDOWN ───
 class NetworkDropdown extends ConsumerStatefulWidget {
   final ValueChanged<Map<String, dynamic>>? onChanged;
   final ValueChanged<String>? onPhoneChanged;
@@ -416,147 +550,68 @@ class NetworkDropdown extends ConsumerStatefulWidget {
 }
 
 class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
-  final List<Map<String, dynamic>> _providers = [
-    {'name': 'Kano Electricity (KEDCO)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Abuja Electricity (AEDC)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Eko Electricity (EKEDC)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Ikeja Electricity (IKEDC)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Kaduna Electricity (KAEDCO)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Port Harcourt (PHED)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Jos (JED)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Ibadan (IBEDC)', 'logo': 'assets/svg/bank.png'},
-    {'name': 'Benin (BEDC)', 'logo': 'assets/svg/bank.svg'},
-    {'name': 'Enugu (EEDC)', 'logo': 'assets/svg/bank.png'},
-  ];
-
   Map<String, dynamic>? _selectedProvider;
-  final TextEditingController _phoneController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedProvider = _providers.first;
-  }
 
   @override
   Widget build(BuildContext context) {
+    final providersAsync = ref.watch(electricityProviderListProvider);
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, ),
-        decoration: BoxDecoration(
-        //  border: Border.all(color: themeContext.checkboxBorderColor),
-          borderRadius: BorderRadius.all(Radius.circular(10.r)),
-        ),
-        child: Row(
-          children: [
-            // FIXED WIDTH dropdown so it doesn't collapse and hides
-            Expanded(
-              child: SizedBox(
-                width: double.infinity, // <- adjust width as needed for your layout
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<Map<String, dynamic>>(
-                    isExpanded: true,
-                    value: _selectedProvider,
-                   // dropdownColor: themeContext.offWhiteBg,
-                    menuMaxHeight: 300.h,
-                    borderRadius: BorderRadius.circular(10.r),
-                    icon: Icon(
-                      Icons.arrow_drop_down_rounded,
-                     // color: themeContext.secondaryTextColor,
-                      size: 20.sp,
-                    ),
-
-                    // how the selected value is shown in the closed button
-                    selectedItemBuilder: (BuildContext context) {
-                      return _providers.map<Widget>((provider) {
-                        return Row(
-                          children: [
-                            Container(
-                              height: 28.h,
-                              width: 28.h,
-                              margin: EdgeInsets.only(right: 8.w),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage(provider['logo']),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 10.w), // vertical divider between dropdown and input (optional)
-                            Container(
-                              width: 1,
-                              height: 36.h,
-                             // color: themeContext.checkboxBorderColor,
-                            ),
-                            SizedBox(width: 10.w),
-                            Expanded(
-                              child: Text(
-                                provider['name'],
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                 // color: themeContext.titleTextColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList();
-                    },
-
-                    // items inside the dropdown menu
-                    items: _providers.map((provider) {
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: provider,
-                        child: Row(
-                          children: [
-                            Container(
-                              height: 28.h,
-                              width: 28.h,
-                              margin: EdgeInsets.only(right: 8.w),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage(provider['logo']),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                provider['name'],
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                               //   color: themeContext.titleTextColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => _selectedProvider = value);
-                      widget.onChanged?.call(value);
-                    },
-                  ),
-                ),
-              ),
-            ),
-
-          ],
-        ),
+    return providersAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: CircularProgressIndicator(),
       ),
+
+      error: (err, _) => Text("Error loading providers"),
+
+      data: (providers) {
+        if (providers.isEmpty) {
+          return const Text("No providers available");
+        }
+
+        // ✅ Ensure selected provider is always valid
+        if (_selectedProvider == null ||
+            !providers.contains(_selectedProvider)) {
+          _selectedProvider = providers.first;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.onChanged?.call(_selectedProvider!);
+          });
+        }
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<Map<String, dynamic>>(
+              isExpanded: true,
+              value: _selectedProvider,
+              menuMaxHeight: 300.h,
+              borderRadius: BorderRadius.circular(10.r),
+
+              items: providers.map((provider) {
+                return DropdownMenuItem<Map<String, dynamic>>(
+                  value: provider,
+                  child: Text(
+                    provider['name'],
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() => _selectedProvider = value);
+                widget.onChanged?.call(value);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
+
 void showAirtimeConfirmationSheet(
     BuildContext context, {
       required int amount,
@@ -582,7 +637,7 @@ void showAirtimeConfirmationSheet(
           bottom: MediaQuery.of(context).viewInsets.bottom + 50,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // 🔥 ENSURE THIS IS SET
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ─── Drag Handle ───
@@ -593,9 +648,7 @@ void showAirtimeConfirmationSheet(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: SvgPicture.asset('assets/svg/cancel.svg',
-                //color: Theme.of(context)Context.secondaryTextColor,
-              ),
+              child: SvgPicture.asset('assets/svg/cancel.svg'),
             ),
 
             // 💰 Big Amount
@@ -604,36 +657,33 @@ void showAirtimeConfirmationSheet(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: Constants.nairaCurrencySymbol, // ₦ sign
+                      text: Constants.nairaCurrencySymbol,
                       style: TextStyle(
-                        fontSize: 14.spMin, // smaller ₦
+                        fontSize: 14.spMin,
                         fontWeight: FontWeight.w600,
-                        //color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                     TextSpan(
-                      text: '$amount.00', // bigger number
+                      text: '$amount.00',
                       style: TextStyle(
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w700,
-                       // color: Theme.of(context)Context.titleTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 20.h,),
-
+            SizedBox(height: 20.h),
 
             // 📄 Transaction summary
             Container(
-              padding: EdgeInsets.symmetric( vertical: 18, horizontal: 16),
+              padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
               decoration: BoxDecoration(
-               // color: Theme.of(context)Context.offWhiteBg,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min, // 🔥 ADD THIS
                 children: [
                   // 👇 Network logo + name
                   Row(
@@ -658,8 +708,7 @@ void showAirtimeConfirmationSheet(
                               ),
                             ),
                           ),
-                          SizedBox(height: 6.h,),
-
+                          SizedBox(height: 6.h),
                           Text(
                             networkName,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -690,7 +739,8 @@ void showAirtimeConfirmationSheet(
             ),
 
             Divider(color: Colors.grey.shade300),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
+
             // 💳 Payment Method
             Text(
               'Payment Method',
@@ -699,17 +749,18 @@ void showAirtimeConfirmationSheet(
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 10.h,),
+            SizedBox(height: 10.h),
 
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric( vertical: 16, horizontal: 18),
+              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 18),
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min, // 🔥 ADD THIS
                 children: [
                   Text(
                     'Available Balance (${currencySymbol}314,171.32)',
@@ -722,13 +773,16 @@ void showAirtimeConfirmationSheet(
               ),
             ),
 
-            SizedBox(height: 20.h,),
-
+            SizedBox(height: 20.h),
 
             // 🟩 Pay Button
             Padding(
-                padding: EdgeInsets.symmetric( horizontal: 10.w),
-                child: CustomButton(buttonColor: Colors.white, buttonTextColor: Colors.white, buttonName: 'Pay')
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: CustomButton(
+                buttonColor: Colors.white,
+                buttonTextColor: Colors.white,
+                buttonName: 'Pay',
+              ),
             ),
           ],
         ),
@@ -736,6 +790,7 @@ void showAirtimeConfirmationSheet(
     },
   );
 }
+
 /// 🔹 Helper Summary Row Widget
 Widget _buildSummaryRow(
     BuildContext context,
@@ -767,12 +822,10 @@ Widget _buildSummaryRow(
               )
             else
               Text(
-                  value,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  )
-
+                value,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(),
               ),
-            SizedBox(height: 5.h,),
+            SizedBox(height: 5.h),
             if (hasToggle)
               GestureDetector(
                 onTap: () {},
@@ -781,7 +834,6 @@ Widget _buildSummaryRow(
                   width: 25,
                   height: 15,
                   decoration: BoxDecoration(
-                    //color: false ? Theme.of(context)Context.kPrimary : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Align(

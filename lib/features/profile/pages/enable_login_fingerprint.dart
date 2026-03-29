@@ -1,13 +1,11 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import '../../../app/utils/router/route_constant.dart';
-import '../../../app/view/widget/app_textfield.dart';
-import '../../../core/utils/biometric_helper.dart';
+import '../../../core/services/biometric_service.dart';
 
 class EnableLoginFingerprint extends ConsumerStatefulWidget {
   const EnableLoginFingerprint({super.key});
@@ -17,8 +15,6 @@ class EnableLoginFingerprint extends ConsumerStatefulWidget {
 }
 
 class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint> {
-  final TextEditingController passwordController = TextEditingController();
-  bool _obscurePassword = true;
   bool _isLoading = false;
   String _biometricTypeName = 'Biometric';
 
@@ -28,46 +24,60 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
     _loadBiometricTypeName();
   }
 
-  @override
-  void dispose() {
-    passwordController.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadBiometricTypeName() async {
-    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricService = BiometricService();
+    final typeName = await biometricService.getBiometricTypeName();
     setState(() {
-      _biometricTypeName = availability.biometricTypeName;
+      _biometricTypeName = typeName;
     });
   }
 
   Future<void> _enableBiometricLogin() async {
-    final password = passwordController.text.trim();
-
-    if (password.isEmpty) {
-      _showSnack("Please enter your password", errorColor);
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
+      final biometricService = BiometricService();
+      
       // Check if biometric is available
-      final availability = await BiometricHelper.checkBiometricAvailability();
-      if (!availability.isAvailable) {
+      final canCheck = await biometricService.canCheckBiometrics();
+      if (!canCheck) {
         _showSnack('Biometric authentication is not available on this device', pendingColor);
         return;
       }
 
-      final box = await Hive.openBox('settingsBox');
-      await box.put('biometric_login_password', password);
-      await box.put('login_biometric_enabled', true);
+      // Get the current user info
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+      
+      if (effectiveUserId.isEmpty) {
+        _showSnack('User session not found. Please log in again.', errorColor);
+        return;
+      }
 
-      _showSnack("$_biometricTypeName login enabled successfully", successColor);
+      // Get saved password
+      final savedPassword = await biometricService.getLoginPassword(effectiveUserId);
+      
+      if (savedPassword == null) {
+        _showSnack('Please log in again to enable biometric login', pendingColor);
+        return;
+      }
 
-      if (mounted) {
-        // Pop with result to indicate success
-        context.pop(true);
+      // Enable biometric with complete flow (includes authentication)
+      final success = await biometricService.enableLoginBiometric(
+        userId: effectiveUserId,
+        phone: phone,
+        password: savedPassword,
+      );
+
+      if (success) {
+        _showSnack("$_biometricTypeName login enabled successfully", successColor);
+        if (mounted) {
+          context.pop(true);
+        }
+      } else {
+        _showSnack("Failed to enable $_biometricTypeName login", errorColor);
       }
     } catch (e) {
       _showSnack("Failed to enable $_biometricTypeName login: $e", errorColor);
@@ -110,90 +120,85 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 30.h),
+            SizedBox(height: 60.h),
 
             // Icon and description
-            Center(
-              child: Column(
+            Container(
+              padding: EdgeInsets.all(30.w),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    primaryColor.withOpacity(0.2),
+                    primaryColor.withOpacity(0.1),
+                  ],
+                ),
+              ),
+              child: Icon(
+                Icons.fingerprint,
+                size: 80.sp,
+                color: primaryColor,
+              ),
+            ),
+            
+            SizedBox(height: 40.h),
+            
+            Text(
+              'Enable $_biometricTypeName Login',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            SizedBox(height: 16.h),
+            
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Text(
+                'Use your $_biometricTypeName to quickly and securely log in to your account.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: lightSecondaryText,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            SizedBox(height: 20.h),
+
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: primaryColor.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(20.w),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: primaryColor.withOpacity(0.1),
-                    ),
-                    child: Icon(
-                      Icons.fingerprint,
-                      size: 60.sp,
-                      color: primaryColor,
-                    ),
+                  Icon(
+                    Icons.info_outline,
+                    color: primaryColor,
+                    size: 24.sp,
                   ),
-                  SizedBox(height: 20.h),
-                  Text(
-                    'Enable $_biometricTypeName Login',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Text(
+                      'Tap the button below and authenticate with your $_biometricTypeName to enable this feature.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: lightText,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    'Enter your account password to save for $_biometricTypeName login.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: lightSecondaryText,
-                    ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
-              ),
-            ),
-
-            SizedBox(height: 40.h),
-
-            // Password field
-            Text(
-              'Account Password',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 8.h),
-
-            AppTextField(
-              controller: passwordController,
-              obscureText: _obscurePassword,
-              borderRadius: 8.r,
-              decoration: InputDecoration(
-                hintText: "Enter your password",
-                hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                  color: lightSecondaryText,
-                ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: lightSecondaryText,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 5,
-                  horizontal: 16,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: lightBorderColor, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: primaryColor, width: 1.5),
-                ),
               ),
             ),
 
@@ -208,20 +213,37 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
                   backgroundColor: primaryColor,
                   padding: EdgeInsets.symmetric(vertical: 16.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
+                  elevation: 0,
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      )
-                    : Text(
-                        'Enable $_biometricTypeName Login',
-                        style: const TextStyle(
+                    ? SizedBox(
+                        height: 20.h,
+                        width: 20.w,
+                        child: const CircularProgressIndicator(
                           color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                          strokeWidth: 2,
                         ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.fingerprint,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Authenticate with $_biometricTypeName',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ),

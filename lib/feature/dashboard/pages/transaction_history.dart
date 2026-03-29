@@ -96,11 +96,11 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                             : (tx.receiverName ?? (tx.provider ?? "Transfer")));
 
                   return Container(
-                    margin: EdgeInsets.only(bottom: 14.h),
-                    padding: EdgeInsets.all(14.w),
+                    margin: EdgeInsets.only(bottom: 6.h),
+                    padding: EdgeInsets.symmetric(vertical: 7.h, horizontal: 10.w),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
+                      borderRadius: BorderRadius.circular(10.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(.03),
@@ -113,8 +113,8 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                       children: [
                         /// ICON
                         Container(
-                          height: 45.w,
-                          width: 45.w,
+                          height: 40.w,
+                          width: 40.w,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: amountColor.withOpacity(.08),
@@ -124,11 +124,11 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                 ? Icons.arrow_downward_rounded
                                 : Icons.arrow_upward_rounded,
                             color: amountColor,
-                            size: 20.sp,
+                            size: 18.sp,
                           ),
                         ),
 
-                        SizedBox(width: 14.w),
+                        SizedBox(width: 10.w),
 
                         /// TITLE + DATE
                         Expanded(
@@ -141,7 +141,7 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 14.sp,
+                                  fontSize: 12.sp,
                                   color: darkBackground,
                                 ),
                               ),
@@ -149,7 +149,7 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                               Text(
                                 formatTransactionDate(tx.createdAt),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 11.sp,
+                                  fontSize: 10.sp,
                                   color: lightSecondaryText,
                                 ),
                               ),
@@ -165,14 +165,14 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                               "${isCredit ? '+' : '-'}₦${tx.amount}",
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 15.sp,
+                                fontSize: 14.sp,
                                 color: amountColor,
                               ),
                             ),
                             SizedBox(height: 6.h),
                             Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: 10.w,
+                                horizontal: 8.w,
                                 vertical: 4.h,
                               ),
                               decoration: BoxDecoration(
@@ -183,7 +183,7 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                 tx.status ?? "",
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 9.sp,
+                                  fontSize: 7.sp,
                                   color: amountColor,
                                 ),
                               ),

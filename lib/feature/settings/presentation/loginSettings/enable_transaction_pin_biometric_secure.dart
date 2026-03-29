@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 
 import '../../../../app/utils/widgets/pin_field.dart';
-import '../../../../core/services/secure_biometric_service.dart';
+import '../../../../core/services/biometric_service.dart';
 import '../../../dashboard/widgets/keypad.dart';
 
 /// Secure implementation of biometric enablement
@@ -34,6 +35,7 @@ class _EnableTransactionPinBiometricSecureState
   void initState() {
     super.initState();
     _loadBiometricTypeName();
+    _debugCheckStoredData();
   }
 
   @override
@@ -59,91 +61,83 @@ class _EnableTransactionPinBiometricSecureState
   }
 
   Future<void> _loadBiometricTypeName() async {
-    final typeName = await SecureBiometricService.getBiometricTypeName();
+    final biometricService = BiometricService();
+    final typeName = await biometricService.getBiometricTypeName();
     setState(() {
       _biometricTypeName = typeName;
     });
   }
 
-  /// Enable biometric authentication
-  /// IMPORTANT: This is a simplified version
-  /// In production, you should:
-  /// 1. Send PIN to backend for validation
-  /// 2. Backend returns a secure token (NOT the PIN)
-  /// 3. Store the token securely
+  /// Enable biometric for transaction PIN
+  /// Uses the entered PIN to enable biometric authentication
   Future<void> _enableBiometricTransaction() async {
-    final inputPin = pinController.text.trim();
-
-    if (inputPin.length != 4) {
-      _showSnack("Please enter a valid 4-digit PIN", errorColor);
+    if (password.length != 4) {
+      _showSnack('Please enter your 4-digit PIN', pendingColor);
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
+      final biometricService = BiometricService();
+      
       // Check biometric availability
-      final isAvailable = await SecureBiometricService.isBiometricAvailable();
-      if (!isAvailable) {
-        _showSnack(
-          'Biometric authentication is not available on this device',
-          pendingColor,
-        );
+      final canCheck = await biometricService.canCheckBiometrics();
+      if (!canCheck) {
+        _showSnack('Biometric not available', pendingColor);
         return;
       }
 
-      // ⚠️ CRITICAL SECURITY NOTE:
-      // In a proper implementation, you should:
-      // 1. Call backend API to validate PIN: POST /api/validate-pin { pin: inputPin }
-      // 2. Backend validates PIN and returns a secure token
-      // 3. Store that token (NOT the PIN)
-      //
-      // Example:
-      // final response = await apiClient.post('/api/validate-pin', { 'pin': inputPin });
-      // if (response.success) {
-      //   final secureToken = response.data['token'];
-      //   await SecureBiometricService.enableBiometricTransaction(
-      //     authToken: secureToken,
-      //   );
-      // }
-      //
-      // For now, we're using the PIN as the token (NOT SECURE for production!)
-      // This is only for demonstration purposes
+      // Get current user
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
-      debugPrint('⚠️ WARNING: Using PIN as token - NOT SECURE for production!');
-      debugPrint('⚠️ In production, validate PIN with backend and get a secure token');
+      if (effectiveUserId.isEmpty) {
+        _showSnack('User not found. Please login again.', errorColor);
+        return;
+      }
 
-      // Store the PIN as token (TEMPORARY - should be backend token)
-      final success = await SecureBiometricService.enableBiometricTransaction(
-        authToken: inputPin, // ⚠️ Should be a token from backend, not PIN!
+      debugPrint('🔐 Attempting to enable payment biometric for user: $effectiveUserId');
+      debugPrint('🔐 Entered PIN length: ${password.length}');
+
+      // Enable biometric with complete flow (includes authentication)
+      final success = await biometricService.enablePaymentBiometric(
+        userId: effectiveUserId,
+        pin: password,
       );
 
-      if (success) {
-        _showSnack(
-          '$_biometricTypeName transaction enabled successfully',
-          successColor,
-        );
+      debugPrint('🔐 Enable payment biometric result: $success');
 
-        if (mounted) {
-          context.pop(true);
-        }
+      if (success && mounted) {
+        // Verify it was actually saved
+        final isEnabled = await biometricService.isPaymentEnabled(effectiveUserId);
+        final savedPin = await biometricService.getTransactionPin(effectiveUserId);
+        
+        debugPrint('🔐 Verification after enable:');
+        debugPrint('   - isEnabled: $isEnabled');
+        debugPrint('   - hasSavedPin: ${savedPin != null}');
+        
+        _showSnack('$_biometricTypeName enabled successfully!', successColor);
+        context.pop(true);
       } else {
-        _showSnack(
-          'Failed to enable $_biometricTypeName transaction',
-          errorColor,
-        );
+        _showSnack('Failed to enable biometric', errorColor);
       }
     } catch (e) {
-      _showSnack(
-        'Failed to enable $_biometricTypeName transaction',
-        errorColor,
-      );
       debugPrint('❌ Error enabling biometric: $e');
+      _showSnack('Error: $e', errorColor);
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _debugCheckStoredData() async {
+    final authBox = await Hive.openBox('authBox');
+    final userId = authBox.get('userId', defaultValue: '');
+
+    debugPrint('🔍 DEBUG: User ID: $userId');
+  }
   void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

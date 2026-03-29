@@ -12,6 +12,7 @@ import '../dashboard_repo/repo.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 import '../model/bank_model.dart';
+import '../model/data_model.dart';
 import '../model/deposit.dart';
 import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
@@ -828,4 +829,544 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       BuildContext context) async {
     return await dashboardRepository.getBankBeneficiaries();
   }
+  Future<ResponseModel?> forgotPaymentPin(BuildContext context) async {
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response =
+      await dashboardRepository.forgotPaymentPin();
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+  Future<ResponseModel?> verifyForgotPin(
+      BuildContext context,
+      String otp,
+      ) async {
+    if (otp.isEmpty || otp.length != 6) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Enter a valid 6-digit OTP",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response =
+      await dashboardRepository.verifyForgotPin(otp);
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> resetForgotPin(
+      BuildContext context,
+      String newPin,
+      String confirmNewPin,
+      ) async {
+    if (newPin.length != 4 || confirmNewPin.length != 4) {
+      ToastHelper.showToast(
+        context: context,
+        message: "PIN must be 4 digits",
+        icon: Icons.info,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response =
+      await dashboardRepository.resetForgotPin(
+        newPin: newPin,
+        confirmNewPin: confirmNewPin,
+      );
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> verifyPhone(
+      BuildContext context,
+      String phone,
+      ) async {
+
+    if (phone.length != 11) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Enter a valid phone number",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response =
+      await dashboardRepository.verifyPhoneNumber(phone);
+
+      EasyLoading.dismiss();
+
+      return response;
+
+    } catch (e) {
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> buyAirtime(
+      BuildContext context, {
+        required String phone,
+        required int amount,
+        required String network,
+        required String pin,
+      }) async {
+    if (phone.isEmpty || amount <= 0 || pin.isEmpty || network.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields are required",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response = await dashboardRepository.purchaseAirtime(
+        phone: phone,
+        amount: amount,
+        network: network.toLowerCase().trim(), // ✅ CRITICAL FIX
+        pin: pin,
+      );
+
+      EasyLoading.dismiss();
+
+      debugPrint("📡 Airtime Controller Response: ${response.responseMessage}");
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      debugPrint("🔥 Airtime Controller Error: $e");
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Airtime failed: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+
+  Future<List<DataPlanModel>> fetchDataPlans(
+      BuildContext context, String serviceId) async {
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final plans = await dashboardRepository.getDataPlans(serviceId);
+
+      EasyLoading.dismiss();
+
+      return plans;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Failed to load data plans",
+        icon: Icons.error,
+        iconColor: Colors.red,
+      );
+
+      return [];
+    }
+  }
+  Future<ResponseModel?> buyData(
+      BuildContext context, {
+        required String phone,
+        required String serviceId,
+        required String variationCode,
+        required int amount,
+        required String pin,
+      }) async {
+    if (phone.isEmpty ||
+        serviceId.isEmpty ||
+        variationCode.isEmpty ||
+        amount <= 0 ||
+        pin.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields are required",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final response = await dashboardRepository.purchaseData(
+        serviceId: serviceId.trim(),
+        phone: phone.trim(),
+        billersCode: phone.trim(), // ✅ CRITICAL FIX
+        variationCode: variationCode.trim(),
+        amount: amount,
+        pin: pin.trim(),
+      );
+
+      EasyLoading.dismiss();
+
+      debugPrint("📡 Data Controller Response: ${response.responseMessage}");
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      debugPrint("🔥 Data Controller Error: $e");
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Data purchase failed: $e",
+        icon: Icons.error,
+        iconColor: Colors.red,
+        position: ToastPosition.top,
+      );
+
+      return null;
+    }
+  }
+
+
+
+  Future<List<DataPlanModel>> fetchSmePlans(BuildContext context) async {
+    try {
+      final plans = await dashboardRepository.getSmeDataPlans();
+      return plans;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCableProviders(
+      BuildContext context) async {
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+        dismissOnTap: false,
+      );
+
+      final providers = await dashboardRepository.getCableProviders();
+
+      EasyLoading.dismiss();
+
+      return providers;
+    } catch (e) {
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: "Failed to load providers",
+        icon: Icons.error,
+        iconColor: Colors.red,
+      );
+
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCablePlans(
+      BuildContext context,
+      String serviceId,
+      ) async {
+    try {
+      final result =
+      await dashboardRepository.getCableVariations(serviceId);
+
+      return result;
+    } catch (e) {
+      return [];
+    }
+  }
+
+
+
+  Future<Map<String, dynamic>?> verifyCable(
+      BuildContext context, {
+        required String serviceId,
+        required String smartcard,
+      }) async {
+    if (smartcard.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Enter smartcard number",
+        icon: Icons.error,
+        iconColor: Colors.red,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+      );
+
+      final result = await dashboardRepository.verifyCableCard(
+        serviceId: serviceId,
+        billersCode: smartcard,
+      );
+
+      EasyLoading.dismiss();
+
+      if (result != null) {
+        ToastHelper.showToast(
+          context: context,
+          message: "Verified: ${result['Customer_Name']}",
+          icon: Icons.check_circle,
+          iconColor: Colors.green,
+        );
+      }
+
+      return result;
+    } catch (e) {
+      EasyLoading.dismiss();
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> buyCable(
+      BuildContext context, {
+        required String serviceId,
+        required String smartcard,
+        required String packageName,
+        required String variationCode,
+        required int amount,
+        required String phone,
+        required String pin,
+      }) async {
+    if (smartcard.isEmpty || variationCode.isEmpty || pin.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields required",
+        icon: Icons.error,
+        iconColor: Colors.red,
+      );
+      return null;
+    }
+
+    try {
+      EasyLoading.show(
+        indicator: const CustomLoader(),
+        maskType: EasyLoadingMaskType.black,
+      );
+
+      final response = await dashboardRepository.purchaseCable(
+        serviceId: serviceId,
+        billersCode: smartcard,
+        packageName: packageName,
+        variationCode: variationCode,
+        amount: amount,
+        phone: phone,
+        pin: pin,
+      );
+
+      EasyLoading.dismiss();
+
+      ToastHelper.showToast(
+        context: context,
+        message: response.responseMessage,
+        icon: response.responseSuccessful
+            ? Icons.check_circle
+            : Icons.error,
+        iconColor:
+        response.responseSuccessful ? Colors.green : Colors.red,
+      );
+
+      return response;
+    } catch (e) {
+      EasyLoading.dismiss();
+      return null;
+    }
+  }
+  Future<ResponseModel> buyElectricity(
+      BuildContext context, {
+        required String serviceId,
+        required String meterNumber,
+        required String variationCode,
+        required int amount,
+        required String phone,
+        required String pin,
+      }) async {
+    final repo = dashboardRepository;
+    return await repo.purchaseElectricity(
+      serviceId: serviceId,
+      meterNumber: meterNumber,
+      variationCode: variationCode,
+      amount: amount,
+      phone: phone,
+      pin: pin,
+    );
+  }
+
+  // Future<List<DataPlanModel>> fetchDataPlans(
+  //     BuildContext context, String serviceId) async {
+  //   try {
+  //     EasyLoading.show(
+  //       indicator: const CustomLoader(),
+  //       maskType: EasyLoadingMaskType.black,
+  //       dismissOnTap: false,
+  //     );
+  //
+  //     final plans = await dashboardRepository.getDataPlans(serviceId);
+  //
+  //     EasyLoading.dismiss();
+  //
+  //     return plans;
+  //   } catch (e) {
+  //     EasyLoading.dismiss();
+  //
+  //     ToastHelper.showToast(
+  //       context: context,
+  //       message: "Failed to load data plans",
+  //       icon: Icons.error,
+  //       iconColor: Colors.red,
+  //     );
+  //
+  //     return [];
+  //   }
+  // }
 }

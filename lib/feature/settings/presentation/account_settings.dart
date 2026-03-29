@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:bia/core/__core.dart';
+import 'package:bia/feature/dashboard/dashboard_repo/repo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,7 @@ import '../../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/image.dart';
 import '../../../core/local/transaction_cache.dart';
-import '../../../core/utils/biometric_helper.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../auth/authrepo/repo.dart';
 import '../../auth/data/api_constant.dart';
 import '../../auth/data/api_data.dart';
@@ -97,9 +98,10 @@ class _UProfileState extends ConsumerState<UProfile> {
   }
 
   Future<void> _loadBiometricTypeName() async {
-    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricService = BiometricService();
+    final typeName = await biometricService.getBiometricTypeName();
     setState(() {
-      _biometricTypeName = availability.biometricTypeName;
+      _biometricTypeName = typeName;
     });
   }
 
@@ -131,6 +133,7 @@ class _UProfileState extends ConsumerState<UProfile> {
       setState(() => _isLoadingProfile = false);
     }
   }
+
   void _showEditAvatarSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -163,13 +166,32 @@ class _UProfileState extends ConsumerState<UProfile> {
       ),
     );
   }
+
   Future<void> _loadBiometricSetting() async {
-    final box = await Hive.openBox('settingsBox');
+    final authBox = await Hive.openBox('authBox');
+    final userId = authBox.get('userId');
+    final phone = authBox.get('phone');
+
+    final effectiveUserId = userId?.toString() ?? phone?.toString() ?? '';
+
+    if (effectiveUserId.isEmpty) {
+      setState(() {
+        biometricEnabled = false;
+        loginBiometricEnabled = false;
+      });
+      return;
+    }
+
+    final biometricService = BiometricService();
+    final loginEnabled = await biometricService.isLoginEnabled(effectiveUserId);
+    final paymentEnabled = await biometricService.isPaymentEnabled(effectiveUserId);
+
     setState(() {
-      biometricEnabled = box.get('biometric_enabled', defaultValue: false);
-      loginBiometricEnabled = box.get('login_biometric_enabled', defaultValue: false);
+      loginBiometricEnabled = loginEnabled;
+      biometricEnabled = paymentEnabled;
     });
   }
+
   void _previewAvatar(BuildContext context) {
     final image = _user?.picture;
     if (image == null) return;
@@ -186,6 +208,7 @@ class _UProfileState extends ConsumerState<UProfile> {
       ),
     );
   }
+
   Future<void> _pickAndUploadAvatar(BuildContext context) async {
     final picker = ImagePicker();
 
@@ -221,53 +244,75 @@ class _UProfileState extends ConsumerState<UProfile> {
     try {
       EasyLoading.show(status: "Logging out...");
 
+      final authBox = await Hive.openBox('authBox');
+      final settingsBox = await Hive.openBox('settingsBox');
+
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final fullname = authBox.get('fullname', defaultValue: '');
+      final picture = authBox.get('picture');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      // 🔹 Save user data BEFORE any clearing
+      final userDataToKeep = {
+        'userId': userId,
+        'phone': phone,
+        'fullname': fullname,
+        'picture': picture,
+      };
+
+      // Call API logout
       final authRepo = ref.read(authRepositoryProvider);
-      final result = await authRepo.logout();
+      await authRepo.logout();
+
+      // 🔹 CRITICAL FIX: Always keep user identification data
+      // Only delete sensitive tokens, never clear everything
+
+      // Step 1: Delete sensitive data only
+      await authBox.delete('token');
+      await authBox.delete('refreshToken');
+      await authBox.delete('balance');
+      await authBox.delete('saved_user_profile');
+
+      // Step 2: Restore user identification data
+      for (var entry in userDataToKeep.entries) {
+        if (entry.value != null && entry.value.toString().isNotEmpty) {
+          await authBox.put(entry.key, entry.value);
+        }
+      }
+
+      // Step 3: If biometric was disabled, also clear biometric settings for this user
+      // (but keep the user data)
+      if (effectiveUserId.isNotEmpty) {
+        // Optional: Clear biometric settings if you want to force re-enable
+        // await settingsBox.delete('login_biometric_enabled_$effectiveUserId');
+        // await settingsBox.delete('biometric_login_password_$effectiveUserId');
+      }
+
+      debugPrint('🔐 Logout complete. Kept user data: $userDataToKeep');
 
       EasyLoading.dismiss();
 
-      if (!mounted) return;
-
-      if (result.responseSuccessful) {
-        ref.invalidate(recentTransactionsProvider);
-        ref.invalidate(dashboardControllerProvider);
-
-        // SHOW SNACKBAR FIRST
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.responseMessage),
+          const SnackBar(
+            content: Text("Logged out successfully"),
             backgroundColor: Colors.green,
           ),
         );
+      }
 
-        final box = await Hive.openBox('authBox');
-        final biometricEnabled =
-        box.get('login_biometric_enabled', defaultValue: false);
-
-        // THEN NAVIGATE
-        if (!mounted) return;
-
-        context.go(
-          biometricEnabled
-              ? RouteList.welcomeBackScreen
-              : RouteList.loginScreen,
-        );
-      }else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.responseMessage),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // 🔹 ALWAYS go to welcome back
+      if (mounted) {
+        context.go(RouteList.welcomeBackScreen);
       }
     } catch (e) {
       EasyLoading.dismiss();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Logout failed: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint('❌ Logout error: $e');
+      // Even on error, go to welcome back
+      if (mounted) {
+        context.go(RouteList.welcomeBackScreen);
+      }
     }
   }
 
@@ -347,10 +392,8 @@ class _UProfileState extends ConsumerState<UProfile> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   Navigator.of(context).pop();
-
-                                  Future.microtask(() {
-                                    _logout(this.context);
-                                  });
+                                  // 🔹 Call logout directly - no need for microtask
+                                  _logout(this.context);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
@@ -470,6 +513,43 @@ class _UProfileState extends ConsumerState<UProfile> {
       // user turning off
       await settingsBox.put('scan_to_receive', false);
       setState(() {});
+    }
+  }
+
+  Future<void> _handleForgotPin() async {
+    try {
+      EasyLoading.show(status: "Sending OTP...");
+
+      final controller =
+      ref.read(dashboardControllerProvider.notifier);
+
+      final result =
+      await controller.forgotPaymentPin(context);
+
+      EasyLoading.dismiss();
+
+      if (!mounted) return;
+
+      // ✅ PROPER NULL CHECK
+      if (result != null && result.responseSuccessful == true) {
+        context.pushNamed(RouteList.forgotPin);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result?.responseMessage ?? "Failed to send OTP"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Something went wrong: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -753,6 +833,8 @@ class _UProfileState extends ConsumerState<UProfile> {
                               context.pushNamed(RouteList.setTransactionPin);
                             } else if (subTitle == 'Change Payment Pin') {
                               context.pushNamed(RouteList.changePaymentPin);
+                            } else if (subTitle == 'Forget Payment Pin') {
+                              _handleForgotPin();
                             }
                           },
                           child: Text(
@@ -787,71 +869,98 @@ class _UProfileState extends ConsumerState<UProfile> {
                             final isLoginSwitch =
                             subTitle.startsWith('Login with ');
 
-                            bool isEnabled;
+                            return FutureBuilder<String>(
+                              future: Hive.openBox('authBox').then((authBox) =>
+                                  authBox.get('userId', defaultValue: '')),
+                              builder: (context, userIdSnapshot) {
+                                if (!userIdSnapshot.hasData) {
+                                  return SizedBox(
+                                    width: 24.w,
+                                    height: 24.w,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  );
+                                }
 
-                            if (subTitle == 'Enable Scan to Receive') {
-                              isEnabled = box.get(
-                                'scan_to_receive',
-                                defaultValue: false,
-                              );
-                            } else if (isLoginSwitch) {
-                              isEnabled = box.get(
-                                'login_biometric_enabled',
-                                defaultValue: false,
-                              );
-                            } else {
-                              isEnabled = box.get(
-                                'biometric_enabled',
-                                defaultValue: false,
-                              );
-                            }
+                                final userId = userIdSnapshot.data!;
 
-                            return Transform.scale(
-                              scale: 0.75,
-                              child: Switch(
-                                value: isEnabled,
-                                onChanged: (value) async {
-                                  if (subTitle ==
-                                      'Enable Scan to Receive') {
-                                    await _handleScanToggle(box, value);
-                                    return;
-                                  }
-
-                                  if (isLoginSwitch) {
-                                    if (value) {
-                                      final result = await context.pushNamed(
-                                        RouteList.enableLoginFingerprint,
-                                      );
-                                      if (result == true) {
-                                        await _loadBiometricSetting();
-                                      }
-                                    } else {
-                                      await box.put(
-                                          'login_biometric_enabled', false);
-                                      await box.delete(
-                                          'biometric_login_password');
-                                      setState(() =>
-                                      loginBiometricEnabled = false);
-                                    }
+                                // Get enabled state based on switch type
+                                Future<bool> getEnabledState() async {
+                                  if (subTitle == 'Enable Scan to Receive') {
+                                    return box.get('scan_to_receive', defaultValue: false);
+                                  } else if (isLoginSwitch) {
+                                    final biometricService = BiometricService();
+                                    return await biometricService.isLoginEnabled(userId);
                                   } else {
-                                    if (value) {
-                                      final result = await context.pushNamed(
-                                        RouteList
-                                            .enableTransactionPinFingerprint,
-                                      );
-                                      if (result == true) {
-                                        await _loadBiometricSetting();
-                                      }
-                                    } else {
-                                      await box.put(
-                                          'biometric_enabled', false);
-                                      await box.delete('saved_pin');
-                                      setState(() =>
-                                      biometricEnabled = false);
-                                    }
+                                    final biometricService = BiometricService();
+                                    return await biometricService.isPaymentEnabled(userId);
                                   }
-                                },
-                              ),
+                                }
+
+                                return FutureBuilder<bool>(
+                                  future: getEnabledState(),
+                                  builder: (context, enabledSnapshot) {
+                                    if (!enabledSnapshot.hasData) {
+                                      return SizedBox(
+                                        width: 24.w,
+                                        height: 24.w,
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      );
+                                    }
+
+                                    final isEnabled = enabledSnapshot.data!;
+
+                                    return Transform.scale(
+                                      scale: 0.75,
+                                      child: Switch(
+                                        value: isEnabled,
+                                        onChanged: (value) async {
+                                          if (subTitle ==
+                                              'Enable Scan to Receive') {
+                                            await _handleScanToggle(box, value);
+                                            return;
+                                          }
+
+                                          if (isLoginSwitch) {
+                                            if (value) {
+                                              final result = await context.pushNamed(
+                                                RouteList.enableLoginFingerprint,
+                                              );
+                                              if (result == true) {
+                                                await _loadBiometricSetting();
+                                              }
+                                            } else {
+                                              // Disable login biometric using service
+                                              final biometricService = BiometricService();
+                                              await biometricService.disableLoginBiometric(userId);
+                                              setState(() => loginBiometricEnabled = false);
+                                            }
+                                          }
+                                          else {
+                                            if (value) {
+                                              final result = await context.pushNamed(
+                                                RouteList
+                                                    .enableTransactionPinFingerprint,
+                                              );
+                                              if (result == true) {
+                                                await _loadBiometricSetting();
+                                              }
+                                            } else {
+                                              // Disable payment biometric using service
+                                              final biometricService = BiometricService();
+                                              await biometricService.disablePaymentBiometric(userId);
+                                              setState(() => biometricEnabled = false);
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
                             );
                           },
                         ),

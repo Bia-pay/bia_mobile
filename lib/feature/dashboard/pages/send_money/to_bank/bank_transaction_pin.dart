@@ -1,12 +1,10 @@
 // TransactionPin widget
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../../../app/utils/colors.dart';
-import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/keypad.dart';
@@ -78,6 +76,11 @@ class _BankTransactionPinState
     );
 
     if (response != null && response.responseSuccessful) {
+
+      final reference = response.responseBody?.txnRef ??
+          response.responseBody?.paymentRef ??
+          "";
+
       context.pushNamed(
         RouteList.successScreen,
         extra: {
@@ -85,17 +88,54 @@ class _BankTransactionPinState
           "amount": widget.amount.toStringAsFixed(2),
           "recipientName": widget.recipientName,
           "recipientAccount": widget.recipientAccount,
-          "reference": "",
-          "channel": "Bank",
+          "reference": reference,
+          "channel": widget.bankName,
         },
       );
-    } else {
+    }else {
       final msg =
           response?.responseMessage ?? "Transfer failed. Check your PIN.";
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleForgotPin() async {
+    try {
+      EasyLoading.show(status: "Sending OTP...");
+
+      final controller =
+      ref.read(dashboardControllerProvider.notifier);
+
+      final result =
+      await controller.forgotPaymentPin(context);
+
+      EasyLoading.dismiss();
+
+      if (!mounted) return;
+
+      // ✅ PROPER NULL CHECK
+      if (result != null && result.responseSuccessful == true) {
+        context.pushNamed(RouteList.forgotPin);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result?.responseMessage ?? "Failed to send OTP"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Something went wrong: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -208,7 +248,7 @@ class _BankTransactionPinState
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 30),
               child: GestureDetector(
-                onTap: () => context.go(RouteList.forgotPassword),
+                onTap: () => _handleForgotPin(),
                 child: Align(
                   alignment: Alignment.bottomRight,
                   child: Text(

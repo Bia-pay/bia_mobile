@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import '../../../app/utils/colors.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../dashboard/dashboard_repo/repo.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/widgets/keypad.dart';
@@ -379,10 +380,22 @@ class _ConfirmSetNewPinState extends ConsumerState<ConfirmSetNewPin> {
       pin,
     );
 
-    if (response != null &&
-        response.responseSuccessful &&
-        mounted) {
-      context.goNamed(RouteList.bottomNavBar);
+    if (response != null && response.responseSuccessful) {
+      // Save new PIN securely for biometric use
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      if (effectiveUserId.isNotEmpty) {
+        final biometricService = BiometricService();
+        await biometricService.saveTransactionPin(effectiveUserId, pin);
+        debugPrint('🔐 New transaction PIN saved securely for user: $effectiveUserId');
+      }
+
+      if (mounted) {
+        context.goNamed(RouteList.bottomNavBar);
+      }
     }
   }
 

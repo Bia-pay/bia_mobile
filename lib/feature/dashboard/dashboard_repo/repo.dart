@@ -11,6 +11,7 @@ import '../../auth/modal/reponse/response_modal.dart';
 import '../../auth/modal/verify_bank.dart';
 import '../../settings/model/qr_code.dart';
 import '../model/bank_model.dart';
+import '../model/data_model.dart';
 import '../model/deposit.dart';
 import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
@@ -49,12 +50,7 @@ class DashboardRepository {
       print("✅ API Response: $jsonResponse");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return ResponseModel(
-          responseMessage:
-          jsonResponse['responseMessage'] ?? 'Transfer successful',
-          responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
-          statusCode: response.statusCode,
-        );
+        return ResponseModel.fromJson(jsonResponse, response.statusCode);
       } else {
         return ResponseModel(
           responseMessage: jsonResponse["responseMessage"] ?? "Transfer failed",
@@ -77,6 +73,7 @@ class DashboardRepository {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
+      final userId = box.get("userId", defaultValue: "");
       print("🔑 Using token: $token");
 
       if (token.isEmpty) {
@@ -92,6 +89,14 @@ class DashboardRepository {
       final response = await _apiClient.postData(ApiConstant.SET_PIN, body);
       final jsonResponse = jsonDecode(response.body);
       print("✅ Response: $jsonResponse");
+
+      // Save PIN locally with user-specific key for biometric use
+      if (jsonResponse['responseSuccessful'] == true && userId.isNotEmpty) {
+        final settingsBox = await Hive.openBox('settingsBox');
+        await settingsBox.put('saved_pin_$userId', body['pin']);
+        await box.put('has_pin', true);
+        debugPrint('💾 Saved PIN locally for user $userId');
+      }
 
       return ResponseModel(
         responseMessage:
@@ -269,37 +274,6 @@ class DashboardRepository {
       );
     }
   }
-
-  // Future<FavouriteBeneficiaryResponse>
-  // getFavouriteBeneficiary() async {
-  //   try {
-  //     final box = await Hive.openBox("authBox");
-  //     final token = box.get("token", defaultValue: "");
-  //
-  //     if (token.isEmpty) {
-  //       return FavouriteBeneficiaryResponse(
-  //         responseSuccessful: false,
-  //         responseMessage: "No token found",
-  //         beneficiaries: [],
-  //       );
-  //     }
-  //
-  //     _apiClient.updateHeaders(token);
-  //
-  //     final response =
-  //     await _apiClient.getData(ApiConstant.FAVOURITE_TRANSFER);
-  //
-  //     final jsonResponse = jsonDecode(response.body);
-  //
-  //     return FavouriteBeneficiaryResponse.fromJson(jsonResponse);
-  //   } catch (e) {
-  //     return FavouriteBeneficiaryResponse(
-  //       responseSuccessful: false,
-  //       responseMessage: "Error: $e",
-  //       beneficiaries: [],
-  //     );
-  //   }
-  // }
 
   Future<TransactionResponse> getTransactions() async {
     try {
@@ -489,6 +463,7 @@ class DashboardRepository {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
+      final userId = box.get("userId", defaultValue: "");
 
       if (token.isEmpty) {
         return ResponseModel(
@@ -505,6 +480,13 @@ class DashboardRepository {
       final jsonResponse = jsonDecode(response.body);
       print("🔁 Update PIN response: $jsonResponse");
 
+      // Update saved PIN locally with user-specific key
+      if (jsonResponse['responseSuccessful'] == true && userId.isNotEmpty) {
+        final settingsBox = await Hive.openBox('settingsBox');
+        await settingsBox.put('saved_pin_$userId', body['newPin']);
+        debugPrint('💾 Updated saved PIN locally for user $userId');
+      }
+
       return ResponseModel(
         responseMessage:
         jsonResponse['responseMessage'] ?? "Failed to update PIN",
@@ -520,70 +502,6 @@ class DashboardRepository {
       );
     }
   }
-
-  // Future<ResponseModel> uploadProfileImage(String imagePath) async {
-  //   try {
-  //     final box = await Hive.openBox('authBox');
-  //     final token = box.get('token') as String?;
-  //
-  //     debugPrint('🔐 UPLOAD TOKEN FROM HIVE: $token');
-  //
-  //     if (token == null || token.isEmpty) {
-  //       return ResponseModel(
-  //         responseMessage: "No token found",
-  //         responseSuccessful: false,
-  //         statusCode: 401,
-  //       );
-  //     }
-  //
-  //     final uri = Uri.parse(
-  //       '${ApiConstant.BASE_URL}${ApiConstant.UPDATE_AVATAR}',
-  //     );
-  //
-  //     final request = http.MultipartRequest('PATCH', uri);
-  //     request.headers['Authorization'] = 'Bearer $token';
-  //     request.headers['Accept'] = 'application/json';
-  //
-  //     request.files.add(
-  //       await http.MultipartFile.fromPath(
-  //         'image',
-  //         imagePath,
-  //         contentType: MediaType('image', 'jpeg'), // 🔥 IMPORTANT
-  //       ),
-  //     );
-  //
-  //     debugPrint('📤 Uploading image: $imagePath');
-  //
-  //     final streamedResponse = await request.send();
-  //     final response = await http.Response.fromStream(streamedResponse);
-  //
-  //     debugPrint("🟢 UPLOAD STATUS: ${response.statusCode}");
-  //     debugPrint("🟢 UPLOAD BODY: ${response.body}");
-  //
-  //     final json = jsonDecode(response.body);
-  //     if (json['responseSuccessful'] == true) {
-  //       final pictureUrl = json['responseBody']?['picture'];
-  //
-  //       if (pictureUrl != null) {
-  //         final box = Hive.box('authBox');
-  //         await box.put('picture', pictureUrl);
-  //       }
-  //     }
-  //     return ResponseModel(
-  //       responseMessage:
-  //       json['responseMessage'] ?? json['error'] ?? 'Upload failed',
-  //       responseSuccessful: json['responseSuccessful'] ?? false,
-  //       statusCode: response.statusCode,
-  //     );
-  //   } catch (e) {
-  //     debugPrint("🔥 Upload exception: $e");
-  //     return ResponseModel(
-  //       responseMessage: 'Image upload failed',
-  //       responseSuccessful: false,
-  //       statusCode: 500,
-  //     );
-  //   }
-  // }
 
   Future<ResponseModel> uploadProfileImage(String imagePath) async {
     try {
@@ -710,7 +628,47 @@ class DashboardRepository {
       );
     }
   }
+  Future<ResponseModel> forgotPaymentPin() async {
+    print('📡 Sending forgot PIN request...');
 
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found. Please log in again.",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final response =
+      await _apiClient.postData(ApiConstant.FORGOT_PIN, {});
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("🔁 Forgot PIN response: $jsonResponse");
+
+      return ResponseModel(
+        responseMessage:
+        jsonResponse['responseMessage'] ?? "Request failed",
+        responseSuccessful:
+        jsonResponse['responseSuccessful'] ?? false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Forgot PIN error: $e");
+
+      return ResponseModel(
+        responseMessage: "Something went wrong. Please try again.",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
   // Send Money to Bank
   Future<BankTransferResponse> sendMoneyToBank({
     required String accountNumber,
@@ -891,4 +849,631 @@ class DashboardRepository {
       return [];
     }
   }
+
+  Future<ResponseModel> verifyForgotPin(String otp) async {
+    print('📡 Verifying forgot PIN OTP...');
+
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found. Please log in again.",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.postData(
+        ApiConstant.VERIFY_FORGOT_PIN,
+        {
+          "otp": otp.trim(),
+        },
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("🔁 Verify Forgot PIN response: $jsonResponse");
+
+      return ResponseModel(
+        responseMessage:
+        jsonResponse['responseMessage'] ?? "Verification failed",
+        responseSuccessful:
+        jsonResponse['responseSuccessful'] ?? false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Verify forgot PIN error: $e");
+
+      return ResponseModel(
+        responseMessage: "Something went wrong. Please try again.",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> resetForgotPin({
+    required String newPin,
+    required String confirmNewPin,
+  }) async {
+    print('📡 Resetting PIN (forgot flow)...');
+
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+      final userId = box.get("userId", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found. Please log in again.",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.postData(
+        ApiConstant.RESTORE_FORGOT_PIN,
+        {
+          "newPin": newPin.trim(),
+          "confirmNewPin": confirmNewPin.trim(),
+        },
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("🔁 Reset PIN response: $jsonResponse");
+
+      // Update saved PIN locally with user-specific key
+      if (jsonResponse['responseSuccessful'] == true && userId.isNotEmpty) {
+        final settingsBox = await Hive.openBox('settingsBox');
+        await settingsBox.put('saved_pin_$userId', newPin.trim());
+        debugPrint('💾 Updated saved PIN locally for user $userId');
+      }
+
+      return ResponseModel(
+        responseMessage:
+        jsonResponse['responseMessage'] ?? "Failed",
+        responseSuccessful:
+        jsonResponse['responseSuccessful'] ?? false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Reset PIN error: $e");
+
+      return ResponseModel(
+        responseMessage: "Something went wrong",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> verifyPhoneNumber(String phone) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.postData(
+        ApiConstant.VERIFY_PHONE,
+        {"phone": phone},
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("📱 Verify Phone Response: $jsonResponse");
+
+      return ResponseModel(
+        responseMessage: jsonResponse["responseMessage"],
+        responseSuccessful: jsonResponse["responseSuccessful"],
+        statusCode: response.statusCode,
+        responseBody: ResponseBody.fromJson(jsonResponse["responseBody"][0]),
+      );
+    } catch (e) {
+      print("🔥 Verify phone error: $e");
+
+      return ResponseModel(
+        responseMessage: "Something went wrong",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> purchaseAirtime({
+    required String phone,
+    required int amount,
+    required String network,
+    required String pin,
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "phone": phone,
+        "amount": amount,
+        "network": network,
+        "pin": pin
+      };
+
+      print("📡 Airtime Purchase Payload: $body");
+
+      final response =
+      await _apiClient.postData(ApiConstant.BUY_AIRTIME, body);
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("📡 Airtime Purchase Response: $jsonResponse");
+
+      return ResponseModel(
+        responseMessage: jsonResponse["responseMessage"],
+        responseSuccessful: jsonResponse["responseSuccessful"],
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Airtime purchase error: $e");
+
+      return ResponseModel(
+        responseMessage: "Airtime purchase failed",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<List<DataPlanModel>> getDataPlans(String serviceId) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData(
+        "/api/v1/billpayment/data/plans?serviceID=$serviceId",
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+        final body = jsonResponse['responseBody'] ?? {};
+        final List list = body['variations'] ?? [];
+
+        return list.map((e) => DataPlanModel.fromJson(e)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint("🔥 Data plans error: $e");
+      return [];
+    }
+  }
+  Future<ResponseModel> purchaseData({
+    required String serviceId,
+    required String phone,
+    required String billersCode,
+    required String variationCode,
+    required int amount,
+    required String pin,
+  }) async {
+    final body = {
+      "serviceID": serviceId,
+      "billersCode": billersCode,
+      "variation_code": variationCode,
+      "amount": amount,
+      "phone": phone,
+      "pin": pin,
+    };
+
+    debugPrint("📤 DATA PURCHASE BODY: $body");
+
+    final response = await _apiClient.postData(
+      ApiConstant.DATA_PURCHASE,
+      body,
+    );
+
+    // ✅ FIX: decode response.body
+    final decoded = jsonDecode(response.body);
+
+    return ResponseModel.fromJson(
+      decoded,
+      response.statusCode,
+    );
+  }
+
+  Future<List<DataPlanModel>> getSmeDataPlans() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData(
+        "/api/v1/billpayment/data/plans?serviceID=mtn-data",
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (jsonResponse['responseSuccessful'] == true) {
+        final List list =
+            jsonResponse['responseBody']?['variations'] ?? [];
+
+        return list.map((e) => DataPlanModel.fromJson(e)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint("🔥 SME Plans Error: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCableProviders() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData(
+        "/api/v1/billpayment/cabletv/service-ids",
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+      print("📡 STATUS: ${response.statusCode}");
+      print("📡 BODY: ${response.body}");
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+        final List list = jsonResponse['responseBody'] ?? [];
+
+        return list.map<Map<String, dynamic>>((e) {
+          return {
+            "name": e["name"],
+            "serviceID": e["serviceID"],
+          };
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint("🔥 Cable providers error: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCableVariations(
+      String serviceId) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData(
+        "/api/v1/billpayment/cabletv/variation-codes?serviceID=$serviceId",
+      );
+
+      print("📡 VARIATION STATUS: ${response.statusCode}");
+      print("📡 VARIATION BODY: ${response.body}");
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+
+        final body = jsonResponse['responseBody'] ?? {};
+
+        // ✅ Handle both correct + wrong key
+        final List variations =
+            body['variations'] ?? body['varations'] ?? [];
+
+        return variations.map<Map<String, dynamic>>((e) {
+          return {
+            "variation_code": e["variation_code"], // ✅ FIXED
+            "name": e["name"],
+            "variation_amount": e["variation_amount"], // ✅ FIXED
+          };
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print("🔥 Cable variation error: $e");
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> verifyCableCard({
+    required String serviceId,
+    required String billersCode,
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return null;
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "serviceID": serviceId,
+        "billersCode": billersCode,
+      };
+
+      final response = await _apiClient.postData(
+        "/api/v1/billpayment/cabletv/card/verify",
+        body,
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("📡 VERIFY STATUS: ${response.statusCode}");
+      print("📡 VERIFY BODY: ${response.body}");
+
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+        return jsonResponse['responseBody'];
+      }
+
+      return null;
+    } catch (e) {
+      print("🔥 Verify cable error: $e");
+      return null;
+    }
+  }
+
+  Future<ResponseModel> purchaseCable({
+    required String serviceId,
+    required String billersCode,
+    required String packageName,
+    required String variationCode,
+    required int amount,
+    required String phone,
+    required String pin,
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "serviceID": serviceId,
+        "billersCode": billersCode,
+        "packageName": packageName,
+        "variation_code": variationCode,
+        "amount": amount,
+        "phone": phone,
+        "pin": pin,
+      };
+
+      print("📤 CABLE PURCHASE BODY: $body");
+
+      final response = await _apiClient.postData(
+        "/api/v1/billpayment/cabletv/purchase",
+        body,
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("📡 PURCHASE RESPONSE: $jsonResponse");
+
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      print("🔥 Cable purchase error: $e");
+
+      return ResponseModel(
+        responseMessage: "Purchase failed",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getElectricityProviders() async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return [];
+
+      _apiClient.updateHeaders(token);
+
+      final response = await _apiClient.getData(
+        "/api/v1/billpayment/electricity/service-ids",
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("⚡ ELECTRICITY STATUS: ${response.statusCode}");
+      print("⚡ ELECTRICITY BODY: ${response.body}");
+
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+        final List list = jsonResponse['responseBody'] ?? [];
+
+        return list.map<Map<String, dynamic>>((e) {
+          return {
+            "name": e["name"],
+            "serviceID": e["serviceID"], // 🔥 IMPORTANT
+          };
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      debugPrint("🔥 Electricity providers error: $e");
+      return [];
+    }
+  }
+  Future<Map<String, dynamic>?> verifyElectricityMeter({
+    required String serviceId,
+    required String meterNumber,
+    required String type, // prepaid | postpaid
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) return null;
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "serviceID": serviceId,
+        "billersCode": meterNumber,
+        "type": type,
+      };
+
+      final response = await _apiClient.postData(
+        "/api/v1/billpayment/electricity/meter/verify",
+        body,
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("⚡ VERIFY STATUS: ${response.statusCode}");
+      print("⚡ VERIFY BODY: ${response.body}");
+
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+        return jsonResponse['responseBody'];
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint("🔥 Meter verify error: $e");
+      return null;
+    }
+  }
+
+  Future<ResponseModel> purchaseElectricity({
+    required String serviceId,
+    required String meterNumber,
+    required String variationCode, // prepaid/postpaid
+    required int amount,
+    required String phone,
+    required String pin,
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+
+      final body = {
+        "serviceID": serviceId,
+        "billersCode": meterNumber,
+        "variation_code": variationCode,
+        "amount": amount,
+        "phone": phone,
+        "pin": pin,
+      };
+
+      print("⚡ ELECTRICITY PURCHASE BODY: $body");
+
+      final response = await _apiClient.postData(
+        "/api/v1/billpayment/electricity/purchase",
+        body,
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      print("⚡ PURCHASE RESPONSE: $jsonResponse");
+
+      return ResponseModel.fromJson(
+        jsonResponse,
+        response.statusCode,
+      );
+    } catch (e) {
+      print("🔥 Electricity purchase error: $e");
+
+      return ResponseModel(
+        responseMessage: "Purchase failed",
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  // Future<List<DataPlanModel>> getDataPlans(String serviceId) async {
+  //   try {
+  //     final box = await Hive.openBox("authBox");
+  //     final token = box.get("token", defaultValue: "");
+  //
+  //     if (token.isEmpty) return [];
+  //
+  //     _apiClient.updateHeaders(token);
+  //
+  //     final response = await _apiClient.getData(
+  //       "/api/v1/billpayment/data/plans?serviceID=$serviceId",
+  //     );
+  //
+  //     final jsonResponse = jsonDecode(response.body);
+  //
+  //     if (response.statusCode == 200 &&
+  //         jsonResponse['responseSuccessful'] == true) {
+  //       final body = jsonResponse['responseBody'] ?? {};
+  //
+  //       final List list = body['variations'] ?? [];
+  //
+  //       return list.map((e) => DataPlanModel.fromJson(e)).toList();
+  //     }
+  //
+  //     return [];
+  //   } catch (e) {
+  //     debugPrint("🔥 Data plans error: $e");
+  //     return [];
+  //   }
+  // }
 }

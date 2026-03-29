@@ -1,9 +1,6 @@
 class ApiConstant {
-
   // ------------- BASE URL LINK -------------------
   static const BASE_URL = 'https://api.bia.com.ng';
-
-
   // ------------ USER SIGN
   static const LOGIN = '/api/v1/auth/login';
   static const REGISTER_STEP_ONE = '/api/v1/auth/register';
@@ -28,12 +25,18 @@ class ApiConstant {
   static const DEPOSIT = '/api/v1/payment/deposit';
   static const VERIFY_PAYMENT = '/api/v1/payment/deposit/verify';
   static const UPDATE_AVATAR = '/api/v1/user/profile/image';
-  static const String LOGOUT = "/api/v1/auth/logout";
+  static const LOGOUT = "/api/v1/auth/logout";
   static const BANK_TRANSFER = '/api/v1/payment/bank/transfer';
   static const GET_BANKS= '/api/v1/payment/banks';
   static const VERIFY_BANK_ACCOUNT= '/api/v1/payment/account/verify';
-  static const String VERIFY_BANK_TRANSFER = "/api/v1/payment/bank/transfer/verify";
-  static const String RECENT_BANK_TRANSFERS = "/api/v1/payment/recent-transfers";
-  static const String BENEFICIARIES = "/api/v1/payment/beneficiaries/";
-
+  static const VERIFY_BANK_TRANSFER = "/api/v1/payment/bank/transfer/verify";
+  static const RECENT_BANK_TRANSFERS = "/api/v1/payment/recent-transfers";
+  static const BENEFICIARIES = "/api/v1/payment/beneficiaries/";
+  static const FORGOT_PIN = "/api/v1/user/forgot-pin";
+  static const VERIFY_FORGOT_PIN = "/api/v1/user/verify-forgot-pin";
+  static const RESTORE_FORGOT_PIN = "/api/v1/user/change-pin";
+  static const VERIFY_PHONE = "/api/v1/billpayment/phone/verify";
+  static const BUY_AIRTIME = "/api/v1/billpayment/airtime/purchase";
+  static const String DATA_PURCHASE = '/api/v1/billpayment/data/purchase';
+  static const String DATA_PLANS = '/api/v1/billpayment/data/plans';
 }

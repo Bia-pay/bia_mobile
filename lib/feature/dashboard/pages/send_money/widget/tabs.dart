@@ -72,7 +72,7 @@ class _BeneficiaryTabSectionState
           child: ListView.separated(
             physics: const BouncingScrollPhysics(),
             itemCount: listToShow.length,
-            separatorBuilder: (_, __) => SizedBox(height: 12.h),
+            separatorBuilder: (_, __) => SizedBox(height: 10.h),
             itemBuilder: (context, index) {
               final beneficiary = listToShow[index];
               final name = beneficiary['name'] ?? '';
@@ -83,8 +83,8 @@ class _BeneficiaryTabSectionState
                     widget.onSelectBeneficiary?.call(name, account),
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                    vertical: 13.h,
-                    horizontal: 15.w,
+                    vertical: 9.h,
+                    horizontal: 12.w,
                   ),
                   decoration: BoxDecoration(
                     color: lightSurface,
@@ -100,11 +100,11 @@ class _BeneficiaryTabSectionState
                             if (widget.showProgress)
                               CircularPercentageIndicator(
                                 percentage: widget.progressValue,
-                                size: 50.w,
+                                size: 40.w,
                                 color: primaryColor,
                               ),
                             if (widget.showProgress)
-                              SizedBox(width: 20.w),
+                              SizedBox(width: 10.w),
 
                             /// TEXT
                             Expanded(

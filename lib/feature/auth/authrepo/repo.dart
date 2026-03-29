@@ -4,8 +4,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
+import '../../../app/utils/device_helper.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../../../core/services/auth_flow_service.dart';
+import '../../../core/services/biometric_service.dart';
+import '../../../core/utils/biometric_migration.dart';
 import '../data/api_constant.dart';
 import '../data/api_data.dart';
 import '../modal/reponse/response_modal.dart';
@@ -18,7 +21,6 @@ final authRepositoryProvider = Provider((ref) {
 
 class AuthRepository {
   final ApiClient _apiClient;
-  final LocalAuthentication _localAuth = LocalAuthentication();
   final Ref _ref;
 
   AuthRepository(this._apiClient, this._ref);
@@ -27,37 +29,38 @@ class AuthRepository {
   Future<ResponseModel> logout() async {
     try {
       final box = await Hive.openBox('authBox');
-      final userId = box.get('userId', defaultValue: '');
-      final biometricEnabled =
-      box.get('login_biometric_enabled', defaultValue: false);
 
-      // 🔹 Call backend logout
+      // Get current user info for logging
+      final userId = box.get('userId', defaultValue: '');
+      final phone = box.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      // Call backend logout
       try {
         await _apiClient.deleteData(ApiConstant.LOGOUT);
-      } catch (_) {
-        // Continue even if backend fails
-      }
+      } catch (_) {}
 
-      // 🔹 Stop token refresh timer
+      // Stop token refresh
       _apiClient.dispose();
 
-      // 🔹 Clear user-specific cache
+      // Clear user cache
       if (userId.isNotEmpty) {
         await TransactionCache.clearTransactions(userId);
-        final recentBox = await Hive.openBox('recentBeneficiaries');
-        await recentBox.delete('beneficiaries_$userId');
       }
 
-      // 🔹 Clear saved profile
+      // 🔹 Clear biometric credentials but KEEP login credentials for next biometric login
+      if (effectiveUserId.isNotEmpty) {
+        await BiometricService().clearUserBiometricData(effectiveUserId, keepLoginCredentials: true);
+      }
+
+      // 🔹 ONLY delete sensitive tokens, NEVER clear user identification
+      await box.delete('token');
+      await box.delete('refreshToken');
+      await box.delete('balance');
       await box.delete('saved_user_profile');
+      // 🔹 DO NOT delete: userId, phone, fullname, picture
 
-      // 🔹 Clear Hive storage
-      if (biometricEnabled) {
-        await box.delete('token');
-        await box.delete('refreshToken');
-      } else {
-        await box.clear();
-      }
+      debugPrint('🔐 Logout complete for user: $userId');
 
       return ResponseModel(
         responseMessage: "Logged out successfully",
@@ -65,6 +68,7 @@ class AuthRepository {
         statusCode: 200,
       );
     } catch (e) {
+      debugPrint('❌ Logout error: $e');
       return ResponseModel(
         responseMessage: "Logout failed",
         responseSuccessful: false,
@@ -73,28 +77,72 @@ class AuthRepository {
     }
   }
 
-  Future<ResponseModel> logIn(Map<String, dynamic> body, {bool fromBiometric = false}) async {
+
+
+  Future<ResponseModel> logIn(
+      Map<String, dynamic> body, {
+        bool fromBiometric = false,
+      }) async {
     print('📡 Attempting login...');
 
     try {
+      final ipAddress = await DeviceHelper.getIpAddress();
+      final deviceName = await DeviceHelper.getDeviceName();
 
+      body['ipAddress'] = ipAddress;
+      body['device'] = deviceName;
 
       print("📤 Final body sent to backend: $body");
 
-      // --- Continue with your original code ---
-      final response = await _apiClient.postData(ApiConstant.LOGIN, body);
+      final response =
+      await _apiClient.postData(ApiConstant.LOGIN, body);
+
       final jsonResponse = jsonDecode(response.body);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 201) {
         print("✅ Login Success: $jsonResponse");
 
         final responseBody = jsonResponse['responseBody'] ?? {};
-        final userJson = Map<String, dynamic>.from(responseBody['user'] ?? {});
-        final walletJson = Map<String, dynamic>.from(responseBody['wallet'] ?? {});
+        final userJson =
+        Map<String, dynamic>.from(responseBody['user'] ?? {});
+        final walletJson =
+        Map<String, dynamic>.from(responseBody['wallet'] ?? {});
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
 
         final box = await Hive.openBox('authBox');
+        
+        // 🔹 Save password for biometric login (user-specific)
+        if (!fromBiometric && body.containsKey('password')) {
+          final userId = userJson['id']?.toString() ?? '';
+          final phone = userJson['phone']?.toString() ?? '';
+          final effectiveId = userId.isNotEmpty ? userId : phone;
+
+          if (effectiveId.isNotEmpty) {
+            final biometricService = BiometricService();
+            final password = body['password'];
+
+            // Always save credentials securely (for potential biometric use)
+            await biometricService.saveLoginCredentials(effectiveId, phone, password);
+
+            // 🔹 CRITICAL FIX: Only enable on FIRST login, never override user choice
+            // Check if user has ever interacted with this setting
+            final hasEverBeenSet = await biometricService.hasLoginPreferenceBeenSet(effectiveId);
+            
+            if (!hasEverBeenSet) {
+              // First time ever - enable by default and mark as set
+              await biometricService.setLoginEnabled(effectiveId, true);
+              await biometricService.markInitialPromptShown(effectiveId);
+              debugPrint('🔐 First login - enabled biometric for: $effectiveId');
+            } else {
+              // User has made a choice before - respect it (don't change anything)
+              final currentSetting = await biometricService.isLoginEnabled(effectiveId);
+              debugPrint('🔐 Existing user - keeping biometric setting: $currentSetting for: $effectiveId');
+            }
+          }
+        }
+        
         await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
         await box.put("userId", userJson['id']?.toString() ?? '');
@@ -104,49 +152,38 @@ class AuthRepository {
         await box.put("currency", walletJson['currency'] ?? 'NGN');
         await box.put(
           "has_pin",
-          userJson['pin'] != null && userJson['pin'].toString().isNotEmpty,
+          userJson['pin'] != null &&
+              userJson['pin'].toString().isNotEmpty,
         );
-        await box.put("picture", userJson['picture']);
-        if (!fromBiometric && body.containsKey('password')) {
-          await box.put("password", body['password']);
-          await box.put("login_biometric_enabled", true);
-        }
-        final picture = userJson['picture'];
-        final fcmToken = await FirebaseMessaging.instance.getToken();
 
-        debugPrint('🔥 RAW FCM TOKEN FROM FIREBASE: $fcmToken');
-        final authBox = await Hive.openBox('authBox');
-        await authBox.put('fcmToken', fcmToken);
+        // This duplicate code block is handled above - removed to prevent conflicts
 
-        print('💾 FCM token saved to Hive');
-        if (picture is String) {
-          await box.put('picture', picture);
-        } else {
-          await box.delete('picture');
-        }
-        print('User Picture✅ $picture');
         _apiClient.updateHeaders(accessToken);
 
-        // Complete the auth flow (connect socket with tokens)
-        final authFlowService = _ref.read(authFlowServiceProvider);
+        final authFlowService =
+        _ref.read(authFlowServiceProvider);
         await authFlowService.completeAuthFlow();
 
+        // Migrate old biometric settings to user-specific settings
+        try {
+          await BiometricMigration.migrateToUserSpecificSettings();
+        } catch (e) {
+          debugPrint('⚠️ Biometric migration skipped: $e');
+        }
+
         return ResponseModel(
-          responseMessage: jsonResponse['responseMessage'] ?? 'Login successful',
+          responseMessage:
+          jsonResponse['responseMessage'] ??
+              'Login successful',
           responseSuccessful: true,
           statusCode: response.statusCode,
-          responseBody: ResponseBody(
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-            user: UserResponse.fromJson(userJson),
-            wallet: WalletResponse.fromJson(walletJson),
-          ),
         );
       }
 
-      print("❌ Login Failed: $jsonResponse");
       return ResponseModel(
-        responseMessage: jsonResponse['responseMessage'] ?? 'Login failed',
+        responseMessage:
+        jsonResponse['responseMessage'] ??
+            'Login failed',
         responseSuccessful: false,
         statusCode: response.statusCode,
       );
@@ -158,7 +195,36 @@ class AuthRepository {
         statusCode: 500,
       );
     }
-  }
+  }  /// ---------------- SET PIN ----------------
+  // Future<ResponseModel> setPin(String pin, String confirmPin) async {
+  //   try {
+  //     final body = {'pin': pin, 'confirmPin': confirmPin};
+  //     final response = await _apiClient.postData(ApiConstant.SET_PIN, body);
+  //     final jsonResponse = jsonDecode(response.body);
+  //
+  //     if (response.statusCode == 200) {
+  //       print("✅ PIN set successfully: $jsonResponse");
+  //       return ResponseModel(
+  //         responseMessage: jsonResponse['responseMessage'] ?? 'PIN set successfully',
+  //         responseSuccessful: true,
+  //         statusCode: response.statusCode,
+  //       );
+  //     }
+  //
+  //     return ResponseModel(
+  //       responseMessage: jsonResponse['responseMessage'] ?? 'Failed to set PIN',
+  //       responseSuccessful: false,
+  //       statusCode: response.statusCode,
+  //     );
+  //   } catch (e) {
+  //     print("🔥 Set PIN Exception: $e");
+  //     return ResponseModel(
+  //       responseMessage: 'Something went wrong. Try again.',
+  //       responseSuccessful: false,
+  //       statusCode: 500,
+  //     );
+  //   }
+  // }
   /// ---------------- SET PIN ----------------
   Future<ResponseModel> setPin(String pin, String confirmPin) async {
     try {
@@ -168,6 +234,19 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         print("✅ PIN set successfully: $jsonResponse");
+
+        // Save PIN securely for biometric use
+        final authBox = await Hive.openBox('authBox');
+        final userId = authBox.get('userId', defaultValue: '');
+        final phone = authBox.get('phone', defaultValue: '');
+        final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+        if (effectiveUserId.isNotEmpty) {
+          final biometricService = BiometricService();
+          await biometricService.saveTransactionPin(effectiveUserId, pin);
+          print("🔐 PIN saved securely for biometric use: $effectiveUserId");
+        }
+
         return ResponseModel(
           responseMessage: jsonResponse['responseMessage'] ?? 'PIN set successfully',
           responseSuccessful: true,
@@ -189,37 +268,52 @@ class AuthRepository {
       );
     }
   }
-  // ---------------- BIOMETRIC LOGIN ----------------
+
   Future<ResponseModel?> biometricLogin() async {
     try {
       final box = await Hive.openBox('authBox');
-      final canCheck = await _localAuth.canCheckBiometrics;
-      final enabled =
-      box.get('login_biometric_enabled', defaultValue: false);
+      final biometricService = BiometricService();
+      
+      final userId = box.get('userId', defaultValue: '');
+      final phone = box.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+      
+      if (effectiveUserId.isEmpty) {
+        debugPrint('⚠️ No userId found for biometric login');
+        return null;
+      }
 
-      if (!canCheck || !enabled) return null;
+      // Check if biometric is enabled for this user
+      final enabled = await biometricService.isLoginEnabled(effectiveUserId);
+      final canCheck = await biometricService.canCheckBiometrics();
 
-      final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to log in',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
+      if (!canCheck || !enabled) {
+        debugPrint('⚠️ Biometric not available or not enabled');
+        return null;
+      }
+
+      // Authenticate with biometric
+      final authenticated = await biometricService.authenticate(
+        reason: 'Authenticate to log in',
+        biometricOnly: true,
       );
 
       if (!authenticated) return null;
 
-      final phone = box.get('phone');
-      final password = box.get('password');
+      // Get saved credentials
+      final password = await biometricService.getLoginPassword(effectiveUserId);
 
-      if (phone == null || password == null) return null;
+      if (phone.isEmpty || password == null) {
+        debugPrint('⚠️ Missing credentials for biometric login');
+        return null;
+      }
 
       return await logIn({
         "phone": phone,
         "password": password,
       }, fromBiometric: true);
     } catch (e) {
-      print("🔥 Exception during biometric login: $e");
+      debugPrint("🔥 Exception during biometric login: $e");
       return null;
     }
   }

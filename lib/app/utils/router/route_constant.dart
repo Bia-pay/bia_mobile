@@ -64,7 +64,8 @@ class RouteList {
   static const String depositScreen = '/deposit-screen';
   static const String enableLoginFingerprint = '/enable-login-fingerprint';
   static const String enableTransactionPinFingerprint = '/enable-transaction-fingerprint';
-
-  // static const String twoFactorPinScreenCode = '/twoFactorPinScreenCode';
-  // static const String animatedonboarding = '/animatedonboarding';
+  static const String forgotPin = '/forgotPin';
+  static const String restoreNewPin = '/restoreNewPin';
+  static const String confirmRestoreNewPin = '/confirmRestoreNewPin';
+  static const String transactionPin = '/transactionPin';
 }

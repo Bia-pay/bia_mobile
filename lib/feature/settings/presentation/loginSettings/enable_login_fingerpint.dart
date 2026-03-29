@@ -1,3 +1,4 @@
+
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,10 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 
-import '../../../../app/utils/widgets/pin_field.dart';
-import '../../../../app/view/widget/app_textfield.dart';
-import '../../../../core/utils/biometric_helper.dart';
-import '../../../dashboard/widgets/keypad.dart';
+import '../../../../core/services/biometric_service.dart';
+import '../../../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../../dashboard/dashboardcontroller/provider.dart';
 
 class EnableTransactionPinFingerprint extends ConsumerStatefulWidget {
   const EnableTransactionPinFingerprint({super.key});
@@ -18,11 +18,8 @@ class EnableTransactionPinFingerprint extends ConsumerStatefulWidget {
 }
 
 class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransactionPinFingerprint> {
-  final TextEditingController pinController = TextEditingController();
-  bool _obscurepin = true;
   bool _isLoading = false;
   String _biometricTypeName = 'Biometric';
-  String pin = ""; // Plain string pin
 
   @override
   void initState() {
@@ -30,81 +27,84 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
     _loadBiometricTypeName();
   }
 
-  @override
-  void dispose() {
-    pinController.dispose();
-    super.dispose();
-  }
-
-  // Add character from keypad
-  void addDigit(String value) {
-    setState(() {
-      pin += value;
-      pinController.text = pin;
-    });
-  }
-
-  // Remove last character
-  void removeDigit() {
-    setState(() {
-      if (pin.isNotEmpty) {
-        pin = pin.substring(0, pin.length - 1);
-        pinController.text = pin;
-      }
-    });
-  }
-
   Future<void> _loadBiometricTypeName() async {
-    final availability = await BiometricHelper.checkBiometricAvailability();
+    final biometricService = BiometricService();
+    final typeName = await biometricService.getBiometricTypeName();
     setState(() {
-      _biometricTypeName = availability.biometricTypeName;
+      _biometricTypeName = typeName;
     });
   }
 
   Future<void> _enableBiometricTransaction() async {
-    final inputPin = pinController.text.trim();
-
-    if (inputPin.length != 4) {
-      _showSnack("Please enter a valid 4-digit PIN", errorColor);
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
+      final biometricService = BiometricService();
+      
       // Check biometric availability
-      final availability = await BiometricHelper.checkBiometricAvailability();
-      if (!availability.isAvailable) {
-        _showSnack(
-          'Biometric authentication is not available on this device',
-          pendingColor,
-        );
+      final canCheck = await biometricService.canCheckBiometrics();
+      if (!canCheck) {
+        _showSnack('Biometric not available on this device', pendingColor);
         return;
       }
 
-      final box = await Hive.openBox('settingsBox');
+      // Get current user
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
-      // ✅ TRANSACTION BIOMETRIC KEYS (CORRECT)
-      await box.put('saved_pin', inputPin);
-      await box.put('biometric_enabled', true);
+      debugPrint('🔐 ENABLE PAYMENT BIOMETRIC:');
+      debugPrint('   - userId from authBox: $userId');
+      debugPrint('   - phone from authBox: $phone');
+      debugPrint('   - effectiveUserId: $effectiveUserId');
 
-      _showSnack(
-        '$_biometricTypeName transaction enabled successfully',
-        successColor,
+      if (effectiveUserId.isEmpty) {
+        _showSnack('User not found. Please login again.', errorColor);
+        return;
+      }
+
+      // Get the saved PIN
+      final settingsBox = await Hive.openBox('settingsBox');
+      final savedPin = settingsBox.get('saved_pin_$effectiveUserId');
+      
+      if (savedPin == null) {
+        _showSnack('Please set your transaction PIN first', pendingColor);
+        return;
+      }
+
+      debugPrint('🔐 Attempting to enable payment biometric for user: $effectiveUserId');
+
+      // Enable biometric with complete flow (includes authentication)
+      final success = await biometricService.enablePaymentBiometric(
+        userId: effectiveUserId,
+        pin: savedPin,
       );
 
-      if (mounted) {
-        context.pop(true); // ✅ notify caller (switch)
+      debugPrint('🔐 Enable payment biometric result: $success');
+
+      if (success && mounted) {
+        // Verify it was actually saved
+        final isEnabled = await biometricService.isPaymentEnabled(effectiveUserId);
+        final savedPinCheck = await biometricService.getTransactionPin(effectiveUserId);
+        
+        debugPrint('🔐 Verification after enable:');
+        debugPrint('   - isEnabled: $isEnabled');
+        debugPrint('   - hasSavedPin: ${savedPinCheck != null}');
+        
+        _showSnack('$_biometricTypeName enabled successfully!', successColor);
+        context.pop(true);
+      } else {
+        _showSnack('Failed to enable biometric', errorColor);
       }
     } catch (e) {
-      _showSnack(
-        'Failed to enable $_biometricTypeName transaction',
-        errorColor,
-      );
+      debugPrint('❌ Error enabling biometric: $e');
+      _showSnack('Error: $e', errorColor);
     } finally {
       setState(() => _isLoading = false);
     }
   }
+
   void _showSnack(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -139,91 +139,127 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 10.h),
+            SizedBox(height: 60.h),
+            
             Container(
-              padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 15.w),
+              padding: EdgeInsets.all(30.w),
               decoration: BoxDecoration(
+                shape: BoxShape.circle,
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    accentColor.withOpacity(0.4),
-                    primaryColor,
-                    primaryColor.withOpacity(0.9),
+                    accentColor.withOpacity(0.3),
+                    primaryColor.withOpacity(0.8),
                   ],
                 ),
-                borderRadius: BorderRadius.all(Radius.circular(10.r)),
               ),
-              child: Icon(Icons.lock, color: Colors.white, size: 30.sp),
+              child: Icon(Icons.fingerprint, color: Colors.white, size: 80.sp),
             ),
-            SizedBox(height: 20.h),
+            
+            SizedBox(height: 40.h),
+            
             Text(
-              'Enter Transaction PIN',
+              'Enable $_biometricTypeName',
               style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
               ),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 15.h),
+            
+            SizedBox(height: 16.h),
+            
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30),
+              padding: EdgeInsets.symmetric(horizontal: 30.w),
               child: Text(
-                textAlign: TextAlign.center,'Enter your 4-digit transaction PIN to enable $_biometricTypeName for transfer.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                textAlign: TextAlign.center,
+                'Use your $_biometricTypeName for a faster and secure way to authorize transactions.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: lightSecondaryText,
+                  height: 1.5,
                 ),
               ),
             ),
-            SizedBox(height: 15.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) {
-                final isFilled = index < pin.length;
+            
+            SizedBox(height: 20.h),
 
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 16.w,
-                  height: 16.h,
-                  margin: EdgeInsets.symmetric(horizontal: 5.w),
-                  decoration: BoxDecoration(
-                    color: isFilled ? primaryColor : Colors.transparent,
-                    border: Border.all(
-                      color: isFilled ? inactiveColor : disabledTextColor,
-                      width: 2,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                );
-              }),
-            ),
-            SizedBox(height: 80.h),
-            SizedBox(
-              height: 400.h,
-              child: CustomGridKeypad(
-                onNumberPressed: (value) {
-                  addDigit(value);
-                },
-
-                // Bottom-left → delete
-                leftAction: ActionKey(
-                  child: Icon(
-                    Icons.backspace,
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: primaryColor.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
                     color: primaryColor,
+                    size: 24.sp,
                   ),
-                  backgroundColor: primaryColor.withOpacity(0.1),
-                  onTap: removeDigit,
-                ),
-
-                // Bottom-right → enable biometric
-                rightAction: ActionKey(
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Text(
+                      'Tap the button below and authenticate with your $_biometricTypeName to enable this feature.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: lightText,
+                      ),
+                    ),
                   ),
-                  backgroundColor: primaryColor,
-                  onTap: _enableBiometricTransaction,
-                ),
+                ],
               ),
             ),
+
+            const Spacer(),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _enableBiometricTransaction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isLoading
+                    ? SizedBox(
+                        height: 20.h,
+                        width: 20.w,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.fingerprint,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Authenticate with $_biometricTypeName',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+
+            SizedBox(height: 20.h),
           ],
         ),
       ),

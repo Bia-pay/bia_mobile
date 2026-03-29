@@ -225,3 +225,20 @@ StateNotifierProvider<AllTransactionsNotifier, AsyncValue<List<TransactionItem>>
   },
 );
 final balanceVisibilityProvider = StateProvider<bool>((ref) => true);
+
+final electricityProviderListProvider =
+FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.read(dashboardRepositoryProvider);
+  return repo.getElectricityProviders();
+});
+
+final verifyMeterProvider = FutureProvider.family<
+    Map<String, dynamic>?, Map<String, String>>((ref, params) async {
+  final repo = ref.read(dashboardRepositoryProvider);
+
+  return repo.verifyElectricityMeter(
+    serviceId: params['serviceId']!,
+    meterNumber: params['meter']!,
+    type: params['type']!,
+  );
+});

@@ -21,7 +21,7 @@ class SendMoneyTransfer extends ConsumerStatefulWidget {
 
 class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   final TextEditingController accountController = TextEditingController();
-
+  String? accountError;
   bool isVerified = false;
   String? verifiedName;
   String? verifiedPhone;
@@ -46,6 +46,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
         verifiedName = fullname;
         verifiedPhone = accountNumber;
         verifiedAccount = accountNumber;
+        accountError = null;
       });
     } else {
       setState(() {
@@ -53,10 +54,10 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
         verifiedName = null;
         verifiedPhone = null;
         verifiedAccount = null;
+        accountError = result?.responseMessage ?? "Account not found";
       });
     }
   }
-
   Future<void> _verifyAccountSilently(BuildContext context, String accountNumber) async {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
     final result = await dashboardCtrl.verifyAccount(context, accountNumber);
@@ -142,14 +143,30 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                       initialValue: verifiedAccount,
                       withClearButton: true,
                       onChanged: (value) {
+                        setState(() {
+                          accountError = null;
+                        });
+
                         if (value.length == 10) {
                           _verifyAccountFromInput(context, value.trim());
                         } else {
-                          setState(() => isVerified = false);
+                          setState(() {
+                            isVerified = false;
+                          });
                         }
                       },
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 10.h),if (accountError != null)
+                      Container(
+                        padding: EdgeInsets.all(13.w),
+                        child: Text(
+                          accountError!,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: errorColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     if (isVerified)
                       InkWell(
                         onTap: () => _goToAmountPage(context),
@@ -247,7 +264,7 @@ class _CardThreeState extends ConsumerState<CardThree> {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
       decoration: BoxDecoration(
         color: whiteBackground,
         borderRadius: BorderRadius.circular(15.r),

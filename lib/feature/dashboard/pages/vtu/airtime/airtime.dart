@@ -1,14 +1,123 @@
+import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
-import '../../../widgets/transaction.dart';
+import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
+import '../../../../../app/view/widget/custom_textfiels_with_contact.dart';
+import '../../../../../app/view/widget/quick_access_app_bar.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../send_money/widget/tabs.dart';
+
+// ==================== RESPONSIVE HELPERS ====================
+
+class ResponsiveConfig {
+  static bool isSmallScreen(BuildContext context) =>
+      MediaQuery.of(context).size.width < 360;
+
+  static bool isLargeScreen(BuildContext context) =>
+      MediaQuery.of(context).size.width > 600;
+
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.shortestSide > 600;
+
+  static double getPadding(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 360) return 12.w;
+    if (width > 600) return 24.w;
+    return 16.w;
+  }
+
+  static int getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 320) return 3;
+    if (width < 400) return 4;
+    if (width > 600) return 6;
+    return 4;
+  }
+}
+
+// ==================== STATE PROVIDERS ====================
+
+final airtimeFormProvider =
+    StateNotifierProvider<AirtimeFormNotifier, AirtimeFormState>((ref) {
+      return AirtimeFormNotifier();
+    });
+
+class AirtimeFormState {
+  final Map<String, dynamic>? selectedProvider;
+  final String phoneNumber;
+  final int? amount;
+  final bool isLoading;
+  final String? error;
+
+  const AirtimeFormState({
+    this.selectedProvider,
+    this.phoneNumber = '',
+    this.amount,
+    this.isLoading = false,
+    this.error,
+  });
+
+  AirtimeFormState copyWith({
+    Map<String, dynamic>? selectedProvider,
+    String? phoneNumber,
+    int? amount,
+    bool? isLoading,
+    String? error,
+  }) {
+    return AirtimeFormState(
+      selectedProvider: selectedProvider ?? this.selectedProvider,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      amount: amount ?? this.amount,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
+
+  bool get isValid =>
+      phoneNumber.length >= 10 &&
+      amount != null &&
+      amount! > 0 &&
+      selectedProvider != null;
+}
+
+class AirtimeFormNotifier extends StateNotifier<AirtimeFormState> {
+  AirtimeFormNotifier() : super(const AirtimeFormState());
+
+  void setProvider(Map<String, dynamic> provider) {
+    state = state.copyWith(selectedProvider: provider);
+  }
+
+  void setPhoneNumber(String phone) {
+    state = state.copyWith(phoneNumber: phone);
+  }
+
+  void setAmount(int amount) {
+    state = state.copyWith(amount: amount);
+  }
+
+  void setLoading(bool loading) {
+    state = state.copyWith(isLoading: loading);
+  }
+
+  void setError(String? error) {
+    state = state.copyWith(error: error);
+  }
+
+  void clear() {
+    state = const AirtimeFormState();
+  }
+}
+
+// ==================== MAIN SCREEN ====================
 
 class Airtime extends ConsumerStatefulWidget {
   const Airtime({super.key});
@@ -20,204 +129,104 @@ class Airtime extends ConsumerStatefulWidget {
 class _AirtimeState extends ConsumerState<Airtime> {
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final isTablet = ResponsiveConfig.isTablet(context);
+    final padding = ResponsiveConfig.getPadding(context);
 
     return Scaffold(
       backgroundColor: lightBackground,
-      resizeToAvoidBottomInset: false,
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 60.h),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// 🔹 Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const Icon(Icons.arrow_back_ios),
-                      ),
-                      SizedBox(width: 8.w),
-                      Text(
-                        'Airtime',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    'History',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: primaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+      appBar: CustomAppBar(
+        title: 'Airtime',
+        onBackPressed: () async {
+          FocusScope.of(context).unfocus();
+          await Future.delayed(const Duration(milliseconds: 150));
+          // Check if context is still valid before using it
+          if (!context.mounted) return;
 
-              SizedBox(height: 30.h),
-
-              const CardTwo(),
-              SizedBox(height: 20.h),
-              const CardOne(),
-              SizedBox(height: 20.h),
-              const CardThree(),
-
-              SizedBox(height: 20.h),
-
-              /// 🔹 Airtime Services
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 18.h),
-                decoration: BoxDecoration(
-                  // color: themeContext.tertiaryBackgroundColor,
-                  borderRadius: BorderRadius.circular(15.r),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Airtime Service',
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 250.h,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: topUp.length,
-                        padding: EdgeInsets.symmetric(vertical: 6.h),
-                        itemBuilder: (context, index) {
-                          final tx = topUp[index];
-                          return Container(
-                            margin: EdgeInsets.symmetric(vertical: 6.h),
-                            padding: EdgeInsets.symmetric(
-                              vertical: 10.h,
-                              horizontal: 16.w,
-                            ),
-                            decoration: BoxDecoration(
-                              //  color: themeContext.kSecondary,
-                              borderRadius: BorderRadius.circular(10.r),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  height: 40.h,
-                                  width: 40.h,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      // color: themeContext.kPrimary
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/svg/bank.png',
-                                    height: 18.h,
-                                  ),
-                                ),
-                                SizedBox(width: 15.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        tx.name,
-                                        style: textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        tx.dateTime,
-                                        style: textTheme.bodySmall?.copyWith(
-                                          // color: themeContext
-                                          //     .secondaryTextColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward_ios_outlined,
-                                  size: 14.sp,
-                                  // color: themeContext.secondaryTextColor
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          if (context.canPop()) {
+            context.pop();
+          }
+        },
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: padding),
+            child: SvgPicture.asset(
+              bell,
+              width: isTablet ? 28.w : 24.w,
+              height: isTablet ? 28.h : 24.h,
+            ),
           ),
+        ],
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: padding,
+                    vertical: padding,
+                  ),
+                  child: isTablet ? _buildTabletLayout() : _buildPhoneLayout(),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
-}
 
-class CardOne extends ConsumerStatefulWidget {
-  const CardOne({super.key});
+  Widget _buildPhoneLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(height: 8.h),
+        const CardTwo(),
+        SizedBox(height: 12.h),
+        const CardOne(),
+        SizedBox(height: 12.h),
+        const CardThree(),
+        SizedBox(height: 20.h),
+      ],
+    );
+  }
 
-  @override
-  ConsumerState<CardOne> createState() => _CardOneState();
-}
-
-class _CardOneState extends ConsumerState<CardOne> {
-  Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      decoration: BoxDecoration(
-        color: lightSurface,
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [AirtimeAmountSelector()],
-      ),
+  Widget _buildTabletLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(height: 16.h),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                children: [
+                  const CardTwo(),
+                  SizedBox(height: 16.h),
+                  const CardOne(),
+                ],
+              ),
+            ),
+            SizedBox(width: 20.w),
+            const Expanded(flex: 1, child: CardThree()),
+          ],
+        ),
+        SizedBox(height: 24.h),
+      ],
     );
   }
 }
 
-class CardThree extends ConsumerStatefulWidget {
-  const CardThree({super.key});
+// ==================== CARD TWO: NETWORK SELECTOR ====================
 
-  @override
-  ConsumerState<CardThree> createState() => _CardThreeState();
-}
-
-class _CardThreeState extends ConsumerState<CardThree> {
-  Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      decoration: BoxDecoration(
-        //  color: themeContext.tertiaryBackgroundColor,
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [BeneficiarySelector()],
-      ),
-    );
-  }
-}
+// ==================== CARD TWO: NETWORK SELECTOR ====================
 
 class CardTwo extends ConsumerStatefulWidget {
   const CardTwo({super.key});
@@ -227,32 +236,713 @@ class CardTwo extends ConsumerStatefulWidget {
 }
 
 class _CardTwoState extends ConsumerState<CardTwo> {
+  final List<Map<String, dynamic>> _providers = [
+    {'name': 'MTN', 'logo': 'assets/svg/mtn.jpg', 'id': 'mtn'},
+    {'name': 'Airtel', 'logo': 'assets/svg/airtel.png', 'id': 'airtel'},
+    {'name': 'Glo', 'logo': 'assets/svg/glo.jpg', 'id': 'glo'},
+    {'name': '9mobile', 'logo': 'assets/svg/9mobile.png', 'id': '9mobile'},
+  ];
+
   Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
+  final TextEditingController _phoneController = TextEditingController();
+  bool _isVerifying = false;
+  String? _selectedContactName;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedProvider = _providers.first;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(airtimeFormProvider.notifier).setProvider(_selectedProvider!);
+    });
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  void _detectNetwork(String input) {
+    if (input.length < 4) return;
+    final prefix = input.substring(0, 4);
+
+    Map<String, dynamic>? detected;
+    final mtnPrefixes = [
+      '0803',
+      '0806',
+      '0703',
+      '0706',
+      '0813',
+      '0816',
+      '0810',
+      '0814',
+      '0903',
+      '0906',
+      '0913',
+      '0916',
+    ];
+    final airtelPrefixes = [
+      '0802',
+      '0808',
+      '0708',
+      '0812',
+      '0701',
+      '0902',
+      '0907',
+      '0901',
+      '0912',
+      '0911',
+    ];
+    final gloPrefixes = [
+      '0805',
+      '0807',
+      '0811',
+      '0705',
+      '0815',
+      '0905',
+      '0915',
+    ];
+    final etisalatPrefixes = ['0809', '0818', '0817', '0909', '0908'];
+
+    if (mtnPrefixes.contains(prefix)) {
+      detected = _providers.firstWhere(
+        (p) => p['name'] == 'MTN',
+        orElse: () => _providers.first,
+      );
+    } else if (airtelPrefixes.contains(prefix)) {
+      detected = _providers.firstWhere(
+        (p) => p['name'] == 'Airtel',
+        orElse: () => _providers.first,
+      );
+    } else if (gloPrefixes.contains(prefix)) {
+      detected = _providers.firstWhere(
+        (p) => p['name'] == 'Glo',
+        orElse: () => _providers.first,
+      );
+    } else if (etisalatPrefixes.contains(prefix)) {
+      detected = _providers.firstWhere(
+        (p) => p['name'] == '9mobile',
+        orElse: () => _providers.first,
+      );
+    }
+
+    if (detected != null && detected != _selectedProvider) {
+      setState(() => _selectedProvider = detected);
+      ref.read(airtimeFormProvider.notifier).setProvider(detected);
+    }
+  }
+
+  void _onContactSelected(String phoneNumber, String? contactName) {
+    setState(() => _selectedContactName = contactName);
+    _detectNetwork(phoneNumber);
+    ref.read(airtimeFormProvider.notifier).setPhoneNumber(phoneNumber);
+
+    if (phoneNumber.length == 11) {
+      _verifyPhoneNumber(phoneNumber);
+    }
+
+    if (contactName != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selected: $contactName'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  Future<void> _verifyPhoneNumber(String phone) async {
+    if (phone.length != 11) return;
+
+    setState(() => _isVerifying = true);
+
+    final result = await ref
+        .read(dashboardControllerProvider.notifier)
+        .verifyPhone(context, phone);
+
+    setState(() => _isVerifying = false);
+
+    if (result != null) {
+      debugPrint('✅ Phone verified');
+    } else {
+      debugPrint('❌ Phone verification failed');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Responsive breakpoints
+    final size = MediaQuery.of(context).size;
+    final isSmall = size.width < 360;
+    final isTablet = size.width > 600;
+
+    // Responsive values
+    final horizontalPadding = isSmall ? 10.w : (isTablet ? 24.w : 16.w);
+    final verticalPadding = isSmall ? 10.h : (isTablet ? 24.h : 10.h);
+    final borderRadius = isTablet ? 20.r : 16.r;
+    final titleFontSize = isSmall ? 14.sp : (isTablet ? 20.sp : 16.sp);
+    final innerPadding = isSmall ? 8.w : 12.w;
+    final dividerHeight = isTablet ? 32.h : 24.h;
+    final dropdownSize = isSmall ? 28.w : (isTablet ? 44.w : 36.w);
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       decoration: BoxDecoration(
-        // color: themeContext.tertiaryBackgroundColor,
-        borderRadius: BorderRadius.circular(15.r),
+        color: whiteBackground,
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: darkBackground.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, // Center the column
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Centered title
+          Text(
+            'Select Service Provider',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: titleFontSize,
+            ),
+            // textAlign: TextAlign.center,
+          ),
+          SizedBox(height: isSmall ? 12.h : 16.h),
+
+          // Main input container - everything centered
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: innerPadding,
+              vertical: isSmall ? 2.h : 2.h,
+            ),
+            decoration: BoxDecoration(
+              border: Border.all(color: grey300),
+              borderRadius: BorderRadius.circular(borderRadius - 4.r),
+              color: grey50,
+            ),
+            child: Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Center row contents
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Network Dropdown (left)
+                _buildNetworkDropdown(isSmall, isTablet, dropdownSize),
+
+                // Centered divider
+                Container(
+                  height: dividerHeight,
+                  width: 1,
+                  color: grey300,
+                  margin: EdgeInsets.symmetric(horizontal: innerPadding),
+                ),
+
+                // Phone Input (centered, takes remaining space)
+                Expanded(
+                  child: Center(
+                    child: CustomTextFieldWithContacts(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      hint: isSmall ? 'Phone Number' : 'Enter Phone Number',
+                      maxLength: 11,
+                      onChanged: (value) {
+                        setState(() => _selectedContactName = null);
+                        _detectNetwork(value);
+                        ref
+                            .read(airtimeFormProvider.notifier)
+                            .setPhoneNumber(value);
+                        if (value.length == 11) {
+                          _verifyPhoneNumber(value);
+                        }
+                      },
+                      onContactSelected: _onContactSelected,
+                    ),
+                  ),
+                ),
+
+                // // Verification indicator (right, centered vertically)
+                // if (_isVerifying)
+                //   Padding(
+                //     padding: EdgeInsets.only(left: innerPadding),
+                //     child: Center(
+                //       child: SizedBox(
+                //         width: isSmall ? 16.w : 20.w,
+                //         height: isSmall ? 16.h : 20.h,
+                //         child: CircularProgressIndicator(
+                //           strokeWidth: 2,
+                //           valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+              ],
+            ),
+          ),
+
+          // Selected info row - centered
+          if (_selectedProvider != null || _selectedContactName != null)
+            Padding(
+              padding: EdgeInsets.only(top: isSmall ? 10.h : 12.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_selectedProvider != null) ...[
+                    Container(
+                      width: isSmall ? 8.w : 10.w,
+                      height: isSmall ? 8.h : 10.h,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: primaryColor,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      _selectedProvider!['name'],
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: isSmall ? 12.sp : 14.sp,
+                      ),
+                    ),
+                  ],
+                  if (_selectedContactName != null) ...[
+                    if (_selectedProvider != null)
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w),
+                        child: Container(
+                          width: 4.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: grey400,
+                          ),
+                        ),
+                      ),
+                    Icon(
+                      Icons.person_outline,
+                      size: isSmall ? 14.sp : 16.sp,
+                      color: grey600,
+                    ),
+                    SizedBox(width: 6.w),
+                    Flexible(
+                      child: Text(
+                        _selectedContactName!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: grey700,
+                          fontWeight: FontWeight.w500,
+                          fontSize: isSmall ? 12.sp : 14.sp,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkDropdown(bool isSmall, bool isTablet, double size) {
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<Map<String, dynamic>>(
+        value: _selectedProvider,
+        isDense: true,
+        icon: Icon(
+          Icons.arrow_drop_down,
+          size: isSmall ? 20.sp : 24.sp,
+          color: grey,
+        ),
+        selectedItemBuilder: (context) {
+          return _providers.map((provider) {
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: AssetImage(provider['logo']),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            );
+          }).toList();
+        },
+        items: _providers.map((provider) {
+          return DropdownMenuItem(
+            value: provider,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: isSmall ? 24.w : (isTablet ? 36.w : 28.w),
+                  height: isSmall ? 24.h : (isTablet ? 36.h : 28.h),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage(provider['logo']),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(width: isSmall ? 8.w : 12.w),
+                Text(
+                  provider['name'],
+                  style: TextStyle(fontSize: isSmall ? 12.sp : 14.sp),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() => _selectedProvider = value);
+          ref.read(airtimeFormProvider.notifier).setProvider(value!);
+        },
+      ),
+    );
+  }
+}
+
+// ==================== CARD ONE: AMOUNT SELECTOR ====================
+
+class CardOne extends ConsumerStatefulWidget {
+  const CardOne({super.key});
+
+  @override
+  ConsumerState<CardOne> createState() => _CardOneState();
+}
+
+class _CardOneState extends ConsumerState<CardOne> {
+  final TextEditingController _amountController = TextEditingController();
+  final List<int> amounts = [50, 100, 200, 500, 1000, 2000, 5000, 10000];
+  int? selectedAmount;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final formState = ref.watch(airtimeFormProvider);
+    final isSmall = ResponsiveConfig.isSmallScreen(context);
+    final isTablet = ResponsiveConfig.isTablet(context);
+    final crossAxisCount = ResponsiveConfig.getGridCrossAxisCount(context);
+
+    return Container(
+      padding: EdgeInsets.all(isSmall ? 10.w : (isTablet ? 20.w : 12.w)),
+      decoration: BoxDecoration(
+        color: lightSurface,
+        borderRadius: BorderRadius.circular(isTablet ? 20.r : 15.r),
+        boxShadow: [
+          BoxShadow(
+            color: darkBackground.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Select Service Provider',
-            textAlign: TextAlign.start,
-            // style: textTheme.titleMedium?.copyWith(
-            //   fontWeight: FontWeight.w600,
-            // ),
+            'Enter Amount',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: isSmall ? 14.sp : (isTablet ? 18.sp : 16.sp),
+            ),
           ),
-          SizedBox(height: 10.h),
-          NetworkDropdown(
-            onChanged: (provider) =>
-                setState(() => _selectedProvider = provider),
-            onPhoneChanged: (number) => setState(() => _phoneNumber = number),
+          SizedBox(height: isSmall ? 12.h : 16.h),
+
+          // Amount Input & Pay Button - Responsive Row
+          Row(
+            children: [
+              Expanded(
+                flex: isTablet ? 4 : 3,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: grey300),
+                    borderRadius: BorderRadius.all(Radius.circular(10.r)),
+                  ),
+                  child: TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(fontSize: isSmall ? 14.sp : 16.sp),
+                    onChanged: (value) {
+                      final amount = int.tryParse(value);
+                      if (amount != null) {
+                        setState(() => selectedAmount = amount);
+                        ref
+                            .read(airtimeFormProvider.notifier)
+                            .setAmount(amount);
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Amount',
+                      hintStyle: TextStyle(
+                        color: grey400,
+                        fontSize: isSmall ? 12.sp : 14.sp,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: isSmall ? 10.h : 12.h,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: isSmall ? 8.w : 10.w),
+              Expanded(
+                flex: isTablet ? 1 : 1,
+                child: CustomButton(
+                  buttonName: 'PAY',
+                  buttonColor: formState.isValid ? primaryColor : grey,
+                  buttonTextColor: whiteBackground,
+                  // height: isSmall ? 44.h : (isTablet ? 56.h : 48.h),
+                  // fontSize: isSmall ? 12.sp : 14.sp,
+                  onPressed: formState.isValid ? _handlePay : null,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: isSmall ? 16.h : 20.h),
+          Text(
+            'Quick Select',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: grey700,
+              fontSize: isSmall ? 11.sp : 12.sp,
+            ),
+          ),
+          SizedBox(height: isSmall ? 10.h : 12.h),
+
+          // Responsive Amount Grid
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final spacing = isSmall ? 8.w : 10.w;
+              final runSpacing = isSmall ? 8.h : 10.h;
+              final totalSpacing = spacing * (crossAxisCount - 1);
+              final itemWidth =
+                  (constraints.maxWidth - totalSpacing) / crossAxisCount;
+              final itemHeight = isSmall ? 36.h : (isTablet ? 48.h : 40.h);
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: runSpacing,
+                children: amounts.map((amount) {
+                  final isSelected = selectedAmount == amount;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedAmount = amount;
+                        _amountController.text = amount.toString();
+                      });
+                      ref.read(airtimeFormProvider.notifier).setAmount(amount);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: itemWidth,
+                      height: itemHeight,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isSelected ? primaryColor : whiteBackground,
+                        borderRadius: BorderRadius.circular(
+                          isSmall ? 8.r : 10.r,
+                        ),
+                        border: Border.all(
+                          color: isSelected ? primaryColor : grey300,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          child: Text(
+                            '₦$amount',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: isSmall
+                                  ? 11.sp
+                                  : (isTablet ? 14.sp : 13.sp),
+                              color: isSelected
+                                  ? whiteBackground
+                                  : semiTransparentBlack,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handlePay() async {
+    final formState = ref.read(airtimeFormProvider);
+
+    if (!formState.isValid) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Fill all fields')));
+      return;
+    }
+
+    final provider = formState.selectedProvider!;
+    final amount = formState.amount!;
+    final phone = formState.phoneNumber;
+
+    ConfirmationBottomSheet.show(
+      context: context,
+      config: BottomSheetConfig(
+        title: '${Constants.nairaCurrencySymbol}$amount.00',
+        subtitle: 'Confirm Airtime Purchase',
+        showCashback: true,
+        amount: amount.toDouble(),
+        cashbackAmount: '+${Constants.nairaCurrencySymbol}1 Cashback',
+        details: [
+          BottomSheetDetailItem(
+            label: 'Network',
+            value: provider['name'],
+            logo: provider['logo'],
+          ),
+          BottomSheetDetailItem(label: 'Phone Number', value: phone),
+          BottomSheetDetailItem(
+            label: 'Amount',
+            value: '${Constants.nairaCurrencySymbol}$amount.00',
+          ),
+        ],
+      ),
+      onConfirm: (pin) async {
+        ref.read(airtimeFormProvider.notifier).setLoading(true);
+
+        final result = await ref
+            .read(dashboardControllerProvider.notifier)
+            .buyAirtime(
+              context,
+              phone: phone,
+              amount: amount,
+              network: provider['id'],
+              pin: pin,
+            );
+
+        ref.read(airtimeFormProvider.notifier).setLoading(false);
+
+        // ✅ Guard with mounted check before using context
+        if (!mounted) return;
+
+        final isSuccess =
+            result?.responseSuccessful == true ||
+            result?.responseBody?.status == "SUCCESS";
+
+        context.goNamed(
+          RouteList.successScreen,
+          extra: {
+            "type": isSuccess ? "success" : "failed",
+            "amount": amount.toString(),
+            "recipientName": provider['name'],
+            "recipientAccount": phone,
+            "reference": result?.responseBody?.reference ?? '',
+            "channel": "Airtime",
+          },
+        );
+      },
+    );
+  }
+}
+
+// ==================== CARD THREE: BENEFICIARY ====================
+
+class CardThree extends ConsumerStatefulWidget {
+  const CardThree({super.key});
+
+  @override
+  ConsumerState<CardThree> createState() => _CardThreeState();
+}
+
+class _CardThreeState extends ConsumerState<CardThree> {
+  @override
+  Widget build(BuildContext context) {
+    final isSmall = ResponsiveConfig.isSmallScreen(context);
+    final isTablet = ResponsiveConfig.isTablet(context);
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 12.w : (isTablet ? 24.w : 20.w),
+        vertical: isSmall ? 12.h : (isTablet ? 24.h : 16.h),
+      ),
+      decoration: BoxDecoration(
+        color: whiteBackground,
+        borderRadius: BorderRadius.circular(isTablet ? 20.r : 15.r),
+        boxShadow: [
+          BoxShadow(
+            color: darkBackground.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Select Beneficiary',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: isSmall ? 14.sp : (isTablet ? 18.sp : 16.sp),
+            ),
+          ),
+          SizedBox(height: isSmall ? 10.h : 12.h),
+
+          // Flexible height based on available space
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: isSmall ? 120.h : 150.h,
+                maxHeight: isTablet ? 400.h : 250.h,
+              ),
+              child: BeneficiaryTabSection(
+                favorites: const [
+                  {"name": "Mustapha Garba", "account": "0123456789"},
+                  {"name": "Aisha Bello", "account": "0145678901"},
+                ],
+                recents: const [
+                  {"name": "Fatima Yusuf", "account": "0234567891"},
+                  {"name": "John Musa", "account": "0345678912"},
+                ],
+                onSelectBeneficiary: (name, account) {
+                  debugPrint('Selected $name - $account');
+                  ref
+                      .read(airtimeFormProvider.notifier)
+                      .setPhoneNumber(account);
+                },
+                onSearchTap: () => debugPrint('Search tapped'),
+                showProgress: false,
+                showLogo: true,
+              ),
+            ),
           ),
         ],
       ),
@@ -272,10 +962,10 @@ class NetworkDropdown extends ConsumerStatefulWidget {
 
 class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
   final List<Map<String, dynamic>> _providers = [
-    {'name': '', 'logo': 'assets/svg/mtn.jpg'},
-    {'name': '', 'logo': 'assets/svg/airtel.png'},
-    {'name': '', 'logo': 'assets/svg/glo.jpg'},
-    {'name': '', 'logo': 'assets/svg/9mobile.png'},
+    {'name': 'mtn', 'logo': 'assets/svg/mtn.jpg'},
+    {'name': 'airtel', 'logo': 'assets/svg/airtel.png'},
+    {'name': 'glo', 'logo': 'assets/svg/glo.jpg'},
+    {'name': '9mobile', 'logo': 'assets/svg/9mobile.png'},
   ];
 
   Map<String, dynamic>? _selectedProvider;
@@ -411,7 +1101,15 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
             /// 📞 Input field
             Expanded(
               flex: 5,
-              child: CustomTextField(hint: 'Kano Electricity (KEDCO)'),
+              child: CustomTextField(
+                hint: 'Enter Phone Number',
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                onChanged: (value) {
+                  widget.onPhoneChanged?.call(value);
+                  _detectNetwork(value);
+                },
+              ),
             ),
           ],
         ),
@@ -440,7 +1138,7 @@ class AirtimeAmountSelector extends ConsumerStatefulWidget {
 class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
   final TextEditingController _amountController = TextEditingController();
 
-  final List<int> amounts = [100, 200, 300, 400, 500, 1000, 2000, 3000, 5000];
+  final List<int> amounts = [50, 100, 200, 500, 1000, 2000];
   final List<String> cashback = [
     '+₦1 Cashback',
     '+₦2 Cashback',
@@ -448,19 +1146,12 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
     '+₦4 Cashback',
     '+₦5 Cashback',
     '+₦10 Cashback',
-    '+₦20 Cashback',
-    '+₦30 Cashback',
-    '+₦50 Cashback',
   ];
 
-  Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
   int? selectedAmount;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -509,21 +1200,30 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
               child: CustomButton(
                 buttonName: 'PAY',
                 buttonColor: primaryColor,
-                buttonTextColor: Colors.white,
-                onPressed: () {
-                  final amountText = _amountController.text.trim();
-                  if (amountText.isEmpty) return;
-                  final amount = int.tryParse(amountText) ?? 0;
+                buttonTextColor: whiteBackground,
+                onPressed: () async {
+                  FocusScope.of(context).unfocus();  // Dismiss keyboard first
+                  await Future.delayed(const Duration(milliseconds: 150));  // Wait for animation
+                  if (!context.mounted) return;
+                  if (context.canPop()) {
+                    context.pop();
+                  }
+                  final result = await ref
+                      .read(dashboardControllerProvider.notifier)
+                      .buyAirtime(
+                        context,
+                        phone: widget.phoneNumber ?? "",
+                        amount: selectedAmount ?? 0,
+                        network: widget.selectedProvider?['name'] ?? "mtn",
+                        pin: "1234",
+                      );
 
-                  showAirtimeConfirmationSheet(
-                    context,
-                    amount: amount,
-                    networkName: widget.selectedProvider?['name'] ?? 'MTN',
-                    networkLogo:
-                        widget.selectedProvider?['logo'] ??
-                        'assets/svg/mtn.jpg',
-                    recipientNumber: widget.phoneNumber ?? '',
-                  );
+                  if (result != null && result.responseSuccessful) {
+                    // ✅ Guard with context.mounted check
+                    if (!context.mounted) return;
+
+                    Navigator.pop(context);
+                  }
                 },
               ),
             ),
@@ -540,52 +1240,46 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
         SizedBox(height: 10.h),
 
         /// 🔹 Clean grid layout
-        Wrap(
-          spacing: 10.w, // horizontal space between items
-          runSpacing: 10.h, // vertical space between rows
-          children: List.generate(amounts.length, (index) {
-            final amount = amounts[index];
-            final isSelected = selectedAmount == amount;
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final itemWidth = (constraints.maxWidth - 40.w) / 4;
 
-            // ✅ Make second-row items wider
-            final isSecondRow = index >= 5; // since 5 items per row
-            final itemWidth = isSecondRow ? 62.w : 52.w; // 👈 adjust as needed
-            final itemHeight = 50.h;
+            return Wrap(
+              spacing: 10.w,
+              runSpacing: 10.h,
+              children: List.generate(amounts.length, (index) {
+                final amount = amounts[index];
 
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedAmount = amount;
-                  _amountController.text = amount.toString();
-                });
-                widget.onAmountSelected?.call(amount);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                curve: Curves.easeOut,
-                width: itemWidth,
-                height: itemHeight,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10.r),
-                  border: Border.all(
-                    // color: isSelected ? themeContext.kPrimary : Colors.grey.shade300,
-                    width: 1.3,
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedAmount = amount;
+                      _amountController.text = amount.toString();
+                    });
+                    widget.onAmountSelected?.call(amount);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: itemWidth,
+                    height: 50.h,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: whiteBackground,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(width: 1.3),
+                    ),
+                    child: Text(
+                      '₦$amount',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14.sp,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  '₦$amount',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    // color: themeContext.titleTextColor,
-                    fontSize: 14.sp,
-                  ),
-                ),
-              ),
+                );
+              }),
             );
-          }),
+          },
         ),
         SizedBox(height: 25.h),
       ],
@@ -594,10 +1288,6 @@ class _AirtimeAmountSelectorState extends ConsumerState<AirtimeAmountSelector> {
 }
 
 class BeneficiarySelector extends ConsumerStatefulWidget {
-  final Function(int amount)? onAmountSelected;
-  final Map<String, dynamic>? selectedProvider;
-  final String? phoneNumber;
-
   const BeneficiarySelector({
     super.key,
     this.onAmountSelected,
@@ -605,353 +1295,53 @@ class BeneficiarySelector extends ConsumerStatefulWidget {
     this.phoneNumber,
   });
 
+  final Function(int amount)? onAmountSelected;
+  final Map<String, dynamic>? selectedProvider;
+  final String? phoneNumber;
+
   @override
   ConsumerState<BeneficiarySelector> createState() =>
       _BeneficiarySelectorState();
 }
 
 class _BeneficiarySelectorState extends ConsumerState<BeneficiarySelector> {
-  final TextEditingController _amountController = TextEditingController();
-
-  Map<String, dynamic>? _selectedProvider;
-  String _phoneNumber = '';
-  int? selectedAmount;
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          height: constraints.maxHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Select Beneficiary'),
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// 💰 Amount Grid (matching your image layout)
-        Text(
-          'Select Beneficiary',
-          textAlign: TextAlign.start,
-          // style: textTheme.titleMedium?.copyWith(
-          //   fontWeight: FontWeight.w600,
-          // ),
-        ),
-        SizedBox(height: 10.h),
-        BeneficiaryTabSection(
-          favorites: [
-            {"name": "Mustapha Garba", "account": "0123456789"},
-            {"name": "Aisha Bello", "account": "0145678901"},
-          ],
-          recents: [
-            {"name": "Fatima Yusuf", "account": "0234567891"},
-            {"name": "John Musa", "account": "0345678912"},
-            {"name": "Fatima Yusuf", "account": "0234567891"},
-            {"name": "John Musa", "account": "0345678912"},
-          ],
-          onSelectBeneficiary: (name, account) {
-            debugPrint('Selected $name - $account');
-          },
-          onSearchTap: () => debugPrint('Search tapped'),
+              SizedBox(height: 10.h),
 
-          // optional config:
-          showProgress: false, // hide progress circle
-          showLogo: true,
-        ),
-
-        SizedBox(height: 25.h),
-      ],
+              Expanded(
+                child: BeneficiaryTabSection(
+                  favorites: const [
+                    {"name": "Mustapha Garba", "account": "0123456789"},
+                    {"name": "Aisha Bello", "account": "0145678901"},
+                  ],
+                  recents: const [
+                    {"name": "Fatima Yusuf", "account": "0234567891"},
+                    {"name": "John Musa", "account": "0345678912"},
+                    {"name": "Fatima Yusuf", "account": "0234567891"},
+                    {"name": "John Musa", "account": "0345678912"},
+                  ],
+                  onSelectBeneficiary: (name, account) {
+                    debugPrint('Selected $name - $account');
+                  },
+                  onSearchTap: () => debugPrint('Search tapped'),
+                  showProgress: false,
+                  showLogo: true,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
-}
-
-/// 🔹 Bottom Sheet Confirmation
-void showAirtimeConfirmationSheet(
-  BuildContext context, {
-  required int amount,
-  required String networkName,
-  required String networkLogo,
-  required String recipientNumber,
-}) {
-  final currencySymbol = Constants.nairaCurrencySymbol;
-
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-    ),
-    builder: (_) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: 10.w,
-          right: 10.w,
-          top: 20.h,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 50,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ─── Drag Handle ───
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 10.h),
-              width: 40.w,
-              height: 30.h,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: SvgPicture.asset(
-                'assets/svg/cancel.svg',
-                // color: Theme.of(context)Context.secondaryTextColor,
-              ),
-            ),
-
-            // 💰 Big Amount
-            Center(
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: Constants.nairaCurrencySymbol, // ₦ sign
-                      style: TextStyle(
-                        fontSize: 14.spMin, // smaller ₦
-                        fontWeight: FontWeight.w600,
-                        //  color: Theme.of(context)Context.titleTextColor,
-                      ),
-                    ),
-                    TextSpan(
-                      text: '$amount.00', // bigger number
-                      style: TextStyle(
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w700,
-                        //  color: Theme.of(context)Context.titleTextColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 20.h),
-
-            // 📄 Transaction summary
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-              decoration: BoxDecoration(
-                //   color: Theme.of(context)Context.offWhiteBg,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  // 👇 Network logo + name
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Product Name',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Container(
-                            height: 26.h,
-                            width: 26.h,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: AssetImage(networkLogo),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 6.h),
-
-                          Text(
-                            networkName,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    'Recipient Mobile',
-                    recipientNumber,
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    'Amount',
-                    '$currencySymbol$amount.00',
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    'Use Cashback (${currencySymbol}34.00)',
-                    '-${currencySymbol}34.00',
-                    hasToggle: true,
-                  ),
-                  _buildSummaryRow(
-                    context,
-                    'Bonus to Earn',
-                    '+${currencySymbol}1 Cashback',
-                    bonus: true,
-                  ),
-                ],
-              ),
-            ),
-
-            Divider(color: Colors.grey.shade300),
-            SizedBox(height: 10.h),
-            // 💳 Payment Method
-            Text(
-              'Payment Method',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w400,
-                color: Colors.black87,
-              ),
-            ),
-            SizedBox(height: 10.h),
-
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Available Balance (${currencySymbol}314,171.32)',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 20.h),
-
-            // 🟩 Pay Button
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              child: CustomButton(
-                buttonColor: Colors.white,
-                buttonTextColor: Colors.white,
-                buttonName: 'Pay',
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-/// 🔹 Helper Summary Row Widget
-Widget _buildSummaryRow(
-  BuildContext context,
-  String title,
-  String value, {
-  bool bonus = false,
-  bool hasToggle = false,
-}) {
-  return Padding(
-    padding: EdgeInsets.symmetric(vertical: 6.h),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey.shade600,
-          ),
-        ),
-        Row(
-          children: [
-            if (bonus)
-              Text(
-                value,
-                style: TextStyle(
-                  color: Colors.green.shade600,
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            else
-              Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith()),
-            SizedBox(height: 5.h),
-            if (hasToggle)
-              GestureDetector(
-                onTap: () {},
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 25,
-                  height: 15,
-                  decoration: BoxDecoration(
-                    // color: false ? Theme.of(context)Context.kPrimary : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Align(
-                    alignment: false
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Container(
-                      width: 10.w,
-                      height: 10.h,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-/// 🔹 Helper Payment Row Widget
-Widget _buildPaymentRow(
-  BuildContext context,
-  String method,
-  String amount, {
-  required bool selected,
-}) {
-  return Padding(
-    padding: EdgeInsets.symmetric(vertical: 8.h),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          method,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black87),
-        ),
-        Row(
-          children: [
-            if (amount.isNotEmpty)
-              Text(
-                amount,
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            if (selected)
-              const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: Icon(Icons.check_circle, color: Colors.green, size: 20),
-              ),
-          ],
-        ),
-      ],
-    ),
-  );
 }

@@ -1,14 +1,14 @@
-// Secure TransactionPin widget with proper biometric implementation
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../core/services/secure_biometric_service.dart';
+import '../../../../../core/services/biometric_service.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/keypad.dart';
 
@@ -48,20 +48,39 @@ class _TransactionPinSecureState extends ConsumerState<TransactionPinSecure> {
   }
 
   Future<void> _initializeBiometric() async {
-    final isAvailable = await SecureBiometricService.isBiometricAvailable();
-    final isEnabled = await SecureBiometricService.isBiometricTransactionEnabled();
-    final typeName = await SecureBiometricService.getBiometricTypeName();
+    final authBox = await Hive.openBox('authBox');
+    final userId = authBox.get('userId', defaultValue: '');
+    final phone = authBox.get('phone', defaultValue: '');
+
+    // Match the logic used in EnableTransactionPinBiometricSecure
+    final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+    debugPrint('🔐 TransactionPinSecure - userId: "$userId", phone: "$phone", effective: "$effectiveUserId"');
+
+    if (effectiveUserId.isEmpty) {
+      setState(() {
+        _hasBiometric = false;
+        _biometricEnabled = false;
+      });
+      debugPrint('❌ No user ID found');
+      return;
+    }
+
+    final biometricService = BiometricService();
+    final isAvailable = await biometricService.canCheckBiometrics();
+    final isEnabled = await biometricService.isPaymentEnabled(effectiveUserId);
+    final typeName = await biometricService.getBiometricTypeName();
+    final savedPin = await biometricService.getTransactionPin(effectiveUserId);
+
+    debugPrint('🔐 Checking biometric for user: "$effectiveUserId"');
+    debugPrint('🔐 Key used: "biometric_payment_enabled_$effectiveUserId"');
+    debugPrint('🔐 isEnabled: $isEnabled, hasPin: ${savedPin != null}');
 
     setState(() {
       _hasBiometric = isAvailable;
-      _biometricEnabled = isEnabled;
+      _biometricEnabled = isEnabled && savedPin != null; // Both must be true!
       _biometricTypeName = typeName;
     });
-
-    debugPrint('🔐 Secure Biometric initialized:');
-    debugPrint('   - Available: $_hasBiometric');
-    debugPrint('   - Enabled: $_biometricEnabled');
-    debugPrint('   - Type: $_biometricTypeName');
   }
 
   @override
@@ -87,8 +106,7 @@ class _TransactionPinSecureState extends ConsumerState<TransactionPinSecure> {
     });
   }
 
-  /// Authenticate with biometric and get auth token
-  /// The token is then used to authorize the transaction with backend
+  /// Authenticate with biometric and get PIN
   Future<void> _authenticateWithBiometric() async {
     if (_isAuthenticating) return;
     
@@ -105,46 +123,57 @@ class _TransactionPinSecureState extends ConsumerState<TransactionPinSecure> {
     setState(() => _isAuthenticating = true);
 
     try {
-      // Authenticate with biometric and get the secure token
-      final authToken = await SecureBiometricService.getAuthTokenWithBiometric(
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      if (effectiveUserId.isEmpty) {
+        _showError('User session not found');
+        return;
+      }
+
+      final biometricService = BiometricService();
+      
+      // Authenticate with biometric
+      final authenticated = await biometricService.authenticate(
         reason: 'Authenticate to complete transaction',
+        biometricOnly: true,
       );
 
-      if (authToken != null && authToken.isNotEmpty) {
+      if (!authenticated) {
+        debugPrint('❌ Biometric authentication cancelled');
+        return;
+      }
+
+      // Get saved PIN
+      final savedPin = await biometricService.getTransactionPin(effectiveUserId);
+
+      if (savedPin != null && savedPin.isNotEmpty) {
         debugPrint('✅ Biometric authentication successful, processing transfer...');
-        
-        // ⚠️ IMPORTANT: The authToken here is NOT the PIN!
-        // It's a secure token that was stored after backend validated the PIN
-        // The backend will validate this token to authorize the transaction
-        
-        // For now, we use it as the PIN since your backend expects PIN
-        // In a proper implementation, you'd have a separate endpoint that accepts tokens
-        await _processTransferWithPin(authToken);
+        await _processTransferWithPin(savedPin);
       } else {
-        debugPrint('❌ Biometric authentication failed or no token found');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Authentication failed. Please try again or enter PIN manually.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        debugPrint('❌ No saved PIN found');
+        _showError('Please set up your transaction PIN first');
       }
     } catch (e) {
       debugPrint('⚠️ Biometric error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Authentication error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showError('Authentication error: $e');
     } finally {
       if (mounted) {
         setState(() => _isAuthenticating = false);
       }
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
