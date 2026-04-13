@@ -18,7 +18,7 @@
 //   const WelcomeBackScreen({super.key});
 //
 //   @override
-//   ConsumerState<WelcomeBackScreen> createState() =>
+//   ConsumerState<WelcomeBackScreen> createState =>
 //       _WelcomeBackScreenState();
 // }
 //
@@ -136,7 +136,7 @@
 //     ScaffoldMessenger.of(context).showSnackBar(
 //       SnackBar(
 //         content: Text(msg),
-//         backgroundColor: Colors.red,
+//         backgroundColor: errorColor,
 //       ),
 //     );
 //   }
@@ -193,7 +193,7 @@
 //                             ? CircleAvatar(
 //                           radius: 30.r,
 //                           backgroundColor:
-//                           Colors.grey.shade200,
+//                           grey200,
 //                           backgroundImage:
 //                           NetworkImage(pictureUrl!),
 //                         )
@@ -204,7 +204,7 @@
 //                           child: Icon(
 //                             Icons.person,
 //                             size: 40.sp,
-//                             color: Colors.white,
+//                             color: lightBackground,
 //                           ),
 //                         ),
 //                       ),
@@ -382,7 +382,11 @@
 //     );
 //   }
 // }
+import 'dart:async';
+import 'dart:io';
+
 import 'package:bia/core/__core.dart';
+import 'package:bia/core/easy_loading_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -416,8 +420,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
   String? fullname;
   String? savedPassword;
   String? pictureUrl;
-  // ADD THESE MISSING VARIABLES:
-  bool _isLoading = true; // For loading state
+  bool _isLoading = true;
   String? _biometricTypeName = 'Biometric';
 
   final TextEditingController passwordController = TextEditingController();
@@ -434,138 +437,409 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     super.dispose();
   }
 
+  // Show error modal with consistent messaging
+  void _showErrorModal(
+    String title,
+    String message, {
+    bool isNetworkError = false,
+    VoidCallback? onRetry,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        contentPadding: EdgeInsets.all(24.w),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: isNetworkError
+                    ? pendingColor.withValues(alpha:0.1)
+                    : errorColor.withValues(alpha:0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isNetworkError ? Icons.wifi_off : Icons.error_outline,
+                color: isNetworkError ? pendingColor : errorColor,
+                size: 40.sp,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w700,
+                color: darkBackground,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14.sp, color: grey600),
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 24.h),
+            Row(
+              children: [
+                if (onRetry != null) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onRetry();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        side: BorderSide(color: primaryColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                      ),
+                      child: Text(
+                        'Retry',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                ],
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        color: lightBackground,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Check connectivity before attempting login
+  Future<bool> _checkConnectivity() async {
+    try {
+      final results = await Future.wait([
+        InternetAddress.lookup(
+          'google.com',
+        ).timeout(const Duration(seconds: 5)),
+        InternetAddress.lookup(
+          'cloudflare.com',
+        ).timeout(const Duration(seconds: 5)),
+      ], eagerError: true).catchError((_) => <List<InternetAddress>>[]);
+
+      return results.isNotEmpty && results.any((r) => r.isNotEmpty);
+    } on SocketException catch (_) {
+      return false;
+    } on TimeoutException catch (_) {
+      return false;
+    }
+  }
+
+  // Check if error is a server/database error
+  bool _isServerError(String errorMessage) {
+    final msg = errorMessage.toLowerCase();
+    return msg.contains('database') ||
+        msg.contains('prisma') ||
+        msg.contains('server') ||
+        msg.contains('internal server error') ||
+        msg.contains('500') ||
+        msg.contains("can't reach") ||
+        msg.contains('connection refused');
+  }
+
+  // Check if error is a network error
+  bool _isNetworkError(dynamic error) {
+    if (error == null) return false;
+    final msg = error.toString().toLowerCase();
+    return msg.contains('socket') ||
+        msg.contains('timeout') ||
+        (msg.contains('connection') && !msg.contains('database')) ||
+        msg.contains('network') ||
+        msg.contains('internet') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('no route to host');
+  }
+
   Future<void> _initializeSettings() async {
     final authBox = await Hive.openBox("authBox");
     final biometricService = BiometricService();
 
-    // Load user data
-    final loadedUserId = authBox.get("userId");
-    final loadedPhone = authBox.get("phone");
-    final loadedFullname = authBox.get("fullname");
-    final loadedPicture = authBox.get("picture");
+    // Read exactly what was written during the last login
+    final loadedUserId = authBox.get("userId")?.toString() ?? '';
+    final loadedPhone  = authBox.get("phone")?.toString() ?? '';
+    final loadedFullname = authBox.get("fullname")?.toString() ?? '';
+    final loadedPicture  = authBox.get("picture")?.toString();
 
-    debugPrint('📦 Raw data from authBox:');
-    debugPrint('  userId: $loadedUserId');
-    debugPrint('  phone: $loadedPhone');
+    debugPrint('📦 WelcomeBack authBox → userId: $loadedUserId  phone: $loadedPhone');
 
-    // Use phone as fallback if userId is empty
-    final effectiveUserId = (loadedUserId?.toString().isNotEmpty == true)
-        ? loadedUserId.toString()
-        : (loadedPhone?.toString().isNotEmpty == true
-        ? loadedPhone.toString()
-        : "");
+    // userId is the canonical identifier — phone is only a display fallback
+    final effectiveUserId = loadedUserId.isNotEmpty ? loadedUserId : loadedPhone;
 
-    // Check if we have any identifier
     if (effectiveUserId.isEmpty) {
       debugPrint('⚠️ No user identifier found, redirecting to login');
-      if (mounted) {
-        context.go(RouteList.loginScreen);
-      }
+      if (mounted) context.go(RouteList.loginScreen);
       return;
     }
 
-    // Resolve fullname with fallbacks
-    String effectiveFullname = "User";
-    if (loadedFullname != null && loadedFullname.toString().isNotEmpty) {
-      effectiveFullname = loadedFullname.toString();
-    } else {
-      final savedProfile = authBox.get('saved_user_profile');
-      if (savedProfile != null) {
-        try {
-          final profileData = Map<String, dynamic>.from(savedProfile);
-          final profileName = profileData['fullname'] ?? profileData['name'];
-          if (profileName != null && profileName.toString().isNotEmpty) {
-            effectiveFullname = profileName.toString();
-          }
-        } catch (e) {
-          debugPrint('⚠️ Error parsing saved profile: $e');
+    // Resolve display name
+    String effectiveFullname = loadedFullname.isNotEmpty ? loadedFullname : loadedPhone;
+    if (effectiveFullname.isEmpty) effectiveFullname = 'User';
+
+    // Check biometric for THIS specific user only
+    final biometricEnabled = await biometricService.isLoginEnabled(effectiveUserId);
+    final savedPwd        = await biometricService.getLoginPassword(effectiveUserId);
+    final canCheck        = await biometricService.canCheckBiometrics();
+
+    debugPrint('🔐 WelcomeBack biometric check → userId: $effectiveUserId  enabled: $biometricEnabled  hasPassword: ${savedPwd != null}  canCheck: $canCheck');
+
+    setState(() {
+      phone        = loadedPhone;
+      fullname     = effectiveFullname;
+      pictureUrl   = loadedPicture;
+      savedPassword = savedPwd;
+      _hasBiometric    = canCheck;
+      // Only show biometric UI if ALL three conditions are true for THIS user
+      _biometricEnabled = canCheck && biometricEnabled && savedPwd != null;
+      _showPasswordField = !_biometricEnabled;
+    });
+
+    if (_biometricEnabled) {
+      Future.delayed(const Duration(milliseconds: 600), _authenticate);
+    }
+  }
+
+  // Main login logic with proper network error handling
+  Future<void> _performLogin(
+    String loginPhone,
+    String loginPassword, {
+    bool isBiometric = false,
+  }) async {
+    if (_isAuthenticating) return;
+
+    // Check connectivity first
+    final hasConnection = await _checkConnectivity();
+    if (!hasConnection) {
+      _showErrorModal(
+        'No Internet Connection',
+        'Something went wrong. Please try again later.',
+        isNetworkError: true,
+        onRetry: () =>
+            _performLogin(loginPhone, loginPassword, isBiometric: isBiometric),
+      );
+      return;
+    }
+
+    setState(() => _isAuthenticating = true);
+
+    final authController = ref.read(authControllerProvider.notifier);
+
+    try {
+      final success = await authController
+          .logIn(context, loginPhone, loginPassword.trim())
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              throw TimeoutException('Connection timed out.');
+            },
+          );
+
+      LoadingHelper.dismiss();
+
+      if (success && mounted) {
+        // Verify token exists and matches
+        final box = await Hive.openBox("authBox");
+        final token = box.get("token");
+        final savedPhone = box.get("phone");
+
+        if (token != null && token.isNotEmpty && savedPhone == loginPhone) {
+          context.go(RouteList.bottomNavBar);
+        } else {
+          await box.delete("token");
+          _showErrorModal(
+            'Login Failed',
+            'Unable to verify login. Please try again.',
+          );
+          _resetState(isBiometric);
+        }
+      } else {
+        // API returned success=false (invalid credentials, user not found, etc.)
+        LoadingHelper.dismiss();
+
+        if (mounted) {
+          _showErrorModal(
+            'Login Failed',
+            'Invalid credentials. Please check and try again.',
+          );
+          _resetState(isBiometric);
         }
       }
+    } on TimeoutException catch (e) {
+      LoadingHelper.dismiss();
+      if (mounted) {
+        _showErrorModal(
+          'Connection Timeout',
+          'Something went wrong. Please try again later.',
+          isNetworkError: true,
+          onRetry: () => _performLogin(
+            loginPhone,
+            loginPassword,
+            isBiometric: isBiometric,
+          ),
+        );
+        _resetState(isBiometric);
+      }
+    } on SocketException catch (e) {
+      LoadingHelper.dismiss();
+      if (mounted) {
+        _showErrorModal(
+          'Network Error',
+          'Something went wrong. Please try again later.',
+          isNetworkError: true,
+          onRetry: () => _performLogin(
+            loginPhone,
+            loginPassword,
+            isBiometric: isBiometric,
+          ),
+        );
+        _resetState(isBiometric);
+      }
+    } on HandshakeException catch (e) {
+      LoadingHelper.dismiss();
+      if (mounted) {
+        _showErrorModal(
+          'Secure Connection Failed',
+          'Something went wrong. Please try again later.',
+          isNetworkError: true,
+          onRetry: () => _performLogin(
+            loginPhone,
+            loginPassword,
+            isBiometric: isBiometric,
+          ),
+        );
+        _resetState(isBiometric);
+      }
+    } catch (e) {
+      LoadingHelper.dismiss();
+      debugPrint("Login error: $e");
+
+      if (mounted) {
+        final errorMsg = e.toString();
+
+        // Check if it's a network-related error
+        if (_isNetworkError(e) ||
+            errorMsg.toLowerCase().contains('internet') ||
+            errorMsg.toLowerCase().contains('connection') ||
+            errorMsg.toLowerCase().contains('network') ||
+            errorMsg.toLowerCase().contains('socket') ||
+            errorMsg.toLowerCase().contains('timeout') ||
+            errorMsg.toLowerCase().contains('failed host lookup') ||
+            errorMsg.toLowerCase().contains('no route to host')) {
+          _showErrorModal(
+            'Connection Error',
+            'Something went wrong. Please try again later.',
+            isNetworkError: true,
+            onRetry: () => _performLogin(
+              loginPhone,
+              loginPassword,
+              isBiometric: isBiometric,
+            ),
+          );
+        } else if (_isServerError(errorMsg)) {
+          _showErrorModal(
+            'Server Error',
+            'Something went wrong. Please try again later.',
+            isNetworkError: true,
+            onRetry: () => _performLogin(
+              loginPhone,
+              loginPassword,
+              isBiometric: isBiometric,
+            ),
+          );
+        } else {
+          _showErrorModal('Login Failed', errorMsg);
+        }
+
+        _resetState(isBiometric);
+      }
     }
+  }
 
-    if (effectiveFullname == "User" && loadedPhone != null) {
-      effectiveFullname = loadedPhone.toString();
-    }
-
-    // Check biometric settings using new service
-    final biometricEnabled = await biometricService.isLoginEnabled(effectiveUserId);
-    final savedPwd = await biometricService.getLoginPassword(effectiveUserId);
-    final biometricTypeName = await biometricService.getBiometricTypeName();
-
-    setState(() {
-      phone = loadedPhone?.toString();
-      fullname = effectiveFullname;
-      pictureUrl = loadedPicture?.toString();
-      savedPassword = savedPwd;
-      _hasBiometric = true; // Will update after check
-      _biometricEnabled = biometricEnabled && savedPwd != null;
-      _biometricTypeName = biometricTypeName;
-      _isLoading = false;
-    });
-
-    // Check hardware availability
-    final canCheck = await biometricService.canCheckBiometrics();
-
-    setState(() {
-      _hasBiometric = canCheck;
-    });
-
-    debugPrint('✅ WelcomeBack loaded:');
-    debugPrint('   fullname: $fullname');
-    debugPrint('   phone: $phone');
-    debugPrint('   biometricEnabled: $_biometricEnabled');
-
-    // Show appropriate UI
-    if (_hasBiometric && _biometricEnabled && savedPwd != null) {
-      Future.delayed(const Duration(milliseconds: 600), _authenticate);
+  void _resetState(bool isBiometric) {
+    if (isBiometric) {
+      setState(() {
+        _showPasswordField = true;
+        _isAuthenticating = false;
+      });
     } else {
-      setState(() => _showPasswordField = true);
+      setState(() => _isAuthenticating = false);
     }
   }
 
   Future<void> _authenticate() async {
-    try {
-      setState(() => _isAuthenticating = true);
+    if (_isAuthenticating) return;
 
-      final biometricService = BiometricService();
-      final didAuthenticate = await biometricService.authenticate(
-        reason: 'Authenticate to log in',
-        biometricOnly: true,
+    // Check if we have credentials
+    if (phone == null || savedPassword == null) {
+      _showErrorModal(
+        'Missing Credentials',
+        'Saved credentials not found. Please log in with password.',
       );
-
-      if (!didAuthenticate) return;
-
-      final authController = ref.read(authControllerProvider.notifier);
-
-      await authController.logIn(context, phone!, savedPassword!.trim());
-
-      final box = Hive.box("authBox");
-      final token = box.get("token");
-
-      if (token != null && token.isNotEmpty && mounted) {
-        context.go(RouteList.bottomNavBar);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isAuthenticating = false);
-      }
+      setState(() => _showPasswordField = true);
+      return;
     }
+
+    // Perform biometric authentication
+    final biometricService = BiometricService();
+    final didAuthenticate = await biometricService.authenticate(
+      reason: 'Authenticate to log in',
+      biometricOnly: true,
+    );
+
+    if (!didAuthenticate) {
+      // User cancelled biometric, stay on screen
+      return;
+    }
+
+    // Use the shared login logic
+    await _performLogin(phone!, savedPassword!, isBiometric: true);
   }
 
   Future<void> _loginWithPassword() async {
     FocusScope.of(context).unfocus();
 
-    final authState = ref.read(authControllerProvider.notifier);
-
-    final success = await authState.logIn(
-      context,
-      phone!,
-      passwordController.text.trim(),
-    );
-
-    if (success && mounted) {
-      context.go(RouteList.bottomNavBar);
+    if (phone == null) {
+      _showErrorModal('Error', 'Phone number not found. Please log in again.');
+      return;
     }
+
+    // Use the shared login logic
+    await _performLogin(phone!, passwordController.text, isBiometric: false);
   }
 
   @override
@@ -586,7 +860,6 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
             final isSmallPhone = maxHeight < 700;
             final isVerySmall = maxHeight < 600;
 
-            // Calculate responsive values
             final horizontalPadding = isTablet ? 80.w : 30.w;
             final cardMaxWidth = isTablet ? 400.w : double.infinity;
             final contentScale = isVerySmall
@@ -605,17 +878,15 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Top spacer - shrinks when keyboard open or small screen
                       if (!isKeyboardOpen)
                         SizedBox(
                           height:
-                          (isVerySmall ? 20 : (isSmallPhone ? 30 : 60)) *
+                              (isVerySmall ? 20 : (isSmallPhone ? 30 : 60)) *
                               contentScale.h,
                         )
                       else
                         SizedBox(height: 8.h),
 
-                      /// 🔹 Card Container
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: cardMaxWidth),
                         child: Container(
@@ -625,11 +896,11 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                             vertical: (isCompact ? 16 : 32) * contentScale.h,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: lightBackground,
                             borderRadius: BorderRadius.circular(20.r),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
+                                color: darkBackground.withValues(alpha:0.02),
                                 blurRadius: 20,
                                 offset: const Offset(0, 4),
                               ),
@@ -638,7 +909,6 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Logo - scales with screen size
                               Image.asset(
                                 appLogoFull,
                                 height: (isCompact ? 35 : 50) * contentScale.h,
@@ -646,42 +916,31 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                               SizedBox(
                                 height: (isCompact ? 12 : 20) * contentScale.h,
                               ),
-
-                              // Avatar
                               _buildProfileAvatar(contentScale),
-
                               SizedBox(
                                 height: (isCompact ? 10 : 16) * contentScale.h,
                               ),
-
-                              // Welcome text
                               Text(
                                 "Welcome Back",
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   fontSize:
-                                  (isCompact ? 16 : 22) * contentScale.sp,
+                                      (isCompact ? 16 : 22) * contentScale.sp,
                                 ),
                               ),
-
                               SizedBox(height: 4.h),
-
-                              // Username
                               Text(
                                 fullname?.toUpperCase() ?? "USER",
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize:
-                                  (isCompact ? 11 : 14) * contentScale.sp,
+                                      (isCompact ? 11 : 14) * contentScale.sp,
                                 ),
                               ),
-
                               SizedBox(
                                 height: (isCompact ? 16 : 24) * contentScale.h,
                               ),
-
-                              // Biometric or Password section
                               if (_hasBiometric &&
                                   _biometricEnabled &&
                                   !_showPasswordField)
@@ -695,7 +954,6 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
                       SizedBox(height: (isCompact ? 16 : 24) * contentScale.h),
 
-                      // Switch Account
                       GestureDetector(
                         onTap: () => context.go(RouteList.loginScreen),
                         child: Text(
@@ -707,42 +965,14 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                         ),
                       ),
 
-                      // Bottom spacer
                       if (!isKeyboardOpen)
                         SizedBox(
                           height:
-                          (isVerySmall ? 16 : (isSmallPhone ? 20 : 40)) *
+                              (isVerySmall ? 16 : (isSmallPhone ? 20 : 40)) *
                               contentScale.h,
                         )
                       else
                         SizedBox(height: 16.h),
-                      // In your WelcomeBack build method, temporarily add:
-                      // ElevatedButton(
-                      //   onPressed: () async {
-                      //     final authBox = await Hive.openBox('authBox');
-                      //     showDialog(
-                      //       context: context,
-                      //       builder: (_) => AlertDialog(
-                      //         title: const Text('Debug Storage'),
-                      //         content: Text('''
-                      //           Auth Box:
-                      //           - userId: ${authBox.get('userId')}
-                      //           - phone: ${authBox.get('phone')}
-                      //           - fullname: ${authBox.get('fullname')}
-                      //           - picture: ${authBox.get('picture')}
-                      //           - token: ${authBox.get('token') != null ? 'EXISTS' : 'null'}
-                      //             '''),
-                      //         actions: [
-                      //           TextButton(
-                      //             onPressed: () => Navigator.pop(context),
-                      //             child: const Text('OK'),
-                      //           ),
-                      //         ],
-                      //       ),
-                      //     );
-                      //   },
-                      //   child: const Text('DEBUG'),
-                      // ),
                     ],
                   ),
                 ),
@@ -765,12 +995,12 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       ),
       child: CircleAvatar(
         radius: avatarRadius,
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: grey200,
         backgroundImage: (pictureUrl != null && pictureUrl!.isNotEmpty)
             ? NetworkImage(pictureUrl!)
             : null,
         child: pictureUrl == null
-            ? Icon(Icons.person, size: (32 * scale).sp, color: Colors.white)
+            ? Icon(Icons.person, size: (32 * scale).sp, color: lightBackground)
             : null,
       ),
     );
@@ -785,7 +1015,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
             padding: EdgeInsets.all((isCompact ? 10 : 16) * scale.r),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: primaryColor.withOpacity(0.08),
+              color: primaryColor.withValues(alpha:0.08),
             ),
             child: SvgPicture.asset(
               fingerPrint,
@@ -859,7 +1089,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
           buttonName: "Login",
           buttonColor: primaryColor,
           buttonTextColor: lightBackground,
-          onPressed: _loginWithPassword,
+          onPressed: _isAuthenticating ? null : _loginWithPassword,
         ),
       ],
     );

@@ -22,7 +22,7 @@ class SuccessScreen extends StatefulWidget {
   final String? recipientAccount;
   final String? reference;
   final String? channel;
-  final String? type;
+  final String? type; // "success" | "failed" | "pending"
 
   const SuccessScreen({
     super.key,
@@ -41,6 +41,46 @@ class SuccessScreen extends StatefulWidget {
 class _SuccessScreenState extends State<SuccessScreen> {
   final GlobalKey _boundaryKey = GlobalKey();
   bool _isProcessing = false;
+
+  // Get status config based on type
+  Map<String, dynamic> get _statusConfig {
+    switch (widget.type?.toLowerCase()) {
+      case 'success':
+        return {
+          'title': 'Payment Successful',
+          'icon': successs,
+          'color': successColor,
+          'showActions': true,
+          'gradientColors': [
+            successColor,
+            successColor.withOpacity(0.7),
+          ],
+        };
+      case 'pending':
+        return {
+          'title': 'Payment Pending',
+          //'icon': pendingIcon, // You'll need to add this to your images
+          'color': pendingColor,
+          'showActions': true,
+          'gradientColors': [
+            Colors.orange,
+            Colors.orange.withOpacity(0.7),
+          ],
+        };
+      case 'failed':
+      default:
+        return {
+          'title': 'Payment Failed',
+        //  'icon': failedIcon, // You'll need to add this to your images
+          'color': errorColor,
+          'showActions': false, // Don't show share/download for failed
+          'gradientColors': [
+            errorColor,
+            errorColor.withOpacity(0.7),
+          ],
+        };
+    }
+  }
 
   Future<File?> _captureAndSave() async {
     try {
@@ -62,7 +102,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
       final pngBytes = byteData.buffer.asUint8List();
       final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/transaction_success.png');
+      final file = File('${directory.path}/transaction_${widget.type}.png');
       await file.writeAsBytes(pngBytes);
 
       return file;
@@ -118,7 +158,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
   Future<String> _writeTempFile(Uint8List bytes) async {
     final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/payment_success_${DateTime.now().millisecondsSinceEpoch}.png');
+    final file = File('${tempDir.path}/payment_${widget.type}_${DateTime.now().millisecondsSinceEpoch}.png');
     await file.writeAsBytes(bytes);
     return file.path;
   }
@@ -133,7 +173,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
       if (file != null && mounted) {
         await Share.shareXFiles(
           [XFile(file.path)],
-          text: "Payment Successful - ₦${widget.amount ?? '0.00'}",
+          text: "${_statusConfig['title']} - ₦${widget.amount ?? '0.00'}",
         );
       }
     } catch (e) {
@@ -174,6 +214,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final config = _statusConfig;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -185,7 +226,6 @@ class _SuccessScreenState extends State<SuccessScreen> {
             final isSmallHeight = screenHeight < 700;
             final isNarrow = screenWidth < 360;
 
-            // Responsive calculations
             final badgeSize = isSmallHeight
                 ? screenWidth * 0.22
                 : (isNarrow ? screenWidth * 0.28 : screenWidth * 0.32);
@@ -199,8 +239,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 children: [
                   SizedBox(height: isSmallHeight ? 12.h : 24.h),
 
-                  // Success Badge
-                  _buildSuccessBadge(badgeSize),
+                  // Status Badge
+                  _buildStatusBadge(badgeSize, config),
 
                   SizedBox(height: verticalSpacing),
 
@@ -209,15 +249,15 @@ class _SuccessScreenState extends State<SuccessScreen> {
                     child: RepaintBoundary(
                       key: _boundaryKey,
                       child: Container(
-                        color: Colors.white, // Ensure white background for capture
+                        color: Colors.white,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            _buildTitle(textTheme, isSmallHeight),
+                            _buildTitle(textTheme, isSmallHeight, config),
                             SizedBox(height: 8.h),
                             _buildAmount(textTheme, isSmallHeight),
                             SizedBox(height: verticalSpacing),
-                            _buildDetailsCard(isSmallHeight, isNarrow),
+                            _buildDetailsCard(isSmallHeight, isNarrow, config),
                           ],
                         ),
                       ),
@@ -226,15 +266,17 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
                   SizedBox(height: verticalSpacing),
 
-                  // Action Buttons
-                  _buildActionButtons(),
+                  // Action Buttons (only for success/pending)
+                  if (config['showActions'])
+                    _buildActionButtons(),
 
-                  SizedBox(height: verticalSpacing),
+                  if (config['showActions'])
+                    SizedBox(height: verticalSpacing),
 
                   // Done Button
                   CustomButton(
                     buttonName: "Done",
-                    buttonColor: primaryColor,
+                    buttonColor: config['color'],
                     buttonTextColor: Colors.white,
                     onPressed: () => context.pushNamed(RouteList.bottomNavBar),
                   ),
@@ -249,9 +291,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-  Widget _buildSuccessBadge(double badgeSize) {
+  Widget _buildStatusBadge(double badgeSize, Map<String, dynamic> config) {
     return Hero(
-      tag: 'success_badge',
+      tag: 'status_badge_${widget.type}',
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -263,14 +305,11 @@ class _SuccessScreenState extends State<SuccessScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  successColor,
-                  successColor.withOpacity(0.7),
-                ],
+                colors: config['gradientColors'],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: successColor.withOpacity(0.3),
+                  color: config['color'].withOpacity(0.3),
                   blurRadius: 30,
                   spreadRadius: 5,
                   offset: const Offset(0, 8),
@@ -278,21 +317,29 @@ class _SuccessScreenState extends State<SuccessScreen> {
               ],
             ),
           ),
-          SvgPicture.asset(
-            successs,
-            height: badgeSize * 1.1,
-            width: badgeSize * 1.1,
+          // Use icon based on status
+          config['icon'] != null
+              ? SvgPicture.asset(
+            config['icon'],
+            height: badgeSize * 0.5,
+            width: badgeSize * 0.5,
+            colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          )
+              : Icon(
+            widget.type == 'failed' ? Icons.close : Icons.access_time,
+            color: Colors.white,
+            size: badgeSize * 0.4,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTitle(TextTheme textTheme, bool isSmallHeight) {
+  Widget _buildTitle(TextTheme textTheme, bool isSmallHeight, Map<String, dynamic> config) {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Text(
-        "Payment Successful",
+        config['title'],
         style: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           fontSize: isSmallHeight ? 18.sp : 22.sp,
@@ -318,17 +365,17 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-  Widget _buildDetailsCard(bool isSmallHeight, bool isNarrow) {
+  Widget _buildDetailsCard(bool isSmallHeight, bool isNarrow, Map<String, dynamic> config) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(isSmallHeight ? 12.w : 20.w),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
         color: Colors.white,
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: config['color'].withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: config['color'].withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -338,6 +385,10 @@ class _SuccessScreenState extends State<SuccessScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Status Row
+          _buildDetailRow("Status", config['title'], isNarrow,
+              valueColor: config['color']),
+          _buildDivider(),
           _buildDetailRow("Recipient", widget.recipientName ?? "-", isNarrow),
           _buildDivider(),
           _buildDetailRow("Account", widget.recipientAccount ?? "-", isNarrow),
@@ -352,7 +403,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-  Widget _buildDetailRow(String title, String value, bool isNarrow) {
+  Widget _buildDetailRow(String title, String value, bool isNarrow, {Color? valueColor}) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isNarrow ? 10.h : 14.h),
       child: Row(
@@ -376,7 +427,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
               value,
               textAlign: TextAlign.right,
               style: TextStyle(
-                color: darkBackground,
+                color: valueColor ?? darkBackground,
                 fontSize: isNarrow ? 13.sp : 15.sp,
                 fontWeight: FontWeight.w600,
                 height: 1.3,

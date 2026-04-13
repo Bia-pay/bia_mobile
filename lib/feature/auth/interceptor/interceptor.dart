@@ -1,32 +1,23 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-// Use this global key in your MaterialApp
+/// Global navigator key — register this in MaterialApp so that ApiClient
+/// can forcibly navigate to the login screen when a token refresh fails.
+///
+/// Usage in MaterialApp:
+///   navigatorKey: navigatorKey,
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class ApiHelper {
   Future<http.Response> handleResponse(http.Response response) async {
-    if (response.statusCode == 401) {
-      await onTokenExpired();
-    }
+    // 401 is handled centrally inside ApiClient._authorizedRequest().
+    // Nothing to do here — just return the response as-is.
     return response;
-  }
-
-  Future<void> onTokenExpired() async {
-    debugPrint("⚠️ Token expired, redirecting to PasscodeLogin");
-
-    // navigatorKey.currentState?.pushAndRemoveUntil(
-    //   MaterialPageRoute(builder: (_) => const PasscodeLogin()),
-    //   (route) => false,
-    // );
   }
 }
 
-// ✅ provider for ApiHelper
+// ✅ Provider for ApiHelper
 final apiHelperProvider = Provider<ApiHelper>((ref) {
   return ApiHelper();
 });
-

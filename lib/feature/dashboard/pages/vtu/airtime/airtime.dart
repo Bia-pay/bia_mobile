@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/router/route_constant.dart';
@@ -84,9 +85,9 @@ class AirtimeFormState {
 
   bool get isValid =>
       phoneNumber.length >= 10 &&
-      amount != null &&
-      amount! > 0 &&
-      selectedProvider != null;
+          amount != null &&
+          amount! >= 50 &&
+          selectedProvider != null;
 }
 
 class AirtimeFormNotifier extends StateNotifier<AirtimeFormState> {
@@ -555,6 +556,8 @@ class _CardTwoState extends ConsumerState<CardTwo> {
   }
 
   Widget _buildNetworkDropdown(bool isSmall, bool isTablet, double size) {
+    final theme = Theme.of(context);
+
     return DropdownButtonHideUnderline(
       child: DropdownButton<Map<String, dynamic>>(
         value: _selectedProvider,
@@ -599,7 +602,10 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                 SizedBox(width: isSmall ? 8.w : 12.w),
                 Text(
                   provider['name'],
-                  style: TextStyle(fontSize: isSmall ? 12.sp : 14.sp),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isSmall ? 12.sp : 14.sp,
+                  ),
                 ),
               ],
             ),
@@ -633,7 +639,9 @@ class _CardOneState extends ConsumerState<CardOne> {
     _amountController.dispose();
     super.dispose();
   }
-
+  bool showMinimumAmountWarning = false;
+  bool showInsufficientFundsWarning = false;
+  double walletBalance = 0.0;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -679,33 +687,27 @@ class _CardOneState extends ConsumerState<CardOne> {
                     border: Border.all(color: grey300),
                     borderRadius: BorderRadius.all(Radius.circular(10.r)),
                   ),
-                  child: TextField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(fontSize: isSmall ? 14.sp : 16.sp),
+                  child:CustomTextField(
+                      controller: _amountController,
+                      keyboardType: TextInputType.number,
+                      hint: 'Amount',
                     onChanged: (value) {
-                      final amount = int.tryParse(value);
-                      if (amount != null) {
-                        setState(() => selectedAmount = amount);
-                        ref
-                            .read(airtimeFormProvider.notifier)
-                            .setAmount(amount);
-                      }
+                      final amount = int.tryParse(value) ?? 0;
+                      final balance = _getWalletBalance();
+
+                      setState(() {
+                        selectedAmount = amount;
+                        walletBalance = balance;
+
+                        showMinimumAmountWarning = amount > 0 && amount < 50;
+                        showInsufficientFundsWarning = amount > balance;
+                      });
+
+                      ref.read(airtimeFormProvider.notifier).setAmount(amount);
                     },
-                    decoration: InputDecoration(
-                      hintText: 'Amount',
-                      hintStyle: TextStyle(
-                        color: grey400,
-                        fontSize: isSmall ? 12.sp : 14.sp,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: isSmall ? 10.h : 12.h,
-                      ),
-                    ),
-                  ),
                 ),
-              ),
+              ),),
+
               SizedBox(width: isSmall ? 8.w : 10.w),
               Expanded(
                 flex: isTablet ? 1 : 1,
@@ -720,7 +722,50 @@ class _CardOneState extends ConsumerState<CardOne> {
               ),
             ],
           ),
-
+          if (showMinimumAmountWarning)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h, left: 4.w),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: errorColor, size: 16.sp),
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: Text(
+                      "Minimum amount is ₦50",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: errorColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: isSmall ? 11.sp : 12.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          /// 🔥 ERROR NOW BELOW (VISIBLE)
+          if (showInsufficientFundsWarning)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h, left: 4.w),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: errorColor, size: 16.sp),
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: Text(
+                      "Insufficient balance. Your balance is ₦${walletBalance.toStringAsFixed(2)}",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: errorColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: isSmall ? 11.sp : 12.sp,
+                      )
+                      ,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           SizedBox(height: isSmall ? 16.h : 20.h),
           Text(
             'Quick Select',
@@ -749,10 +794,17 @@ class _CardOneState extends ConsumerState<CardOne> {
                   final isSelected = selectedAmount == amount;
                   return GestureDetector(
                     onTap: () {
+                      final balance = _getWalletBalance();
+
                       setState(() {
                         selectedAmount = amount;
                         _amountController.text = amount.toString();
+
+                        walletBalance = balance;
+                        showInsufficientFundsWarning =
+                            amount > 0 && amount > balance;
                       });
+
                       ref.read(airtimeFormProvider.notifier).setAmount(amount);
                     },
                     child: AnimatedContainer(
@@ -776,14 +828,14 @@ class _CardOneState extends ConsumerState<CardOne> {
                           padding: EdgeInsets.symmetric(horizontal: 4.w),
                           child: Text(
                             '₦$amount',
-                            style: TextStyle(
+                            style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: isSmall
                                   ? 11.sp
-                                  : (isTablet ? 14.sp : 13.sp),
+                                  : (isTablet ? 14.sp : 10.sp),
                               color: isSelected
                                   ? whiteBackground
-                                  : semiTransparentBlack,
+                                  : transparentBlack54,
                             ),
                           ),
                         ),
@@ -799,13 +851,19 @@ class _CardOneState extends ConsumerState<CardOne> {
     );
   }
 
+  double _getWalletBalance() {
+    final box = Hive.box('authBox');
+    final balanceStr = box.get('balance', defaultValue: '0').toString();
+    return double.tryParse(balanceStr.replaceAll(',', '')) ?? 0.0;
+  }
+
   Future<void> _handlePay() async {
     final formState = ref.read(airtimeFormProvider);
 
     if (!formState.isValid) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Fill all fields')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fill all fields')),
+      );
       return;
     }
 
@@ -813,6 +871,18 @@ class _CardOneState extends ConsumerState<CardOne> {
     final amount = formState.amount!;
     final phone = formState.phoneNumber;
 
+    /// 🚫 BLOCK HERE (BEFORE BOTTOM SHEET)
+    final walletBalance = _getWalletBalance();
+
+    if (amount > walletBalance) {
+      setState(() {
+        showInsufficientFundsWarning = true;
+        this.walletBalance = walletBalance;
+      });
+      return;
+    }
+
+    /// ✅ ONLY CONTINUE IF VALID
     ConfirmationBottomSheet.show(
       context: context,
       config: BottomSheetConfig(
@@ -840,21 +910,20 @@ class _CardOneState extends ConsumerState<CardOne> {
         final result = await ref
             .read(dashboardControllerProvider.notifier)
             .buyAirtime(
-              context,
-              phone: phone,
-              amount: amount,
-              network: provider['id'],
-              pin: pin,
-            );
+          context,
+          phone: phone,
+          amount: amount,
+          network: provider['id'],
+          pin: pin,
+        );
 
         ref.read(airtimeFormProvider.notifier).setLoading(false);
 
-        // ✅ Guard with mounted check before using context
         if (!mounted) return;
 
         final isSuccess =
             result?.responseSuccessful == true ||
-            result?.responseBody?.status == "SUCCESS";
+                result?.responseBody?.status == "SUCCESS";
 
         context.goNamed(
           RouteList.successScreen,

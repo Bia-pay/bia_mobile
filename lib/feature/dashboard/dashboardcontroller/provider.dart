@@ -6,19 +6,12 @@ import '../dashboard_repo/repo.dart';
 import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
 
-final recentTransactionsProvider =
-StateNotifierProvider<RecentTransactionsNotifier, AsyncValue<List<TransactionItem>>>(
-      (ref) {
-    final repo = ref.watch(dashboardRepositoryProvider);
-    final userId = Hive.box('authBox').get('userId', defaultValue: '');
-    return RecentTransactionsNotifier(repo, userId);
-  },
-);
-
+final userIdProvider = StateProvider<String>((ref) => '');
 class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionItem>>> {
   final DashboardRepository repository;
   final String userId;
   bool _isFetching = false;
+  bool _initialized = false;
 
   RecentTransactionsNotifier(this.repository, this.userId)
       : super(const AsyncValue.loading()) {
@@ -26,25 +19,35 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
   }
 
   Future<void> _init() async {
-    print('🔄 Initializing recent transactions for user: $userId');
-    
-    // 1️⃣ Load cached transactions immediately (instant UI)
-    final cached = await TransactionCache.getTransactions(userId);
-    if (cached.isNotEmpty) {
-      state = AsyncValue.data(cached);
-      print('✅ Showing ${cached.length} cached transactions');
+    if (_initialized) return;
+    _initialized = true;
+
+    print('🔄 Initializing transactions for user: $userId');
+
+    if (userId.isEmpty) {
+      state = const AsyncValue.data([]);
+      return;
     }
 
-    // 2️⃣ Check if cache is still valid
-    final isCacheValid = await TransactionCache.isCacheValid(userId);
-    
-    if (!isCacheValid) {
-      print('🔄 Cache expired or invalid, fetching fresh data...');
-      await _fetchFresh(silent: cached.isNotEmpty);
-    } else {
-      print('✅ Cache is valid, fetching in background...');
-      // Fetch in background without blocking UI
+    // 🔥 Check if we have fresh pre-loaded cache first
+    final hasValidCache = await TransactionCache.isCacheValid(userId);
+    final cached = await TransactionCache.getTransactions(userId);
+
+    if (cached.isNotEmpty && hasValidCache) {
+      print('✅ Using pre-loaded cache with ${cached.length} transactions');
+      state = AsyncValue.data(cached);
+      // Still refresh in background but silently
       _fetchFresh(silent: true);
+    } else if (cached.isNotEmpty) {
+      // Cache exists but stale - show it while refreshing
+      print('⏰ Stale cache found, showing while refreshing');
+      state = AsyncValue.data(cached);
+      await _fetchFresh(silent: false);
+    } else {
+      // No cache - must fetch
+      print('📭 No cache found, fetching fresh data');
+      state = const AsyncValue.loading();
+      await _fetchFresh(silent: false);
     }
   }
 
@@ -66,12 +69,12 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
 
         // Merge with existing data to avoid duplicates
         final Map<int, TransactionItem> map = {};
-        
+
         // Add existing transactions
         for (var tx in state.value ?? []) {
           map[tx.id] = tx;
         }
-        
+
         // Add/update with fresh transactions
         for (var tx in fresh) {
           map[tx.id] = tx;
@@ -87,9 +90,11 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
         // Limit to recent 50 transactions
         final limited = merged.take(50).toList();
 
-        // Update UI
-        state = AsyncValue.data(limited);
-        
+        // Update UI only if not silent or if we have new data
+        if (!silent || limited.length != (state.value?.length ?? 0)) {
+          state = AsyncValue.data(limited);
+        }
+
         // Save to cache
         await TransactionCache.saveTransactions(userId, limited);
         print('💾 Saved ${limited.length} transactions to cache');
@@ -127,12 +132,22 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
     await _fetchFresh(silent: false);
   }
 }
+final recentTransactionsProvider =
+StateNotifierProvider.family<RecentTransactionsNotifier,
+    AsyncValue<List<TransactionItem>>, String>((ref, userId) {
+
+  final repo = ref.watch(dashboardRepositoryProvider);
+  return RecentTransactionsNotifier(repo, userId);
+});
+
+
 final depositProvider = FutureProvider.family<DepositResponseModel, double>(
       (ref, amount) {
     final repo = ref.read(dashboardRepositoryProvider);
     return repo.depositMoney({"amount": amount});
   },
 );
+
 class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionItem>>> {
   final DashboardRepository repository;
   final String userId;
@@ -144,23 +159,24 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
   }
 
   Future<void> _init() async {
-    print('🔄 Initializing all transactions for user: $userId');
-    
-    // Load from cache immediately
-    final cached = await TransactionCache.getTransactions(userId);
-    if (cached.isNotEmpty) {
-      state = AsyncValue.data(cached);
-      print('✅ Showing ${cached.length} cached transactions');
+    print('🔄 Initializing transactions for user: $userId');
+
+    if (userId.isEmpty) {
+      state = const AsyncValue.data([]);
+      return;
     }
 
-    // Check cache validity
-    final isCacheValid = await TransactionCache.isCacheValid(userId);
-    
-    if (!isCacheValid) {
-      await _fetchFresh(silent: cached.isNotEmpty);
+    // 🔥 ALWAYS LOAD USER-SPECIFIC CACHE
+    final cached = await TransactionCache.getTransactions(userId);
+
+    if (cached.isNotEmpty) {
+      state = AsyncValue.data(cached);
     } else {
-      _fetchFresh(silent: true);
+      state = const AsyncValue.loading();
     }
+
+    // 🔥 ALWAYS FETCH FRESH DATA FOR NEW USER
+    await _fetchFresh(silent: cached.isNotEmpty);
   }
 
   Future<void> _fetchFresh({bool silent = false}) async {
@@ -216,14 +232,17 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
     await _fetchFresh(silent: false);
   }
 }
+
 final allTransactionsProvider =
-StateNotifierProvider<AllTransactionsNotifier, AsyncValue<List<TransactionItem>>>(
-      (ref) {
-    final repo = ref.watch(dashboardRepositoryProvider);
-    final userId = Hive.box('authBox').get('userId', defaultValue: '');
-    return AllTransactionsNotifier(repo, userId);
-  },
-);
+StateNotifierProvider.autoDispose.family<
+    AllTransactionsNotifier,
+    AsyncValue<List<TransactionItem>>,
+    String>((ref, userId) {
+
+  final repo = ref.watch(dashboardRepositoryProvider);
+  return AllTransactionsNotifier(repo, userId);
+});
+
 final balanceVisibilityProvider = StateProvider<bool>((ref) => true);
 
 final electricityProviderListProvider =

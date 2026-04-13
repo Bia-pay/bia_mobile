@@ -7,7 +7,6 @@ import 'package:hive/hive.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/view/widget/app_textfield.dart';
 import '../../../widgets/keypad.dart';
-import '../input_transfer/complete_transaction.dart';
 import 'on_bank_complete_payment.dart';
 
 class BankAmountPage extends ConsumerStatefulWidget {
@@ -18,6 +17,7 @@ class BankAmountPage extends ConsumerStatefulWidget {
   final String title;
   final String bankCode;
   final String bankName;
+
   const BankAmountPage({
     super.key,
     required this.controller,
@@ -76,10 +76,8 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     final numericValue =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
 
-    // Minimum ₦50
     showMinWarning = numericValue < 50 && numericValue != 0;
 
-    // Wallet balance check
     final walletBalance = _getWalletBalance();
     showInsufficientFundsWarning =
         numericValue > walletBalance && numericValue != 0;
@@ -115,7 +113,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
         recipientName: widget.recipientName,
         recipientAccount: widget.recipientAccount,
         bankCode: widget.bankCode,
-        bankName: widget.bankName, // ✅ ADD
+        bankName: widget.bankName,
       ),
     );
   }
@@ -123,6 +121,12 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenHeight < 700;
+    final isLargeScreen = screenHeight > 900;
+
+    final sectionSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 60.h : 55.h);
+    final smallSpacing = isSmallScreen ? 6.h : 10.h;
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
@@ -142,187 +146,239 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Recipient Details',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 10.h),
-
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: offWhite,
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20.r,
-                    backgroundColor: secondaryColor,
-                    child: widget.recipientIconPath != null
-                        ? SvgPicture.asset(
-                      widget.recipientIconPath!,
-                      height: 30.h,
-                      colorFilter: ColorFilter.mode(
-                        primaryColor,
-                        BlendMode.srcIn,
-                      ),
-                    )
-                        : Icon(
-                      Icons.person,
-                      size: 30.sp,
-                      color: primaryColor,
-                    ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.w,
+                    vertical: isSmallScreen ? 20.h : 30.h,
                   ),
-                  SizedBox(width: 13.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.recipientName,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: lightText,
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Recipient Details',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: isSmallScreen ? 14.sp : 16.sp,
                         ),
-                        Text(
-                          widget.recipientAccount,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: lightSecondaryText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: SvgPicture.asset(editSvg, height: 15.h),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 45.h),
-
-            Text(
-              'Enter Amount',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 5.h),
-
-            AppTextField(
-              controller: widget.controller,
-              readOnly: true,
-              borderRadius: 8.r,
-              hintTextAlign: TextAlign.center,
-              textAlignVertical: TextAlignVertical.center,
-              decoration: InputDecoration(
-                hintText: "₦0.00",
-                hintStyle: theme.textTheme.titleLarge?.copyWith(
-                  color: lightSecondaryText,
-                  fontSize: 23.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color:
-                    showInsufficientFundsWarning ? errorColor : primaryColor,
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(
-                    color:
-                    showInsufficientFundsWarning ? errorColor : primaryColor,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-            ),
-
-            if (showMinWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h, left: 4.w),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber_rounded,
-                        color: errorColor, size: 16.sp),
-                    SizedBox(width: 4.w),
-                    Text(
-                      "Minimum amount you can send is ₦50",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: errorColor,
-                        fontWeight: FontWeight.w500,
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                      SizedBox(height: smallSpacing),
 
-            if (showInsufficientFundsWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h, left: 4.w),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline,
-                        color: errorColor, size: 16.sp),
-                    SizedBox(width: 4.w),
-                    Expanded(
-                      child: Text(
-                        "Insufficient funds. Your balance is ₦${_getWalletBalance().toStringAsFixed(2)}",
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: errorColor,
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: isSmallScreen ? 8.h : 12.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: offWhite,
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: isSmallScreen ? 16.r : 20.r,
+                              backgroundColor: secondaryColor,
+                              child: widget.recipientIconPath != null
+                                  ? SvgPicture.asset(
+                                widget.recipientIconPath!,
+                                height: isSmallScreen ? 24.h : 30.h,
+                                colorFilter: ColorFilter.mode(
+                                  primaryColor,
+                                  BlendMode.srcIn,
+                                ),
+                              )
+                                  : Icon(
+                                Icons.person,
+                                size: isSmallScreen ? 24.sp : 30.sp,
+                                color: primaryColor,
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    widget.recipientName,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: lightText,
+                                      fontSize: isSmallScreen ? 13.sp : 14.sp,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    widget.recipientAccount,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: lightSecondaryText,
+                                      fontSize: isSmallScreen ? 11.sp : 12.sp,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: SvgPicture.asset(
+                                editSvg,
+                                height: isSmallScreen ? 14.h : 16.h,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionSpacing),
+
+                      Text(
+                        'Enter Amount',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: isSmallScreen ? 14.sp : 16.sp,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+
+                      AppTextField(
+                        controller: widget.controller,
+                        readOnly: true,
+                        borderRadius: 8.r,
+                        hintTextAlign: TextAlign.center,
+                        textAlignVertical: TextAlignVertical.center,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontSize: isSmallScreen ? 20.sp : 24.sp,
                           fontWeight: FontWeight.w600,
                         ),
+                        decoration: InputDecoration(
+                          hintText: "₦0.00",
+                          hintStyle: theme.textTheme.titleLarge?.copyWith(
+                            color: lightSecondaryText,
+                            fontSize: isSmallScreen ? 20.sp : 24.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: isSmallScreen ? 12.h : 16.h,
+                            horizontal: 12.w,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                            borderSide: BorderSide(
+                              color: showInsufficientFundsWarning
+                                  ? errorColor
+                                  : primaryColor,
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                            borderSide: BorderSide(
+                              color: showInsufficientFundsWarning
+                                  ? errorColor
+                                  : primaryColor,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
 
-            SizedBox(height: 50.h),
+                      if (showMinWarning)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8.h, left: 4.w),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: errorColor,
+                                size: isSmallScreen ? 14.sp : 16.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                              Flexible(
+                                child: Text(
+                                  "Minimum amount you can send is ₦50",
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: errorColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: isSmallScreen ? 11.sp : 12.sp,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
-            /// 🔢 Keypad (NO BIOMETRIC HERE)
-            Expanded(
-              child: CustomGridKeypad(
-                onNumberPressed: addDigit,
+                      if (showInsufficientFundsWarning)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8.h, left: 4.w),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: errorColor,
+                                size: isSmallScreen ? 14.sp : 16.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                              Flexible(
+                                child: Text(
+                                  "Insufficient funds. Your balance is ₦${_getWalletBalance().toStringAsFixed(2)}",
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: errorColor,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isSmallScreen ? 11.sp : 12.sp,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
-                leftAction: ActionKey(
-                  child: SvgPicture.asset(
-                    'assets/svg/cancel.svg',
-                    height: 20.h,
-                    colorFilter: ColorFilter.mode(
-                      primaryColor,
-                      BlendMode.srcIn,
-                    ),
+                      SizedBox(height: sectionSpacing),
+
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: CustomGridKeypad(
+                          onNumberPressed: addDigit,
+                          leftAction: ActionKey(
+                            child: SvgPicture.asset(
+                              'assets/svg/cancel.svg',
+                              height: isSmallScreen ? 18.h : 22.h,
+                              colorFilter: ColorFilter.mode(
+                                primaryColor,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                            backgroundColor: primaryColor.withOpacity(0.1),
+                            onTap: removeDigit,
+                          ),
+                          rightAction: ActionKey(
+                            child: Icon(
+                              Icons.arrow_forward,
+                              color: lightBackground,
+                              size: isSmallScreen ? 22.sp : 26.sp,
+                            ),
+                            backgroundColor: primaryColor,
+                            onTap: _showConfirmBottomSheet,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  backgroundColor: primaryColor.withOpacity(0.1),
-                  onTap: removeDigit,
-                ),
-
-                rightAction: ActionKey(
-                  child: const Icon(Icons.arrow_forward,
-                      color: lightBackground),
-                  backgroundColor: primaryColor,
-                  onTap: _showConfirmBottomSheet,
                 ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

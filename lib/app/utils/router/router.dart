@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
+import '../../../feature/ai_chat/ui/ai_chat_screen.dart';
+import '../../../feature/ai_chat/ui/bia_language_onboarding.dart';
+import '../../../feature/auth/interceptor/interceptor.dart';
 import '../../../feature/auth/presentation/pages/create_account.dart';
 import '../../../feature/auth/presentation/pages/create_account_phone.dart';
 import '../../../feature/auth/presentation/pages/create_account_verify_otp.dart';
@@ -24,6 +27,7 @@ import '../../../feature/dashboard/pages/send_money/to_bank/bank_amount.dart';
 import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
+import '../../../feature/dashboard/pages/transaction_details.dart';
 import '../../../feature/settings/presentation/change_pin.dart';
 import '../../../feature/settings/presentation/confirm_SetPin.dart';
 import '../../../feature/settings/presentation/forgot_pin.dart';
@@ -47,6 +51,7 @@ void navigateWithUnfocus(BuildContext context, String route, {Object? extra}) {
 }
 class AppRouter {
   static final GoRouter router = GoRouter(
+    navigatorKey: navigatorKey,  // ← Allows ApiClient force-logout navigation
     observers: [DismissKeyboardOnNavigation()],
 
     debugLogDiagnostics: false,
@@ -153,6 +158,10 @@ class AppRouter {
         path: '/send-to-bank',
         name: RouteList.sendMoneyToBank,
         builder: (context, state) => const SendMoneyToBank(),
+      ),  GoRoute(
+        path: '/transactionDetailsScreen',
+        name: RouteList.transactionDetailsScreen,
+        builder: (context, state) => TransactionDetailsScreen(transaction: state.extra as Transaction),
       ),
       GoRoute(
         path: '/amount',
@@ -312,6 +321,16 @@ class AppRouter {
         path: '/socket-test',
         name: 'socketTest',
         builder: (context, state) => const SocketTestPage(),
+      ),
+      GoRoute(
+        path: RouteList.aiChat,
+        name: RouteList.aiChat,
+        builder: (context, state) => const AiChatScreen(),
+      ),
+      GoRoute(
+        path: RouteList.biaLanguageOnboarding,
+        name: RouteList.biaLanguageOnboarding,
+        builder: (context, state) => const BiaLanguageOnboarding(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

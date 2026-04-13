@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/image.dart';
+import '../../../app/view/widget/dashboard_header.dart';
 import '../../../core/helper/helper.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
 
@@ -22,7 +23,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool showMore = false;
 
   Future<void> _handleRefresh() async {
-    final txFuture = ref.read(recentTransactionsProvider.notifier).refresh();
+    final userId = ref.read(userIdProvider);
+
+    final txFuture = ref
+        .read(recentTransactionsProvider(userId).notifier)
+        .refresh();
     final walletFuture = ref
         .read(dashboardControllerProvider.notifier)
         .refreshWalletBalance();
@@ -33,32 +38,32 @@ class _HomePageState extends ConsumerState<HomePage> {
   List<Map<String, dynamic>> _quickActions(BuildContext context) => [
     {
       'label': 'Airtime',
-      'icon': Icon(Icons.bar_chart, color: primaryColor),
+      'icon': Icon(Icons.bar_chart, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.airtime),
     },
     {
       'label': 'Data',
-      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor),
+      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.data),
     },
     {
       'label': 'Cable TV',
-      'icon': Icon(Icons.tv, color: primaryColor),
+      'icon': Icon(Icons.tv, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.cable),
     },
     {
       'label': 'Tiktok Coin',
-      'icon': Image.asset(tiktok, height: 23.h),
-      'onTap': () => context.pushNamed(RouteList.electricity),
+      'icon': Image.asset(tiktok, height: isSmallScreen(context) ? 18.h : 23.h),
+      'onTap': () => context.pushNamed(RouteList.transactionDetailsScreen),
     },
     {
       'label': 'Utility Bill',
-      'icon': Icon(Icons.electrical_services, color: primaryColor),
+      'icon': Icon(Icons.electrical_services, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.electricity),
     },
     {
       'label': 'Internet',
-      'icon': Icon(Icons.wifi, color: primaryColor),
+      'icon': Icon(Icons.wifi, color: primaryColor, size: 20.sp),
       'onTap': () {},
     },
   ];
@@ -83,12 +88,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  bool isSmallScreen(BuildContext context) {
+    return MediaQuery.of(context).size.height < 700;
+  }
+
+  bool isLargeScreen(BuildContext context) {
+    return MediaQuery.of(context).size.height > 900;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'User');
     final picture = box.get('picture');
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenHeight < 700;
+    final isLargeScreen = screenHeight > 900;
+
+    final headerSpacing = isSmallScreen ? 6.h : 10.h;
+    final sectionSpacing = isSmallScreen ? 10.h : 15.h;
+    final cardPadding = isSmallScreen ? 10.h : 15.h;
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
@@ -96,227 +116,181 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return RefreshIndicator(
-              onRefresh: _handleRefresh,
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                    maxHeight: constraints.maxHeight,
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 8.h),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
+            return Column(
+              children: [
+                HomeHeader(
+                  isSmallScreen: isSmallScreen,
+                  picture: picture,
+                  fullname: fullname,
+                  theme: theme,
+                  primaryColor: primaryColor,
+                  lightSecondaryText: lightSecondaryText,
+                  lightText: lightText,
+                  appLogoPng: appLogoPng,
+                  bell: bell,
+                  notificationRoute: RouteList.notification,
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _handleRefresh,
+                    // 🔥 FIX: Use CustomScrollView with SliverToBoxAdapter for each section
+                    // This allows pull-to-refresh while preventing content scrolling
+                    child: CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(), // Required for RefreshIndicator
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              left: isSmallScreen ? 16.w : 20.w,
+                              right: isSmallScreen ? 16.w : 20.w,
+                              top: isSmallScreen ? 3.h : 2.h,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Header Row
+
+                                SizedBox(height: headerSpacing),
+
+                                BalanceCard(isSmallScreen: isSmallScreen),
+                                SizedBox(height: sectionSpacing),
+
+                                buildContainer(context, theme, isSmallScreen),
+                                SizedBox(height: isSmallScreen ? 10.h : 13.h),
+
+                                Text(
+                                  'Quick Actions',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: isSmallScreen ? 11.sp : 13.sp,
+                                  ),
+                                ),
+                                SizedBox(height: isSmallScreen ? 6.h : 8.h),
+
+                                buildContainerTwo(theme, context, isSmallScreen),
+                                SizedBox(height: sectionSpacing),
+
                                 Container(
-                                  height: 45.r,
-                                  width: 45.r,
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isSmallScreen ? 10.h : 15.h,
+                                    horizontal: isSmallScreen ? 3.w : 5.w,
+                                  ),
                                   decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: primaryColor),
+                                    color: offWhite,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: ClipOval(
-                                    child:
-                                        picture != null &&
-                                            picture.toString().isNotEmpty
-                                        ? Image.network(
-                                            picture,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                Image.asset(appLogoPng),
-                                          )
-                                        : Image.asset(appLogoPng),
-                                  ),
-                                ),
-                                SizedBox(width: 10.w),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Hello,',
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            color: lightSecondaryText,
-                                            fontSize: 12.sp,
-                                          ),
-                                    ),
-                                    Text(
-                                      fullname,
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            color: lightText,
-                                            fontSize: 13.sp,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () =>
-                                  context.pushNamed(RouteList.notification),
-                              child: Container(
-                                height: 45.h,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                                child: SvgPicture.asset(bell),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10.h),
-
-                        // Balance Card
-                        BalanceCard(),
-                        SizedBox(height: 15.h),
-
-                        // Action Buttons Row
-                        buildContainer(context, theme),
-                        SizedBox(height: 13.h),
-
-                        // Quick Actions Title
-                        Text(
-                          'Quick Actions',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-
-                        // Bia AI Section
-                        buildContainerTwo(theme, context),
-                        SizedBox(height: 15.h),
-
-                        // Quick Actions Grid
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: 15.h,
-                            horizontal: 5.w,
-                          ),
-                          decoration: BoxDecoration(
-                            color: offWhite,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // First Row
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: _quickActions(context)
-                                    .take(4)
-                                    .map(
-                                      (item) => QuickActionButton(
-                                        label: item['label'],
-                                        icon: item['icon'],
-                                        onTap: item['onTap'],
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
-                              SizedBox(height: 5.h),
-
-                              // Second Row (conditional)
-                              if (showMore)
-                                Padding(
-                                  padding: EdgeInsets.only(top: 10.h),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: _quickActions(context)
-                                        .skip(4)
-                                        .map(
-                                          (item) => QuickActionButton(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        children: _quickActions(context)
+                                            .take(4)
+                                            .map(
+                                              (item) => QuickActionButton(
                                             label: item['label'],
                                             icon: item['icon'],
                                             onTap: item['onTap'],
+                                            isSmallScreen: isSmallScreen,
                                           ),
                                         )
-                                        .toList(),
-                                  ),
-                                ),
-
-                              // Toggle
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => showMore = !showMore),
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 10.h),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        showMore ? "Less" : "More",
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: primaryColor,
-                                        ),
+                                            .toList(),
                                       ),
-                                      Icon(
-                                        showMore
-                                            ? Icons.keyboard_arrow_up
-                                            : Icons.keyboard_arrow_down,
-                                        color: primaryColor,
+                                      SizedBox(height: isSmallScreen ? 3.h : 5.h),
+
+                                      if (showMore)
+                                        Padding(
+                                          padding: EdgeInsets.only(top: isSmallScreen ? 8.h : 10.h),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                            children: _quickActions(context)
+                                                .skip(4)
+                                                .map(
+                                                  (item) => QuickActionButton(
+                                                label: item['label'],
+                                                icon: item['icon'],
+                                                onTap: item['onTap'],
+                                                isSmallScreen: isSmallScreen,
+                                              ),
+                                            )
+                                                .toList(),
+                                          ),
+                                        ),
+
+                                      GestureDetector(
+                                        onTap: () => setState(() => showMore = !showMore),
+                                        child: Padding(
+                                          padding: EdgeInsets.only(top: isSmallScreen ? 8.h : 10.h),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                showMore ? "Less" : "More",
+                                                style: TextStyle(
+                                                  fontSize: isSmallScreen ? 11.sp : 12.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: primaryColor,
+                                                ),
+                                              ),
+                                              Icon(
+                                                showMore
+                                                    ? Icons.keyboard_arrow_up
+                                                    : Icons.keyboard_arrow_down,
+                                                color: primaryColor,
+                                                size: isSmallScreen ? 18.sp : 20.sp,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                SizedBox(height: isSmallScreen ? 15.h : 20.h),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Transaction History',
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: isSmallScreen ? 11.sp : 13.sp,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => context.pushNamed(RouteList.transactionHistory),
+                                      child: Text(
+                                        'View all',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w300,
+                                          fontSize: isSmallScreen ? 9.sp : 10.sp,
+                                          color: lightSecondaryText,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: isSmallScreen ? 6.h : 8.h),
+
+                                // 🔥 FIX: Use SizedBox with calculated height instead of Expanded
+                                SizedBox(
+                                  height: isSmallScreen ? 140.h : 180.h,
+                                  child: buildExpanded(theme, isSmallScreen, isLargeScreen),
+                                ),
+
+                                // Bottom padding
+                                SizedBox(height: isSmallScreen ? 10.h : 20.h),
+                              ],
+                            ),
                           ),
                         ),
-                        SizedBox(height: 20.h),
-
-                        // Transaction History Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Transaction History',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13.sp,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => context.pushNamed(
-                                RouteList.transactionHistory,
-                              ),
-                              child: Text(
-                                'View all',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w300,
-                                  fontSize: 10.sp,
-                                  color: lightSecondaryText,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8.h),
-
-                        // Transaction List - Takes remaining space
-                        buildExpanded(theme),
                       ],
                     ),
                   ),
                 ),
-              ),
+              ],
             );
           },
         ),
@@ -324,53 +298,76 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Container buildContainerTwo(ThemeData theme, BuildContext context) {
+  Container buildContainerTwo(ThemeData theme, BuildContext context, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 15.w),
+      padding: EdgeInsets.symmetric(
+        vertical: isSmallScreen ? 15.h : 20.h,
+        horizontal: isSmallScreen ? 12.w : 15.w,
+      ),
       decoration: BoxDecoration(
         color: offWhite,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(mic, height: 50.h, color: primaryColor),
-              SvgPicture.asset(chatting, height: 50.h, color: primaryColor),
-            ],
-          ),
-          SizedBox(height: 5.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Bia AI',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13.sp,
+      child: InkWell(
+        onTap: () async {
+          final box = await Hive.openBox('appPrefs');
+          final savedLang = box.get('biaAiLanguage');
+          if (!context.mounted) return;
+          if (savedLang == null) {
+            // First time – show language picker
+            context.pushNamed(RouteList.biaLanguageOnboarding);
+          } else {
+            // Already picked a language – go straight to chat
+            context.pushNamed(RouteList.aiChat);
+          }
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  mic,
+                  height: isSmallScreen ? 40.h : 50.h,
                   color: primaryColor,
                 ),
-              ),
-              GestureDetector(
-                onTap: () => context.pushNamed(RouteList.transactionHistory),
-                child: Icon(
+                SvgPicture.asset(
+                  chatting,
+                  height: isSmallScreen ? 40.h : 50.h,
+                  color: primaryColor,
+                ),
+              ],
+            ),
+            SizedBox(height: isSmallScreen ? 3.h : 5.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Bia AI',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: isSmallScreen ? 11.sp : 13.sp,
+                    color: primaryColor,
+                  ),
+                ),
+                Icon(
                   Icons.arrow_forward_ios_sharp,
-                  size: 12.sp,
+                  size: isSmallScreen ? 10.sp : 12.sp,
                   color: primaryColor,
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Container buildContainer(BuildContext context, ThemeData theme) {
+  Container buildContainer(BuildContext context, ThemeData theme, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 14.h),
+      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 10.h : 14.h),
       decoration: BoxDecoration(
         color: offWhite,
         borderRadius: BorderRadius.circular(8),
@@ -379,21 +376,23 @@ class _HomePageState extends ConsumerState<HomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ActionButton(
-            label: 'Send TP      ',
-            icon: SvgPicture.asset(send),
+            label: 'Send TP',
+            icon: SvgPicture.asset(send, height: isSmallScreen ? 18.h : 21.h),
             onTap: () => context.pushNamed(RouteList.sendMoneyTransfer),
+            isSmallScreen: isSmallScreen,
           ),
           Stack(
             clipBehavior: Clip.none,
             children: [
               ActionButton(
                 label: 'Bia Trike',
-                icon: Icon(Icons.car_crash_sharp, color: primaryColor),
+                icon: Icon(Icons.car_crash_sharp, color: primaryColor, size: isSmallScreen ? 18.sp : 21.sp),
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Bia Trike coming soon!')),
                   );
                 },
+                isSmallScreen: isSmallScreen,
               ),
               Positioned(
                 top: -5.h,
@@ -408,7 +407,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     'Coming Soon',
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: 6.sp,
+                      fontSize: isSmallScreen ? 5.sp : 6.sp,
                       color: whiteBackground,
                     ),
                   ),
@@ -418,19 +417,24 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           ActionButton(
             label: 'Withdrawal',
-            icon: Image.asset(atm, height: 21.h),
+            icon: Image.asset(atm, height: isSmallScreen ? 18.h : 21.h),
             onTap: () => context.pushNamed(RouteList.sendMoneyToBank),
+            isSmallScreen: isSmallScreen,
           ),
         ],
       ),
     );
   }
 
-  Expanded buildExpanded(ThemeData theme) {
-    return Expanded(
+  Widget buildExpanded(ThemeData theme, bool isSmallScreen, bool isLargeScreen) {
+    return SizedBox(
+      // 🔥 CHANGED: Let height be determined by parent Expanded, not fixed
+      width: double.infinity,
       child: Consumer(
         builder: (context, ref, _) {
-          final asyncTx = ref.watch(recentTransactionsProvider);
+          final userId = ref.watch(userIdProvider);
+
+          final asyncTx = ref.watch(recentTransactionsProvider(userId));
           return asyncTx.when(
             data: (transactions) {
               if (transactions.isEmpty) {
@@ -446,7 +450,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               }
               return ListView.builder(
                 shrinkWrap: true,
-                itemCount: transactions.length > 2 ? 2 : transactions.length,
+                // 🔥 CHANGED: Limit items to fit available space without scrolling
+                itemCount: transactions.length > (isSmallScreen ? 2 : 2)
+                    ? (isSmallScreen ? 2 : 2)
+                    : transactions.length,
+                // 🔥 CHANGED: Disable scrolling physics
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 itemBuilder: (context, index) {
@@ -461,18 +469,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                   final titleText = tx.serviceType == "TOPUP"
                       ? (tx.serviceType ?? "Top Up")
                       : (isCredit
-                            ? (tx.senderName ?? (tx.provider ?? "Transfer"))
-                            : (tx.receiverName ?? (tx.provider ?? "Transfer")));
+                      ? (tx.senderName ?? (tx.provider ?? "Transfer"))
+                      : (tx.receiverName ?? (tx.provider ?? "Transfer")));
 
                   return Container(
-                    margin: EdgeInsets.only(bottom: 7.h),
+                    margin: EdgeInsets.only(bottom: isSmallScreen ? 5.h : 7.h),
                     padding: EdgeInsets.symmetric(
-                      vertical: 9.h,
-                      horizontal: 10.w,
+                      vertical: isSmallScreen ? 7.h : 9.h,
+                      horizontal: isSmallScreen ? 8.w : 10.w,
                     ),
                     decoration: BoxDecoration(
                       color: offWhite,
-                      borderRadius: BorderRadius.circular(16.r),
+                      borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(.03),
@@ -484,8 +492,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Row(
                       children: [
                         Container(
-                          height: 40.w,
-                          width: 40.w,
+                          height: isSmallScreen ? 35.w : 40.w,
+                          width: isSmallScreen ? 35.w : 40.w,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: amountColor.withOpacity(.08),
@@ -495,10 +503,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ? Icons.arrow_downward_rounded
                                 : Icons.arrow_upward_rounded,
                             color: amountColor,
-                            size: 18.sp,
+                            size: isSmallScreen ? 16.sp : 18.sp,
                           ),
                         ),
-                        SizedBox(width: 10.w),
+                        SizedBox(width: isSmallScreen ? 8.w : 10.w),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,15 +517,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 12.sp,
+                                  fontSize: isSmallScreen ? 11.sp : 12.sp,
                                   color: darkBackground,
                                 ),
                               ),
-                              SizedBox(height: 4.h),
+                              SizedBox(height: isSmallScreen ? 3.h : 4.h),
                               Text(
                                 formatTransactionDate(tx.createdAt),
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: 10.sp,
+                                  fontSize: isSmallScreen ? 9.sp : 10.sp,
                                   color: lightSecondaryText,
                                 ),
                               ),
@@ -531,15 +539,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                               "${isCredit ? '+' : '-'}₦${tx.amount}",
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 14.sp,
+                                fontSize: isSmallScreen ? 12.sp : 14.sp,
                                 color: amountColor,
                               ),
                             ),
-                            SizedBox(height: 5.h),
+                            SizedBox(height: isSmallScreen ? 4.h : 5.h),
                             Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
+                                horizontal: isSmallScreen ? 6.w : 8.w,
+                                vertical: isSmallScreen ? 3.h : 4.h,
                               ),
                               decoration: BoxDecoration(
                                 color: amountColor.withOpacity(.08),
@@ -549,7 +557,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 tx.status ?? "",
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 7.sp,
+                                  fontSize: isSmallScreen ? 6.sp : 7.sp,
                                   color: amountColor,
                                 ),
                               ),
@@ -572,7 +580,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 }
 
 class BalanceCard extends ConsumerWidget {
-  const BalanceCard({super.key});
+  final bool isSmallScreen;
+
+  const BalanceCard({super.key, required this.isSmallScreen});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -592,14 +602,17 @@ class BalanceCard extends ConsumerWidget {
         : rawBalance.toString();
     final formattedBalance = balance.replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]},',
+          (m) => '${m[1]},',
     );
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 15.w),
+      padding: EdgeInsets.symmetric(
+        vertical: isSmallScreen ? 12.h : 15.h,
+        horizontal: isSmallScreen ? 12.w : 15.w,
+      ),
       decoration: BoxDecoration(
         color: primaryColor,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 8.r : 10.r),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -613,24 +626,24 @@ class BalanceCard extends ConsumerWidget {
                     'Available Balance',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
-                      fontSize: 12.sp,
+                      fontSize: isSmallScreen ? 10.sp : 12.sp,
                     ),
                   ),
-                  SizedBox(width: 8.w),
+                  SizedBox(width: isSmallScreen ? 6.w : 8.w),
                   GestureDetector(
                     onTap: () {
                       ref.read(balanceVisibilityProvider.notifier).state =
-                          !isVisible;
+                      !isVisible;
                     },
                     child: Icon(
                       isVisible ? Icons.visibility : Icons.visibility_off,
-                      size: 16.sp,
+                      size: isSmallScreen ? 14.sp : 16.sp,
                       color: Colors.white,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: isSmallScreen ? 3.h : 4.h),
               Text(
                 isVisible
                     ? '${Constants.nairaCurrencySymbol}$formattedBalance'
@@ -638,7 +651,7 @@ class BalanceCard extends ConsumerWidget {
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 20.sp,
+                  fontSize: isSmallScreen ? 16.sp : 20.sp,
                 ),
               ),
             ],
@@ -646,21 +659,25 @@ class BalanceCard extends ConsumerWidget {
           GestureDetector(
             onTap: () => context.pushNamed(RouteList.topUp),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 8.w : 10.w,
+                vertical: isSmallScreen ? 4.h : 5.h,
+              ),
               decoration: BoxDecoration(
                 color: whiteBackground,
-                borderRadius: BorderRadius.all(Radius.circular(8.r)),
+                borderRadius: BorderRadius.all(Radius.circular(isSmallScreen ? 6.r : 8.r)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Image.asset('assets/svg/plus.png', height: 15.h),
-                  SizedBox(width: 6.w),
+                  Image.asset('assets/svg/plus.png', height: isSmallScreen ? 12.h : 15.h),
+                  SizedBox(width: isSmallScreen ? 4.w : 6.w),
                   Text(
                     'Add money',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
+                      fontSize: isSmallScreen ? 10.sp : 12.sp,
                     ),
                   ),
                 ],
@@ -677,12 +694,14 @@ class ActionButton extends StatelessWidget {
   final String label;
   final Widget icon;
   final VoidCallback? onTap;
+  final bool isSmallScreen;
 
   const ActionButton({
     super.key,
     required this.label,
     required this.icon,
     this.onTap,
+    required this.isSmallScreen,
   });
 
   @override
@@ -694,20 +713,23 @@ class ActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 11.w),
+            padding: EdgeInsets.symmetric(
+              vertical: isSmallScreen ? 6.h : 8.h,
+              horizontal: isSmallScreen ? 9.w : 11.w,
+            ),
             decoration: BoxDecoration(
               color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(5)),
             ),
             child: icon,
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: isSmallScreen ? 8.h : 10.h),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
               fontWeight: FontWeight.w700,
-              fontSize: 11.sp,
+              fontSize: isSmallScreen ? 10.sp : 11.sp,
             ),
           ),
         ],
@@ -720,12 +742,14 @@ class QuickActionButton extends StatelessWidget {
   final String label;
   final Widget icon;
   final VoidCallback? onTap;
+  final bool isSmallScreen;
 
   const QuickActionButton({
     super.key,
     required this.label,
     required this.icon,
     this.onTap,
+    required this.isSmallScreen,
   });
 
   @override
@@ -737,20 +761,23 @@ class QuickActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 9.w),
+            padding: EdgeInsets.symmetric(
+              vertical: isSmallScreen ? 7.h : 9.h,
+              horizontal: isSmallScreen ? 7.w : 9.w,
+            ),
             decoration: BoxDecoration(
               color: secondaryColor,
               borderRadius: const BorderRadius.all(Radius.circular(50)),
             ),
             child: icon,
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: isSmallScreen ? 8.h : 10.h),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
               fontWeight: FontWeight.w700,
-              fontSize: 10.sp,
+              fontSize: isSmallScreen ? 9.sp : 10.sp,
             ),
           ),
         ],

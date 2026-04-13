@@ -39,4 +39,13 @@ class ApiConstant {
   static const BUY_AIRTIME = "/api/v1/billpayment/airtime/purchase";
   static const String DATA_PURCHASE = '/api/v1/billpayment/data/purchase';
   static const String DATA_PLANS = '/api/v1/billpayment/data/plans';
+  static const String GET_DATA_PLANS = '/api/v1/billpayment/data/plans?serviceID=mtn-data';
+  static const GET_CABLE_PROVIDERS = "/api/v1/billpayment/cabletv/service-ids";
+  static const GET_CABLE_VARIATION = "/api/v1/billpayment/cabletv/variation-codes?serviceID=";
+  static const String VERIFY_SMART_CARD = '/api/v1/billpayment/cabletv/card/verify';
+  static const String PURCHASE_CABLE = '/api/v1/billpayment/cabletv/purchase';
+  static const String GET_ELECTRICITY_PROVIDERS = "/api/v1/billpayment/electricity/service-ids";
+  static const String VERIFY_ELECTRICITY_METER = '/api/v1/billpayment/electricity/meter/verify';
+  static const String PURCHASE_ELECTRICITY_UNIT = '//api/v1/billpayment/electricity/purchase';
+  static const String GET_CHARGES = "/api/v1/payment/charges";
 }

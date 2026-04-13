@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
+import '../../../app/utils/colors.dart';
+import '../../../core/easy_loading_config.dart';
 import '../../../core/helper/helper.dart';
 import '../../auth/modal/reponse/response_modal.dart' hide WalletResponse;
 import '../../auth/modal/verify_bank.dart';
@@ -39,7 +40,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "All fields are required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -47,11 +48,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
     try {
       // Show loading indicator
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       Map<String, dynamic> body = {
         'account': account.trim(),
@@ -67,24 +64,24 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       // Call repository (assuming dashboardRepository is defined)
       final ResponseModel response = await dashboardRepository.sendMoney(body);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
         icon: response.responseSuccessful ? Icons.check_circle : Icons.error,
-        iconColor: response.responseSuccessful ? Colors.green : Colors.red,
+        iconColor: response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
       return response;
 
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -97,38 +94,34 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Both fields are required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
       Map<String, dynamic> body = {'pin': pin, 'confirmPin': confirmPin};
       debugPrint("➡️ Setting PIN: $body");
 
       final ResponseModel response = await dashboardRepository.setPin(body);
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
         icon: response.responseSuccessful ? Icons.check_circle : Icons.error,
-        iconColor: response.responseSuccessful ? Colors.green : Colors.red,
+        iconColor: response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -142,31 +135,27 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Enter a valid 10-digit account number",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
       final Map<String, dynamic> body = {"account": account.trim()};
       debugPrint("➡️ Verifying account: $body");
       final ResponseModel response = await dashboardRepository.verifyAccount(body);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -175,31 +164,27 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
   Future<QrCodeResponse?> getUserQrCode(BuildContext context) async {
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final qrResponse = await dashboardRepository.getUserQrCode();
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: qrResponse.responseMessage,
         icon: qrResponse.responseSuccessful ? Icons.check_circle : Icons.error,
-        iconColor: qrResponse.responseSuccessful ? Colors.green : Colors.red,
+        iconColor: qrResponse.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return qrResponse;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -217,7 +202,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.error,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
         return [];
@@ -227,29 +212,13 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return [];
     }
   }
 
-  // Future<List<FavouriteBeneficiaryItem>>
-  // getFavouriteBeneficiary(BuildContext context) async {
-  //   try {
-  //     final response =
-  //     await dashboardRepository.getFavouriteBeneficiary();
-  //
-  //     if (response.responseSuccessful) {
-  //       return response.beneficiaries;
-  //     }
-  //
-  //     return [];
-  //   } catch (e) {
-  //     debugPrint("❌ Error fetching favourites: $e");
-  //     return [];
-  //   }
-  // }
 
   Future<List<RecentBeneficiaryItem>> getRecentBeneficiary(BuildContext context) async {
     try {
@@ -362,10 +331,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       // Call repository
       final user =  await dashboardRepository.getUserProfile();
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       return user;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       return null;
     }
   }
@@ -376,22 +345,18 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Enter a valid amount",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response = await dashboardRepository.depositMoney({
         "amount": amount.toInt().toString(),
-      });      EasyLoading.dismiss();
+      });      LoadingHelper.dismiss();
 
       if (response.responseSuccessful && response.data != null) {
         print(response.data);
@@ -401,18 +366,18 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.error,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
         return null;
       }
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Deposit failed: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -422,7 +387,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   Future<VerifyTransactionResponse?> verifyDeposit(BuildContext context, String reference) async {
 
     final result =  await dashboardRepository.verifyPayment(reference);
-   // final result = await repo.verifyPayment(reference);
+    // final result = await repo.verifyPayment(reference);
 
     if (result != null && result.responseSuccessful) {
       print("💰 Payment Verified Successfully!");
@@ -440,7 +405,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "All fields are required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -451,18 +416,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "New PIN and Confirm PIN do not match.",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
       final body = {
         "currentPin": oldPin,
         "newPin": newPin,
@@ -470,22 +431,22 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       };
       debugPrint("➡️ Updating PIN: $body");
       final response = await dashboardRepository.changePin(body);
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
         icon: response.responseSuccessful ? Icons.check_circle : Icons.error,
-        iconColor: response.responseSuccessful ? Colors.green : Colors.red,
+        iconColor: response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -497,16 +458,12 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       String imagePath,
       ) async {
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response =
       await dashboardRepository.uploadProfileImage(imagePath);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
@@ -515,100 +472,25 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Upload failed: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
   }
 
-  // Future<ResponseModel?> verifyBankAccount(
-  //     BuildContext context,
-  //     String account,
-  //     String bankCode,
-  //     ) async {
-  //   if (account.length != 10 || bankCode.isEmpty) {
-  //     ToastHelper.showToast(
-  //       context: context,
-  //       message: "Invalid account details",
-  //       icon: Icons.error,
-  //       iconColor: Colors.red,
-  //     );
-  //     return null;
-  //   }
-  //
-  //   EasyLoading.show(
-  //     indicator: const CustomLoader(),
-  //     maskType: EasyLoadingMaskType.black,
-  //   );
-  //
-  //   final result =
-  //   await dashboardRepository.verifyBankAccount({
-  //     "account": account.trim(),
-  //     "bankCode": bankCode,
-  //   });
-  //
-  //   EasyLoading.dismiss();
-  //
-  //   return result;
-  // }
-  //
-  // Future<ResponseModel?> sendMoneyToBank(
-  //     BuildContext context,
-  //     String account,
-  //     String bankCode,
-  //     String amount,
-  //     String narration,
-  //     String pin,
-  //     {required bool save},
-  //     ) async {
-  //   if (account.isEmpty ||
-  //       bankCode.isEmpty ||
-  //       amount.isEmpty ||
-  //       narration.isEmpty ||
-  //       pin.isEmpty) {
-  //     ToastHelper.showToast(
-  //       context: context,
-  //       message: "All fields are required",
-  //       icon: Icons.error,
-  //       iconColor: Colors.red,
-  //     );
-  //     return null;
-  //   }
-  //
-  //   EasyLoading.show(
-  //     indicator: const CustomLoader(),
-  //     maskType: EasyLoadingMaskType.black,
-  //   );
-  //
-  //   final result =
-  //   await dashboardRepository.transferToBank({
-  //     "account": account.trim(),
-  //     "bankCode": bankCode,
-  //     "amount": num.tryParse(amount) ?? 0,
-  //     "narration": narration,
-  //     "pin": pin,
-  //     "save": save.toString(),
-  //   });
-  //
-  //   EasyLoading.dismiss();
-  //
-  //   return result;
-  // }
-// Add to DashboardController
 
-  // Bank List Cache
   List<BankModel> _cachedBanks = [];
 
   Future<List<BankModel>> getBanks(BuildContext context) async {
@@ -624,7 +506,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Error loading banks: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return [];
@@ -632,17 +514,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   }
 
   // Verify Bank Account
+// ✅ VERIFY BANK ACCOUNT (Before Transfer) - UPDATED
   Future<BankAccountVerifyResponse?> verifyBankAccount(
       BuildContext context, {
         required String accountNumber,
         required String bankCode,
+        required String bankName, // ✅ ADDED
       }) async {
     if (accountNumber.isEmpty || accountNumber.length != 10) {
       ToastHelper.showToast(
         context: context,
         message: "Enter a valid 10-digit account number",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -653,33 +537,30 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Please select a bank",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response = await dashboardRepository.verifyBankAccount(
         accountNumber: accountNumber,
         bankCode: bankCode,
+        bankName: bankName, // ✅ ADDED
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -705,18 +586,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "All fields are required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response = await dashboardRepository.sendMoneyToBank(
         accountNumber: accountNumber,
@@ -728,7 +605,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         saveBeneficiary: saveBeneficiary,
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (response.responseSuccessful &&
           response.responseBody != null) {
@@ -747,22 +624,41 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
+      return null;
+    }
+  }
+  Future<Map<String, dynamic>?> getTransactionCharges(
+      BuildContext context, {
+        required double amount,
+        String transactionType = "DEBIT",
+        String serviceType = "TRANSFER",
+      }) async {
+    try {
+      final charges = await dashboardRepository.getTransactionCharges(
+        amount: amount,
+        transactionType: transactionType,
+        serviceType: serviceType,
+      );
+
+      return charges;
+    } catch (e) {
+      debugPrint("❌ Error fetching charges: $e");
       return null;
     }
   }
@@ -777,23 +673,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Invalid transaction reference",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response =
       await dashboardRepository.verifyBankTransfer(reference);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
@@ -802,19 +694,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return response;
 
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: "Verification failed: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -831,16 +723,12 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   }
   Future<ResponseModel?> forgotPaymentPin(BuildContext context) async {
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response =
       await dashboardRepository.forgotPaymentPin();
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
@@ -849,19 +737,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
@@ -877,23 +765,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Enter a valid 6-digit OTP",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response =
       await dashboardRepository.verifyForgotPin(otp);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
@@ -902,19 +786,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
@@ -932,18 +816,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "PIN must be 4 digits",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response =
       await dashboardRepository.resetForgotPin(
@@ -951,7 +831,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         confirmNewPin: confirmNewPin,
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
@@ -960,19 +840,19 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
         position: ToastPosition.top,
       );
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
@@ -990,7 +870,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Enter a valid phone number",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -998,28 +878,24 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
     try {
 
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response =
       await dashboardRepository.verifyPhoneNumber(phone);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       return response;
 
     } catch (e) {
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Error: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
@@ -1039,18 +915,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "All fields are required",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response = await dashboardRepository.purchaseAirtime(
         phone: phone,
@@ -1059,13 +931,13 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         pin: pin,
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       debugPrint("📡 Airtime Controller Response: ${response.responseMessage}");
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       debugPrint("🔥 Airtime Controller Error: $e");
 
@@ -1073,7 +945,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Airtime failed: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
@@ -1084,25 +956,21 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   Future<List<DataPlanModel>> fetchDataPlans(
       BuildContext context, String serviceId) async {
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final plans = await dashboardRepository.getDataPlans(serviceId);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       return plans;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Failed to load data plans",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
       );
 
       return [];
@@ -1125,18 +993,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "All fields are required",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final response = await dashboardRepository.purchaseData(
         serviceId: serviceId.trim(),
@@ -1147,13 +1011,13 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         pin: pin.trim(),
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       debugPrint("📡 Data Controller Response: ${response.responseMessage}");
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       debugPrint("🔥 Data Controller Error: $e");
 
@@ -1161,7 +1025,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Data purchase failed: $e",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
 
@@ -1183,25 +1047,21 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   Future<List<Map<String, dynamic>>> fetchCableProviders(
       BuildContext context) async {
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       final providers = await dashboardRepository.getCableProviders();
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       return providers;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
         message: "Failed to load providers",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
       );
 
       return [];
@@ -1234,15 +1094,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "Enter smartcard number",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
+      LoadingHelper.show(
+
       );
 
       final result = await dashboardRepository.verifyCableCard(
@@ -1250,20 +1109,20 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         billersCode: smartcard,
       );
 
-      EasyLoading.dismiss();
+      // LoadingHelper.dismiss();
 
       if (result != null) {
         ToastHelper.showToast(
           context: context,
           message: "Verified: ${result['Customer_Name']}",
           icon: Icons.check_circle,
-          iconColor: Colors.green,
+          iconColor: successColor,
         );
       }
 
       return result;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       return null;
     }
   }
@@ -1283,15 +1142,14 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         context: context,
         message: "All fields required",
         icon: Icons.error,
-        iconColor: Colors.red,
+        iconColor: errorColor,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
+      LoadingHelper.show(
+
       );
 
       final response = await dashboardRepository.purchaseCable(
@@ -1304,7 +1162,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         pin: pin,
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
@@ -1313,12 +1171,12 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
             ? Icons.check_circle
             : Icons.error,
         iconColor:
-        response.responseSuccessful ? Colors.green : Colors.red,
+        response.responseSuccessful ? successColor : errorColor,
       );
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       return null;
     }
   }
@@ -1342,31 +1200,31 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     );
   }
 
-  // Future<List<DataPlanModel>> fetchDataPlans(
-  //     BuildContext context, String serviceId) async {
-  //   try {
-  //     EasyLoading.show(
-  //       indicator: const CustomLoader(),
-  //       maskType: EasyLoadingMaskType.black,
-  //       dismissOnTap: false,
-  //     );
-  //
-  //     final plans = await dashboardRepository.getDataPlans(serviceId);
-  //
-  //     EasyLoading.dismiss();
-  //
-  //     return plans;
-  //   } catch (e) {
-  //     EasyLoading.dismiss();
-  //
-  //     ToastHelper.showToast(
-  //       context: context,
-  //       message: "Failed to load data plans",
-  //       icon: Icons.error,
-  //       iconColor: Colors.red,
-  //     );
-  //
-  //     return [];
-  //   }
-  // }
+// Future<List<DataPlanModel>> fetchDataPlans(
+//     BuildContext context, String serviceId) async {
+//   try {
+//     LoadingHelper.show(
+//       indicator: const CustomLoader(),
+//       maskType: LoadingHelperMaskType.black,
+//       dismissOnTap: false,
+//     );
+//
+//     final plans = await dashboardRepository.getDataPlans(serviceId);
+//
+//     LoadingHelper.dismiss();
+//
+//     return plans;
+//   } catch (e) {
+//     LoadingHelper.dismiss();
+//
+//     ToastHelper.showToast(
+//       context: context,
+//       message: "Failed to load data plans",
+//       icon: Icons.error,
+//       iconColor: errorColor,
+//     );
+//
+//     return [];
+//   }
+// }
 }

@@ -68,4 +68,7 @@ class RouteList {
   static const String restoreNewPin = '/restoreNewPin';
   static const String confirmRestoreNewPin = '/confirmRestoreNewPin';
   static const String transactionPin = '/transactionPin';
+  static const String transactionDetailsScreen = 'transactionDetailsScreen';
+  static const String aiChat = '/ai-chat';
+  static const String biaLanguageOnboarding = '/bia-language-onboarding';
 }

@@ -18,6 +18,7 @@ import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
 import '../../../../../app/utils/widgets/toast_helper.dart';
 import '../../../../../app/view/widget/custom_textfiels_with_contact.dart';
 import '../../../../../app/view/widget/quick_access_app_bar.dart';
+import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/transaction.dart';
 
@@ -33,6 +34,8 @@ class _DataState extends ConsumerState<Data> with RouteAware {
   Map<String, dynamic>? _selectedProvider;
   String _phoneNumber = '';
   Map<String, dynamic>? _selectedPlan;
+
+
 
   void _handlePlanSelected(Map<String, dynamic> plan) {
     setState(() {
@@ -253,12 +256,43 @@ class CardOne extends ConsumerStatefulWidget {
 
 class _CardOneState extends ConsumerState<CardOne> {
   final TextEditingController _amountController = TextEditingController();
+  bool showInsufficientFundsWarning = false;
+  double walletBalance = 0.0;
+
+  void _validateAmount(int amount) {
+    final balance = _getWalletBalance();
+
+    setState(() {
+      walletBalance = balance;
+      showInsufficientFundsWarning =
+          amount > 0 && amount > balance;
+    });
+  }
+  bool get _isFormValid {
+    final hasProvider = widget.selectedProvider != null;
+    final hasPhone = (widget.phoneNumber ?? '').length == 11;
+
+    final amount = int.tryParse(_amountController.text.trim()) ?? 0;
+    final hasAmount = amount > 0;
+
+    final balance = _getWalletBalance();
+    final hasBalance = amount <= balance;
+
+    return hasProvider && hasPhone && hasAmount && hasBalance;
+  }
 
   @override
   void didUpdateWidget(covariant CardOne oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedPlan != null && widget.selectedPlan != oldWidget.selectedPlan) {
       _amountController.text = widget.selectedPlan!['price'].toString();
+    }
+    if (widget.selectedPlan != null &&
+        widget.selectedPlan != oldWidget.selectedPlan) {
+      final price = widget.selectedPlan!['price'];
+
+      _amountController.text = price.toString();
+      _validateAmount(price); // 🔥 THIS WAS MISSING
     }
   }
 
@@ -473,7 +507,7 @@ class _CardOneState extends ConsumerState<CardOne> {
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: isTablet ? 20 : 17,
-        horizontal: isTablet ? 30 : 25,
+        horizontal: isTablet ? 20 : 10,
       ),
       decoration: BoxDecoration(
         color: lightBackground,
@@ -512,7 +546,8 @@ class _CardOneState extends ConsumerState<CardOne> {
                   child: CustomTextField(
                     hint: 'Amount',
                     controller: _amountController,
-                    keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.none, // 🔥 no keyboard
+                    readOnly: true, // 🔥 disables typing
                   ),
                 ),
               ),
@@ -522,13 +557,33 @@ class _CardOneState extends ConsumerState<CardOne> {
                 height: isTablet ? 52.h : 48.h,
                 child: CustomButton(
                   buttonName: 'PAY',
-                  buttonColor: primaryColor,
+                  buttonColor: _isFormValid ? primaryColor : grey300,
                   buttonTextColor: lightBackground,
-                  onPressed: _handlePurchase,
-                ),
+                  onPressed: _isFormValid ? _handlePurchase : null,                ),
               ),
             ],
           ),
+          if (showInsufficientFundsWarning)
+            Padding(
+              padding: EdgeInsets.only(top: 6.h, left: 4.w),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline,
+                      color: errorColor, size: 16.sp),
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: Text(
+                      "Insufficient balance. Your balance is ₦${walletBalance.toStringAsFixed(2)}",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith (
+                        color: errorColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: isTablet ? 12.sp : 11.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           SizedBox(height: isTablet ? 18.h : 15.h),
           DataAmountSelector(
             selectedProvider: widget.selectedProvider,
@@ -543,135 +598,7 @@ class _CardOneState extends ConsumerState<CardOne> {
   }
 }
 
-/// ─── RESPONSIVE BOTTOM SHEET WITH PIN ───
-void showDataConfirmationSheet(
-    BuildContext context, {
-      required int amount,
-      required String networkName,
-      required String networkLogo,
-      required String recipientNumber,
-      required Function(String pin) onConfirm,
-    }) {
-  final currencySymbol = Constants.nairaCurrencySymbol;
-  final pinController = TextEditingController();
-  final ValueNotifier<bool> useCashback = ValueNotifier<bool>(false);
 
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: transparent,
-    builder: (BuildContext modalContext) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final screenWidth = constraints.maxWidth;
-          final isTablet = screenWidth > 600;
-          final maxWidth = isTablet ? 500.0 : double.infinity;
-
-          return AnimatedPadding(
-            padding: MediaQuery.of(modalContext).viewInsets,
-            duration: const Duration(milliseconds: 100),
-            child: Center(
-              child: Container(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                decoration: BoxDecoration(
-                  color: lightBackground,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 32.w : 24.w,
-                  vertical: isTablet ? 28.h : 24.h,
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Drag Handle
-                      Container(
-                        width: 40.w,
-                        height: 4.h,
-                        decoration: BoxDecoration(
-                          color: grey300,
-                          borderRadius: BorderRadius.circular(2.r),
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 28.h : 24.h),
-
-                      // Amount
-                      Text(
-                        '$currencySymbol$amount.00',
-                        style: TextStyle(
-                          fontSize: isTablet ? 28.sp : 25.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Text(
-                        'Confirm Payment',
-                        style: TextStyle(
-                          fontSize: isTablet ? 14.sp : 12.sp,
-                          color: grey600,
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 28.h : 24.h),
-
-                      // Details Card
-                      _buildDetailsCard(
-                        modalContext,
-                        networkName: networkName,
-                        networkLogo: networkLogo,
-                        recipientNumber: recipientNumber,
-                        amount: amount,
-                        currencySymbol: currencySymbol,
-                        useCashback: useCashback,
-                        isTablet: isTablet,
-                      ),
-                      SizedBox(height: isTablet ? 28.h : 24.h),
-
-                      // PIN Input - Responsive sizing
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 80.w : 60.w,
-                        ),
-                        child: PinCodeTextField(
-                          length: 4,
-                          controller: pinController,
-                          obscureText: true,
-                          appContext: modalContext,
-                          pinTheme: PinTheme(
-                            shape: PinCodeFieldShape.box,
-                            borderRadius: BorderRadius.circular(10.r),
-                            fieldHeight: isTablet ? 45.h : 35.h,
-                            fieldWidth: isTablet ? 45.h : 35.h,
-                            inactiveColor: grey300,
-                            activeColor: primaryColor,
-                            selectedColor: primaryColor,
-                            activeFillColor: lightBackground,
-                            inactiveFillColor: lightBackground,
-                            selectedFillColor: lightBackground,
-                          ),
-                          animationType: AnimationType.fade,
-                          animationDuration: const Duration(milliseconds: 300),
-                          enableActiveFill: true,
-                          keyboardType: TextInputType.number,
-                          onCompleted: (code) {
-                            if (pinController.text.length == 4) {
-                              onConfirm(pinController.text);
-                            }
-                          },
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 20.h : 16.h),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
 
 double _getWalletBalance() {
   final box = Hive.box('authBox');
@@ -679,283 +606,7 @@ double _getWalletBalance() {
   return double.tryParse(balanceStr.replaceAll(',', '')) ?? 0.0;
 }
 
-Widget _buildDetailsCard(
-    BuildContext context, {
-      required String networkName,
-      required String networkLogo,
-      required String recipientNumber,
-      required int amount,
-      required String currencySymbol,
-      required ValueNotifier<bool> useCashback,
-      bool isTablet = false,
-    }) {
-  return Container(
-    padding: EdgeInsets.all(isTablet ? 24.w : 20.w),
-    decoration: BoxDecoration(
-      color: grey50,
-      borderRadius: BorderRadius.circular(16.r),
-      border: Border.all(color: grey200),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildDetailRow(
-          context,
-          label: 'Network',
-          value: networkName,
-          logo: networkLogo,
-          isTablet: isTablet,
-        ),
-        Divider(height: isTablet ? 28.h : 24.h, color: grey300),
-        _buildDetailRow(
-          context,
-          label: 'Phone Number',
-          value: recipientNumber,
-          isTablet: isTablet,
-        ),
-        Divider(height: isTablet ? 28.h : 24.h, color: grey300),
-        _buildDetailRow(
-          context,
-          label: 'Amount',
-          value: '$currencySymbol$amount.00',
-          isTablet: isTablet,
-        ),
 
-        // Cashback bonus row
-        Divider(height: isTablet ? 28.h : 24.h, color: grey300),
-        _buildCashbackBonusRow(
-          context,
-          '+${currencySymbol}1 Cashback',
-          isTablet: isTablet,
-        ),
-
-        // Cashback toggle row
-        ValueListenableBuilder<bool>(
-          valueListenable: useCashback,
-          builder: (context, isUsing, child) {
-            return _buildSummaryRow(
-              context,
-              'Use Cashback (${currencySymbol}34.00)',
-              '-${currencySymbol}34.00',
-              hasToggle: true,
-              isToggled: isUsing,
-              onToggle: (value) => useCashback.value = value,
-              isTablet: isTablet,
-            );
-          },
-        ),
-
-        // Wallet balance row
-        Divider(height: isTablet ? 28.h : 24.h, color: grey300),
-        _buildWalletBalanceRow(
-          context,
-          balance: _getWalletBalance().toStringAsFixed(2),
-          currencySymbol: currencySymbol,
-          isTablet: isTablet,
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildCashbackBonusRow(BuildContext context, String value, {bool isTablet = false}) {
-  return Padding(
-    padding: EdgeInsets.symmetric(vertical: isTablet ? 8.h : 6.h),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const SizedBox.shrink(),
-        Text(
-          value,
-          style: TextStyle(
-            color: primaryGreenColor600,
-            fontWeight: FontWeight.bold,
-            fontSize: isTablet ? 13.sp : 11.sp,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildDetailRow(
-    BuildContext context, {
-      required String label,
-      required String value,
-      String? logo,
-      bool isTablet = false,
-    }) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: grey600,
-          fontSize: isTablet ? 13.sp : 11.sp,
-        ),
-      ),
-      Row(
-        children: [
-          if (logo != null)
-            Container(
-              width: isTablet ? 24.w : 20.w,
-              height: isTablet ? 24.h : 20.h,
-              margin: EdgeInsets.only(right: 8.w),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: AssetImage(logo),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          Text(
-            value,
-            style: TextStyle(
-              color: transparentBlack87,
-              fontSize: isTablet ? 13.sp : 11.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
-}
-
-Widget _buildSummaryRow(
-    BuildContext context,
-    String title,
-    String value, {
-      bool bonus = false,
-      bool hasToggle = false,
-      bool isToggled = false,
-      ValueChanged<bool>? onToggle,
-      bool isTablet = false,
-    }) {
-  return Padding(
-    padding: EdgeInsets.symmetric(vertical: isTablet ? 8.h : 6.h),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: grey600,
-            fontSize: isTablet ? 13.sp : 11.sp,
-          ),
-        ),
-        Row(
-          children: [
-            if (bonus)
-              Text(
-                value,
-                style: TextStyle(
-                  color: primaryGreenColor600,
-                  fontWeight: FontWeight.bold,
-                  fontSize: isTablet ? 13.sp : 11.sp,
-                ),
-              )
-            else
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: isTablet ? 13.sp : 11.sp,
-                ),
-              ),
-            SizedBox(width: 8.w),
-            if (hasToggle)
-              GestureDetector(
-                onTap: () {
-                  if (onToggle != null) {
-                    onToggle(!isToggled);
-                  }
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: isTablet ? 48.w : 40.w,
-                  height: isTablet ? 26.h : 22.h,
-                  decoration: BoxDecoration(
-                    color: isToggled ? primaryColor : grey300,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: AnimatedAlign(
-                    duration: const Duration(milliseconds: 200),
-                    alignment: isToggled ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: isTablet ? 22.w : 18.w,
-                      height: isTablet ? 22.h : 18.h,
-                      margin: EdgeInsets.symmetric(horizontal: 2),
-                      decoration: const BoxDecoration(
-                        color: lightBackground,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildWalletBalanceRow(
-    BuildContext context, {
-      required String balance,
-      required String currencySymbol,
-      bool isTablet = false,
-    }) {
-  return Container(
-    width: double.infinity,
-    padding: EdgeInsets.symmetric(
-      vertical: isTablet ? 18 : 16,
-      horizontal: isTablet ? 20 : 18,
-    ),
-    decoration: BoxDecoration(
-      border: Border.all(color: grey300),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.account_balance_wallet,
-          color: primaryColor,
-          size: isTablet ? 28 : 24,
-        ),
-        SizedBox(width: isTablet ? 12.w : 10.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Wallet Balance',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: grey600,
-                  fontSize: isTablet ? 13.sp : null,
-                ),
-              ),
-              Text(
-                '$currencySymbol$balance',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: isTablet ? 16.sp : null,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Icon(
-          Icons.check_circle,
-          color: primaryColor,
-          size: isTablet ? 28 : 24,
-        ),
-      ],
-    ),
-  );
-}
 
 /// ─── CARD TWO ───
 class CardTwo extends StatefulWidget {
@@ -1022,7 +673,7 @@ class _CardTwoState extends State<CardTwo> {
         return Container(
           padding: EdgeInsets.symmetric(
             vertical: isTablet ? 20 : 17,
-            horizontal: isTablet ? 30 : 25,
+            horizontal: isTablet ? 20 : 10,
           ),
           decoration: BoxDecoration(
             color: lightBackground,
@@ -1231,7 +882,6 @@ class DataAmountSelector extends ConsumerStatefulWidget {
 
 class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
     with SingleTickerProviderStateMixin {
-  final TextEditingController _amountController = TextEditingController();
   int? selectedAmount;
   int? selectedIndex;
 
@@ -1239,25 +889,13 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
 
   late final TabController _tabController;
 
+  /// 🔥 ALL EMPTY BY DEFAULT
   final Map<String, List<Map<String, dynamic>>> categorizedPlans = {
-    'Gifting': [
-      {'data': '110MB', 'price': 100, 'duration': '1 DAY', 'bonus': 'Facebook', 'variation_code': 'mtn-110mb-100'},
-      {'data': '150MB', 'price': 200, 'duration': '1 DAY', 'bonus': 'TikTok', 'variation_code': 'mtn-150mb-200'},
-      {'data': '350MB', 'price': 300, 'duration': '7 DAYS', 'bonus': 'WhatsApp', 'variation_code': 'mtn-350mb-300'},
-    ],
-    'Corporate': [
-      {'data': '2GB', 'price': 1500, 'duration': '14 DAYS', 'bonus': 'Team', 'variation_code': 'mtn-2gb-1500'},
-      {'data': '5GB', 'price': 3000, 'duration': '30 DAYS', 'bonus': 'Biz', 'variation_code': 'mtn-5gb-3000'},
-    ],
+    'Gifting': [],
+    'Corporate': [],
     'SME': [],
-    'Hot': [
-      {'data': '1.5GB', 'price': 500, 'duration': '1 DAY', 'bonus': '🔥', 'variation_code': 'mtn-1.5gb-500'},
-      {'data': '3GB', 'price': 1000, 'duration': '7 DAYS', 'bonus': 'Hot', 'variation_code': 'mtn-3gb-1000'},
-    ],
-    'Exclusive': [
-      {'data': '15GB', 'price': 3500, 'duration': '30 DAYS', 'bonus': 'VIP', 'variation_code': 'mtn-15gb-3500'},
-      {'data': '40GB', 'price': 10000, 'duration': '30 DAYS', 'bonus': 'Gold', 'variation_code': 'mtn-40gb-10000'},
-    ],
+    'Hot': [],
+    'Exclusive': [],
   };
 
   bool isLoadingSme = true;
@@ -1272,157 +910,141 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
   @override
   void dispose() {
     _tabController.dispose();
-    _amountController.dispose();
     super.dispose();
   }
 
+  /// 🔥 LOAD SME (FIXED)
   Future<void> _loadSmePlans() async {
-    // Add this at the start of _loadSmePlans()
-    final testResult = await ref.read(dashboardControllerProvider.notifier).fetchSmePlans(context);
-    if (testResult.isNotEmpty) {
-      final first = testResult.first;
-      // Print every property
-      debugPrint('Plan object: $first');
-      debugPrint('Amount: ${first.amount} (type: ${first.amount.runtimeType})');
-      // If it's a custom class, check all fields
-      // debugPrint('All fields: ${first.toJson()}'); // if available
-    }
     try {
       final result = await ref
           .read(dashboardControllerProvider.notifier)
           .fetchSmePlans(context);
 
-      // DEBUG: Print the raw result to see what fields are available
-      if (result.isNotEmpty) {
-        debugPrint('=== SME PLANS DEBUG ===');
-        debugPrint('First plan type: ${result.first.runtimeType}');
-        debugPrint('First plan fields: ${result.first.toString()}');
-        // Try to print all available getters
-        final first = result.first;
-        debugPrint('amount value: ${first.amount}');
-        debugPrint('amount type: ${first.amount?.runtimeType}');
-      }
-
       if (result.isNotEmpty) {
         final formatted = result.map((plan) {
-          final parsed = _parsePlan(plan.name);
-
-          // FIXED: Robust amount parsing
           int price = _parseAmount(plan.amount);
 
-          // If price is still 0, try to extract from plan name (e.g., "1GB - 30 Days - N1000")
+          /// 🔥 FALLBACK (CRITICAL FIX)
           if (price == 0 && plan.name != null) {
             price = _extractPriceFromName(plan.name!);
           }
 
-          debugPrint('SME Plan: ${plan.name} -> Parsed Price: $price');
-
           return {
-            'data': parsed['data'],
+            'data': _extractData(plan.name ?? ''),
             'price': price,
-            'duration': parsed['duration'],
+            'duration': _extractDuration(plan.name ?? ''),
             'bonus': 'SME',
-            'variation_code': plan.variationCode ?? '${plan.serviceId}-${price}mb-$price',
-            'service_id': plan.serviceId,
+            'variation_code': plan.variationCode,
           };
-        }).toList();
-
-        // Filter out plans with 0 price
-        final validPlans = formatted.where((plan) => (plan['price'] as int) > 0).toList();
-        debugPrint('Valid SME plans loaded: ${validPlans.length}');
+        }).where((e) => (e['price'] as int) > 0).toList();
 
         if (mounted) {
           setState(() {
-            categorizedPlans['SME'] = validPlans;
+            categorizedPlans['SME'] = formatted;
             isLoadingSme = false;
           });
         }
       } else {
-        if (mounted) {
-          setState(() => isLoadingSme = false);
-        }
+        if (mounted) setState(() => isLoadingSme = false);
       }
-    } catch (e, stackTrace) {
-      debugPrint('Error loading SME plans: $e');
-      debugPrint('Stack trace: $stackTrace');
-      if (mounted) {
-        setState(() => isLoadingSme = false);
-      }
+    } catch (e) {
+      if (mounted) setState(() => isLoadingSme = false);
     }
   }
 
-// Helper: Parse amount from any type
+  /// 🔥 PARSE AMOUNT
   int _parseAmount(dynamic amount) {
     if (amount == null) return 0;
     if (amount is int) return amount;
     if (amount is double) return amount.toInt();
     if (amount is String) {
-      // Handle formats like "1000", "1,000", "₦1000", "1000.00"
       final clean = amount
           .replaceAll(',', '')
           .replaceAll('₦', '')
           .replaceAll('N', '')
-          .replaceAll('\$', '')
           .trim();
-      return int.tryParse(clean) ?? double.tryParse(clean)?.toInt() ?? 0;
+      return int.tryParse(clean) ?? 0;
     }
     return 0;
   }
 
-// Helper: Extract price from plan name if amount field is empty
-// Handles names like "MTN 1GB - 30 Days - N1000" or "1GB (N500)"
+  /// 🔥 EXTRACT PRICE FROM NAME
   int _extractPriceFromName(String name) {
-    // Try to find price patterns like N1000, ₦500, N 1000, etc.
-    final regExp = RegExp(r'[₦N]\s*(\d{1,6})', caseSensitive: false);
+    final regExp = RegExp(r'[₦N]\s*([\d,]+)');
     final match = regExp.firstMatch(name);
-    if (match != null) {
-      return int.tryParse(match.group(1)!) ?? 0;
-    }
 
-    // Try generic number at end: "1GB - 1000"
-    final endNumber = RegExp(r'(\d{3,6})\s*$');
-    final endMatch = endNumber.firstMatch(name);
-    if (endMatch != null) {
-      return int.tryParse(endMatch.group(1)!) ?? 0;
+    if (match != null) {
+      final clean = match.group(1)!.replaceAll(',', '');
+      return int.tryParse(clean) ?? 0;
     }
 
     return 0;
   }
-  Map<String, String> _parsePlan(String name) {
-    String data = '';
-    String duration = '';
 
-    final parts = name.split(' ');
-    for (var p in parts) {
-      if (p.toLowerCase().contains('gb') || p.toLowerCase().contains('mb')) {
-        data = p;
-      }
-    }
-
-    if (name.contains('-')) {
-      duration = name.split('-').last.trim();
-    }
-
-    return {
-      'data': data,
-      'duration': duration.isEmpty ? '30 DAYS' : duration,
-    };
+  /// 🔥 EXTRACT DATA (e.g 1GB, 500MB)
+  String _extractData(String name) {
+    final reg = RegExp(r'(\d+(\.\d+)?\s?(GB|MB))', caseSensitive: false);
+    final match = reg.firstMatch(name);
+    return match?.group(0) ?? '';
   }
 
-  // Calculate responsive grid columns based on screen width
-// Calculate responsive grid columns based on screen width
+  /// 🔥 EXTRACT DURATION
+  String _extractDuration(String name) {
+    final reg = RegExp(r'(\d+\s?(day|days|month|months))', caseSensitive: false);
+    final match = reg.firstMatch(name);
+    return match?.group(0)?.toUpperCase() ?? '30 DAYS';
+  }
+
   int _getCrossAxisCount(double width) {
-    if (width > 900) return 5;      // Desktop/large tablet
-    if (width > 600) return 4;      // Tablet
-    return 3;                       // ALL phones get 3 columns (no matter the size)
+    if (width > 900) return 5;
+    if (width > 600) return 4;
+    return 3;
   }
 
-  // Calculate responsive aspect ratio
-// Calculate responsive aspect ratio
   double _getChildAspectRatio(double width) {
-    if (width > 900) return 1.0;    // Desktop
-    if (width > 600) return 0.9;    // Tablet
-    return 0.80;                    // Phones - slightly taller for 3 columns
+    if (width > 900) return 1.0;
+    if (width > 600) return 0.9;
+    return 0.80;
+  }
+
+  /// 🔥 EMPTY STATE UI
+  Widget _buildEmptyState(BuildContext context, String tabName) {
+    final theme = Theme.of(context);
+
+    String message;
+    switch (tabName) {
+      case 'Gifting':
+        message = "Gifting plans coming soon";
+        break;
+      case 'Corporate':
+        message = "Corporate plans coming soon";
+        break;
+      case 'Hot':
+        message = "Hot deals coming soon";
+        break;
+      case 'Exclusive':
+        message = "Exclusive plans coming soon";
+        break;
+      default:
+        message = "No plans available";
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.hourglass_empty, size: 40, color: primaryColor),
+          SizedBox(height: 10),
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1432,16 +1054,9 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
 
     final crossAxisCount = _getCrossAxisCount(screenWidth);
     final childAspectRatio = _getChildAspectRatio(screenWidth);
+    final tabViewHeight = isTablet ? 280.h : 220.h;
+    final theme = Theme.of(context);
 
-    // Dynamic height based on grid configuration
-    final maxPlans = categorizedPlans.values.map((e) => e.length).fold(0, (prev, curr) => curr > prev ? curr : prev);
-    final rowCount = (maxPlans / crossAxisCount).ceil().clamp(1, 3);
-// OLD (might be too tall):
-
-// NEW (more compact):
-    final calculatedHeight = (screenWidth / crossAxisCount / childAspectRatio * rowCount) + 40.h;
-// Force smaller height for 3-column layout
-    final tabViewHeight = isTablet ? 280.h : 220.h;  // Reduced from 350/280
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1451,51 +1066,47 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
           labelColor: primaryColor,
           unselectedLabelColor: grey,
           indicatorColor: primaryColor,
-          labelStyle: TextStyle(
-            fontSize: isTablet ? 14.sp : 12.sp,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: TextStyle(
-            fontSize: isTablet ? 14.sp : 12.sp,
-          ),
           tabs: _tabs.map((e) => Tab(text: e)).toList(),
         ),
+
         SizedBox(
           height: tabViewHeight,
           child: TabBarView(
             controller: _tabController,
             children: _tabs.map((tabName) {
+
+              /// 🔥 SME LOADER
               if (tabName == 'SME' && isLoadingSme) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final plans = categorizedPlans[tabName] ?? [];
-
-              if (plans.isEmpty) {
                 return Center(
-                  child: Text(
-                    'No plans available',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: grey,
-                      fontSize: isTablet ? 16.sp : null,
-                    ),
+                  child: PulsingLogoIndicator(
+                    logoPath: 'assets/svg/logo.png',
+                    size: 40,
+                    pulseColor: primaryColor,
                   ),
                 );
               }
 
+              final plans = categorizedPlans[tabName] ?? [];
+
+              /// 🔥 EMPTY STATE
+              if (plans.isEmpty) {
+                return _buildEmptyState(context, tabName);
+              }
+
               return GridView.builder(
-                padding: EdgeInsets.all(isTablet ? 8 : 6),  // Reduced from 10/12
+                padding: const EdgeInsets.all(8),
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: isTablet ? 12 : 8,  // Reduced from 16/12
-                  mainAxisSpacing: isTablet ? 12 : 8,   // Reduced from 16/12
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
                   childAspectRatio: childAspectRatio,
                 ),
                 itemCount: plans.length,
                 itemBuilder: (context, index) {
                   final plan = plans[index];
-                  final isSelected = selectedAmount == plan['price'] && selectedIndex == index;
+                  final isSelected =
+                      selectedAmount == plan['price'] && selectedIndex == index;
 
                   return GestureDetector(
                     onTap: () {
@@ -1507,15 +1118,15 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.all(isTablet ? 8 : 6),  // Reduced from 10/8
+                      padding: EdgeInsets.all(isTablet ? 8 : 6),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? primaryColor.withValues(alpha:0.1)
+                            ? primaryColor.withValues(alpha: 0.1)
                             : grey50,
-                        borderRadius: BorderRadius.circular(8.r),  // Reduced from 12.r
+                        borderRadius: BorderRadius.circular(8.r),
                         border: Border.all(
                           color: isSelected ? primaryColor : transparent,
-                          width: isTablet ? 1.5 : 1,  // Reduced from 2/1.5
+                          width: isTablet ? 1.5 : 1,
                         ),
                       ),
                       child: Column(
@@ -1527,56 +1138,56 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
                               plan['data'],
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                fontSize: isTablet ? 14.sp : 12.sp,  // Reduced from 16/14
+                                fontSize: isTablet ? 14.sp : 12.sp,
                               ),
                             ),
                           ),
-                          SizedBox(height: isTablet ? 4.h : 2.h),  // Reduced from 6/4
+                          SizedBox(height: isTablet ? 4.h : 2.h),
                           Flexible(
                             child: Text(
                               "₦${plan['price']}",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: primaryColor,
-                                fontSize: isTablet ? 13.sp : 11.sp,  // Smaller
+                                fontSize: isTablet ? 13.sp : 11.sp,
                               ),
                             ),
                           ),
-                          SizedBox(height: isTablet ? 4.h : 2.h),  // Reduced from 6/4
+                          SizedBox(height: isTablet ? 4.h : 2.h),
                           Flexible(
                             child: Text(
                               plan['duration'],
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontSize: isTablet ? 10.sp : 9.sp,  // Smaller
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: isTablet ? 10.sp : 9.sp,
                               ),
                             ),
                           ),
-                          SizedBox(height: isTablet ? 4.h : 2.h),  // Reduced from 6/4
+                          SizedBox(height: isTablet ? 4.h : 2.h),
                           if (plan['bonus'] != null)
                             Flexible(
                               child: Container(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: isTablet ? 6 : 4,  // Reduced from 8/6
-                                  vertical: isTablet ? 2 : 1,   // Reduced from 4/2
+                                  horizontal: isTablet ? 6 : 4,
+                                  vertical: isTablet ? 2 : 1,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: primaryColor.withValues(alpha:0.08),
-                                  borderRadius: BorderRadius.circular(12),  // Reduced from 20
+                                  color: primaryColor.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   plan['bonus'],
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  style: theme.textTheme.bodySmall?.copyWith(
                                     color: primaryColor,
                                     fontWeight: FontWeight.w600,
-                                    fontSize: isTablet ? 9.sp : 7.sp,  // Reduced from 10/8
+                                    fontSize: isTablet ? 9.sp : 7.sp,
                                   ),
                                 ),
                               ),

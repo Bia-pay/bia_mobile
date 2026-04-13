@@ -42,10 +42,12 @@ const offWhite = Color(0xFFFFFFFF);
 /// ⚠️ ALERT / ERROR RED
 ///
 const errorColor = Color(0xFFEF4444); // bright red
+const redAccent = Color(0xFFFF5252); // bright red
 /// ✅ SUCCESS GREEN
 const successColor = Color(0xFF22C55E);
 const Color pendingColor = Color(0xFFFFA000);
 const primaryGreenColor = Color(0xFF49C25B);
+const greenAccent = Color(0xFF49C25B);
 const primaryGreenColor600 = Color(0xFF43A047);
 const successTextColor = Color(0xFF1A9C47); // main green for success messages, icons
 const successLight = Color(0xFFD1FAE5); // light green background for containers, badges,
@@ -55,6 +57,7 @@ const darkBackground = Color(0xFF0B0B0B);
 const darkSurface = Color(0xFF1A1A1A);
 const darkText = Color(0xFFF9FAFB);
 const darkSecondaryText = Color(0xFFD0D5DD);
+const lightBackground70 = Color(0xB3FFFFFF);
 const darkBorderColor = Color(0xFF2E2E2E);
 const transparent = Color(0x00000000);
 const semiTransparentBlack = Color(0xDD000000);

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:bia/core/__core.dart';
+import 'package:bia/core/easy_loading_config.dart';
 import 'package:bia/feature/dashboard/dashboard_repo/repo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -242,10 +243,9 @@ class _UProfileState extends ConsumerState<UProfile> {
 
   Future<void> _logout(BuildContext context) async {
     try {
-      EasyLoading.show(status: "Logging out...");
+      LoadingHelper.show();
 
       final authBox = await Hive.openBox('authBox');
-      final settingsBox = await Hive.openBox('settingsBox');
 
       final userId = authBox.get('userId', defaultValue: '');
       final phone = authBox.get('phone', defaultValue: '');
@@ -253,20 +253,25 @@ class _UProfileState extends ConsumerState<UProfile> {
       final picture = authBox.get('picture');
       final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
-      // 🔹 Save user data BEFORE any clearing
+      // 🔥 CRITICAL: Clear transaction cache FIRST
+      await TransactionCache.clearAllTransactions();
+
+      // Clear beneficiaries
+      if (effectiveUserId.isNotEmpty) {
+        await clearRecentBeneficiaries(effectiveUserId);
+      }
+
+      // Call API logout
+      final authRepo = ref.read(authRepositoryProvider);
+      await authRepo.logout();
+
+      // 🔹 Save user data BEFORE any clearing (for welcome back screen)
       final userDataToKeep = {
         'userId': userId,
         'phone': phone,
         'fullname': fullname,
         'picture': picture,
       };
-
-      // Call API logout
-      final authRepo = ref.read(authRepositoryProvider);
-      await authRepo.logout();
-
-      // 🔹 CRITICAL FIX: Always keep user identification data
-      // Only delete sensitive tokens, never clear everything
 
       // Step 1: Delete sensitive data only
       await authBox.delete('token');
@@ -279,14 +284,6 @@ class _UProfileState extends ConsumerState<UProfile> {
         if (entry.value != null && entry.value.toString().isNotEmpty) {
           await authBox.put(entry.key, entry.value);
         }
-      }
-
-      // Step 3: If biometric was disabled, also clear biometric settings for this user
-      // (but keep the user data)
-      if (effectiveUserId.isNotEmpty) {
-        // Optional: Clear biometric settings if you want to force re-enable
-        // await settingsBox.delete('login_biometric_enabled_$effectiveUserId');
-        // await settingsBox.delete('biometric_login_password_$effectiveUserId');
       }
 
       debugPrint('🔐 Logout complete. Kept user data: $userDataToKeep');
@@ -307,7 +304,7 @@ class _UProfileState extends ConsumerState<UProfile> {
         context.go(RouteList.welcomeBackScreen);
       }
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       debugPrint('❌ Logout error: $e');
       // Even on error, go to welcome back
       if (mounted) {
@@ -315,7 +312,6 @@ class _UProfileState extends ConsumerState<UProfile> {
       }
     }
   }
-
   Future<void> clearRecentBeneficiaries(String userId) async {
     final box = await Hive.openBox('recentBeneficiaries');
     await box.delete('beneficiaries_$userId');
@@ -396,7 +392,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                                   _logout(this.context);
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: errorColor,
                                   shape: RoundedRectangleBorder(
                                     borderRadius:
                                     BorderRadius.circular(10.r),
@@ -537,7 +533,7 @@ class _UProfileState extends ConsumerState<UProfile> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result?.responseMessage ?? "Failed to send OTP"),
-            backgroundColor: Colors.red,
+            backgroundColor: errorColor,
           ),
         );
       }
@@ -547,7 +543,7 @@ class _UProfileState extends ConsumerState<UProfile> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Something went wrong: $e"),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     }
@@ -747,7 +743,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                   height: 36.w,
                   decoration: BoxDecoration(
                     color: isLogout
-                        ? Colors.red.withOpacity(0.1)
+                        ? errorColor.withOpacity(0.1)
                         : Colors.grey.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
@@ -756,7 +752,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                       item['image'],
                       height: 18.h,
                       colorFilter: ColorFilter.mode(
-                        isLogout ? Colors.red : Colors.black87,
+                        isLogout ? errorColor : Colors.black87,
                         BlendMode.srcIn,
                       ),
                     ),
@@ -769,7 +765,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                     style: TextStyle(
                       fontSize: 15.spMin,
                       fontWeight: FontWeight.w500,
-                      color: isLogout ? Colors.red : Colors.black87,
+                      color: isLogout ? errorColor : Colors.black87,
                     ),
                   ),
                 ),

@@ -590,9 +590,11 @@ class DashboardRepository {
   }
 
   // Verify Bank Account
+// Verify Bank Account - UPDATED
   Future<BankAccountVerifyResponse> verifyBankAccount({
     required String accountNumber,
     required String bankCode,
+    required String bankName, // ✅ ADDED
   }) async {
     try {
       final box = await Hive.openBox("authBox");
@@ -610,6 +612,7 @@ class DashboardRepository {
       final body = {
         "account": accountNumber.trim(),
         "bankCode": bankCode.trim(),
+        "bankName": bankName.trim(), // ✅ ADDED - include in request body if API needs it
       };
 
       print("🔍 Verifying bank account: $body");
@@ -628,6 +631,64 @@ class DashboardRepository {
       );
     }
   }
+
+  Future<Map<String, dynamic>?> getTransactionCharges({
+    required double amount,
+    required String transactionType,
+    required String serviceType,
+  }) async {
+    try {
+      final box = await Hive.openBox("authBox");
+      final token = box.get("token", defaultValue: "");
+
+      if (token.isEmpty) {
+        print("❌ No token found");
+        return null;
+      }
+
+      _apiClient.updateHeaders(token);
+
+      // Build query parameters
+      final queryParams = {
+        'amount': amount.toStringAsFixed(2),
+        'transactionType': transactionType,
+        'serviceType': serviceType,
+      };
+
+      // ✅ FIXED: Use only the endpoint path, let _apiClient handle base URL
+      final endpoint = "${ApiConstant.GET_CHARGES}?${Uri(queryParameters: queryParams).query}";
+
+      print("═══════════════════════════════════════════");
+      print("💰 CHARGES API REQUEST");
+      print("═══════════════════════════════════════════");
+      print("🔧 Endpoint: $endpoint");
+      print("🔧 Query Params: $queryParams");
+      print("🔧 Token: ${token.substring(0, token.length > 20 ? 20 : token.length)}...");
+      print("═══════════════════════════════════════════");
+
+      final response = await _apiClient.getData(endpoint);
+
+      print("📥 Response Status: ${response.statusCode}");
+      print("📥 Response Body: ${response.body}");
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 &&
+          jsonResponse['responseSuccessful'] == true) {
+        final responseBody = jsonResponse['responseBody'];
+        print("✅ Charges fetched successfully: $responseBody");
+        return responseBody;
+      } else {
+        print("❌ API returned unsuccessful response: ${jsonResponse['responseMessage']}");
+        return null;
+      }
+    } catch (e, stackTrace) {
+      print("🔥 Error fetching charges: $e");
+      print("📍 Stack trace: $stackTrace");
+      return null;
+    }
+  }
+
   Future<ResponseModel> forgotPaymentPin() async {
     print('📡 Sending forgot PIN request...');
 
@@ -1057,7 +1118,7 @@ class DashboardRepository {
       _apiClient.updateHeaders(token);
 
       final response = await _apiClient.getData(
-        "/api/v1/billpayment/data/plans?serviceID=$serviceId",
+          "${ApiConstant.DATA_PLANS}$serviceId"
       );
 
       final jsonResponse = jsonDecode(response.body);
@@ -1119,7 +1180,7 @@ class DashboardRepository {
       _apiClient.updateHeaders(token);
 
       final response = await _apiClient.getData(
-        "/api/v1/billpayment/data/plans?serviceID=mtn-data",
+          ApiConstant.GET_DATA_PLANS,
       );
 
       final jsonResponse = jsonDecode(response.body);
@@ -1148,7 +1209,7 @@ class DashboardRepository {
       _apiClient.updateHeaders(token);
 
       final response = await _apiClient.getData(
-        "/api/v1/billpayment/cabletv/service-ids",
+        ApiConstant.GET_CABLE_PROVIDERS,
       );
 
       final jsonResponse = jsonDecode(response.body);
@@ -1184,7 +1245,7 @@ class DashboardRepository {
       _apiClient.updateHeaders(token);
 
       final response = await _apiClient.getData(
-        "/api/v1/billpayment/cabletv/variation-codes?serviceID=$serviceId",
+        "${ApiConstant.GET_CABLE_VARIATION}$serviceId"
       );
 
       print("📡 VARIATION STATUS: ${response.statusCode}");
@@ -1235,7 +1296,7 @@ class DashboardRepository {
       };
 
       final response = await _apiClient.postData(
-        "/api/v1/billpayment/cabletv/card/verify",
+        ApiConstant.VERIFY_SMART_CARD,
         body,
       );
 
@@ -1292,7 +1353,7 @@ class DashboardRepository {
       print("📤 CABLE PURCHASE BODY: $body");
 
       final response = await _apiClient.postData(
-        "/api/v1/billpayment/cabletv/purchase",
+        ApiConstant.PURCHASE_CABLE,
         body,
       );
 
@@ -1322,7 +1383,7 @@ class DashboardRepository {
       _apiClient.updateHeaders(token);
 
       final response = await _apiClient.getData(
-        "/api/v1/billpayment/electricity/service-ids",
+      ApiConstant.GET_ELECTRICITY_PROVIDERS,
       );
 
       final jsonResponse = jsonDecode(response.body);
@@ -1368,7 +1429,7 @@ class DashboardRepository {
       };
 
       final response = await _apiClient.postData(
-        "/api/v1/billpayment/electricity/meter/verify",
+        ApiConstant.VERIFY_ELECTRICITY_METER,
         body,
       );
 
@@ -1423,7 +1484,7 @@ class DashboardRepository {
       print("⚡ ELECTRICITY PURCHASE BODY: $body");
 
       final response = await _apiClient.postData(
-        "/api/v1/billpayment/electricity/purchase",
+        ApiConstant.PURCHASE_ELECTRICITY_UNIT,
         body,
       );
 
@@ -1445,6 +1506,8 @@ class DashboardRepository {
       );
     }
   }
+
+
 
   // Future<List<DataPlanModel>> getDataPlans(String serviceId) async {
   //   try {

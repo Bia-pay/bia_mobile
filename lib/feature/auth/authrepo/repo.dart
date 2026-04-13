@@ -9,6 +9,8 @@ import '../../../core/local/transaction_cache.dart';
 import '../../../core/services/auth_flow_service.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/biometric_migration.dart';
+import '../../dashboard/dashboardcontroller/provider.dart';
+import '../../dashboard/model/recent_transaction.dart'; // 🔥 ADD THIS IMPORT
 import '../data/api_constant.dart';
 import '../data/api_data.dart';
 import '../modal/reponse/response_modal.dart';
@@ -48,10 +50,11 @@ class AuthRepository {
         await TransactionCache.clearTransactions(userId);
       }
 
-      // 🔹 Clear biometric credentials but KEEP login credentials for next biometric login
-      if (effectiveUserId.isNotEmpty) {
-        await BiometricService().clearUserBiometricData(effectiveUserId, keepLoginCredentials: true);
-      }
+      // 🔹 DO NOT clear biometric credentials on logout if we want biometric login to work!
+      // The credentials are encrypted in Secure Storage and protected by the OS Biometric prompt.
+      // if (effectiveUserId.isNotEmpty) {
+      //   await BiometricService().clearUserBiometricData(effectiveUserId);
+      // }
 
       // 🔹 ONLY delete sensitive tokens, NEVER clear user identification
       await box.delete('token');
@@ -59,7 +62,15 @@ class AuthRepository {
       await box.delete('balance');
       await box.delete('saved_user_profile');
       // 🔹 DO NOT delete: userId, phone, fullname, picture
+// Reset userId in Riverpod
+      _ref.read(userIdProvider.notifier).state = '';
 
+// Clear ALL cached transactions
+      await TransactionCache.clearAllTransactions();
+
+// Destroy providers
+      _ref.invalidate(allTransactionsProvider);
+      _ref.invalidate(recentTransactionsProvider);
       debugPrint('🔐 Logout complete for user: $userId');
 
       return ResponseModel(
@@ -103,6 +114,7 @@ class AuthRepository {
           response.statusCode == 201) {
         print("✅ Login Success: $jsonResponse");
 
+        final box = await Hive.openBox('authBox');
         final responseBody = jsonResponse['responseBody'] ?? {};
         final userJson =
         Map<String, dynamic>.from(responseBody['user'] ?? {});
@@ -110,44 +122,56 @@ class AuthRepository {
         Map<String, dynamic>.from(responseBody['wallet'] ?? {});
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
+        final newUserId = userJson['id']?.toString() ?? '';
+        final phone = userJson['phone']?.toString() ?? '';
+        final effectiveId = newUserId.isNotEmpty ? newUserId : phone;
 
-        final box = await Hive.openBox('authBox');
-        
-        // 🔹 Save password for biometric login (user-specific)
+        // 🔥 CRITICAL: Prepare cache for new user BEFORE anything else
+        await TransactionCache.prepareForNewUser(effectiveId);
+
+        // 🔥 UPDATE RIVERPOD STATE
+        _ref.read(userIdProvider.notifier).state = effectiveId;
+
+        // 🔥 CLEAR ALL OLD CACHE (EXTRA SAFETY)
+        await TransactionCache.clearAllTransactions();
+
+        // 🔥 RESET ALL TRANSACTION PROVIDERS
+        _ref.invalidate(allTransactionsProvider);
+        _ref.invalidate(recentTransactionsProvider);
+
+        // 🔥 PRE-FETCH TRANSACTIONS IMMEDIATELY (Eager loading)
+        // This ensures data is available before dashboard loads
+        await _prefetchTransactions(effectiveId, accessToken);
+
+        // Save password for biometric login (user-specific)
         if (!fromBiometric && body.containsKey('password')) {
-          final userId = userJson['id']?.toString() ?? '';
-          final phone = userJson['phone']?.toString() ?? '';
-          final effectiveId = userId.isNotEmpty ? userId : phone;
-
           if (effectiveId.isNotEmpty) {
             final biometricService = BiometricService();
             final password = body['password'];
 
-            // Always save credentials securely (for potential biometric use)
+            // Always re-save credentials on login (they are cleared on logout)
             await biometricService.saveLoginCredentials(effectiveId, phone, password);
+            debugPrint('🔐 Login credentials saved for: $effectiveId');
 
-            // 🔹 CRITICAL FIX: Only enable on FIRST login, never override user choice
-            // Check if user has ever interacted with this setting
+            // Only set the preference key on first-ever login — never auto-enable
             final hasEverBeenSet = await biometricService.hasLoginPreferenceBeenSet(effectiveId);
-            
             if (!hasEverBeenSet) {
-              // First time ever - enable by default and mark as set
-              await biometricService.setLoginEnabled(effectiveId, true);
+              // Write false explicitly so the key exists but biometric is OFF by default
+              await biometricService.setLoginEnabled(effectiveId, false);
               await biometricService.markInitialPromptShown(effectiveId);
-              debugPrint('🔐 First login - enabled biometric for: $effectiveId');
+              debugPrint('🔐 First login for $effectiveId — biometric OFF by default');
             } else {
-              // User has made a choice before - respect it (don't change anything)
-              final currentSetting = await biometricService.isLoginEnabled(effectiveId);
-              debugPrint('🔐 Existing user - keeping biometric setting: $currentSetting for: $effectiveId');
+              final current = await biometricService.isLoginEnabled(effectiveId);
+              debugPrint('🔐 Returning user $effectiveId — keeping biometric setting: $current');
             }
           }
         }
-        
+
         await box.put("token", accessToken);
         await box.put("refreshToken", refreshToken);
-        await box.put("userId", userJson['id']?.toString() ?? '');
+        await box.put("userId", newUserId);
         await box.put("fullname", userJson['fullname'] ?? '');
-        await box.put("phone", userJson['phone'] ?? '');
+        await box.put("phone", phone);
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
         await box.put(
@@ -156,9 +180,9 @@ class AuthRepository {
               userJson['pin'].toString().isNotEmpty,
         );
 
-        // This duplicate code block is handled above - removed to prevent conflicts
-
-        _apiClient.updateHeaders(accessToken);
+        // Prime ApiClient: updates in-memory headers AND persists tokens to
+        // encrypted SecureStorage per this specific user account.
+        await _apiClient.initForUser(effectiveId, accessToken, refreshToken);
 
         final authFlowService =
         _ref.read(authFlowServiceProvider);
@@ -195,36 +219,71 @@ class AuthRepository {
         statusCode: 500,
       );
     }
-  }  /// ---------------- SET PIN ----------------
-  // Future<ResponseModel> setPin(String pin, String confirmPin) async {
-  //   try {
-  //     final body = {'pin': pin, 'confirmPin': confirmPin};
-  //     final response = await _apiClient.postData(ApiConstant.SET_PIN, body);
-  //     final jsonResponse = jsonDecode(response.body);
-  //
-  //     if (response.statusCode == 200) {
-  //       print("✅ PIN set successfully: $jsonResponse");
-  //       return ResponseModel(
-  //         responseMessage: jsonResponse['responseMessage'] ?? 'PIN set successfully',
-  //         responseSuccessful: true,
-  //         statusCode: response.statusCode,
-  //       );
-  //     }
-  //
-  //     return ResponseModel(
-  //       responseMessage: jsonResponse['responseMessage'] ?? 'Failed to set PIN',
-  //       responseSuccessful: false,
-  //       statusCode: response.statusCode,
-  //     );
-  //   } catch (e) {
-  //     print("🔥 Set PIN Exception: $e");
-  //     return ResponseModel(
-  //       responseMessage: 'Something went wrong. Try again.',
-  //       responseSuccessful: false,
-  //       statusCode: 500,
-  //     );
-  //   }
-  // }
+  }
+
+  /// Pre-fetch transactions during login so they're ready when dashboard loads
+  Future<void> _prefetchTransactions(String userId, String token) async {
+    if (userId.isEmpty) return;
+
+    try {
+      print('🔄 Pre-fetching transactions during login for user: $userId');
+
+      // 🔥 FIX: Use the existing _apiClient instead of creating new one
+      // It's already configured with the base URL and interceptors
+      _apiClient.updateHeaders(token);
+
+      // Fetch recent transactions - 🔥 FIX: Use correct endpoint
+      final recentResponse = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
+      if (recentResponse.statusCode == 200) {
+        final jsonResponse = jsonDecode(recentResponse.body);
+        final responseBody = jsonResponse['responseBody'] ?? {};
+        final transactionsList = responseBody['transactions'] as List<dynamic>? ?? [];
+
+        // 🔥 FIX: Explicitly cast to List<TransactionItem>
+        final List<TransactionItem> transactions = transactionsList
+            .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
+        // Save to cache immediately
+        await TransactionCache.saveTransactions(userId, transactions);
+        print('✅ Pre-fetched and cached ${transactions.length} transactions');
+      }
+
+      // Also fetch all transactions in background (don't await)
+      _fetchAllTransactionsInBackground(userId, token);
+
+    } catch (e) {
+      print('⚠️ Pre-fetch failed (non-critical): $e');
+      // Don't fail login if pre-fetch fails - provider will handle it
+    }
+  }
+
+  Future<void> _fetchAllTransactionsInBackground(String userId, String token) async {
+    try {
+      // 🔥 FIX: Use existing _apiClient
+      _apiClient.updateHeaders(token);
+
+      // 🔥 FIX: Use correct endpoint - check your ApiConstant for the right one
+      // Using RECENT_TRANSFER as fallback - replace with your actual "all transactions" endpoint
+      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final responseBody = jsonResponse['responseBody'] ?? {};
+        final transactionsList = responseBody['transactions'] as List<dynamic>? ?? [];
+
+        // 🔥 FIX: Explicitly cast to List<TransactionItem>
+        final List<TransactionItem> transactions = transactionsList
+            .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
+        await TransactionCache.saveTransactions(userId, transactions);
+        print('✅ Background fetch: Cached ${transactions.length} total transactions');
+      }
+    } catch (e) {
+      print('⚠️ Background fetch failed: $e');
+    }
+  }
+
   /// ---------------- SET PIN ----------------
   Future<ResponseModel> setPin(String pin, String confirmPin) async {
     try {
@@ -273,11 +332,11 @@ class AuthRepository {
     try {
       final box = await Hive.openBox('authBox');
       final biometricService = BiometricService();
-      
+
       final userId = box.get('userId', defaultValue: '');
       final phone = box.get('phone', defaultValue: '');
       final effectiveUserId = userId.isNotEmpty ? userId : phone;
-      
+
       if (effectiveUserId.isEmpty) {
         debugPrint('⚠️ No userId found for biometric login');
         return null;
@@ -560,42 +619,4 @@ class AuthRepository {
       );
     }
   }
-  // ---------------- SET PIN ----------------
-  // Future<ResponseModel> setPin(String pin, String confirmPin) async {
-  //   try {
-  //     http.Response response =
-  //     await _apiClient.postData(ApiConstant.SET_PIN, {
-  //       "pin": pin,
-  //       "confirmPin": confirmPin,
-  //     });
-  //
-  //     final jsonResponse = jsonDecode(response.body);
-  //
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       final box = Hive.box("authBox");
-  //       await box.put("has_pin", true);
-  //       await box.put("saved_pin", pin);
-  //
-  //       return ResponseModel(
-  //         responseMessage:
-  //         jsonResponse["responseMessage"] ?? "PIN set successfully",
-  //         responseSuccessful: true,
-  //         statusCode: response.statusCode,
-  //       );
-  //     }
-  //
-  //     return ResponseModel(
-  //       responseMessage:
-  //       jsonResponse["responseMessage"] ?? "Failed to set PIN",
-  //       responseSuccessful: false,
-  //       statusCode: response.statusCode,
-  //     );
-  //   } catch (e) {
-  //     return ResponseModel(
-  //       responseMessage: "Something went wrong",
-  //       responseSuccessful: false,
-  //       statusCode: 500,
-  //     );
-  //   }
-  // }
 }

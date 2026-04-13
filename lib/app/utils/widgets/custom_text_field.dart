@@ -39,7 +39,7 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.readOnly = false,
     this.textInputAction,
-    this.focusNode,//
+    this.focusNode, //
     this.autofillHints, // 🔥 ADD THIS LINE
   });
 
@@ -75,6 +75,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     widget.controller.removeListener(_listener);
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

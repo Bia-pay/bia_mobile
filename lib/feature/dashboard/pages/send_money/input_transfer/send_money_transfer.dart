@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/view/widget/app_bar.dart';
 import '../../../../../app/view/widget/app_search_field.dart';
+import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../model/favourite_beneficiary.dart';
 import '../../../model/recent_transfer.dart';
@@ -244,23 +245,59 @@ class _CardThreeState extends ConsumerState<CardThree> {
   Future<void> _loadAll() async {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
 
-    final recent =
-    await dashboardCtrl.getRecentBeneficiary(context);
+    try {
+      final recent =
+      await dashboardCtrl.getRecentBeneficiary(context);
 
-    final favourites =
-    await dashboardCtrl.getFavouriteBeneficiary(context);
+      final favourites =
+      await dashboardCtrl.getFavouriteBeneficiary(context);
 
-    setState(() {
-      recentBeneficiaries = recent;
-      favouriteBeneficiaries = favourites;
-      isLoading = false;
-    });
+      if (!mounted) return;
+
+      setState(() {
+        recentBeneficiaries = recent;
+        favouriteBeneficiaries = favourites;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: whiteBackground,
+          borderRadius: BorderRadius.circular(15.r),
+        ),
+        child: Center(
+          child: PulsingLogoIndicator(
+            logoPath: 'assets/svg/logo-b.png', // 🔥 your logo
+            size: 40,
+            pulseColor: primaryColor,
+          ),
+        ),
+      );
+    }
+
+    if (recentBeneficiaries.isEmpty &&
+        favouriteBeneficiaries.isEmpty) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: whiteBackground,
+          borderRadius: BorderRadius.circular(15.r),
+        ),
+        child: Center(
+          child: Text(
+            "No beneficiaries yet",
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
     }
 
     return Container(
@@ -270,13 +307,15 @@ class _CardThreeState extends ConsumerState<CardThree> {
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: BeneficiaryTabSection(
-        favorites: favouriteBeneficiaries
+        // 🔥 SWAPPED: favourites data now shows in Recent tab
+        recents: favouriteBeneficiaries
             .map((r) => {
           "name": r.name,
-          "account": r.phone, // IN_APP has no account number
+          "account": r.phone,
         })
             .toList(),
-        recents: recentBeneficiaries
+        // 🔥 SWAPPED: recent data now shows in Favourites tab
+        favorites: recentBeneficiaries
             .map((r) => {
           "name": r.fullname,
           "account": r.phone,
@@ -285,8 +324,7 @@ class _CardThreeState extends ConsumerState<CardThree> {
         showLogo: true,
         showProgress: false,
         onSelectBeneficiary: (name, account) {
-          final parent =
-          context.findAncestorStateOfType<_SendMoneyTransferState>();
+          final parent = context.findAncestorStateOfType<_SendMoneyTransferState>();
           if (parent != null) {
             parent._verifyAccountSilently(context, account);
           }

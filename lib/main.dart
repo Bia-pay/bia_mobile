@@ -12,6 +12,8 @@ import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
+import 'core/easy_loading_config.dart';
+import 'feature/dashboard/transaction_cache.dart';
 import 'firebase_options.dart';
 
 final FlutterLocalNotificationsPlugin localNotifications =
@@ -58,11 +60,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await MediaStore.ensureInitialized(); // 👈 REQUIRED
-// 👇 REQUIRED
+  await MediaStore.ensureInitialized();
   MediaStore.appFolder = "Bia";
-  await initLocalNotifications();   // 👈 REQUIRED
-  listenForForegroundMessages();    // 👈 REQUIRED
+  await initLocalNotifications();
+  listenForForegroundMessages();
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -73,7 +74,9 @@ void main() async {
   runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 }
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// NOTE: navigatorKey is defined in feature/auth/interceptor/interceptor.dart
+// and wired into GoRouter in app/utils/router/router.dart.
 
 // ==================== MAIN APP ====================
 
@@ -117,20 +120,40 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     return ScreenUtilInit(
       designSize: const Size(390, 844),
       minTextAdapt: true,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
-        child: MaterialApp.router(
-          debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        // ✅ Initialize EasyLoadingConfig HERE after ScreenUtil is ready
+        // Use a flag to ensure it only runs once
+        _initializeEasyLoadingOnce();
 
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: themeMode,
-
-          routerConfig: AppRouter.router,
-
-          builder: EasyLoading.init(),
-        ),
-      ),
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
+          child: MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeMode,
+            routerConfig: AppRouter.router,
+            builder: EasyLoading.init(),
+          ),
+        );
+      },
     );
+  }
+  bool _isEasyLoadingInitialized = false;
+
+// In main.dart, inside _initializeEasyLoadingOnce():
+
+  void _initializeEasyLoadingOnce() {
+    if (!_isEasyLoadingInitialized) {
+      _isEasyLoadingInitialized = true;
+      EasyLoadingConfig.initialize(
+        logoPath: 'assets/svg/logo-b.png',
+        logoSize: 40.h,        // ← Change from 6 to 3 (or 3.5)
+        pulseColor: primaryColor,
+        maskOpacity: 0.7,
+        dismissOnTap: false,
+        userInteractions: false,
+      );
+    }
   }
 }

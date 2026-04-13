@@ -1,3 +1,5 @@
+import 'package:bia/app/utils/colors.dart';
+import 'package:bia/app/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -51,18 +53,18 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
   late CountryCode _selectedCountry;
   late final VoidCallback _controllerListener;
 
-  bool get _isKeyboardDisabled =>
-      widget.keyboardType == TextInputType.none;
+  bool get _isKeyboardDisabled => widget.keyboardType == TextInputType.none;
 
   @override
   void initState() {
     super.initState();
 
-    _selectedCountry = widget.initialCountry ??
-        CountryCodes.allCountries.firstWhere(
-              (country) => country.code == 'NG',
-          orElse: () => CountryCodes.allCountries.first,
-        );
+    _selectedCountry =
+        widget.initialCountry ??
+            CountryCodes.allCountries.firstWhere(
+                  (country) => country.code == 'NG',
+              orElse: () => CountryCodes.allCountries.first,
+            );
 
     _controllerListener = () {
       final error = widget.validator(widget.controller.text);
@@ -109,8 +111,9 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
   @override
   Widget build(BuildContext context) {
     final defaultBackground = Colors.grey.shade100;
-    final defaultBorderColor =
-    _errorText != null ? Colors.red : Colors.grey[300]!;
+    final defaultBorderColor = _errorText != null
+        ? errorColor
+        : Colors.grey[300]!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,15 +148,14 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
               Expanded(
                 child: TextFormField(
                   controller: widget.controller,
-                  keyboardType:
-                  widget.keyboardType ?? TextInputType.phone,
+                  keyboardType:  TextInputType.phone,
                   maxLength: 10,
                   inputFormatters: _isKeyboardDisabled
                       ? null
                       : [FilteringTextInputFormatter.digitsOnly],
                   onChanged: widget.onChanged,
-                  focusNode: widget.focusNode,              // ✅
-                  textInputAction: widget.textInputAction,  // ✅
+                  focusNode: widget.focusNode, // ✅
+                  textInputAction: widget.textInputAction, // ✅
                   onFieldSubmitted: widget.onSubmitted,
                   readOnly: widget.readOnly || _isKeyboardDisabled,
                   enableInteractiveSelection: !_isKeyboardDisabled,
@@ -161,8 +163,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                   decoration: InputDecoration(
                     counterText: "",
                     hintText: widget.hintText,
-                    hintStyle:
-                    Theme.of(context).textTheme.bodySmall?.copyWith(
+                    hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: widget.hintColor ?? Colors.grey[400],
                       fontWeight: FontWeight.w400,
                       fontSize: 13.sp,
@@ -188,7 +189,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
             child: Text(
               _errorText!,
               style: TextStyle(
-                color: Colors.red,
+                color: errorColor,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w400,
               ),

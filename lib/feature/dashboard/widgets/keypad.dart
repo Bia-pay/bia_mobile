@@ -32,95 +32,126 @@ class _CustomGridKeypadState extends State<CustomGridKeypad> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.height < 700;
+    final isLargeScreen = screenSize.height > 900;
 
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 25.w),
-      itemCount: 12,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 16.h,
-        crossAxisSpacing: 35.w,
-        mainAxisExtent: 70.h,
-      ),
-      itemBuilder: (context, index) {
-        Widget child;
-        VoidCallback? onTap;
-        Color bgColor = keyAColor;
+    // Calculate available space properly
+    final availableWidth = screenSize.width - (screenSize.width * 0.12); // minus padding
+    final keySize = (availableWidth / 3).clamp(
+      isSmallScreen ? 60.0 : 70.0,
+      isLargeScreen ? 100.0 : 85.0,
+    );
 
-        // 1–9
-        if (index < 9) {
-          final number = _numbers[index];
-          child = Text(
-            number,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
-            ),
-          );
-          onTap = () => widget.onNumberPressed(number);
-        }
-        // Left action
-        else if (index == 9) {
-          if (widget.leftAction == null) return const SizedBox();
-          child = widget.leftAction!.child;
-          onTap = widget.leftAction!.onTap;
-          bgColor = widget.leftAction!.backgroundColor ?? keyAColor;
-        }
-        // 0
-        else if (index == 10) {
-          child = Text(
-            "0",
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
-            ),
-          );
-          onTap = () => widget.onNumberPressed("0");
-        }
-        // Right action
-        else {
-          if (widget.rightAction == null) return const SizedBox();
-          child = widget.rightAction!.child;
-          onTap = widget.rightAction!.onTap;
-          bgColor = widget.rightAction!.backgroundColor ?? keyAColor;
-        }
+    // Calculate adaptive spacing and sizing
+    final horizontalPadding = screenSize.width * 0.06; // 6% of screen width
+    final mainSpacing = isSmallScreen ? 8.h : (isLargeScreen ? 20.h : 12.h);
+    final crossSpacing = screenSize.width * 0.08; // 8% of screen width
 
-        final isSelected = _selectedIndex == index;
+    // Calculate key size based on available space
+    final availableHeight = screenSize.height * 0.35; // Use 35% of screen height max
+    final keyHeight = (availableHeight / 4).clamp(
+      isSmallScreen ? 50.0 : 60.0,  // min
+      isLargeScreen ? 90.0 : 75.0,  // max
+    );
 
-        return InkWell(
-          borderRadius: BorderRadius.circular(50.r),
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          onTap: onTap == null
-              ? null
-              : () {
-            setState(() => _selectedIndex = index);
-            onTap!();
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.white : bgColor,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? primaryColor : Colors.transparent,
-                width: 2,
-              ),
-              boxShadow: isSelected
-                  ? [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ]
-                  : [],
-            ),
-            alignment: Alignment.center,
-            child: child,
+    // Font size scaling
+    final fontSize = isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true, // Important: take only needed space
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          itemCount: 12,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: mainSpacing,
+            crossAxisSpacing: crossSpacing,
+            childAspectRatio: 1.0, // Square keys instead of fixed extent
           ),
+          itemBuilder: (context, index) {
+            Widget child;
+            VoidCallback? onTap;
+            Color bgColor = keyAColor;
+
+            // 1–9
+            if (index < 9) {
+              final number = _numbers[index];
+              child = Text(
+                number,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: grey,
+                ),
+              );
+              onTap = () => widget.onNumberPressed(number);
+            }
+            // Left action (index 9)
+            else if (index == 9) {
+              if (widget.leftAction == null) return const SizedBox();
+              child = widget.leftAction!.child;
+              onTap = widget.leftAction!.onTap;
+              bgColor = widget.leftAction!.backgroundColor ?? keyAColor;
+            }
+            // 0 (index 10)
+            else if (index == 10) {
+              child = Text(
+                "0",
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w500,
+                  color: grey,
+                ),
+              );
+              onTap = () => widget.onNumberPressed("0");
+            }
+            // Right action (index 11)
+            else {
+              if (widget.rightAction == null) return const SizedBox();
+              child = widget.rightAction!.child;
+              onTap = widget.rightAction!.onTap;
+              bgColor = widget.rightAction!.backgroundColor ?? keyAColor;
+            }
+
+            final isSelected = _selectedIndex == index;
+
+            return InkWell(
+              borderRadius: BorderRadius.circular(50.r),
+              splashColor: transparent,
+              highlightColor: transparent,
+              onTap: onTap == null
+                  ? null
+                  : () {
+                setState(() => _selectedIndex = index);
+                onTap!();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                decoration: BoxDecoration(
+                  color: isSelected ? lightBackground : bgColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? primaryColor : transparent,
+                    width: 2,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                    BoxShadow(
+                      color: primaryColor.withValues(alpha:0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                      : [],
+                ),
+                alignment: Alignment.center,
+                child: child,
+              ),
+            );
+          },
         );
       },
     );

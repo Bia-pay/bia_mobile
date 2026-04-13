@@ -9,29 +9,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../../../app/utils/widgets/pin_field.dart';
 import '../../../../app/utils/router/route_constant.dart';
-import '../../auth/authcontroller/authcontroller.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/widgets/keypad.dart';
 
 class ForgotPinScreen extends ConsumerStatefulWidget {
-  final String phone; // ✅ Add this
+  final String phone;
 
   const ForgotPinScreen({super.key, required this.phone});
 
   @override
-  ConsumerState<ForgotPinScreen> createState() =>
-      _ForgotPinScreenState();
+  ConsumerState<ForgotPinScreen> createState() => _ForgotPinScreenState();
 }
 
-class _ForgotPinScreenState
-    extends ConsumerState<ForgotPinScreen> {
+class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
   final TextEditingController otpController = TextEditingController();
   int _secondsRemaining = 60;
   bool _canResend = false;
   Timer? _timer;
-  bool _isLoading = false;
   String pin = "";
-  bool showPinWarning = false;
 
   void _startTimer() {
     _secondsRemaining = 60;
@@ -51,13 +46,12 @@ class _ForgotPinScreenState
     _timer?.cancel();
     _startTimer();
   }
+
   @override
   void initState() {
     super.initState();
     _startTimer();
-    setState(() {
-      debugPrint(widget.phone);
-    });
+    debugPrint(widget.phone);
   }
 
   @override
@@ -66,12 +60,12 @@ class _ForgotPinScreenState
     _timer?.cancel();
     super.dispose();
   }
+
   void addDigit(String value) {
     if (pin.length >= 6) return;
     setState(() {
       pin += value;
-      otpController.text = pin; // update controller
-      showPinWarning = false;
+      otpController.text = pin;
     });
   }
 
@@ -79,237 +73,234 @@ class _ForgotPinScreenState
     if (pin.isEmpty) return;
     setState(() {
       pin = pin.substring(0, pin.length - 1);
-      otpController.text = pin; // update controller
+      otpController.text = pin;
     });
   }
-  // Future<void> _resendOtp() async {
-  //   setState(() => _isLoading = true);
-  //
-  //   final controller =
-  //   ref.read(dashboardControllerProvider.notifier);
-  //
-  //   final response =
-  //   await controller.verifyForgotPin(
-  //     context,
-  //
-  //   );
-  //
-  //   if (response != null && response.responseSuccessful) {
-  //     // Go to screen to set new PIN
-  //     context.pushNamed(RouteList.setTransactionPin);
-  //   }
-  //
-  //   setState(() => _isLoading = false);
-  //
-  //   if (response?.responseSuccessful == true) {
-  //     _restartTimer();
-  //
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('OTP resent successfully'),
-  //         backgroundColor: Colors.green,
-  //       ),
-  //     );
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text(
-  //           response?.responseMessage ?? 'Failed to resend OTP',
-  //         ),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
+
+  Future<void> _verifyOtp() async {
+    final otp = otpController.text.trim();
+    final controller = ref.read(dashboardControllerProvider.notifier);
+
+    final response = await controller.verifyForgotPin(
+      context,
+      otp,
+    );
+
+    if (!mounted) return;
+
+    if (response != null && response.responseSuccessful) {
+      context.pushReplacementNamed(RouteList.restoreNewPin);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response?.responseMessage ?? 'Verification failed'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700;
+    final isLargeScreen = screenHeight > 900;
+    final isTablet = screenWidth > 600;
+
+    // Adaptive spacing
+    final headerSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 30.h : 20.h);
+    final sectionSpacing = isSmallScreen ? 16.h : (isLargeScreen ? 30.h : 25.h);
+    final pinSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 40.h : 35.h);
+    final keypadSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 40.h : 30.h);
+
+    // Adaptive keypad height
+    final keypadHeight = isSmallScreen
+        ? 280.h
+        : (isLargeScreen ? 400.h : (isTablet ? 450.h : 420.h));
 
     final box = Hive.box('authBox');
     final phone = box.get('phone', defaultValue: 'User');
-   // final picture = box.get('picture');
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20.w,
-            15.h,
-            18.w,
-            MediaQuery.of(context).viewInsets.bottom + 0.h,
-          ),
-          child: SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start, // CENTERED
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    isTablet ? 40.w : 20.w,
+                    isSmallScreen ? 10.h : 15.h,
+                    isTablet ? 40.w : 18.w,
+                    MediaQuery.of(context).viewInsets.bottom + 16.h,
+                  ),
                   child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Container(
-                            padding: EdgeInsets.all(1.w),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 20.sp,
-                              color: Colors.black,
-                            ),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Back Button
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(isSmallScreen ? 8.w : 10.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_ios_new,
+                            size: isSmallScreen ? 18.sp : 20.sp,
+                            color: Colors.black,
                           ),
                         ),
-                        SizedBox(height: 20.h,),
-                        Text('Enter 6-digit code', style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      ),
+
+                      SizedBox(height: headerSpacing),
+
+                      // Title
+                      Text(
+                        'Enter 6-digit code',
+                        style: theme.textTheme.headlineLarge?.copyWith(
                           fontWeight: FontWeight.w600,
-                        )),
-                        SizedBox(height: 8.h),
-                        Text("We've sent a verification code to",   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp),
+                        ),
+                      ),
+
+                      SizedBox(height: 8.h),
+
+                      // Subtitle
+                      Text(
+                        "We've sent a verification code to",
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: borderColor,
                           fontWeight: FontWeight.w600,
-                        ),),
-                        SizedBox(height: 2.h),
-                        RichText(
+                          fontSize: isSmallScreen ? 12.sp : 14.sp,
+                        ),
+                      ),
+
+                      SizedBox(height: 2.h),
+
+                      // Phone number
+                      RichText(
+                        text: TextSpan(
+                          text: 'Your phone number ',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: borderColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isSmallScreen ? 12.sp : 14.sp,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: phone,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: primaryColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: isSmallScreen ? 12.sp : 14.sp,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: sectionSpacing),
+
+                      // PIN Field
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 40.w : 10.w,
+                          ),
+                          child: AppPinCodeField(
+                            controller: otpController,
+                            length: 6,
+                            fillColor: lightBackground,
+                            inactiveColor: pinBorderColor,
+                            activeColor: primaryColor,
+                            selectedColor: primaryColor,
+                            onCompleted: (code) => _verifyOtp(),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: pinSpacing),
+
+                      // Resend Code
+                      Center(
+                        child: RichText(
                           text: TextSpan(
-                            text: 'Your phone number ',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            text: "You didn't receive any code? ",
+                            style: theme.textTheme.bodyMedium?.copyWith(
                               color: borderColor,
                               fontWeight: FontWeight.w600,
+                              fontSize: isSmallScreen ? 12.sp : 14.sp,
                             ),
                             children: [
-                              TextSpan(
-                                text: phone,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12.spMin
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 25.h),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10.w),
-                          child: AppPinCodeField(
-                              controller: otpController,
-                              length: 6,
-                              fillColor: lightBackground,
-                              inactiveColor: pinBorderColor,
-                              activeColor: primaryColor,
-                              selectedColor: primaryColor,
-                              onCompleted: (code) async {
-                                final otp = otpController.text.trim();
-                                final controller =
-                                ref.read(dashboardControllerProvider.notifier);
-
-                                final response = await controller.verifyForgotPin(
-                                  context,
-                                  otp,
-                                );
-
-                                if (!mounted) return;
-
-                                if (response != null && response.responseSuccessful) {
-                                  context.pushReplacementNamed(RouteList.restoreNewPin);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        response?.responseMessage ?? 'failed',
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              }
-                          ),
-                        ),
-                        SizedBox(height: 15.h),
-                        Center(
-                          child: RichText(
-                            text: TextSpan(
-                              text: "You didn't received any code? ",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color:  borderColor,
-                                fontWeight: FontWeight.w600,
-                              ),                  children: [
                               TextSpan(
                                 text: _canResend
                                     ? 'Resend code'
                                     : 'Resend code in $_secondsRemaining s',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                style: theme.textTheme.bodyMedium?.copyWith(
                                   color: _canResend ? primaryColor : keyAColor,
                                   fontWeight: FontWeight.w600,
+                                  fontSize: isSmallScreen ? 12.sp : 14.sp,
                                 ),
                                 recognizer: TapGestureRecognizer()
-                                 // ..onTap = _canResend ? _resendOtp : null,
+                                  ..onTap = _canResend ? _restartTimer : null,
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: keypadSpacing),
+
+                      // Keypad
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: SizedBox(
+                          height: keypadHeight,
+                          child: CustomGridKeypad(
+                            onNumberPressed: addDigit,
+                            leftAction: ActionKey(
+                              child: SvgPicture.asset(
+                                'assets/svg/cancel.svg',
+                                height: isSmallScreen ? 18.h : 22.h,
+                                colorFilter: ColorFilter.mode(
+                                  primaryColor,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              backgroundColor: primaryColor.withOpacity(0.1),
+                              onTap: removeDigit,
+                            ),
+                            rightAction: ActionKey(
+                              child: Icon(
+                                Icons.arrow_forward,
+                                color: lightBackground,
+                                size: isSmallScreen ? 22.sp : 26.sp,
+                              ),
+                              backgroundColor: primaryColor,
+                              onTap: _verifyOtp,
                             ),
                           ),
                         ),
-                        SizedBox(height: 100.h),
-                      ]),
-                ),
-
-                SizedBox(
-                  height: 350.h,
-                  child: CustomGridKeypad(
-                    onNumberPressed: (value) {
-                      addDigit(value);
-                    },
-
-                    leftAction: ActionKey(
-                      child: SvgPicture.asset(
-                        'assets/svg/cancel.svg',
-                        height: 20.h,
-                        colorFilter: ColorFilter.mode(
-                          primaryColor,
-                          BlendMode.srcIn,
-                        ),
                       ),
-                      backgroundColor: primaryColor.withOpacity(0.1),
-                      onTap: removeDigit,
-                    ),
 
-                    rightAction: ActionKey(
-                      child:  Icon(Icons.arrow_forward, color: lightBackground),
-                      backgroundColor: primaryColor,
-                      onTap: () async {
-                        final otp = otpController.text.trim();
-                        final controller =
-                        ref.read(dashboardControllerProvider.notifier);
-
-                        final response = await controller.verifyForgotPin(
-                          context,
-                          otp,
-                        );
-
-                        if (!mounted) return;
-
-                        if (response != null && response.responseSuccessful) {
-                          context.pushReplacementNamed(RouteList.restoreNewPin);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                response?.responseMessage ?? 'failed',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                      SizedBox(height: isSmallScreen ? 8.h : 16.h),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

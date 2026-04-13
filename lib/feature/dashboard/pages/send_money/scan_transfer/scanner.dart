@@ -18,7 +18,9 @@ class QrScannerScreen extends ConsumerStatefulWidget {
 
 class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     with SingleTickerProviderStateMixin {
-  final MobileScannerController controller = MobileScannerController();
+  // Created lazily in initState so the controller only exists once
+  // the widget is fully attached to the tree.
+  late final MobileScannerController _scannerController;
 
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -30,9 +32,19 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
   String? verifiedName;
   String? verifiedAccount;
 
+  /// Guard: tracks whether the controller has already been disposed so we
+  /// never call dispose() twice (e.g. _goToAmountPage already stopped it).
+  bool _controllerDisposed = false;
+
   @override
   void initState() {
     super.initState();
+
+    // autoStart: false — we start the camera manually after the first frame
+    // so the controller is never restarted by MobileScanner's mount/unmount cycle.
+    _scannerController = MobileScannerController(
+      autoStart: false,
+    );
 
     _animationController = AnimationController(
       vsync: this,
@@ -40,19 +52,48 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     )..repeat(reverse: true);
 
     _animation = Tween<double>(begin: 0, end: 1).animate(_animationController);
+
+    // Start the camera after the first frame — avoids triggering it inside build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scannerController.start();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _safeDisposeScanner();
+    super.dispose();
+  }
+
+  /// Disposes the MobileScannerController at most once.
+  void _safeDisposeScanner() {
+    if (!_controllerDisposed) {
+      _controllerDisposed = true;
+      _scannerController.dispose();
+    }
   }
 
   void _goToAmountPage(BuildContext context) async {
     if (verifiedName == null || verifiedAccount == null) return;
 
-    await controller.stop();
-    controller.dispose();
+    // Stop scanning and dispose before navigating.
+    // Capture the router before the async gap to satisfy use_build_context_synchronously
+    final router = GoRouter.of(context);
 
-    context.pushReplacementNamed(
+    await _scannerController.stop();
+    _safeDisposeScanner();
+
+    if (!mounted) return;
+    final name = verifiedName;
+    final account = verifiedAccount;
+
+    router.pushReplacementNamed(
       RouteList.amountPage,
       extra: {
-        'recipientName': verifiedName,
-        'recipientAccount': verifiedAccount,
+        'recipientName': name,
+        'recipientAccount': account,
+        'controller': TextEditingController(),
       },
     );
   }
@@ -84,53 +125,48 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
           data.containsKey('account')) {
         final account = data['account'].toString();
 
-        final dashboardCtrl =
-        ref.read(dashboardControllerProvider.notifier);
-
+        final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
         final result = await dashboardCtrl.verifyAccount(context, account);
 
         if (result?.responseSuccessful == true) {
           final fullname =
               result?.responseBody?.user?.fullname ?? 'Unknown User';
 
-          setState(() {
-            isVerified = true;
-            verifiedName = fullname;
-            verifiedAccount = account;
-            _scanLocked = true;
-          });
+          // Stop scanning via the controller — do NOT remove MobileScanner from
+          // the tree, as that would teardown/reinit the Camera2 pipeline.
+          await _scannerController.stop();
 
-          await controller.stop();
+          if (mounted) {
+            setState(() {
+              isVerified = true;
+              verifiedName = fullname;
+              verifiedAccount = account;
+              _scanLocked = true;
+            });
+          }
           return;
         } else {
-          _showError(result?.responseMessage ?? "Verification failed");
+          _showError(result?.responseMessage ?? 'Verification failed');
         }
       } else {
-        _showError("Invalid QR Code");
+        _showError('Invalid QR Code');
       }
     } catch (e) {
-      _showError("Invalid QR Format");
+      _showError('Invalid QR Format');
     }
 
     _isProcessing = false;
   }
 
   void _showError(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
-  void dispose() {
-    controller.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     const double boxSize = 290;
 
@@ -156,11 +192,13 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                     borderRadius: BorderRadius.circular(20.r),
                     child: Stack(
                       children: [
-                        if (!_scanLocked)
-                          MobileScanner(
-                            controller: controller,
-                            onDetect: _onDetect,
-                          ),
+                    // MobileScanner stays in the tree at all times.
+                    // The controller's stop()/start() gates active scanning
+                    // without tearing down the Camera2 pipeline.
+                    MobileScanner(
+                      controller: _scannerController,
+                      onDetect: _onDetect,
+                    ),
 
                         // 🔵 Scanning line animation
                         AnimatedBuilder(
@@ -194,7 +232,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                       borderRadius: BorderRadius.circular(15.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 6.r,
                           offset: Offset(0, 3.h),
                         ),
@@ -209,7 +247,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                                 color: primaryColor, size: 22.sp),
                             SizedBox(width: 8.w),
                             Text(
-                              "Account Verified",
+                              'Account Verified',
                               style: theme.textTheme.titleMedium?.copyWith(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold),
@@ -217,10 +255,10 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                           ],
                         ),
                         SizedBox(height: 10.h),
-                        Text("Name: $verifiedName",
+                        Text('Name: $verifiedName',
                             style: theme.textTheme.bodyLarge
                                 ?.copyWith(fontWeight: FontWeight.w600)),
-                        Text("Account: $verifiedAccount",
+                        Text('Account: $verifiedAccount',
                             style: theme.textTheme.bodyMedium?.copyWith(
                                 color: darkSecondaryText)),
                         SizedBox(height: 15.h),
@@ -236,7 +274,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                             ),
                             onPressed: () => _goToAmountPage(context),
                             child: Text(
-                              "Send Money",
+                              'Send Money',
                               style: theme.textTheme.titleMedium?.copyWith(
                                   color: lightText,
                                   fontWeight: FontWeight.bold),
@@ -250,7 +288,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                 ],
 
                 Text(
-                  "Align the QR code inside the box",
+                  'Align the QR code inside the box',
                   style: theme.textTheme.bodyLarge
                       ?.copyWith(color: Colors.white70),
                   textAlign: TextAlign.center,
@@ -260,8 +298,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
 
                 // 🔦 TORCH BUTTON
                 ValueListenableBuilder<MobileScannerState>(
-                  valueListenable: controller,
-                  builder: (_, state, __) {
+                  valueListenable: _scannerController,
+                  builder: (context, state, child) {
                     final torch = state.torchState;
 
                     return IconButton(
@@ -272,7 +310,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                         size: 38.sp,
                         color: primaryColor,
                       ),
-                      onPressed: controller.toggleTorch,
+                      onPressed: _scannerController.toggleTorch,
                     );
                   },
                 ),

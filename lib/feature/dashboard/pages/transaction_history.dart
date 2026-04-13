@@ -16,8 +16,11 @@ class TransactionHistory extends ConsumerStatefulWidget {
 
 class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
   Future<void> _handleRefresh() async {
-    await ref.read(allTransactionsProvider.notifier).refresh();
-  }
+    final userId = ref.read(userIdProvider);
+
+    await ref
+        .read(allTransactionsProvider(userId).notifier)
+        .refresh();  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +28,9 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'User');
 
-    final asyncTx = ref.watch(allTransactionsProvider);
+    final userId = ref.watch(userIdProvider);
 
+    final asyncTx = ref.watch(allTransactionsProvider(userId));
     return Scaffold(
       backgroundColor: offWhiteBackground,
       body: SafeArea(

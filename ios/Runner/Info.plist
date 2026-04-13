@@ -30,6 +30,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs access to your camera to take profile pictures.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to the microphone for voice commands.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app requires access to speech recognition to process voice commands.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to update your profile picture.</string>
 	<key>UIApplicationSceneManifest</key>

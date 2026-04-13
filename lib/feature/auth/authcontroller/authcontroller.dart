@@ -7,10 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
+import '../../../app/utils/colors.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
+import '../../../core/easy_loading_config.dart';
 import '../../../core/local/transaction_cache.dart';
+import '../../../core/services/biometric_service.dart';
 import '../authrepo/repo.dart';
 import '../modal/reponse/response_modal.dart';
 
@@ -23,63 +26,69 @@ final authControllerProvider =
 class AuthController extends StateNotifier<AsyncValue<bool>> {
   AuthRepository authRepository;
   bool isLoading = false;
-  // bool get loading => _isLoading;
+
+  // Add this field to store the last response
+  ResponseModel? _lastResponse;
+
+  // Add this getter
+  ResponseModel? get lastResponse => _lastResponse;
+
   AuthController(this.authRepository) : super(const AsyncLoading());
 
   Future<bool> logIn(
-    BuildContext context,
-    String phone,
-    String password,
-  ) async {
+      BuildContext context,
+      String phone,
+      String password,
+      ) async {
     if (phone.isEmpty || password.isEmpty) {
       ToastHelper.showToast(
         context: context,
         message: "All fields are required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return false;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+      LoadingHelper.show('');
 
       Map<String, dynamic> body = {'phone': phone, 'password': password};
 
       final response = await authRepository.logIn(body);
-      EasyLoading.dismiss();
+
+      // Store the response
+      _lastResponse = response;
+
+      LoadingHelper.dismiss();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-
         return true;
       } else {
         ToastHelper.showToast(
           context: context,
           message: response.responseMessage,
           icon: Icons.info,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
         return false;
       }
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
+      // Clear last response on error
+      _lastResponse = null;
       ToastHelper.showToast(
         context: context,
         message: '$e',
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return false;
     }
   }
-
   Future<ResponseModel?> registerStepOne(
     BuildContext context,
     String phone,
@@ -89,23 +98,20 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         context: context,
         message: "Phone number required",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+           LoadingHelper.show('');
+
 
       final body = {"phone": phone};
       final ResponseModel response = await authRepository.registerStepOne(body);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (response.responseSuccessful) {
         EasyLoading.showToast(response.responseMessage);
@@ -121,19 +127,19 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.info,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
       }
 
       return response; //  <--- important
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -146,14 +152,14 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       EasyLoading.show(status: "Logging out...");
 
       final authBox = await Hive.openBox('authBox');
-      final token = authBox.get('token', defaultValue: '');
-      final biometricEnabled = authBox.get(
-        'login_biometric_enabled',
-        defaultValue: false,
-      );
+      final userId = authBox.get('userId', defaultValue: '');
+      final phone = authBox.get('phone', defaultValue: '');
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      final biometricEnabled = effectiveUserId.isNotEmpty 
+          && await BiometricService().isLoginEnabled(effectiveUserId);
 
       // Clear transaction cache and beneficiaries
-      final userId = authBox.get('userId', defaultValue: '');
       if (userId.isNotEmpty) {
         await TransactionCache.clearTransactions(userId);
         await clearRecentBeneficiaries(userId);
@@ -169,7 +175,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         await authBox.clear();
       }
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (!mounted) return;
 
@@ -182,11 +188,11 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         ),
       );
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Logout failed: $e"),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     }
@@ -208,18 +214,15 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         context: context,
         message: "Field is required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+           LoadingHelper.show('');
+
 
       Map<String, dynamic> body = {'otp': otp, 'phone': phone};
 
@@ -227,7 +230,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       final ResponseModel response = await authRepository.registerStepTwo(body);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (response.responseSuccessful) {
         ToastHelper.showToast(
@@ -242,19 +245,19 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.info,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
       }
 
       return response; //  IMPORTANT — return it to the UI
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -272,18 +275,15 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         context: context,
         message: "Field is required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+           LoadingHelper.show('');
+
 
       Map<String, dynamic> body = {
         'email': email,
@@ -297,7 +297,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         body,
       );
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (response.responseSuccessful) {
         ToastHelper.showToast(
@@ -312,19 +312,19 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.info,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
       }
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -341,18 +341,15 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         context: context,
         message: "Phone number is required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+           LoadingHelper.show('');
+
 
       Map<String, dynamic> body = {'phone': phone};
 
@@ -360,7 +357,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       final ResponseModel response = await authRepository.forgotPassword(body);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (response.responseSuccessful) {
         ToastHelper.showToast(
@@ -375,19 +372,19 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.info,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
       }
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -410,7 +407,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         context: context,
         message: "All fields are required.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -421,18 +418,15 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         context: context,
         message: "Passwords do not match.",
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
     }
 
     try {
-      EasyLoading.show(
-        indicator: const CustomLoader(),
-        maskType: EasyLoadingMaskType.black,
-        dismissOnTap: false,
-      );
+           LoadingHelper.show('');
+
 
       Map<String, dynamic> body = {
         'otp': otp,
@@ -445,7 +439,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       final ResponseModel response = await authRepository.resetPassword(body);
 
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
 
       if (response.responseSuccessful) {
         ToastHelper.showToast(
@@ -461,19 +455,19 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
           context: context,
           message: response.responseMessage,
           icon: Icons.info,
-          iconColor: Colors.red,
+          iconColor: errorColor,
           position: ToastPosition.top,
         );
       }
 
       return response;
     } catch (e) {
-      EasyLoading.dismiss();
+      LoadingHelper.dismiss();
       ToastHelper.showToast(
         context: context,
         message: 'Error: $e',
         icon: Icons.info,
-        iconColor: Colors.red,
+        iconColor: errorColor,
         position: ToastPosition.top,
       );
       return null;
@@ -491,7 +485,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   //       context: context,
   //       message: "All fields are required.",
   //       icon: Icons.info,
-  //       iconColor: Colors.red,
+  //       iconColor: errorColor,
   //       position: ToastPosition.top, // or ToastPosition.bottom
   //     );
   //     return;
@@ -506,7 +500,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   //     Map<String, dynamic> body = {'keyLabel': keyLabel};
   //     debugPrint(body);
   //     var response = await authRepository.signIn(body);
-  //     EasyLoading.dismiss();
+  //     LoadingHelper.dismiss();
   //     if (!mounted) return;
 
   //     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -517,18 +511,18 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   //         context: context,
   //         message: response.responseMessage,
   //         icon: Icons.info,
-  //         iconColor: Colors.red,
+  //         iconColor: errorColor,
   //         position: ToastPosition.top,
   //       );
   //     }
   //   } catch (e) {
   //     debugPrint('Error during sign-in: $e');
-  //     EasyLoading.dismiss();
+  //     LoadingHelper.dismiss();
   //     ToastHelper.showToast(
   //       context: context,
   //       message: '$e',
   //       icon: Icons.info,
-  //       iconColor: Colors.red,
+  //       iconColor: errorColor,
   //       position: ToastPosition.top, // or ToastPosition.bottom
   //     );
   //   }

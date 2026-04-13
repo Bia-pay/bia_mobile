@@ -137,15 +137,17 @@ class ConfirmationBottomSheet {
     final currencySymbol = Constants.nairaCurrencySymbol;
     final ValueNotifier<bool> useCashback = ValueNotifier<bool>(false);
     final Color primary = config.primaryColor ?? primaryColor;
-    final Color bgColor = config.backgroundColor ?? Colors.white;
+    final Color bgColor = config.backgroundColor ?? lightBackground;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: transparent,
       isDismissible: false,
       enableDrag: false,
       builder: (BuildContext modalContext) {
+        final theme = Theme.of(context);
+
         return WillPopScope(
           onWillPop: () async => false,
           child: AnimatedPadding(
@@ -173,7 +175,7 @@ class ConfirmationBottomSheet {
                           width: isSmallScreen(modalContext) ? 32.w : 40.w,
                           height: isSmallScreen(modalContext) ? 3.h : 4.h,
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
+                            color: grey300,
                             borderRadius: BorderRadius.circular(2.r),
                           ),
                         ),
@@ -185,7 +187,7 @@ class ConfirmationBottomSheet {
                         child: Text(
                           config.title,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith (
                             fontSize: r.titleFontSize,
                             fontWeight: FontWeight.w700,
                           ),
@@ -197,9 +199,9 @@ class ConfirmationBottomSheet {
                         Text(
                           config.subtitle!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith (
                             fontSize: r.subtitleFontSize,
-                            color: Colors.grey.shade600,
+                            color: grey600,
                           ),
                         ),
                       ],
@@ -227,8 +229,8 @@ class ConfirmationBottomSheet {
                           height: r.buttonHeight,
                           child: CustomButton(
                             buttonColor: primary,
-                            buttonTextColor: Colors.white,
-                            buttonName: 'Continue to PIN',
+                            buttonTextColor: lightBackground,
+                            buttonName: 'Continue',
                             //fontSize: r.bodyFontSize,
                             onPressed: () {
 
@@ -308,8 +310,8 @@ class ConfirmationBottomSheet {
                           },
                           child: Text(
                             config.cancelButtonText!,
-                            style: TextStyle(
-                              color: Colors.grey,
+                            style: theme.textTheme.bodyMedium?.copyWith (
+                              color: grey,
                               fontSize: r.bodyFontSize,
                             ),
                           ),
@@ -341,9 +343,9 @@ class ConfirmationBottomSheet {
       width: double.infinity,
       padding: EdgeInsets.all(r.cardPadding),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: grey50,
         borderRadius: BorderRadius.circular(r.cardRadius),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: grey200),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -359,13 +361,13 @@ class ConfirmationBottomSheet {
               r: r,
             ),
             if (i < config.details.length - 1)
-              Divider(height: r.mediumSpacing, color: Colors.grey.shade300),
+              Divider(height: r.mediumSpacing, color: grey300),
           ],
 
           // Cashback Bonus
           if (config.showCashback && config.cashbackAmount != null) ...[
             if (config.details.isNotEmpty)
-              Divider(height: r.mediumSpacing, color: Colors.grey.shade300),
+              Divider(height: r.mediumSpacing, color: grey300),
             _buildCashbackBonusRow(context, config.cashbackAmount!, r),
           ],
 
@@ -390,7 +392,7 @@ class ConfirmationBottomSheet {
 
           // Wallet Balance
           if (config.showWalletBalance) ...[
-            Divider(height: r.mediumSpacing, color: Colors.grey.shade300),
+            Divider(height: r.mediumSpacing, color: grey300),
             _buildWalletBalanceRow(
               context,
               balance: config.walletBalance ?? _getWalletBalance().toStringAsFixed(2),
@@ -422,6 +424,8 @@ class ConfirmationBottomSheet {
         bool isHighlighted = false,
         required _ResponsiveHelper r,
       }) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: r.smallSpacing / 2),
       child: Row(
@@ -432,8 +436,8 @@ class ConfirmationBottomSheet {
             flex: 2,
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.grey.shade600,
+              style: theme.textTheme.bodyMedium?.copyWith (
+                color: grey600,
                 fontSize: r.bodyFontSize,
               ),
             ),
@@ -461,8 +465,8 @@ class ConfirmationBottomSheet {
                   child: Text(
                     value,
                     textAlign: TextAlign.right,
-                    style: TextStyle(
-                      color: isHighlighted ? Colors.green.shade600 : Colors.black87,
+                    style: theme.textTheme.bodyMedium?.copyWith (
+                      color: isHighlighted ? primaryGreenColor600 : transparentBlack87,
                       fontSize: r.bodyFontSize,
                       fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
                     ),
@@ -482,6 +486,8 @@ class ConfirmationBottomSheet {
       String value,
       _ResponsiveHelper r,
       ) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: r.smallSpacing),
       child: Row(
@@ -489,8 +495,8 @@ class ConfirmationBottomSheet {
         children: [
           Text(
             value,
-            style: TextStyle(
-              color: Colors.green.shade600,
+            style: theme.textTheme.bodyMedium?.copyWith (
+              color: primaryGreenColor600,
               fontWeight: FontWeight.bold,
               fontSize: r.bodyFontSize,
             ),
@@ -511,6 +517,8 @@ class ConfirmationBottomSheet {
         required Color primaryColor,
         required _ResponsiveHelper r,
       }) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: r.smallSpacing),
       child: Row(
@@ -520,7 +528,7 @@ class ConfirmationBottomSheet {
             child: Text(
               title,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade600,
+                color: grey600,
                 fontSize: r.bodyFontSize,
               ),
               overflow: TextOverflow.ellipsis,
@@ -533,8 +541,8 @@ class ConfirmationBottomSheet {
               Text(
                 value,
                 style: bonus
-                    ? TextStyle(
-                  color: Colors.green.shade600,
+                    ? theme.textTheme.bodyMedium?.copyWith (
+                  color: primaryGreenColor600,
                   fontWeight: FontWeight.bold,
                   fontSize: r.bodyFontSize,
                 )
@@ -555,7 +563,7 @@ class ConfirmationBottomSheet {
                     width: r.toggleWidth,
                     height: r.toggleHeight,
                     decoration: BoxDecoration(
-                      color: isToggled ? primaryColor : Colors.grey.shade300,
+                      color: isToggled ? primaryColor : grey300,
                       borderRadius: BorderRadius.circular(r.toggleHeight / 2),
                     ),
                     child: AnimatedAlign(
@@ -568,7 +576,7 @@ class ConfirmationBottomSheet {
                         height: r.toggleKnobSize,
                         margin: EdgeInsets.symmetric(horizontal: 2.w),
                         decoration: const BoxDecoration(
-                          color: Colors.white,
+                          color: lightBackground,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -596,7 +604,7 @@ class ConfirmationBottomSheet {
         horizontal: r.cardPadding,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: grey300),
         borderRadius: BorderRadius.circular(r.buttonRadius),
       ),
       child: Row(
@@ -614,7 +622,7 @@ class ConfirmationBottomSheet {
                 Text(
                   'Wallet Balance',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: grey600,
                     fontSize: r.smallFontSize,
                   ),
                 ),
