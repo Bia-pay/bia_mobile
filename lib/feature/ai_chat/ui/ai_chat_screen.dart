@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../../app/utils/colors.dart';
 import '../../../../feature/dashboard/pages/send_money/input_transfer/transaction_pin.dart';
@@ -26,6 +29,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _focusNode = FocusNode();
 
   late stt.SpeechToText _speech;
+  late AudioRecorder _recorder; 
   bool _isListening = false;
   bool _hasSpeechInit = false;
 
@@ -33,7 +37,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
+    _recorder = AudioRecorder();
     _initSpeech();
+    
+    // Initialize chat (loads language and adds welcome message)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(aiChatControllerProvider.notifier).initializeChat();
+    });
     
     _textCtrl.addListener(() {
       setState(() {});
@@ -53,6 +63,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   void _toggleListening() async {
+    final language = ref.read(aiChatControllerProvider).language;
+    
+    if (language == 'hausa') {
+      await _toggleHausaListening();
+      return;
+    }
+
     if (!_hasSpeechInit) {
       _hasSpeechInit = await _speech.initialize();
       if (!_hasSpeechInit) return;
@@ -80,11 +97,38 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
+  Future<void> _toggleHausaListening() async {
+    if (_isListening) {
+      setState(() => _isListening = false);
+      final path = await _recorder.stop();
+      if (path != null) {
+        if (!mounted) return;
+        _scrollToBottom();
+        await ref.read(aiChatControllerProvider.notifier).processHausaAudio(context, path);
+      }
+    } else {
+      if (await _recorder.hasPermission()) {
+        final tempDir = await getTemporaryDirectory();
+        final path = p.join(tempDir.path, 'hausa_speech_${DateTime.now().millisecondsSinceEpoch}.wav');
+        
+        const config = RecordConfig(
+          encoder: AudioEncoder.wav,
+          sampleRate: 16000,
+          numChannels: 1,
+        );
+
+        await _recorder.start(config, path: path);
+        setState(() => _isListening = true);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _textCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
+    _recorder.dispose(); // Add this
     super.dispose();
   }
 

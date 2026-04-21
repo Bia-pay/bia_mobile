@@ -46,4 +46,28 @@ class ChatMessage {
       payload: payload ?? this.payload,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'role': role.name,
+      'text': text,
+      'timestamp': timestamp.toIso8601String(),
+      'status': status.name,
+      'type': type.name,
+      'payload': payload,
+    };
+  }
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      id: json['id'] as String?,
+      role: MessageRole.values.byName(json['role'] as String),
+      text: json['text'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      status: MessageStatus.values.byName(json['status'] as String),
+      type: MessageType.values.byName(json['type'] as String),
+      payload: json['payload'] as Map<String, dynamic>?,
+    );
+  }
 }

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:hive/hive.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../../core/constants.dart';

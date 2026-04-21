@@ -1,21 +1,24 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:flutter/material.dart';
+
+import '../controller/ai_chat_controller.dart';
 
 import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/router/route_constant.dart';
 
 /// Shown only the FIRST time a user taps "BIA AI".
 /// Saves the chosen language to Hive so it never shows again.
-class BiaLanguageOnboarding extends StatefulWidget {
+class BiaLanguageOnboarding extends ConsumerStatefulWidget {
   const BiaLanguageOnboarding({super.key});
 
   @override
-  State<BiaLanguageOnboarding> createState() => _BiaLanguageOnboardingState();
+  ConsumerState<BiaLanguageOnboarding> createState() => _BiaLanguageOnboardingState();
 }
 
-class _BiaLanguageOnboardingState extends State<BiaLanguageOnboarding>
+class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
     with SingleTickerProviderStateMixin {
   String? _selected;
   late AnimationController _entryCtrl;
@@ -69,8 +72,14 @@ class _BiaLanguageOnboardingState extends State<BiaLanguageOnboarding>
 
   Future<void> _confirm() async {
     if (_selected == null) return;
+    
+    // 1. Save and apply language via controller
+    await ref.read(aiChatControllerProvider.notifier).updateLanguage(_selected!);
+    
+    // 2. Also save to a global flag so HomePage knows to skip onboarding next time
     final box = await Hive.openBox('appPrefs');
-    await box.put('biaAiLanguage', _selected);
+    await box.put('biaAiLanguageSelected', true);
+
     if (mounted) {
       context.pushNamed(RouteList.aiChat);
     }

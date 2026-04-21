@@ -311,9 +311,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: InkWell(
         onTap: () async {
           final box = await Hive.openBox('appPrefs');
-          final savedLang = box.get('biaAiLanguage');
+          final hasSelectedLang = box.get('biaAiLanguageSelected', defaultValue: false) as bool;
           if (!context.mounted) return;
-          if (savedLang == null) {
+          if (!hasSelectedLang) {
             // First time – show language picker
             context.pushNamed(RouteList.biaLanguageOnboarding);
           } else {

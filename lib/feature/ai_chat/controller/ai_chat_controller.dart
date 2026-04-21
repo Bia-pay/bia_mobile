@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:hive/hive.dart';
 import 'package:audioplayers/audioplayers.dart';
 
@@ -12,6 +11,9 @@ import '../model/bia_strings.dart';
 import '../model/chat_message.dart';
 import '../service/eleven_labs_service.dart';
 import '../service/llm_service.dart';
+import '../service/ai_chat_persistence_service.dart';
+import '../service/hausa_asr_service.dart';
+import '../service/hausa_tts_service.dart';
 
 // ── Conversation step ─────────────────────────────────────────────────────────
 enum AiChatStep {
@@ -91,7 +93,19 @@ final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  return LlmService(apiKey: "AIzaSyAF0soulKyN5mTGjEPfeIdFz9YSo4C_auM");
+  return LlmService(apiKey: "AIzaSyDUpmLBPmubVgLO70skYcZjys2ST3UzXxI");
+});
+
+final aiChatPersistenceServiceProvider = Provider<AiChatPersistenceService>((ref) {
+  return AiChatPersistenceService();
+});
+
+final hausaAsrServiceProvider = Provider<HausaAsrService>((ref) {
+  return HausaAsrService();
+});
+
+final hausaTtsServiceProvider = Provider<HausaTtsService>((ref) {
+  return HausaTtsService();
 });
 
 final aiChatControllerProvider =
@@ -99,7 +113,17 @@ final aiChatControllerProvider =
   final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
   final elevenLabsService = ref.read(elevenLabsServiceProvider);
   final llmService = ref.read(llmServiceProvider);
-  return AiChatController(dashboardCtrl, elevenLabsService, llmService);
+  final persistenceService = ref.read(aiChatPersistenceServiceProvider);
+  final hausaAsrService = ref.read(hausaAsrServiceProvider);
+  final hausaTtsService = ref.read(hausaTtsServiceProvider);
+  return AiChatController(
+    dashboardCtrl, 
+    elevenLabsService, 
+    llmService, 
+    persistenceService,
+    hausaAsrService,
+    hausaTtsService
+  );
 });
 
 // ── Controller ────────────────────────────────────────────────────────────────
@@ -107,28 +131,71 @@ class AiChatController extends StateNotifier<AiChatState> {
   final DashboardController _dashboard;
   final ElevenLabsService _elevenLabsService;
   final LlmService _llmService;
+  final AiChatPersistenceService _persistence;
+  final HausaAsrService _hausaAsrService;
+  final HausaTtsService _hausaTtsService;
   final _resolver = BeneficiaryResolver();
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  AiChatController(this._dashboard, this._elevenLabsService, this._llmService) : super(const AiChatState()) {
+  AiChatController(
+    this._dashboard, 
+    this._elevenLabsService, 
+    this._llmService, 
+    this._persistence,
+    this._hausaAsrService,
+    this._hausaTtsService,
+  ) : super(const AiChatState()) {
     _init();
   }
 
   Future<void> _init() async {
     await _applyStoredLanguage();
-    await _addWelcome();
   }
 
   Future<void> _applyStoredLanguage() async {
     try {
-      final box = await Hive.openBox('appPrefs');
-      final lang = box.get('biaAiLanguage', defaultValue: 'english') as String;
-      _llmService.updateLanguage(lang);
-      state = state.copyWith(language: lang);
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '') as String;
+      final phone = authBox.get('phone', defaultValue: '') as String;
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      if (effectiveUserId.isNotEmpty) {
+        // Load saved messages
+        final messages = await _persistence.loadMessages(effectiveUserId);
+        
+        // Load saved language
+        final lang = await _persistence.loadUserLanguage(effectiveUserId) ?? 'english';
+        
+        _llmService.updateLanguage(lang);
+        state = state.copyWith(
+          language: lang,
+          messages: messages,
+        );
+      }
     } catch (_) {}
   }
 
-  void updateLanguage(String language) {
+  /// Explicitly initialize chat (called from UI when screen opens)
+  Future<void> initializeChat() async {
+    // 1. Ensure language is loaded
+    await _applyStoredLanguage();
+    
+    // 2. If no messages, add welcome
+    if (state.messages.isEmpty) {
+      await _addWelcome();
+    }
+  }
+
+  Future<void> updateLanguage(String language) async {
+    final authBox = await Hive.openBox('authBox');
+    final userId = authBox.get('userId', defaultValue: '') as String;
+    final phone = authBox.get('phone', defaultValue: '') as String;
+    final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+    if (effectiveUserId.isNotEmpty) {
+      await _persistence.saveUserLanguage(effectiveUserId, language);
+    }
+
     _llmService.updateLanguage(language);
     state = state.copyWith(language: language);
   }
@@ -149,22 +216,26 @@ class AiChatController extends StateNotifier<AiChatState> {
   }
 
   Future<void> _playTts(String text) async {
-    final cleanText = text
-        .replaceAll('👋', '')
-        .replaceAll('💰', '')
-        .replaceAll('✅', '')
-        .replaceAll('🔐', '')
-        .replaceAll('🔍', '')
-        .trim();
+    try {
+      if (text.isEmpty) return;
 
-    final bytes = await _elevenLabsService.generateSpeech(
-      text: cleanText,
-      voiceId: state.selectedVoice,
-    );
+      List<int>? audioBytes;
 
-    if (bytes != null) {
-      await _audioPlayer.play(BytesSource(Uint8List.fromList(bytes)));
-    }
+      if (state.language == 'hausa') {
+        // Use custom Hugging Face Hausa TTS
+        audioBytes = await _hausaTtsService.generateSpeech(text);
+      } else {
+        // Use ElevenLabs for English/Pidgin (Hoyeen voice)
+        audioBytes = await _elevenLabsService.generateSpeech(
+          text: text,
+          voiceId: state.selectedVoice, // Hoyeen
+        );
+      }
+
+      if (audioBytes != null) {
+        await _audioPlayer.play(BytesSource(Uint8List.fromList(audioBytes)));
+      }
+    } catch (_) {}
   }
 
   Future<void> _addWelcome() async {
@@ -176,12 +247,12 @@ class AiChatController extends StateNotifier<AiChatState> {
   }
 
   void _addUser(String text) {
-    state = state.copyWith(
-      messages: [
-        ...state.messages,
-        ChatMessage(role: MessageRole.user, text: text),
-      ],
-    );
+    final updated = [
+      ...state.messages,
+      ChatMessage(role: MessageRole.user, text: text),
+    ];
+    state = state.copyWith(messages: updated);
+    _persistState();
   }
 
   void _addAssistant(
@@ -190,21 +261,34 @@ class AiChatController extends StateNotifier<AiChatState> {
     Map<String, dynamic>? payload,
     bool playAudio = true,
   }) {
-    state = state.copyWith(
-      messages: [
-        ...state.messages,
-        ChatMessage(
-          role: MessageRole.assistant,
-          text: text,
-          type: type,
-          payload: payload,
-        ),
-      ],
-    );
+    final updated = [
+      ...state.messages,
+      ChatMessage(
+        role: MessageRole.assistant,
+        text: text,
+        type: type,
+        payload: payload,
+      ),
+    ];
+    state = state.copyWith(messages: updated);
 
     if (playAudio) {
       _playTts(text);
     }
+    _persistState();
+  }
+
+  Future<void> _persistState() async {
+    try {
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId', defaultValue: '') as String;
+      final phone = authBox.get('phone', defaultValue: '') as String;
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      if (effectiveUserId.isNotEmpty) {
+        await _persistence.saveMessages(effectiveUserId, state.messages);
+      }
+    } catch (_) {}
   }
 
   void _setProcessing(bool v) => state = state.copyWith(isProcessing: v);
@@ -259,6 +343,22 @@ class AiChatController extends StateNotifier<AiChatState> {
         break;
     }
 
+    _setProcessing(false);
+  }
+
+  Future<void> processHausaAudio(BuildContext context, String filePath) async {
+    _setProcessing(true);
+    
+    final transcription = await _hausaAsrService.transcribe(filePath);
+    if (transcription == null || transcription.isEmpty) {
+      final aiMsg = await _llmService.sendContextualMessage('I could not hear the user clearly. Ask them to repeat in Hausa.');
+      _addAssistant(aiMsg.chatResponse);
+      _setProcessing(false);
+      return;
+    }
+
+    // Process the transcribed text as a normal user input
+    await handleUserInput(context, transcription);
     _setProcessing(false);
   }
 

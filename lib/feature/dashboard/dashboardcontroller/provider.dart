@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:hive/hive.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../dashboard_repo/repo.dart';
