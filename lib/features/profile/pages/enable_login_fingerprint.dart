@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../core/services/biometric_service.dart';
+import '../../../app/utils/custom_loader.dart';
 
 class EnableLoginFingerprint extends ConsumerStatefulWidget {
   const EnableLoginFingerprint({super.key});
@@ -218,14 +219,7 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
                   elevation: 0,
                 ),
                 child: _isLoading
-                    ? SizedBox(
-                        height: 20.h,
-                        width: 20.w,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                    ? const CustomLoader(size: 20)
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,6 +34,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   late AudioRecorder _recorder; 
   bool _isListening = false;
   bool _hasSpeechInit = false;
+  StreamSubscription<Amplitude>? _amplitudeSub;
+  DateTime? _lastVoiceTime;
+
 
   @override
   void initState() {
@@ -99,13 +104,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   Future<void> _toggleHausaListening() async {
     if (_isListening) {
-      setState(() => _isListening = false);
-      final path = await _recorder.stop();
-      if (path != null) {
-        if (!mounted) return;
-        _scrollToBottom();
-        await ref.read(aiChatControllerProvider.notifier).processHausaAudio(context, path);
-      }
+      await _stopHausaRecording();
     } else {
       if (await _recorder.hasPermission()) {
         final tempDir = await getTemporaryDirectory();
@@ -118,17 +117,50 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         );
 
         await _recorder.start(config, path: path);
+        
+        _lastVoiceTime = DateTime.now();
         setState(() => _isListening = true);
+
+        // 🟢 MONITOR AMPLITUDE FOR SILENCE DETECTION
+        _amplitudeSub = _recorder.onAmplitudeChanged(const Duration(milliseconds: 100)).listen((amp) async {
+          if (amp.current > -40) {
+            _lastVoiceTime = DateTime.now();
+          } else {
+            if (_lastVoiceTime != null && 
+                DateTime.now().difference(_lastVoiceTime!) > const Duration(milliseconds: 1500)) {
+              debugPrint('🎙️ Auto-stopping Hausa recording due to silence...');
+              await _stopHausaRecording();
+            }
+          }
+        });
       }
     }
   }
+
+  Future<void> _stopHausaRecording() async {
+    if (!_isListening) return;
+    
+    setState(() => _isListening = false);
+    await _amplitudeSub?.cancel();
+    _amplitudeSub = null;
+    
+    final path = await _recorder.stop();
+    if (path != null) {
+      if (!mounted) return;
+      _scrollToBottom();
+      await ref.read(aiChatControllerProvider.notifier).processHausaAudio(context, path);
+    }
+  }
+
 
   @override
   void dispose() {
     _textCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
+    _amplitudeSub?.cancel();
     _recorder.dispose(); // Add this
+
     super.dispose();
   }
 

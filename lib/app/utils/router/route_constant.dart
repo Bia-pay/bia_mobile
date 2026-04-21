@@ -71,4 +71,7 @@ class RouteList {
   static const String transactionDetailsScreen = 'transactionDetailsScreen';
   static const String aiChat = '/ai-chat';
   static const String biaLanguageOnboarding = '/bia-language-onboarding';
+  static const String userSettings = '/user-settings';
+  static const String languageSettings = '/language-settings';
+  static const String autoLogoutSettings = '/auto-logout-settings';
 }

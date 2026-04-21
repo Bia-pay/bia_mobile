@@ -151,6 +151,13 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
   final DashboardRepository repository;
   final String userId;
   bool _isFetching = false;
+  int _currentPage = 1;
+  bool _hasNextPage = true;
+  final int _pageSize = 20;
+
+  int get currentPage => _currentPage;
+  bool get hasNextPage => _hasNextPage;
+  bool get hasPreviousPage => _currentPage > 1;
 
   AllTransactionsNotifier(this.repository, this.userId)
       : super(const AsyncValue.loading()) {
@@ -174,42 +181,49 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
       state = const AsyncValue.loading();
     }
 
-    // 🔥 ALWAYS FETCH FRESH DATA FOR NEW USER
-    await _fetchFresh(silent: cached.isNotEmpty);
+    // 🔥 ALWAYS FETCH FRESH DATA FOR NEW USER (Page 1)
+    _currentPage = 1;
+    _hasNextPage = true;
+    await _fetchFresh(silent: cached.isNotEmpty, page: 1);
   }
 
-  Future<void> _fetchFresh({bool silent = false}) async {
+  Future<void> _fetchFresh({bool silent = false, int page = 1}) async {
     if (_isFetching) return;
+    
+    if (!silent) {
+      state = const AsyncValue.loading();
+    }
+    
     _isFetching = true;
 
     try {
-      print('📡 Fetching all transactions from API...');
-      final response = await repository.getTransactions();
+      print('📡 Fetching transactions (Page $page) from API...');
+      final response = await repository.getTransactions(page: page, limit: _pageSize);
 
       if (response.responseSuccessful) {
         final fresh = response.transactions;
-        print('✅ Received ${fresh.length} transactions from API');
+        print('✅ Received ${fresh.length} transactions for page $page');
 
-        // Merge with existing
-        final Map<int, TransactionItem> map = {};
-        for (var tx in state.value ?? []) map[tx.id] = tx;
-        for (var tx in fresh) map[tx.id] = tx;
+        _hasNextPage = fresh.length == _pageSize;
+        _currentPage = page;
 
-        // Sort by date
-        final merged = map.values.toList()
+        // DISCRETE PAGINATION: Replace current list with fresh page data
+        // Sort by date (usually the API should handle this, but for safety)
+        final sorted = fresh
           ..sort((a, b) {
             if (a.createdAt == null || b.createdAt == null) return 0;
             return b.createdAt!.compareTo(a.createdAt!);
           });
 
-        // Limit to 1000 transactions
-        final limited = merged.take(1000).toList();
-
-        state = AsyncValue.data(limited);
-        await TransactionCache.saveTransactions(userId, limited);
-        print('💾 Saved ${limited.length} transactions to cache');
+        state = AsyncValue.data(sorted);
+        
+        // Cache only page 1 for the dashboard preview
+        if (page == 1) {
+          await TransactionCache.saveTransactions(userId, sorted.take(20).toList());
+          print('💾 Cached top 20 transactions');
+        }
       } else {
-        if (!silent && state.value == null) {
+        if (!silent || state.value == null) {
           state = AsyncValue.error(
             'Failed to load transactions',
             StackTrace.current,
@@ -217,8 +231,8 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
         }
       }
     } catch (e, st) {
-      print('❌ Error fetching all transactions: $e');
-      if (!silent && (state.value == null || state.value!.isEmpty)) {
+      print('❌ Error fetching transactions: $e');
+      if (!silent || (state.value == null || state.value!.isEmpty)) {
         state = AsyncValue.error(e, st);
       }
     } finally {
@@ -226,9 +240,21 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
     }
   }
 
+  Future<void> nextPage() async {
+    if (_isFetching || !_hasNextPage) return;
+    await _fetchFresh(silent: false, page: _currentPage + 1);
+  }
+
+  Future<void> previousPage() async {
+    if (_isFetching || _currentPage <= 1) return;
+    await _fetchFresh(silent: false, page: _currentPage - 1);
+  }
+
   Future<void> refresh() async {
     print('🔄 Manual refresh all transactions');
-    await _fetchFresh(silent: false);
+    _currentPage = 1;
+    _hasNextPage = true;
+    await _fetchFresh(silent: false, page: 1);
   }
 }
 

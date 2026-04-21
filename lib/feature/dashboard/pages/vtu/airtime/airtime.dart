@@ -2,7 +2,6 @@ import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -364,11 +363,12 @@ class _CardTwoState extends ConsumerState<CardTwo> {
 
     setState(() => _isVerifying = false);
 
-    if (result != null) {
+    if (result != null && result.responseSuccessful) {
       debugPrint('✅ Phone verified');
     } else {
       debugPrint('❌ Phone verification failed');
     }
+
   }
 
   @override
@@ -478,7 +478,7 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                 //       child: SizedBox(
                 //         width: isSmall ? 16.w : 20.w,
                 //         height: isSmall ? 16.h : 20.h,
-                //         child: CircularProgressIndicator(
+                //         child: CustomLoader(size: 20),
                 //           strokeWidth: 2,
                 //           valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                 //         ),

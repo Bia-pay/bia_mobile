@@ -15,6 +15,7 @@ import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
+import '../../../../../app/utils/custom_loader.dart';
 
 class SuccessScreen extends StatefulWidget {
   final String? amount;
@@ -508,15 +509,9 @@ class _ActionButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isLoading)
-                SizedBox(
-                  height: 18.w,
-                  width: 18.w,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      onTap == null ? Colors.grey : darkBackground,
-                    ),
-                  ),
+                CustomLoader(
+                  size: 18,
+                  color: onTap == null ? grey400 : primaryColor,
                 )
               else
                 Icon(

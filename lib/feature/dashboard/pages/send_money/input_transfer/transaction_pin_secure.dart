@@ -11,6 +11,7 @@ import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../core/services/biometric_service.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/keypad.dart';
+import '../../../../../app/utils/custom_loader.dart';
 
 class TransactionPinSecure extends ConsumerStatefulWidget {
   final String recipientAccount;
@@ -321,14 +322,7 @@ class _TransactionPinSecureState extends ConsumerState<TransactionPinSecure> {
                 rightAction: ActionKey(
                   child: _hasBiometric && _biometricEnabled
                       ? (_isAuthenticating
-                          ? SizedBox(
-                              width: 30.w,
-                              height: 30.h,
-                              child: CircularProgressIndicator(
-                                color: primaryColor,
-                                strokeWidth: 2,
-                              ),
-                            )
+                          ? const CustomLoader(size: 30)
                           : SvgPicture.asset(
                               fingerPrint,
                               height: 75.h,

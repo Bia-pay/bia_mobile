@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../app/utils/u_popup.dart';
 import '../services/biometric_service.dart';
 
 /// Temporary debug widget to test biometric service
@@ -63,40 +65,35 @@ class BiometricDebugWidget extends StatelessWidget {
               onPressed: () async {
                 final info = await _getDebugInfo();
                 if (context.mounted) {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Biometric Debug'),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('User ID: ${info['userId']}'),
-                            Text('Phone: ${info['phone']}'),
-                            Text('Effective ID: ${info['effectiveUserId']}'),
-                            const Divider(),
-                            Text('Login Enabled: ${info['loginEnabled']}'),
-                            Text('Payment Enabled: ${info['paymentEnabled']}'),
-                            const Divider(),
-                            Text('Has Login Password: ${info['hasLoginPassword']}'),
-                            Text('Has Transaction PIN: ${info['hasTransactionPin']}'),
-                            const Divider(),
-                            Text('Raw Login Pref: ${info['rawLoginPref']}'),
-                            Text('Raw Payment Pref: ${info['rawPaymentPref']}'),
-                            const Divider(),
-                            const Text('Pref Keys:', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ...((info['allPrefsKeys'] as List).map((k) => Text('  - $k'))),
-                          ],
-                        ),
+                  UPopup.show(
+                    context,
+                    type: UPopupType.info,
+                    title: 'Biometric Debug',
+                    message: 'Current states and preferences for the active user session.',
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('User ID: ${info['userId']}', style: TextStyle(fontSize: 12.sp)),
+                          Text('Phone: ${info['phone']}', style: TextStyle(fontSize: 12.sp)),
+                          Text('Effective ID: ${info['effectiveUserId']}', style: TextStyle(fontSize: 12.sp)),
+                          const Divider(),
+                          Text('Login Enabled: ${info['loginEnabled']}', style: TextStyle(fontSize: 12.sp)),
+                          Text('Payment Enabled: ${info['paymentEnabled']}', style: TextStyle(fontSize: 12.sp)),
+                          const Divider(),
+                          Text('Has Login Password: ${info['hasLoginPassword']}', style: TextStyle(fontSize: 12.sp)),
+                          Text('Has Transaction PIN: ${info['hasTransactionPin']}', style: TextStyle(fontSize: 12.sp)),
+                          const Divider(),
+                          Text('Raw Login Pref: ${info['rawLoginPref']}', style: TextStyle(fontSize: 12.sp)),
+                          Text('Raw Payment Pref: ${info['rawPaymentPref']}', style: TextStyle(fontSize: 12.sp)),
+                          const Divider(),
+                          const Text('Pref Keys:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ...((info['allPrefsKeys'] as List).map((k) => Text('  - $k', style: TextStyle(fontSize: 10.sp)))),
+                        ],
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Close'),
-                        ),
-                      ],
                     ),
+                    confirmLabel: 'Close',
                   );
                 }
               },

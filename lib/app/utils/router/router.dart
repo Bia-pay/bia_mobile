@@ -28,6 +28,8 @@ import '../../../feature/dashboard/pages/send_money/to_bank/transfer_to_banks.da
 import '../../../feature/dashboard/pages/send_money/top_up/add_money.dart';
 import '../../../feature/dashboard/pages/send_money/top_up/topup_amount.dart';
 import '../../../feature/dashboard/pages/transaction_details.dart';
+import '../../../feature/dashboard/model/recent_transaction.dart';
+
 import '../../../feature/settings/presentation/change_pin.dart';
 import '../../../feature/settings/presentation/confirm_SetPin.dart';
 import '../../../feature/settings/presentation/forgot_pin.dart';
@@ -40,9 +42,13 @@ import '../../../feature/dashboard/pages/vtu/utility/utility.dart';
 import '../../../feature/settings/presentation/change_password.dart';
 import '../../../feature/settings/presentation/loginSettings/enable_login_fingerpint.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
+import '../../../feature/settings/presentation/user_settings.dart';
+import '../../../feature/settings/presentation/language_settings.dart';
 import '../../../features/profile/pages/enable_login_fingerprint.dart';
 import '../../socket/socket_test_page.dart';
 import 'keyboard_observer.dart';
+import '../../../feature/settings/presentation/auto_logout_settings.dart';
+
 export '../../../feature/settings/presentation/change_password.dart'
     show NewPaymentPin;
 void navigateWithUnfocus(BuildContext context, String route, {Object? extra}) {
@@ -161,7 +167,8 @@ class AppRouter {
       ),  GoRoute(
         path: '/transactionDetailsScreen',
         name: RouteList.transactionDetailsScreen,
-        builder: (context, state) => TransactionDetailsScreen(transaction: state.extra as Transaction),
+        builder: (context, state) => TransactionDetailsScreen(transaction: state.extra as TransactionItem),
+
       ),
       GoRoute(
         path: '/amount',
@@ -331,6 +338,21 @@ class AppRouter {
         path: RouteList.biaLanguageOnboarding,
         name: RouteList.biaLanguageOnboarding,
         builder: (context, state) => const BiaLanguageOnboarding(),
+      ),
+      GoRoute(
+        path: RouteList.userSettings,
+        name: RouteList.userSettings,
+        builder: (context, state) => const UserSettingsScreen(),
+      ),
+      GoRoute(
+        path: RouteList.languageSettings,
+        name: RouteList.languageSettings,
+        builder: (context, state) => const LanguageSettingsScreen(),
+      ),
+      GoRoute(
+        path: RouteList.autoLogoutSettings,
+        name: RouteList.autoLogoutSettings,
+        builder: (context, state) => const AutoLogoutSettingsScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

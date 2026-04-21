@@ -35,19 +35,51 @@ class TransactionItem {
       }
     }
 
-    // Handle both API format (nested sender/receiver) and cached format (flat senderName/receiverName)
+    // Handle both API format (nested sender/receiver) and flat formats (bank transfers, VTU)
     String? senderName;
     if (json['sender'] != null && json['sender'] is Map) {
       senderName = json['sender']['fullname'];
-    } else if (json['senderName'] != null) {
-      senderName = json['senderName'];
+    } else {
+      senderName = json['senderName'] ?? 
+                   json['sourceAccountName'] ?? 
+                   json['sender_name'];
     }
 
     String? receiverName;
     if (json['receiver'] != null && json['receiver'] is Map) {
       receiverName = json['receiver']['fullname'];
-    } else if (json['receiverName'] != null) {
-      receiverName = json['receiverName'];
+    } else {
+      receiverName = json['receiverName'] ?? 
+                     json['destinationAccountName'] ?? 
+                     json['accountName'] ?? 
+                     json['account_name'] ?? 
+                     json['beneficiaryName'] ?? 
+                     json['beneficiary_name'];
+    }
+
+
+    // Smart classification for VTU/Bill transactions
+    String? rawServiceType = json['serviceType'];
+    String? rawProvider = json['provider'];
+    
+    // If we get "VT_PASS" or null, try to infer from aggregator fields or fallbacks
+    if (rawServiceType == null || rawServiceType.toUpperCase().contains('VT')) {
+      // Check if 'type' or 'txnType' contains the info
+      final altType = json['type'] ?? json['txnType'] ?? json['category'];
+      if (altType != null && altType is String) {
+        rawServiceType = altType;
+      } else if (rawProvider != null && 
+                 !rawProvider.toUpperCase().contains('VT') && 
+                 !rawProvider.toUpperCase().contains('BIA')) {
+        // If provider looks like "MTN", "GLO" etc, and serviceType is generic,
+        // it's likely an Airtime/Data purchase.
+        rawServiceType = (rawProvider.toUpperCase() == 'MTN' || 
+                          rawProvider.toUpperCase() == 'GLO' || 
+                          rawProvider.toUpperCase() == 'AIRTEL' || 
+                          rawProvider.toUpperCase() == '9MOBILE') 
+                          ? 'AIRTIME' 
+                          : rawProvider;
+      }
     }
 
     return TransactionItem(
@@ -60,10 +92,10 @@ class TransactionItem {
       senderName: senderName,
       receiverName: receiverName,
 
-      provider: json['provider'],              // ✅ now parsed
-      serviceType: json['serviceType'],        // ✅ now parsed
-      status: json['status'],                  // ✅ now parsed
-      transactionId: json['transactionId'],    // ✅ now parsed
+      provider: rawProvider,
+      serviceType: rawServiceType,
+      status: json['status'],
+      transactionId: json['transactionId'],
 
       createdAt: parsedDate,
     );

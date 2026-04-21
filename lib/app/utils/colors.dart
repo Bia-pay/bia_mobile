@@ -142,3 +142,17 @@ final ThemeData darkTheme = ThemeData(
   dividerColor: darkBorderColor,
   iconTheme: const IconThemeData(color: darkText),
 );
+
+/// ✨ MODERN UI TOKENS
+const glassWhite = Color(0x33FFFFFF);
+const glassBorder = Color(0x4DFFFFFF);
+
+const brandGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    primaryColor,
+    Color(0xFF1E9BBF),
+    accentColor,
+  ],
+);

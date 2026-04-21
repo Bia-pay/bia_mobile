@@ -29,7 +29,7 @@ class _SplashScreenState extends ConsumerState<Splash> {
 
   /// 🔹 Only request permission — DO NOT generate token here
   Future<void> _handleFirstLaunch() async {
-    final box = await Hive.openBox('appBox');
+    final box = Hive.box('appBox');
     final isFirstLaunch = box.get('first_launch', defaultValue: true);
 
     if (isFirstLaunch) {
@@ -44,10 +44,12 @@ class _SplashScreenState extends ConsumerState<Splash> {
   }
 
   Future<void> _checkAuthStatus() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Artificial delay removed for instantaneous boot
+    await Future.delayed(const Duration(milliseconds: 1000));
+
 
     try {
-      final box = await Hive.openBox("authBox");
+      final box = Hive.box("authBox");
       final token = box.get("token");
 
       if (!mounted) return;

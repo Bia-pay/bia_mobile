@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../app/utils/colors.dart';
+import '../../../app/utils/custom_loader.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 
 class QrScreen extends ConsumerStatefulWidget {
@@ -109,8 +110,8 @@ class _QrScreenState extends ConsumerState<QrScreen> {
                       ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const CircularProgressIndicator(
-                        strokeWidth: 3,
+                      const CustomLoader(
+                        size: 40,
                         color: Colors.white,
                       ),
                       SizedBox(height: 16.h),

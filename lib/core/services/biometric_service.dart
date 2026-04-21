@@ -141,11 +141,7 @@ class BiometricService {
   }
 
   /// Check if payment biometric is enabled for user
-  // Future<bool> isPaymentEnabled(String userId) async {
-  //   if (userId.isEmpty) return false;
-  //   final prefs = await SharedPreferences.getInstance();
-  //   return prefs.getBool(_paymentEnabledKey(userId)) ?? false;
-  // }
+  /// Check if payment biometric is enabled for user
   Future<bool> isPaymentEnabled(String userId) async {
     if (userId.isEmpty) return false;
     final prefs = await SharedPreferences.getInstance();

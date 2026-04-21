@@ -85,7 +85,7 @@ class _BankCompleteTransactionBottomSheetState
 
   bool _saveAsBeneficiary = false;
   bool _isLoadingCharges = true;
-
+  double _principalAmount = 0.0;
   double _chargeAmount = 0.0;
   double _totalAmount = 0.0;
   String _feeType = "flat";
@@ -119,6 +119,7 @@ class _BankCompleteTransactionBottomSheetState
 
     if (mounted) {
       setState(() {
+        _principalAmount = numericAmount; // ✅ Store principal separately
         if (charges != null) {
           _chargeAmount = (charges['charge'] ?? 0).toDouble();
           _totalAmount = (charges['totalAmount'] ?? numericAmount).toDouble();
@@ -334,7 +335,7 @@ class _BankCompleteTransactionBottomSheetState
                         builder: (_) => BankTransactionPin(
                           recipientAccount: widget.recipientAccount,
                           recipientName: widget.recipientName,
-                          amount: _totalAmount,
+                          amount: _principalAmount, // ✅ Fixed: Send principal, not total
                           saveAsBeneficiary: _saveAsBeneficiary,
                           bankCode: widget.bankCode,
                           bankName: widget.bankName,

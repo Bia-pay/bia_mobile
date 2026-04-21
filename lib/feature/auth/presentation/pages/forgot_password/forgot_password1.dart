@@ -143,127 +143,126 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                 ? screenHeight * 0.42
                 : (isLargeScreen ? screenHeight * 0.5 : screenHeight * 0.45);
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                _getHorizontalPadding(screenWidth),
-                isSmallScreen ? 12.h : 16.h,
-                _getHorizontalPadding(screenWidth),
-                MediaQuery.of(context).viewInsets.bottom + 24.h,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - MediaQuery.of(context).viewInsets.bottom,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    _getHorizontalPadding(screenWidth),
+                    isSmallScreen ? 12.h : 20.h,
+                    _getHorizontalPadding(screenWidth),
+                    0,
+                  ),
+                  child: _buildCustomHeader(isSmallScreen),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    /// 🔹 Custom Header
-                    _buildCustomHeader(isSmallScreen),
 
-                    SizedBox(height: headerSpacing),
-
-                    /// 🔹 Glass Card
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isSmallScreen ? 12.w : 16.w,
-                            vertical: isSmallScreen ? 24.h : 40.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: lightBackground,
-                            borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
-                            border: Border.all(
-                              color: lightBackground.withValues(alpha:0.25),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: _getHorizontalPadding(screenWidth)),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        /// 🔹 Glass Card
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 12.w : 16.w,
+                                vertical: isSmallScreen ? 16.h : 30.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: lightBackground,
+                                borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
+                                border: Border.all(
+                                  color: lightBackground.withValues(alpha:0.25),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: darkBackground.withValues(alpha:0.08),
+                                    blurRadius: 25,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  PhoneInputWidget(
+                                    controller: _phoneController,
+                                    label: 'Mobile Number',
+                                    hintText: '8000000000',
+                                    keyboardType: TextInputType.none,
+                                    backgroundColor: lightBackground.withValues(alpha:0.2),
+                                    borderColor: primaryColor,
+                                    validator: (value) {
+                                      if (value.isEmpty) return 'Phone number is required';
+                                      if (value.length < 10) return 'Phone number too short';
+                                      return null;
+                                    },
+                                    onCountryChanged: (CountryCode? newValue) {
+                                      setState(() {
+                                        _selectedCountry = newValue!;
+                                      });
+                                    },
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 10.h : 20.h),
+                                  Text(
+                                    "We'll send you a code to verify your phone number",
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                      color: darkBackground,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: darkBackground.withValues(alpha:0.08),
-                                blurRadius: 25,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              PhoneInputWidget(
-                                controller: _phoneController,
-                                label: 'Mobile Number',
-                                hintText: '8000000000',
-                                keyboardType: TextInputType.none,
-                                backgroundColor: lightBackground.withValues(alpha:0.2),
-                                borderColor: primaryColor,
-                                validator: (value) {
-                                  if (value.isEmpty) return 'Phone number is required';
-                                  if (value.length < 10) return 'Phone number too short';
-                                  return null;
-                                },
-                                onCountryChanged: (CountryCode? newValue) {
-                                  setState(() {
-                                    _selectedCountry = newValue!;
-                                  });
-                                },
-                              ),
-                              SizedBox(height: isSmallScreen ? 16.h : 20.h),
-                              Text(
-                                "We'll send you a code to verify your phone number",
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: isSmallScreen ? 12.sp : 14.sp,
-                                  color: darkBackground,
+                        ),
+
+                        /// 🔹 Keypad
+                        SizedBox(
+                          height: keypadHeight,
+                          child: CustomGridKeypad(
+                            onNumberPressed: addDigit,
+                            leftAction: ActionKey(
+                              child: SvgPicture.asset(
+                                'assets/svg/cancel.svg',
+                                height: isSmallScreen ? 16.h : 22.h,
+                                colorFilter: ColorFilter.mode(
+                                  primaryColor,
+                                  BlendMode.srcIn,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: cardSpacing),
-
-                    /// 🔹 Keypad
-                    SizedBox(
-                      height: keypadHeight,
-                      child: CustomGridKeypad(
-                        onNumberPressed: addDigit,
-                        leftAction: ActionKey(
-                          child: SvgPicture.asset(
-                            'assets/svg/cancel.svg',
-                            height: isSmallScreen ? 18.h : 22.h,
-                            colorFilter: ColorFilter.mode(
-                              primaryColor,
-                              BlendMode.srcIn,
+                              backgroundColor: primaryColor.withValues(alpha:0.1),
+                              onTap: removeDigit,
+                            ),
+                            rightAction: ActionKey(
+                              child: Icon(
+                                Icons.arrow_forward,
+                                color: _isPhoneNumberComplete ? lightBackground : lightBackground.withValues(alpha:0.5),
+                                size: isSmallScreen ? 20.sp : 26.sp,
+                              ),
+                              backgroundColor: _isPhoneNumberComplete
+                                  ? primaryColor
+                                  : primaryColor.withValues(alpha:0.3),
+                              onTap:_isPhoneNumberComplete
+                                  ? () => _sendForgotPasswordCode()
+                                  : () {},
                             ),
                           ),
-                          backgroundColor: primaryColor.withValues(alpha:0.1),
-                          onTap: removeDigit,
                         ),
-                        rightAction: ActionKey(
-                          child: Icon(
-                            Icons.arrow_forward,
-                            color: _isPhoneNumberComplete ? lightBackground : lightBackground.withValues(alpha:0.5),
-                            size: isSmallScreen ? 22.sp : 26.sp,
-                          ),
-                          backgroundColor: _isPhoneNumberComplete
-                              ? primaryColor
-                              : primaryColor.withValues(alpha:0.3),
-                          onTap:_isPhoneNumberComplete
-                              ? () => _sendForgotPasswordCode()
-                              : () {},
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             );
+
           },
         ),
       ),

@@ -337,6 +337,62 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       return null;
     }
   }
+
+  Future<ResponseModel?> updateUserProfile(
+    BuildContext context,
+    String fullname,
+  ) async {
+    if (fullname.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Full name is required.",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final body = {"fullname": fullname};
+      final response = await dashboardRepository.updateUserProfile(body);
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        // Refresh local user profile to sync Hive and State
+        await fetchUserProfile(context);
+
+        ToastHelper.showToast(
+          context: context,
+          message: "Profile updated successfully",
+          icon: Icons.check_circle,
+          iconColor: successColor,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.error,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Error updating profile: $e",
+        icon: Icons.error,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
   // ✅ Deposit Money
   Future<DepositResponseModel?> depositMoney(BuildContext context, double amount) async {
     if (amount <= 0) {
@@ -884,7 +940,18 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
       LoadingHelper.dismiss();
 
+      if (response.responseSuccessful == false) {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.error,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+
       return response;
+
 
     } catch (e) {
 

@@ -6,12 +6,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
+import '../../../app/socket/socket_provider.dart';
 import '../interceptor/interceptor.dart';
 import 'api_constant.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final apiHelper = ref.read(apiHelperProvider);
-  return ApiClient(apiHelper: apiHelper);
+  return ApiClient(apiHelper: apiHelper, ref: ref);
 });
 
 class ApiClient {
@@ -21,6 +22,7 @@ class ApiClient {
   String _userId = '';
 
   final ApiHelper apiHelper;
+  final Ref ref;
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
@@ -32,7 +34,7 @@ class ApiClient {
   String _tokenKey(String userId) => 'access_token_$userId';
   String _refreshTokenKey(String userId) => 'refresh_token_$userId';
 
-  ApiClient({required this.apiHelper}) {
+  ApiClient({required this.apiHelper, required this.ref}) {
     final box = Hive.box('authBox');
     token = box.get('token', defaultValue: '') ?? '';
     _userId = box.get('userId', defaultValue: '') ?? '';
@@ -166,8 +168,11 @@ class ApiClient {
         }
 
         updateHeaders(newAccessToken);
+        
+        // 🔥 Trigger socket reconnection to sync new token with FCM on backend
+        ref.read(socketNotifierProvider.notifier).reconnect();
 
-        debugPrint('✅ Token refreshed successfully for user: $_userId');
+        debugPrint('✅ Token refreshed successfully and socket resynced for user: $_userId');
         _refreshCompleter!.complete(true);
         _refreshCompleter = null;
         return true;
@@ -195,6 +200,15 @@ class ApiClient {
     http.Response response = await apiCall();
 
     if (response.statusCode == 401) {
+      // 💡 Optimization: If the 401 is actually a wrong PIN error, don't refresh.
+      // This prevents the app from logging the user out when they just entered
+      // a wrong PIN (as the server might invalidate refresh tokens on PIN failure).
+      final body = response.body.toLowerCase();
+      if (body.contains('pin') || body.contains('incorrect') || body.contains('invalid')) {
+        debugPrint('⚠️ 401 received but appears to be a PIN error — skipping refresh.');
+        return response;
+      }
+
       debugPrint('⚠️ 401 received — attempting token refresh...');
       final refreshed = await _refreshToken();
       if (refreshed) {

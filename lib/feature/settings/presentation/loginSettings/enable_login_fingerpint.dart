@@ -9,6 +9,7 @@ import 'package:hive/hive.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../../dashboard/dashboardcontroller/provider.dart';
+import '../../../../app/utils/custom_loader.dart';
 
 class EnableTransactionPinFingerprint extends ConsumerStatefulWidget {
   const EnableTransactionPinFingerprint({super.key});
@@ -229,14 +230,7 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
                   elevation: 0,
                 ),
                 child: _isLoading
-                    ? SizedBox(
-                        height: 20.h,
-                        width: 20.w,
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                    ? const CustomLoader(size: 20)
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

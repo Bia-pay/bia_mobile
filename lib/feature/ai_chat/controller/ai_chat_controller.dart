@@ -93,8 +93,9 @@ final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  return LlmService(apiKey: "AIzaSyDUpmLBPmubVgLO70skYcZjys2ST3UzXxI");
+  return LlmService(apiKey: "AIzaSyCStSPgmhx0JQttxyHmVOhoZoZ9OsaEgeQ");
 });
+
 
 final aiChatPersistenceServiceProvider = Provider<AiChatPersistenceService>((ref) {
   return AiChatPersistenceService();
@@ -350,6 +351,13 @@ class AiChatController extends StateNotifier<AiChatState> {
     _setProcessing(true);
     
     final transcription = await _hausaAsrService.transcribe(filePath);
+    
+    if (transcription == 'HUB_OFFLINE') {
+      _addAssistant('Hub offline');
+      _setProcessing(false);
+      return;
+    }
+
     if (transcription == null || transcription.isEmpty) {
       final aiMsg = await _llmService.sendContextualMessage('I could not hear the user clearly. Ask them to repeat in Hausa.');
       _addAssistant(aiMsg.chatResponse);
@@ -357,10 +365,12 @@ class AiChatController extends StateNotifier<AiChatState> {
       return;
     }
 
-    // Process the transcribed text as a normal user input
-    await handleUserInput(context, transcription);
+    // Process the transcribed text with a clear marker for the LLM
+    await handleUserInput(context, '[VOICE_TRANSCRIPTION]: $transcription');
     _setProcessing(false);
   }
+
+
 
   // ── Intent handlers ───────────────────────────────────────────────────────
 

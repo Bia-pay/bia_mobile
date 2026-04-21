@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'dart:io';
 import '../../core/constants.dart';
 
 // Socket connection state
@@ -56,7 +57,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
       print('🔌 Connecting to: $socketUrl');
       print('🔑 Using token: ${_token!.substring(0, 20)}...');
-      print('🔑 Using fcmToken: ${fcmToken!.substring(0, 20)}...');
+      print('🔥 FCM TOKEN (FULL): $fcmToken');
 
       // Disconnect existing socket if any
       await _disconnect();
@@ -103,10 +104,17 @@ class SocketNotifier extends StateNotifier<SocketState> {
       state = SocketState.connected;
       _reconnectAttempts = 0;
 
-      // Send authentication after connection
+      // Get userId for more robust registration
+      final authBox = Hive.box('authBox');
+      final userId = authBox.get('userId', defaultValue: '');
+
+      // Send registration after connection
+      print('📤 Registering FCM Token with backend ($fcmToken)');
       _socket!.emit('registerFcmToken', {
         'accessToken': _token,
         'fcmToken': fcmToken,
+        'userId': userId,
+        'platform': Platform.isAndroid ? 'android' : 'ios',
       });
 
     });

@@ -240,11 +240,24 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
                 child: Row(
                   children: [
                     if (widget.showProgress)
-                      PulsingLogoIndicator(
-                        logoPath: 'assets/svg/logo-b.png',
-                        size: 40,
-                        pulseColor: primaryColor,
+                    Container(
+                      height: 40.w,
+                      width: 40.w,
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
+                      child: Center(
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.sp,
+                          ),
+                        ),
+                      ),
+                    ),
                     if (widget.showProgress)
                       SizedBox(width: isVerySmallScreen ? 8.w : 12.w),
 

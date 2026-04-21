@@ -118,28 +118,58 @@ YOUR PERSONALITY (ENGLISH):
     // Add user message to history
     _history.add(Content.text(text));
     
-    try {
-      final chat = _model.startChat(history: _history.sublist(0, _history.length - 1));
-      final response = await chat.sendMessage(Content.text(text));
-      
-      var textResponse = response.text ?? '{}';
-      
-      // Save model response to history
-      _history.add(Content.model([TextPart(textResponse)]));
-      
-      // Clean potential markdown wrap
-      textResponse = textResponse.replaceAll('```json', '').replaceAll('```', '').trim();
+    int retries = 0;
+    const int maxRetries = 1;
 
-      final data = jsonDecode(textResponse);
-      return LlmParsedResponse.fromJson(data);
-    } catch (e) {
-      print("LLM Error: $e");
-      return LlmParsedResponse(
-        intent: 'unknown',
-        chatResponse: 'Ah! Small network wahala. I no fit process am right now. Abeg try again.',
-      );
+    while (retries <= maxRetries) {
+      try {
+        final chat = _model.startChat(history: _history.sublist(0, _history.length - 1));
+        final response = await chat.sendMessage(Content.text(text));
+        
+        var textResponse = response.text ?? '{}';
+        
+        // Save model response to history
+        _history.add(Content.model([TextPart(textResponse)]));
+        
+        // Clean potential markdown wrap
+        textResponse = textResponse.replaceAll('```json', '').replaceAll('```', '').trim();
+
+        final data = jsonDecode(textResponse);
+        return LlmParsedResponse.fromJson(data);
+      } catch (e) {
+        final errorStr = e.toString();
+        print("LLM Error (Attempt ${retries + 1}): $errorStr");
+
+        // 🟢 HANDLE 429 (RATE LIMIT)
+        if (errorStr.contains('429') || errorStr.contains('quota')) {
+          if (retries < maxRetries) {
+            retries++;
+            print("⏳ Rate limit hit. Retrying in 3 seconds...");
+            await Future.delayed(const Duration(seconds: 3));
+            continue;
+          }
+          
+          return LlmParsedResponse(
+            intent: 'unknown',
+            chatResponse: 'BIA AI tana numfashi, jira kadan...', // Hausa: BIA AI is breathing, wait a bit...
+          );
+        }
+
+        // Generic error handling
+        return LlmParsedResponse(
+          intent: 'unknown',
+          chatResponse: 'Ah! Small network wahala. I no fit process am right now. Abeg try again.',
+        );
+      }
     }
+    
+    // Fallback (should not reach here ideally)
+    return LlmParsedResponse(
+      intent: 'unknown',
+      chatResponse: 'BIA AI tana numfashi, jira kadan...',
+    );
   }
+
   
   void resetHistory() {
     _history.clear();

@@ -12,42 +12,127 @@ import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
 import 'app/utils/theme_provider.dart';
+import 'app/utils/image.dart';
 import 'core/easy_loading_config.dart';
+import 'core/providers/locale_provider.dart';
+import 'core/providers/fallback_localization_delegate.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'feature/dashboard/transaction_cache.dart';
+import 'core/services/session_service.dart';
+import 'feature/settings/presentation/widgets/inactivity_warning_modal.dart';
+import 'feature/auth/interceptor/interceptor.dart';
 import 'firebase_options.dart';
+import 'dart:io';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint("🔥 Handling a background message: ${message.messageId}");
+  
+  // Explicitly show the notification in the background
+  // This is required for 'data' only messages or when we want custom display logic
+  _showNotification(message);
+}
 
 final FlutterLocalNotificationsPlugin localNotifications =
 FlutterLocalNotificationsPlugin();
+
+/// Helper to show notifications consistently across foreground/background
+Future<void> _showNotification(RemoteMessage message) async {
+  final notification = message.notification;
+  final data = message.data;
+
+  // If there's a notification object, use it. Otherwise, look for data keys.
+  final title = notification?.title ?? data['title'] ?? 'New Notification';
+  final body = notification?.body ?? data['body'] ?? 'You have a new update';
+
+  const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    'default_channel',
+    'Default',
+    channelDescription: 'Default notification channel',
+    importance: Importance.max,
+    priority: Priority.high,
+    showWhen: true,
+  );
+
+  const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentBadge: true,
+    presentSound: true,
+  );
+
+  const NotificationDetails platformDetails = NotificationDetails(
+    android: androidDetails,
+    iOS: iosDetails,
+  );
+
+  await localNotifications.show(
+    message.hashCode,
+    title,
+    body,
+    platformDetails,
+  );
+}
 
 Future<void> initLocalNotifications() async {
   const AndroidInitializationSettings androidInit =
   AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const InitializationSettings initSettings =
-  InitializationSettings(android: androidInit);
+  const DarwinInitializationSettings iosInit = DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
 
-  await localNotifications.initialize(initSettings);
+  const InitializationSettings initSettings = InitializationSettings(
+    android: androidInit,
+    iOS: iosInit,
+  );
+
+  await localNotifications.initialize(
+    initSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      debugPrint('🔔 Notification tapped: ${response.payload}');
+      // Handle navigation here if payload is present
+    },
+  );
+
+  // Create the Android notification channel explicitly
+  if (Platform.isAndroid) {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'default_channel',
+      'Default',
+      description: 'Default notification channel',
+      importance: Importance.max,
+    );
+
+    await localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+    debugPrint('📱 Created Android Notification Channel: default_channel');
+  }
 }
 
 void listenForForegroundMessages() {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    final notification = message.notification;
-    final android = message.notification?.android;
+    debugPrint("🟢 Message received in foreground!");
+    _showNotification(message);
+  });
+}
 
-    if (notification != null && android != null) {
-      localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'default_channel',
-            'Default',
-            importance: Importance.max,
-            priority: Priority.high,
-          ),
-        ),
-      );
+void setupNotificationTapHandlers() {
+  // Handle tap when app is in background but not terminated
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    debugPrint('🔔 FCM Notification tapped (background)!');
+    // Handle navigation
+  });
+
+  // Check if app was opened from a terminated state via a notification
+  FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+    if (message != null) {
+      debugPrint('🔔 FCM Notification tapped (terminated)!');
+      // Handle navigation
     }
   });
 }
@@ -60,18 +145,45 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Register background handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  
   await MediaStore.ensureInitialized();
   MediaStore.appFolder = "Bia";
   await initLocalNotifications();
   listenForForegroundMessages();
+  setupNotificationTapHandlers();
+  
+  // Request permissions on startup
+  await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
   await Hive.initFlutter();
+  final authBox = await Hive.openBox("authBox");
+  await Hive.openBox("appBox");
+
+  // Fetch and store FCM token on startup
+  try {
+    final fcmToken = await FirebaseMessaging.instance.getToken();
+    if (fcmToken != null) {
+      await authBox.put('fcmToken', fcmToken);
+      debugPrint("🔥 Initial FCM Token stored: $fcmToken");
+    }
+  } catch (e) {
+    debugPrint("⚠️ Error fetching FCM token on startup: $e");
+  }
 
   runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
+
 }
 
 
@@ -92,18 +204,44 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // Listen for route changes to manage inactivity timer
+    AppRouter.router.routerDelegate.addListener(_onRouteChanged);
+
+    // Initialize the session service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final String currentLocation = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+      ref.read(sessionServiceProvider.notifier).init(currentLocation);
+    });
   }
+
+  void _onRouteChanged() {
+    if (!mounted) return;
+    final String location = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+    ref.read(sessionServiceProvider.notifier).handleRouteChange(location);
+  }
+
 
   @override
   void dispose() {
+    AppRouter.router.routerDelegate.removeListener(_onRouteChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
+    
+    // Get the current location to decide if we should track inactivity on resume
+    final String currentLocation = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+    
+    // Handle inactivity timer on lifecycle changes
+    ref.read(sessionServiceProvider.notifier).handleAppLifecycle(state, currentLocation);
+    
     if (state == AppLifecycleState.paused ||
+
         state == AppLifecycleState.detached) {
       await runFunctionOnAppClose();
     }
@@ -116,24 +254,81 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
+    final locale = ref.watch(appLocaleProvider);
+
+    // Listen for inactivity warning state to show the modal
+    ref.listen<SessionState>(sessionServiceProvider, (previous, next) {
+      if (next == SessionState.warning && previous != SessionState.warning) {
+        final navContext = navigatorKey.currentContext;
+        if (navContext != null) {
+          showModalBottomSheet(
+            context: navContext,
+            isDismissible: false,
+            enableDrag: false,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (context) => const InactivityWarningModal(),
+          );
+        }
+      }
+    });
 
     return ScreenUtilInit(
       designSize: const Size(390, 844),
       minTextAdapt: true,
       builder: (context, child) {
-        // ✅ Initialize EasyLoadingConfig HERE after ScreenUtil is ready
-        // Use a flag to ensure it only runs once
         _initializeEasyLoadingOnce();
 
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
-          child: MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            theme: lightTheme,
-            darkTheme: darkTheme,
-            themeMode: themeMode,
-            routerConfig: AppRouter.router,
-            builder: EasyLoading.init(),
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            final String path = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+            ref.read(sessionServiceProvider.notifier).resetTimer(path);
+          },
+          onPanDown: (_) {
+            final String path = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+            ref.read(sessionServiceProvider.notifier).resetTimer(path);
+          },
+          onScaleStart: (_) {
+            final String path = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+            ref.read(sessionServiceProvider.notifier).resetTimer(path);
+          },
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) {
+              final String path = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+              ref.read(sessionServiceProvider.notifier).resetTimer(path);
+            },
+            onPointerMove: (_) {
+              final String path = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
+              ref.read(sessionServiceProvider.notifier).resetTimer(path);
+            },
+            child: MediaQuery(
+
+
+              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1)),
+              child: MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                theme: lightTheme,
+                darkTheme: darkTheme,
+                themeMode: themeMode,
+                locale: locale,
+                supportedLocales: const [
+                  Locale('en'),
+                  Locale('ha'),
+                  Locale('pcm'),
+                ],
+                localizationsDelegates: const [
+                  FallbackMaterialLocalizationsDelegate(),
+                  FallbackCupertinoLocalizationsDelegate(),
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                routerConfig: AppRouter.router,
+                builder: EasyLoading.init(),
+              ),
+            ),
           ),
         );
       },
@@ -147,8 +342,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     if (!_isEasyLoadingInitialized) {
       _isEasyLoadingInitialized = true;
       EasyLoadingConfig.initialize(
-        logoPath: 'assets/svg/logo-b.png',
-        logoSize: 40.h,        // ← Change from 6 to 3 (or 3.5)
+        logoPath: appLogoPng,
+        logoSize: 40.h,
         pulseColor: primaryColor,
         maskOpacity: 0.7,
         dismissOnTap: false,

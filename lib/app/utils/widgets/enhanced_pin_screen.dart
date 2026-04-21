@@ -1,104 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import '../../../feature/dashboard/widgets/keypad.dart';
 import '../colors.dart';
+import 'pin_input_widget.dart';
 
-class PinInputScreen extends StatefulWidget {
+enum PinScreenType { set, verify, change, confirm }
+enum InputFieldType { pin, password, amount }
+
+class EnhancedPinScreen extends ConsumerWidget {
   final String title;
   final String subtitle;
-  final int length;
-  final Function(String pin) onComplete;
+  final PinScreenType type;
+  final InputFieldType fieldType;
+  final int inputLength;
+  final String? existingPin;
+  final String? hintText;
+  final bool showKeypad;
+  final bool lockoutEnabled;
+  final double? minAmount;
+  final String currency;
+  final Function(String val)? onPinConfirmed;
+  final Function(String val)? onPinComplete;
+  final VoidCallback? onForgotPin;
+  final VoidCallback? onBiometricAction;
+  final VoidCallback? onSupportTap;
+  final IconData? biometricIcon;
+  final bool showBackButton;
+  final Color? backgroundColor;
+  final Color? keyColor;
 
-  const PinInputScreen({
+  const EnhancedPinScreen({
     super.key,
     required this.title,
     required this.subtitle,
-    this.length = 4,
-    required this.onComplete,
+    this.type = PinScreenType.verify,
+    this.fieldType = InputFieldType.pin,
+    this.inputLength = 4,
+    this.existingPin,
+    this.hintText,
+    this.showKeypad = true,
+    this.lockoutEnabled = true,
+    this.minAmount,
+    this.currency = '₦',
+    this.onPinConfirmed,
+    this.onPinComplete,
+    this.onForgotPin,
+    this.onBiometricAction,
+    this.onSupportTap,
+    this.biometricIcon,
+    this.showBackButton = true,
+    this.backgroundColor,
+    this.keyColor,
   });
 
   @override
-  State<PinInputScreen> createState() => _PinInputScreenState();
-}
-
-class _PinInputScreenState extends State<PinInputScreen> {
-  String pin = "";
-
-  void _addDigit(String value) {
-    if (pin.length >= widget.length) return;
-    setState(() => pin += value);
-
-    if (pin.length == widget.length) {
-      widget.onComplete(pin);
-    }
-  }
-
-  void _removeDigit() {
-    if (pin.isEmpty) return;
-    setState(() => pin = pin.substring(0, pin.length - 1));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: offWhiteBackground,
+      backgroundColor: backgroundColor ?? offWhiteBackground,
       appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: offWhiteBackground,
+        leading: showBackButton ? const BackButton(color: Colors.black) : null,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          SizedBox(height: 40.h),
-          Text(widget.subtitle, style: theme.textTheme.bodyMedium),
-          SizedBox(height: 30.h),
-
-          /// Dots
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(widget.length, (index) {
-              final filled = index < pin.length;
-              return Container(
-                width: 16,
-                height: 16,
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: filled ? primaryColor : Colors.transparent,
-                  border: Border.all(
-                    color: filled ? primaryColor : Colors.grey,
-                    width: 2,
-                  ),
-                ),
-              );
-            }),
-          ),
-
-          const Spacer(),
-
-          /// Keypad
-          SizedBox(
-            height: 350,
-            child: CustomGridKeypad(
-              onNumberPressed: _addDigit,
-              leftAction: ActionKey(
-                child: const Icon(Icons.backspace),
-                onTap: _removeDigit,
-              ),
-              rightAction: ActionKey(
-                child: const Icon(Icons.check),
-                onTap: () {
-                  if (pin.length == widget.length) {
-                    widget.onComplete(pin);
-                  }
-                },
-              ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+            child: PinInputWidget(
+              title: title,
+              subtitle: subtitle,
+              type: type,
+              fieldType: fieldType,
+              inputLength: inputLength,
+              existingPin: existingPin,
+              hintText: hintText,
+              showKeypad: showKeypad,
+              lockoutEnabled: lockoutEnabled,
+              currency: currency,
+              onPinConfirmed: onPinConfirmed,
+              onPinComplete: onPinComplete,
+              onForgotPin: onForgotPin,
+              onBiometricAction: onBiometricAction,
+              onSupportTap: onSupportTap,
+              biometricIcon: biometricIcon,
+              keyColor: keyColor,
             ),
           ),
-        ],
+        ),
       ),
     );
   }

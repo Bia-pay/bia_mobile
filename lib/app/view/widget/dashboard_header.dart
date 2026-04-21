@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../utils/colors.dart';
 
 class HomeHeader extends StatelessWidget {
-  final bool isSmallScreen;
   final String? picture;
   final String fullname;
   final ThemeData theme;
@@ -16,10 +15,10 @@ class HomeHeader extends StatelessWidget {
   final String appLogoPng;
   final String bell;
   final String notificationRoute;
+  final String profileRoute;
 
   const HomeHeader({
     super.key,
-    required this.isSmallScreen,
     required this.picture,
     required this.fullname,
     required this.theme,
@@ -29,6 +28,7 @@ class HomeHeader extends StatelessWidget {
     required this.appLogoPng,
     required this.bell,
     required this.notificationRoute,
+    required this.profileRoute,
   });
 
   @override
@@ -36,33 +36,36 @@ class HomeHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: 16.w,
-        vertical: 8.h,
+        vertical: 10.h,
       ),
-      color: offWhiteBackground, // keeps it solid when scrolling
+      color: offWhiteBackground, 
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Container(
-                height: isSmallScreen ? 38.r : 45.r,
-                width: isSmallScreen ? 38.r : 40.r,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: primaryColor),
-                ),
-                child: ClipOval(
-                  child: picture != null && picture!.isNotEmpty
-                      ? Image.network(
-                    picture!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        Image.asset(appLogoPng),
-                  )
-                      : Image.asset(appLogoPng),
+              GestureDetector(
+                onTap: () => context.pushNamed(profileRoute),
+                child: Container(
+                  height: 42.r,
+                  width: 42.r,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: primaryColor, width: 1.5),
+                  ),
+                  child: ClipOval(
+                    child: picture != null && picture!.isNotEmpty
+                        ? Image.network(
+                      picture!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          Image.asset(appLogoPng),
+                    )
+                        : Image.asset(appLogoPng),
+                  ),
                 ),
               ),
-              SizedBox(width: isSmallScreen ? 8.w : 10.w),
+              SizedBox(width: 10.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -71,17 +74,17 @@ class HomeHeader extends StatelessWidget {
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w500,
                       color: lightSecondaryText,
-                      fontSize: isSmallScreen ? 10.sp : 12.sp,
+                      fontSize: 11.sp,
                     ),
                   ),
                   SizedBox(
-                    width: 120.w,
+                    width: 130.w,
                     child: Text(
                       fullname,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                         color: lightText,
-                        fontSize: isSmallScreen ? 11.sp : 13.sp,
+                        fontSize: 12.sp,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -94,8 +97,8 @@ class HomeHeader extends StatelessWidget {
           GestureDetector(
             onTap: () => context.pushNamed(notificationRoute),
             child: Container(
-              height: isSmallScreen ? 18.h : 25.h,
-              width: isSmallScreen ? 18.h : 25.h,
+              height: 22.r,
+              width: 22.r,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
               ),

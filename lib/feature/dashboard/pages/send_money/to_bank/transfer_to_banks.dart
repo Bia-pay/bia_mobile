@@ -10,6 +10,7 @@ import '../../../../../app/view/widget/app_search_field.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../model/bank_model.dart';
+import '../../../../../app/utils/custom_loader.dart';
 import '../widget/tabs.dart';
 
 class SendMoneyToBank extends ConsumerStatefulWidget {
@@ -28,6 +29,9 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   List<BankModel> filteredBanks = [];
   bool isLoadingBanks = true;
   String? accountError;
+
+  bool isBankDropdownOpen = false;
+  final TextEditingController bankSearchController = TextEditingController();
 
   bool isVerified = false;
   String? verifiedName;
@@ -48,6 +52,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   @override
   void dispose() {
     accountController.dispose();
+    bankSearchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -70,6 +75,9 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
     final loadedBanks = await dashboardCtrl.getBanks(context);
 
+    // Sort banks A-Z
+    loadedBanks.sort((a, b) => a.bankName.toLowerCase().compareTo(b.bankName.toLowerCase()));
+
     if (mounted) {
       setState(() {
         banks = loadedBanks;
@@ -84,7 +92,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
     final effectiveBankName = selectedBank?.bankName ?? verifiedBankName;
 
     if (effectiveBankCode == null || effectiveBankCode.isEmpty) {
-      _showBankSelector();
+      setState(() => isBankDropdownOpen = true);
       return;
     }
 
@@ -232,7 +240,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                     SizedBox(height: 10.h),
                     Expanded(
                       child: isLoadingBanks
-                          ? const Center(child: CircularProgressIndicator())
+                          ? const Center(child: CustomLoader(color: primaryColor))
                           : filteredBanks.isEmpty
                           ? Center(
                         child: Padding(
@@ -355,8 +363,16 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                 ),
                                 SizedBox(height: isSmallScreen ? 10.h : 15.h),
 
-                                InkWell(
-                                  onTap: _showBankSelector,
+                                 InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      isBankDropdownOpen = !isBankDropdownOpen;
+                                      if (isBankDropdownOpen) {
+                                        filteredBanks = banks;
+                                        bankSearchController.clear();
+                                      }
+                                    });
+                                  },
                                   borderRadius: BorderRadius.circular(10.r),
                                   child: Container(
                                     width: double.infinity,
@@ -367,7 +383,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                     decoration: BoxDecoration(
                                       color: whiteBackground,
                                       borderRadius: BorderRadius.circular(10.r),
-                                      border: Border.all(color: lightBorderColor),
+                                      border: Border.all(color: isBankDropdownOpen ? primaryColor : lightBorderColor),
                                     ),
                                     child: Row(
                                       children: [
@@ -387,11 +403,105 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Icon(Icons.arrow_drop_down, color: grey, size: 24.sp),
+                                        Icon(
+                                          isBankDropdownOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                                          color: grey,
+                                          size: 24.sp,
+                                        ),
                                       ],
                                     ),
                                   ),
                                 ),
+
+                                // --- Inline Searchable Dropdown ---
+                                if (isBankDropdownOpen) ...[
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    constraints: BoxConstraints(maxHeight: 250.h),
+                                    decoration: BoxDecoration(
+                                      color: whiteBackground,
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                      border: Border.all(color: lightBorderColor),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Inline Search Bar
+                                        Padding(
+                                          padding: EdgeInsets.all(8.w),
+                                          child: TextField(
+                                            controller: bankSearchController,
+                                            autofocus: true,
+                                            decoration: InputDecoration(
+                                              hintText: 'Search bank...',
+                                              prefixIcon: const Icon(Icons.search, size: 20),
+                                              filled: true,
+                                              fillColor: grey100,
+                                              isDense: true,
+                                              contentPadding: EdgeInsets.symmetric(vertical: 10.h),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8.r),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                            ),
+                                            onChanged: (value) {
+                                              setState(() {
+                                                if (value.isEmpty) {
+                                                  filteredBanks = banks;
+                                                } else {
+                                                  filteredBanks = banks
+                                                      .where((b) => b.bankName.toLowerCase().contains(value.toLowerCase()))
+                                                      .toList();
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        // Bank List
+                                        Expanded(
+                                          child: isLoadingBanks
+                                              ? const Center(child: CustomLoader(color: primaryColor))
+                                              : ListView.separated(
+                                                  padding: EdgeInsets.zero,
+                                                  itemCount: filteredBanks.length,
+                                                  separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
+                                                  itemBuilder: (context, index) {
+                                                    final bank = filteredBanks[index];
+                                                    return ListTile(
+                                                      dense: true,
+                                                      title: Text(
+                                                        bank.bankName,
+                                                        style: TextStyle(
+                                                          fontSize: 13.sp,
+                                                          color: darkBackground,
+                                                          fontWeight: selectedBank?.bankCode == bank.bankCode ? FontWeight.bold : FontWeight.normal,
+                                                        ),
+                                                      ),
+                                                      onTap: () {
+                                                        setState(() {
+                                                          selectedBank = bank;
+                                                          isBankDropdownOpen = false;
+                                                          bankSearchController.clear();
+                                                        });
+                                                        if (accountController.text.length == 10) {
+                                                          _verifyAccountFromInput(accountController.text);
+                                                        }
+                                                      },
+                                                    );
+                                                  },
+                                                ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                                 SizedBox(height: 12.h),
 
                                 AppField.transparent(

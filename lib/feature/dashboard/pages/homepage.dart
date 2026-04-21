@@ -1,16 +1,19 @@
-import 'package:bia/core/__core.dart';
-import 'package:bia/feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+
+import 'package:bia/core/__core.dart';
+import 'package:bia/feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
+import 'package:bia/feature/dashboard/dashboardcontroller/provider.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/image.dart';
+import '../../../app/utils/custom_loader.dart';
 import '../../../app/view/widget/dashboard_header.dart';
 import '../../../core/helper/helper.dart';
-import '../../dashboard/dashboardcontroller/provider.dart';
+import '../widgets/transaction_tile.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -32,7 +35,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         .read(dashboardControllerProvider.notifier)
         .refreshWalletBalance();
 
-    await Future.wait([txFuture, walletFuture] as Iterable<Future<dynamic>>);
+    await Future.wait([txFuture, walletFuture]);
   }
 
   List<Map<String, dynamic>> _quickActions(BuildContext context) => [
@@ -53,8 +56,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     },
     {
       'label': 'Tiktok Coin',
-      'icon': Image.asset(tiktok, height: isSmallScreen(context) ? 18.h : 23.h),
-      'onTap': () => context.pushNamed(RouteList.transactionDetailsScreen),
+      'icon': Image.asset(tiktok, height: 22.h),
+      'onTap': () {},
     },
     {
       'label': 'Utility Bill',
@@ -88,225 +91,194 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  bool isSmallScreen(BuildContext context) {
-    return MediaQuery.of(context).size.height < 700;
-  }
-
-  bool isLargeScreen(BuildContext context) {
-    return MediaQuery.of(context).size.height > 900;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final box = Hive.box('authBox');
     final fullname = box.get('fullname', defaultValue: 'User');
     final picture = box.get('picture');
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isSmallScreen = screenHeight < 700;
-    final isLargeScreen = screenHeight > 900;
-
-    final headerSpacing = isSmallScreen ? 6.h : 10.h;
-    final sectionSpacing = isSmallScreen ? 10.h : 15.h;
-    final cardPadding = isSmallScreen ? 10.h : 15.h;
+    
+    // 🔥 Fluid spacing using consistent ScreenUtil values
+    final headerSpacing = 8.h; 
+    final sectionSpacing = 12.h;
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
-              children: [
-                HomeHeader(
-                  isSmallScreen: isSmallScreen,
-                  picture: picture,
-                  fullname: fullname,
-                  theme: theme,
-                  primaryColor: primaryColor,
-                  lightSecondaryText: lightSecondaryText,
-                  lightText: lightText,
-                  appLogoPng: appLogoPng,
-                  bell: bell,
-                  notificationRoute: RouteList.notification,
-                ),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _handleRefresh,
-                    // 🔥 FIX: Use CustomScrollView with SliverToBoxAdapter for each section
-                    // This allows pull-to-refresh while preventing content scrolling
-                    child: CustomScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(), // Required for RefreshIndicator
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              left: isSmallScreen ? 16.w : 20.w,
-                              right: isSmallScreen ? 16.w : 20.w,
-                              top: isSmallScreen ? 3.h : 2.h,
+        child: Column(
+          children: [
+            HomeHeader(
+              picture: picture,
+              fullname: fullname,
+              theme: theme,
+              primaryColor: primaryColor,
+              lightSecondaryText: lightSecondaryText,
+              lightText: lightText,
+              appLogoPng: appLogoPng,
+              bell: bell,
+              notificationRoute: RouteList.notification,
+              profileRoute: RouteList.userSettings,
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: headerSpacing),
+
+                            const BalanceCard(),
+                            SizedBox(height: sectionSpacing),
+
+                            buildContainer(context, theme),
+                            SizedBox(height: 12.h),
+
+                            Text(
+                              'Quick Actions',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.sp,
+                              ),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Header Row
+                            SizedBox(height: 8.h),
 
-                                SizedBox(height: headerSpacing),
+                            buildContainerTwo(theme, context),
+                            SizedBox(height: sectionSpacing),
 
-                                BalanceCard(isSmallScreen: isSmallScreen),
-                                SizedBox(height: sectionSpacing),
-
-                                buildContainer(context, theme, isSmallScreen),
-                                SizedBox(height: isSmallScreen ? 10.h : 13.h),
-
-                                Text(
-                                  'Quick Actions',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: isSmallScreen ? 11.sp : 13.sp,
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 15.h,
+                                horizontal: 4.w,
+                              ),
+                              decoration: BoxDecoration(
+                                color: offWhite,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: _quickActions(context)
+                                        .take(4)
+                                        .map(
+                                          (item) => QuickActionButton(
+                                        label: item['label'],
+                                        icon: item['icon'],
+                                        onTap: item['onTap'],
+                                      ),
+                                    )
+                                        .toList(),
                                   ),
-                                ),
-                                SizedBox(height: isSmallScreen ? 6.h : 8.h),
 
-                                buildContainerTwo(theme, context, isSmallScreen),
-                                SizedBox(height: sectionSpacing),
-
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: isSmallScreen ? 10.h : 15.h,
-                                    horizontal: isSmallScreen ? 3.w : 5.w,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: offWhite,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Row(
+                                  if (showMore)
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 10.h),
+                                      child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: _quickActions(context)
-                                            .take(4)
+                                            .skip(4)
                                             .map(
                                               (item) => QuickActionButton(
                                             label: item['label'],
                                             icon: item['icon'],
                                             onTap: item['onTap'],
-                                            isSmallScreen: isSmallScreen,
                                           ),
                                         )
                                             .toList(),
                                       ),
-                                      SizedBox(height: isSmallScreen ? 3.h : 5.h),
+                                    ),
 
-                                      if (showMore)
-                                        Padding(
-                                          padding: EdgeInsets.only(top: isSmallScreen ? 8.h : 10.h),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                            children: _quickActions(context)
-                                                .skip(4)
-                                                .map(
-                                                  (item) => QuickActionButton(
-                                                label: item['label'],
-                                                icon: item['icon'],
-                                                onTap: item['onTap'],
-                                                isSmallScreen: isSmallScreen,
-                                              ),
-                                            )
-                                                .toList(),
+                                  GestureDetector(
+                                    onTap: () => setState(() => showMore = !showMore),
+                                    child: Padding(
+                                      padding: EdgeInsets.only(top: 8.h),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            showMore ? "Less" : "More",
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: primaryColor,
+                                            ),
                                           ),
-                                        ),
-
-                                      GestureDetector(
-                                        onTap: () => setState(() => showMore = !showMore),
-                                        child: Padding(
-                                          padding: EdgeInsets.only(top: isSmallScreen ? 8.h : 10.h),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                showMore ? "Less" : "More",
-                                                style: TextStyle(
-                                                  fontSize: isSmallScreen ? 11.sp : 12.sp,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: primaryColor,
-                                                ),
-                                              ),
-                                              Icon(
-                                                showMore
-                                                    ? Icons.keyboard_arrow_up
-                                                    : Icons.keyboard_arrow_down,
-                                                color: primaryColor,
-                                                size: isSmallScreen ? 18.sp : 20.sp,
-                                              ),
-                                            ],
+                                          Icon(
+                                            showMore
+                                                ? Icons.keyboard_arrow_up
+                                                : Icons.keyboard_arrow_down,
+                                            color: primaryColor,
+                                            size: 20.sp,
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: sectionSpacing),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Transaction History',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.sp,
                                   ),
                                 ),
-                                SizedBox(height: isSmallScreen ? 15.h : 20.h),
-
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Transaction History',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: isSmallScreen ? 11.sp : 13.sp,
-                                      ),
+                                GestureDetector(
+                                  onTap: () => context.pushNamed(RouteList.transactionHistory),
+                                  child: Text(
+                                    'View all',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.w300,
+                                      fontSize: 10.sp,
+                                      color: lightSecondaryText,
                                     ),
-                                    GestureDetector(
-                                      onTap: () => context.pushNamed(RouteList.transactionHistory),
-                                      child: Text(
-                                        'View all',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w300,
-                                          fontSize: isSmallScreen ? 9.sp : 10.sp,
-                                          color: lightSecondaryText,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                                SizedBox(height: isSmallScreen ? 6.h : 8.h),
-
-                                // 🔥 FIX: Use SizedBox with calculated height instead of Expanded
-                                SizedBox(
-                                  height: isSmallScreen ? 140.h : 180.h,
-                                  child: buildExpanded(theme, isSmallScreen, isLargeScreen),
-                                ),
-
-                                // Bottom padding
-                                SizedBox(height: isSmallScreen ? 10.h : 20.h),
                               ],
                             ),
-                          ),
+                            SizedBox(height: 8.h),
+
+                            buildExpanded(theme),
+
+                            SizedBox(height: 24.h),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            );
-          },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Container buildContainerTwo(ThemeData theme, BuildContext context, bool isSmallScreen) {
+  Container buildContainerTwo(ThemeData theme, BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: isSmallScreen ? 15.h : 20.h,
-        horizontal: isSmallScreen ? 12.w : 15.w,
+        vertical: 20.h,
+        horizontal: 15.w,
       ),
       decoration: BoxDecoration(
         color: offWhite,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: InkWell(
         onTap: () async {
@@ -314,14 +286,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           final hasSelectedLang = box.get('biaAiLanguageSelected', defaultValue: false) as bool;
           if (!context.mounted) return;
           if (!hasSelectedLang) {
-            // First time – show language picker
             context.pushNamed(RouteList.biaLanguageOnboarding);
           } else {
-            // Already picked a language – go straight to chat
             context.pushNamed(RouteList.aiChat);
           }
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -330,17 +300,17 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 SvgPicture.asset(
                   mic,
-                  height: isSmallScreen ? 40.h : 50.h,
+                  height: 50.h,
                   color: primaryColor,
                 ),
                 SvgPicture.asset(
                   chatting,
-                  height: isSmallScreen ? 40.h : 50.h,
+                  height: 50.h,
                   color: primaryColor,
                 ),
               ],
             ),
-            SizedBox(height: isSmallScreen ? 3.h : 5.h),
+            SizedBox(height: 6.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -348,13 +318,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   'Bia AI',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: isSmallScreen ? 11.sp : 13.sp,
+                    fontSize: 13.sp,
                     color: primaryColor,
                   ),
                 ),
                 Icon(
                   Icons.arrow_forward_ios_sharp,
-                  size: isSmallScreen ? 10.sp : 12.sp,
+                  size: 13.sp,
                   color: primaryColor,
                 ),
               ],
@@ -365,40 +335,38 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Container buildContainer(BuildContext context, ThemeData theme, bool isSmallScreen) {
+  Container buildContainer(BuildContext context, ThemeData theme) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 10.h : 14.h),
+      padding: EdgeInsets.symmetric(vertical: 14.h),
       decoration: BoxDecoration(
         color: offWhite,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.r),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           ActionButton(
             label: 'Send TP',
-            icon: SvgPicture.asset(send, height: isSmallScreen ? 18.h : 21.h),
+            icon: SvgPicture.asset(send, height: 22.h),
             onTap: () => context.pushNamed(RouteList.sendMoneyTransfer),
-            isSmallScreen: isSmallScreen,
           ),
           Stack(
             clipBehavior: Clip.none,
             children: [
               ActionButton(
                 label: 'Bia Trike',
-                icon: Icon(Icons.car_crash_sharp, color: primaryColor, size: isSmallScreen ? 18.sp : 21.sp),
+                icon: Icon(Icons.car_crash_sharp, color: primaryColor, size: 22.sp),
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Bia Trike coming soon!')),
                   );
                 },
-                isSmallScreen: isSmallScreen,
               ),
               Positioned(
                 top: -5.h,
                 right: -20.w,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.h),
+                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
                   decoration: BoxDecoration(
                     color: primaryGreenColor,
                     borderRadius: BorderRadius.circular(8.r),
@@ -407,7 +375,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     'Coming Soon',
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: isSmallScreen ? 5.sp : 6.sp,
+                      fontSize: 6.sp,
                       color: whiteBackground,
                     ),
                   ),
@@ -417,18 +385,16 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           ActionButton(
             label: 'Withdrawal',
-            icon: Image.asset(atm, height: isSmallScreen ? 18.h : 21.h),
+            icon: Image.asset(atm, height: 22.h),
             onTap: () => context.pushNamed(RouteList.sendMoneyToBank),
-            isSmallScreen: isSmallScreen,
           ),
         ],
       ),
     );
   }
 
-  Widget buildExpanded(ThemeData theme, bool isSmallScreen, bool isLargeScreen) {
+  Widget buildExpanded(ThemeData theme) {
     return SizedBox(
-      // 🔥 CHANGED: Let height be determined by parent Expanded, not fixed
       width: double.infinity,
       child: Consumer(
         builder: (context, ref, _) {
@@ -450,127 +416,22 @@ class _HomePageState extends ConsumerState<HomePage> {
               }
               return ListView.builder(
                 shrinkWrap: true,
-                // 🔥 CHANGED: Limit items to fit available space without scrolling
-                itemCount: transactions.length > (isSmallScreen ? 2 : 2)
-                    ? (isSmallScreen ? 2 : 2)
-                    : transactions.length,
-                // 🔥 CHANGED: Disable scrolling physics
+                itemCount: transactions.length > 2 ? 2 : transactions.length,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 itemBuilder: (context, index) {
                   final tx = transactions[index];
-                  final isPending = tx.status == "PENDING";
-                  final isCredit = tx.isCredit;
-                  final amountColor = isPending
-                      ? pendingColor
-                      : isCredit
-                      ? successColor
-                      : errorColor;
-                  final titleText = tx.serviceType == "TOPUP"
-                      ? (tx.serviceType ?? "Top Up")
-                      : (isCredit
-                      ? (tx.senderName ?? (tx.provider ?? "Transfer"))
-                      : (tx.receiverName ?? (tx.provider ?? "Transfer")));
-
-                  return Container(
-                    margin: EdgeInsets.only(bottom: isSmallScreen ? 5.h : 7.h),
-                    padding: EdgeInsets.symmetric(
-                      vertical: isSmallScreen ? 7.h : 9.h,
-                      horizontal: isSmallScreen ? 8.w : 10.w,
-                    ),
-                    decoration: BoxDecoration(
-                      color: offWhite,
-                      borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(.03),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          height: isSmallScreen ? 35.w : 40.w,
-                          width: isSmallScreen ? 35.w : 40.w,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: amountColor.withOpacity(.08),
-                          ),
-                          child: Icon(
-                            isCredit
-                                ? Icons.arrow_downward_rounded
-                                : Icons.arrow_upward_rounded,
-                            color: amountColor,
-                            size: isSmallScreen ? 16.sp : 18.sp,
-                          ),
-                        ),
-                        SizedBox(width: isSmallScreen ? 8.w : 10.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                titleText,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: isSmallScreen ? 11.sp : 12.sp,
-                                  color: darkBackground,
-                                ),
-                              ),
-                              SizedBox(height: isSmallScreen ? 3.h : 4.h),
-                              Text(
-                                formatTransactionDate(tx.createdAt),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: isSmallScreen ? 9.sp : 10.sp,
-                                  color: lightSecondaryText,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              "${isCredit ? '+' : '-'}₦${tx.amount}",
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: isSmallScreen ? 12.sp : 14.sp,
-                                color: amountColor,
-                              ),
-                            ),
-                            SizedBox(height: isSmallScreen ? 4.h : 5.h),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isSmallScreen ? 6.w : 8.w,
-                                vertical: isSmallScreen ? 3.h : 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: amountColor.withOpacity(.08),
-                                borderRadius: BorderRadius.circular(50.r),
-                              ),
-                              child: Text(
-                                tx.status ?? "",
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: isSmallScreen ? 6.sp : 7.sp,
-                                  color: amountColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  return TransactionTile(
+                    tx: tx,
+                    onTap: () => context.pushNamed(
+                      RouteList.transactionDetailsScreen,
+                      extra: tx,
                     ),
                   );
                 },
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: CustomLoader()),
             error: (e, _) => Center(child: Text("Error: $e")),
           );
         },
@@ -580,9 +441,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 }
 
 class BalanceCard extends ConsumerWidget {
-  final bool isSmallScreen;
-
-  const BalanceCard({super.key, required this.isSmallScreen});
+  const BalanceCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -607,12 +466,12 @@ class BalanceCard extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: isSmallScreen ? 12.h : 15.h,
-        horizontal: isSmallScreen ? 12.w : 15.w,
+        vertical: 15.h,
+        horizontal: 15.w,
       ),
       decoration: BoxDecoration(
         color: primaryColor,
-        borderRadius: BorderRadius.circular(isSmallScreen ? 8.r : 10.r),
+        borderRadius: BorderRadius.circular(10.r),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -626,10 +485,10 @@ class BalanceCard extends ConsumerWidget {
                     'Available Balance',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
-                      fontSize: isSmallScreen ? 10.sp : 12.sp,
+                      fontSize: 12.sp,
                     ),
                   ),
-                  SizedBox(width: isSmallScreen ? 6.w : 8.w),
+                  SizedBox(width: 8.w),
                   GestureDetector(
                     onTap: () {
                       ref.read(balanceVisibilityProvider.notifier).state =
@@ -637,13 +496,13 @@ class BalanceCard extends ConsumerWidget {
                     },
                     child: Icon(
                       isVisible ? Icons.visibility : Icons.visibility_off,
-                      size: isSmallScreen ? 14.sp : 16.sp,
+                      size: 16.sp,
                       color: Colors.white,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: isSmallScreen ? 3.h : 4.h),
+              SizedBox(height: 5.h),
               Text(
                 isVisible
                     ? '${Constants.nairaCurrencySymbol}$formattedBalance'
@@ -651,7 +510,7 @@ class BalanceCard extends ConsumerWidget {
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: isSmallScreen ? 16.sp : 20.sp,
+                  fontSize: 20.sp,
                 ),
               ),
             ],
@@ -660,24 +519,24 @@ class BalanceCard extends ConsumerWidget {
             onTap: () => context.pushNamed(RouteList.topUp),
             child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 8.w : 10.w,
-                vertical: isSmallScreen ? 4.h : 5.h,
+                horizontal: 10.w,
+                vertical: 6.h,
               ),
               decoration: BoxDecoration(
                 color: whiteBackground,
-                borderRadius: BorderRadius.all(Radius.circular(isSmallScreen ? 6.r : 8.r)),
+                borderRadius: BorderRadius.circular(8.r),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Image.asset('assets/svg/plus.png', height: isSmallScreen ? 12.h : 15.h),
-                  SizedBox(width: isSmallScreen ? 4.w : 6.w),
+                  Image.asset('assets/svg/plus.png', height: 16.h),
+                  SizedBox(width: 6.w),
                   Text(
                     'Add money',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
-                      fontSize: isSmallScreen ? 10.sp : 12.sp,
+                      fontSize: 12.sp,
                     ),
                   ),
                 ],
@@ -694,14 +553,12 @@ class ActionButton extends StatelessWidget {
   final String label;
   final Widget icon;
   final VoidCallback? onTap;
-  final bool isSmallScreen;
 
   const ActionButton({
     super.key,
     required this.label,
     required this.icon,
     this.onTap,
-    required this.isSmallScreen,
   });
 
   @override
@@ -714,22 +571,22 @@ class ActionButton extends StatelessWidget {
         children: [
           Container(
             padding: EdgeInsets.symmetric(
-              vertical: isSmallScreen ? 6.h : 8.h,
-              horizontal: isSmallScreen ? 9.w : 11.w,
+              vertical: 8.h,
+              horizontal: 12.w,
             ),
             decoration: BoxDecoration(
               color: secondaryColor,
-              borderRadius: const BorderRadius.all(Radius.circular(5)),
+              borderRadius: BorderRadius.circular(5.r),
             ),
             child: icon,
           ),
-          SizedBox(height: isSmallScreen ? 8.h : 10.h),
+          SizedBox(height: 10.h),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
               fontWeight: FontWeight.w700,
-              fontSize: isSmallScreen ? 10.sp : 11.sp,
+              fontSize: 11.sp,
             ),
           ),
         ],
@@ -742,14 +599,12 @@ class QuickActionButton extends StatelessWidget {
   final String label;
   final Widget icon;
   final VoidCallback? onTap;
-  final bool isSmallScreen;
 
   const QuickActionButton({
     super.key,
     required this.label,
     required this.icon,
     this.onTap,
-    required this.isSmallScreen,
   });
 
   @override
@@ -761,23 +616,20 @@ class QuickActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(
-              vertical: isSmallScreen ? 7.h : 9.h,
-              horizontal: isSmallScreen ? 7.w : 9.w,
-            ),
+            padding: EdgeInsets.all(10.r),
             decoration: BoxDecoration(
               color: secondaryColor,
-              borderRadius: const BorderRadius.all(Radius.circular(50)),
+              shape: BoxShape.circle,
             ),
             child: icon,
           ),
-          SizedBox(height: isSmallScreen ? 8.h : 10.h),
+          SizedBox(height: 10.h),
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: lightSecondaryText,
               fontWeight: FontWeight.w700,
-              fontSize: isSmallScreen ? 9.sp : 10.sp,
+              fontSize: 10.sp,
             ),
           ),
         ],

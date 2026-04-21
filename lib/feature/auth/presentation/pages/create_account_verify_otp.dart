@@ -148,15 +148,15 @@ class _CreateAccountVerifyOtpScreenState
     final isTablet = screenWidth > 600;
 
     // Adaptive spacing
-    final headerSpacing = isSmallScreen ? 12.h : 16.h;
-    final sectionSpacing = isSmallScreen ? 16.h : (isLargeScreen ? 30.h : 25.h);
-    final pinSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 40.h : 35.h);
-    final keypadSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 40.h : 30.h);
+    final headerSpacing = isSmallScreen ? 8.h : 16.h;
+    final sectionSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 30.h : 25.h);
+    final pinSpacing = isSmallScreen ? 14.h : (isLargeScreen ? 40.h : 35.h);
+    final keypadSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 40.h : 30.h);
 
     // Adaptive keypad height
     final keypadHeight = isSmallScreen
-        ? screenHeight * 0.38
-        : (isLargeScreen ? screenHeight * 0.48 : screenHeight * 0.42);
+        ? screenHeight * 0.35 // Slightly shorter on small screens
+        : (isLargeScreen ? screenHeight * 0.48 : screenHeight * 0.40);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -283,7 +283,7 @@ class _CreateAccountVerifyOtpScreenState
                                     ? 'Resend code'
                                     : 'Resend code in $_secondsRemaining s',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: _canResend ? primaryColor : keyAColor,
+                                  color: _canResend ? primaryColor : borderColor, // 🔥 CHANGED: Improved visibility (was keyAColor)
                                   fontWeight: FontWeight.w600,
                                   fontSize: isSmallScreen ? 12.sp : 14.sp,
                                 ),

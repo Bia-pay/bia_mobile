@@ -11,6 +11,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../app/utils/colors.dart';
+import '../../../../app/utils/u_popup.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -57,90 +58,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // Show error modal
   void _showErrorModal(String title, String message, {bool isNetworkError = false, VoidCallback? onRetry}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        contentPadding: EdgeInsets.all(24.w),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: isNetworkError ? pendingColor.withValues(alpha:0.1) : errorColor.withValues(alpha:0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isNetworkError ? Icons.wifi_off : Icons.error_outline,
-                color: isNetworkError ? pendingColor : errorColor,
-                size: 40.sp,
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: darkBackground,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: grey600,
-              ),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 24.h),
-            Row(
-              children: [
-                if (onRetry != null) ...[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        onRetry();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        side: BorderSide(color: primaryColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                      ),
-                      child: Text(
-                        'Retry',
-                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                ],
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                    ),
-                    child: Text(
-                      'OK',
-                      style: TextStyle(color: lightBackground, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    if (onRetry != null) {
+      UPopup.confirm(
+        context,
+        title: title,
+        message: message,
+        confirmLabel: 'Retry',
+        cancelLabel: 'OK',
+        onConfirm: onRetry,
+      );
+    } else {
+      UPopup.error(
+        context,
+        title: title,
+        message: message,
+        confirmLabel: 'OK',
+      );
+    }
   }
 
   // Check if API response indicates failure

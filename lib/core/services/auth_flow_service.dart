@@ -31,23 +31,20 @@ class AuthFlowService {
       }
       debugPrint('✅ Step 1: Access token verified');
       
-      // Step 2: Verify FCM token is saved (should already be done in auth repo)
-      final fcmToken = authBox.get('fcmToken');
-      
-      if (fcmToken == null || fcmToken.isEmpty) {
-        debugPrint('⚠️ FCM token not found, generating new one...');
-        
-        // Generate FCM token if missing
-        final newFcmToken = await FirebaseMessaging.instance.getToken();
-        if (newFcmToken != null) {
-          await authBox.put('fcmToken', newFcmToken);
-          debugPrint('✅ Step 2: FCM token generated and saved');
-        } else {
-          debugPrint('❌ Failed to generate FCM token');
-          return;
-        }
+      // Step 2: Always get a fresh FCM token
+      debugPrint('🔥 Fetching fresh FCM token...');
+      final newFcmToken = await FirebaseMessaging.instance.getToken();
+      if (newFcmToken != null) {
+        await authBox.put('fcmToken', newFcmToken);
+        debugPrint('✅ Step 2: FCM token updated');
       } else {
-        debugPrint('✅ Step 2: FCM token verified');
+        debugPrint('⚠️ Could not fetch fresh FCM token, using stored one if available');
+      }
+      
+      final currentFcmToken = authBox.get('fcmToken');
+      if (currentFcmToken == null || currentFcmToken.isEmpty) {
+        debugPrint('❌ No FCM token available, cannot register');
+        return;
       }
       
       // Step 3: Connect socket with both tokens

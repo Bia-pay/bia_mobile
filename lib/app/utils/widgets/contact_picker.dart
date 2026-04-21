@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../colors.dart';
+import '../u_popup.dart';
 
 class ContactsPickerSuffix extends StatelessWidget {
   final Function(String phoneNumber, String? name) onContactSelected;
@@ -95,27 +96,13 @@ class ContactsPickerSuffix extends StatelessWidget {
   }
 
   void _showPermissionDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Contacts Permission'),
-        content: const Text(
-          'This app needs access to your contacts to help you select phone numbers easily.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              openAppSettings();
-              Navigator.pop(context);
-            },
-            child: const Text('Open Settings'),
-          ),
-        ],
-      ),
+    UPopup.confirm(
+      context,
+      title: 'Contacts Permission',
+      message: 'This app needs access to your contacts to help you select phone numbers easily.',
+      confirmLabel: 'Open Settings',
+      cancelLabel: 'Cancel',
+      onConfirm: () => openAppSettings(),
     );
   }
 }

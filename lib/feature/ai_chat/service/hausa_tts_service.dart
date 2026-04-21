@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 
 class HausaTtsService {
   final String _token = String.fromEnvironment('HF_TOKEN');
-  // 🟢 UPDATED ENDPOINT
+  // 🟢 ROUTER ENDPOINT (Supports standard Hugging Face routing)
   final String _modelUrl = 'https://router.huggingface.co/hf-inference/models/facebook/mms-tts-hau';
+
+
 
   Future<List<int>?> generateSpeech(String text) async {
     try {

@@ -275,7 +275,7 @@ class DashboardRepository {
     }
   }
 
-  Future<TransactionResponse> getTransactions() async {
+  Future<TransactionResponse> getTransactions({int page = 1, int limit = 20}) async {
     try {
       final box = await Hive.openBox("authBox");
       final token = box.get("token", defaultValue: "");
@@ -290,7 +290,7 @@ class DashboardRepository {
 
       _apiClient.updateHeaders(token);
 
-      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=3000");
+      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=$page&limit=$limit");
       final jsonResponse = jsonDecode(response.body);
 
       // 🔹 Print out the raw responseBody for debugging
@@ -391,9 +391,16 @@ class DashboardRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final user = UserResponse.fromJson(jsonResponse['responseBody']['user']);
         print(response.body);
-        // Save locally
+        
+        // 🔹 Save locally - Sync all relevant keys
         await box.put('saved_user_profile', user.toJson());
+        
+        // 🟢 Update individual keys used by Home and Welcome Screens
+        if (user.picture != null) await box.put('picture', user.picture);
+        if (user.fullname != null) await box.put('fullname', user.fullname);
+        
         return user;
+
       } else {
         return null;
       }
@@ -528,15 +535,17 @@ class DashboardRepository {
 
       final request = http.MultipartRequest('PATCH', uri);
       request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
 
       request.files.add(
         await http.MultipartFile.fromPath(
           'image',
           imagePath,
-          contentType: MediaType(mimeSplit[0], mimeSplit[1]),
+          contentType: MediaType.parse(mimeType),
         ),
       );
+
+
+
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -556,6 +565,37 @@ class DashboardRepository {
       debugPrint("🔥 Upload exception: $e");
       return ResponseModel(
         responseMessage: 'Image upload failed',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> updateUserProfile(Map<String, dynamic> body) async {
+    try {
+      final box = await Hive.openBox('authBox');
+      final token = box.get('token') as String?;
+
+      if (token == null || token.isEmpty) {
+        return ResponseModel(
+          responseMessage: "No token found",
+          responseSuccessful: false,
+          statusCode: 401,
+        );
+      }
+
+      _apiClient.updateHeaders(token);
+      final response = await _apiClient.patchData(ApiConstant.PROFILE_UPDATE, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      debugPrint("🟢 Profile Update STATUS: ${response.statusCode}");
+      debugPrint("🟢 Profile Update BODY: ${response.body}");
+
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      debugPrint("🔥 Profile update exception: $e");
+      return ResponseModel(
+        responseMessage: 'Profile update failed',
         responseSuccessful: false,
         statusCode: 500,
       );
@@ -1039,12 +1079,21 @@ class DashboardRepository {
 
       print("📱 Verify Phone Response: $jsonResponse");
 
+      // Extract response body safely
+      final responseBodyList = jsonResponse["responseBody"];
+      ResponseBody? parsedBody;
+      
+      if (responseBodyList is List && responseBodyList.isNotEmpty) {
+        parsedBody = ResponseBody.fromJson(responseBodyList[0]);
+      }
+
       return ResponseModel(
-        responseMessage: jsonResponse["responseMessage"],
-        responseSuccessful: jsonResponse["responseSuccessful"],
+        responseMessage: jsonResponse["responseMessage"] ?? "Verification failed",
+        responseSuccessful: jsonResponse["responseSuccessful"] ?? false,
         statusCode: response.statusCode,
-        responseBody: ResponseBody.fromJson(jsonResponse["responseBody"][0]),
+        responseBody: parsedBody,
       );
+
     } catch (e) {
       print("🔥 Verify phone error: $e");
 

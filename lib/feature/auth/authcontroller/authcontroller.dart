@@ -13,6 +13,7 @@ import '../../../app/utils/widgets/toast_helper.dart';
 import '../../../core/easy_loading_config.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../../../core/services/biometric_service.dart';
+import '../interceptor/interceptor.dart';
 import '../authrepo/repo.dart';
 import '../modal/reponse/response_modal.dart';
 
@@ -145,8 +146,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-  // ignore: unused_element
-  Future<void> _logout(BuildContext context) async {
+  Future<void> logout([BuildContext? context]) async {
     try {
       EasyLoading.show(status: "Logging out...");
 
@@ -167,35 +167,44 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       // Stop automatic token refresh
      // TokenManager().stopAutoRefresh();
 
-      if (biometricEnabled) {
-        await authBox.delete('token');
-        await authBox.delete('refreshToken');
+      // Purge secure tokens but preserve identity for the "Welcome Back" experience
+      await authBox.delete('token');
+      await authBox.delete('refreshToken');
+      // We explicitly DO NOT clear() the box here to keep fullname/phone/picture cached.
+
+
+      LoadingHelper.dismiss();
+
+      // Always target WelcomeBack if we have a known user cached
+      final targetRoute = effectiveUserId.isNotEmpty ? RouteList.welcomeBackScreen : RouteList.loginScreen;
+
+
+      if (context != null && context.mounted) {
+        context.go(targetRoute);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Logged out successfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
-        await authBox.clear();
+        // Fallback to global navigatorKey if context is unavailable
+        navigatorKey.currentState?.context.go(targetRoute);
       }
 
-      LoadingHelper.dismiss();
-
-      if (!mounted) return;
-
-      context.go(biometricEnabled ? RouteList.welcomeBackScreen : RouteList.loginScreen);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Logged out successfully"),
-          backgroundColor: Colors.green,
-        ),
-      );
     } catch (e) {
       LoadingHelper.dismiss();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Logout failed: $e"),
-          backgroundColor: errorColor,
-        ),
-      );
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Logout failed: $e"),
+            backgroundColor: errorColor,
+          ),
+        );
+      }
     }
   }
+
 
   Future<void> clearRecentBeneficiaries(String userId) async {
     final box = await Hive.openBox('recentBeneficiaries');

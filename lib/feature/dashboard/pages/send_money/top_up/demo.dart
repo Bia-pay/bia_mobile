@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../../app/utils/colors.dart';
+import '../../../../../app/utils/u_popup.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class PaymentWebViewPage extends ConsumerStatefulWidget {
@@ -108,18 +109,15 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
 
   void _showDialog(String title, String message) {
     if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+    
+    final isSuccess = title.toLowerCase().contains("success");
+    
+    UPopup.show(
+      context,
+      type: isSuccess ? UPopupType.success : UPopupType.error,
+      title: title,
+      message: message,
+      confirmLabel: "OK",
     );
   }
 

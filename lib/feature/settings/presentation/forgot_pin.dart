@@ -110,14 +110,14 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
     final isTablet = screenWidth > 600;
 
     // Adaptive spacing
-    final headerSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 30.h : 20.h);
-    final sectionSpacing = isSmallScreen ? 16.h : (isLargeScreen ? 30.h : 25.h);
-    final pinSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 40.h : 35.h);
-    final keypadSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 40.h : 30.h);
+    final headerSpacing = isSmallScreen ? 8.h : (isLargeScreen ? 30.h : 20.h);
+    final sectionSpacing = isSmallScreen ? 10.h : (isLargeScreen ? 30.h : 25.h);
+    final pinSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 40.h : 35.h);
+    final keypadSpacing = isSmallScreen ? 10.h : (isLargeScreen ? 40.h : 30.h);
 
     // Adaptive keypad height
     final keypadHeight = isSmallScreen
-        ? 280.h
+        ? (screenHeight * 0.35) // Proportional height
         : (isLargeScreen ? 400.h : (isTablet ? 450.h : 420.h));
 
     final box = Hive.box('authBox');
@@ -129,150 +129,128 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    isTablet ? 40.w : 20.w,
-                    isSmallScreen ? 10.h : 15.h,
-                    isTablet ? 40.w : 18.w,
-                    MediaQuery.of(context).viewInsets.bottom + 16.h,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Back Button
+                Padding(
+                  padding: EdgeInsets.fromLTRB(20.w, isSmallScreen ? 10.h : 20.h, 20.w, 0),
+                  child: GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      padding: EdgeInsets.all(isSmallScreen ? 8.w : 10.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: isSmallScreen ? 18.sp : 20.sp,
+                        color: Colors.black,
+                      ),
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Back Button
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(isSmallScreen ? 8.w : 10.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.arrow_back_ios_new,
-                            size: isSmallScreen ? 18.sp : 20.sp,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
+                ),
 
-                      SizedBox(height: headerSpacing),
-
-                      // Title
-                      Text(
-                        'Enter 6-digit code',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp),
-                        ),
-                      ),
-
-                      SizedBox(height: 8.h),
-
-                      // Subtitle
-                      Text(
-                        "We've sent a verification code to",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: borderColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 12.sp : 14.sp,
-                        ),
-                      ),
-
-                      SizedBox(height: 2.h),
-
-                      // Phone number
-                      RichText(
-                        text: TextSpan(
-                          text: 'Your phone number ',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: borderColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: isSmallScreen ? 12.sp : 14.sp,
-                          ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 40.w : 20.w),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextSpan(
-                              text: phone,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: primaryColor,
+                            // Title
+                            Text(
+                              'Enter 6-digit code',
+                              style: theme.textTheme.headlineLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                fontSize: isSmallScreen ? 12.sp : 14.sp,
+                                fontSize: isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp),
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            // Subtitle & Phone
+                            Text(
+                              "We've sent a verification code to",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: borderColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: isSmallScreen ? 11.sp : 14.sp,
+                              ),
+                            ),
+                            RichText(
+                              text: TextSpan(
+                                text: 'Your phone number ',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: borderColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: phone,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
 
-                      SizedBox(height: sectionSpacing),
-
-                      // PIN Field
-                      Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 40.w : 10.w,
-                          ),
-                          child: AppPinCodeField(
-                            controller: otpController,
-                            length: 6,
-                            fillColor: lightBackground,
-                            inactiveColor: pinBorderColor,
-                            activeColor: primaryColor,
-                            selectedColor: primaryColor,
-                            onCompleted: (code) => _verifyOtp(),
-                          ),
+                        // PIN Field
+                        AppPinCodeField(
+                          controller: otpController,
+                          length: 6,
+                          fillColor: lightBackground,
+                          inactiveColor: pinBorderColor,
+                          activeColor: primaryColor,
+                          selectedColor: primaryColor,
+                          onCompleted: (code) => _verifyOtp(),
                         ),
-                      ),
 
-                      SizedBox(height: pinSpacing),
-
-                      // Resend Code
-                      Center(
-                        child: RichText(
-                          text: TextSpan(
-                            text: "You didn't receive any code? ",
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: borderColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: isSmallScreen ? 12.sp : 14.sp,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: _canResend
-                                    ? 'Resend code'
-                                    : 'Resend code in $_secondsRemaining s',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: _canResend ? primaryColor : keyAColor,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: isSmallScreen ? 12.sp : 14.sp,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = _canResend ? _restartTimer : null,
+                        // Resend Code
+                        Center(
+                          child: RichText(
+                            text: TextSpan(
+                              text: "You didn't receive any code? ",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: borderColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: isSmallScreen ? 11.sp : 14.sp,
                               ),
-                            ],
+                              children: [
+                                TextSpan(
+                                  text: _canResend
+                                      ? 'Resend code'
+                                      : 'Resend code in $_secondsRemaining s',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: _canResend ? primaryColor : borderColor,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = _canResend ? _restartTimer : null,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
 
-                      SizedBox(height: keypadSpacing),
-
-                      // Keypad
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: SizedBox(
+                        // Keypad
+                        SizedBox(
                           height: keypadHeight,
                           child: CustomGridKeypad(
                             onNumberPressed: addDigit,
                             leftAction: ActionKey(
                               child: SvgPicture.asset(
                                 'assets/svg/cancel.svg',
-                                height: isSmallScreen ? 18.h : 22.h,
+                                height: isSmallScreen ? 16.h : 22.h,
                                 colorFilter: ColorFilter.mode(
                                   primaryColor,
                                   BlendMode.srcIn,
@@ -285,21 +263,21 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                               child: Icon(
                                 Icons.arrow_forward,
                                 color: lightBackground,
-                                size: isSmallScreen ? 22.sp : 26.sp,
+                                size: isSmallScreen ? 20.sp : 26.sp,
                               ),
                               backgroundColor: primaryColor,
                               onTap: _verifyOtp,
                             ),
                           ),
                         ),
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 8.h : 16.h),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(height: 8.h),
+              ],
             );
+
           },
         ),
       ),

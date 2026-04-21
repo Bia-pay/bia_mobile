@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../app/utils/colors.dart';
+import '../../../../app/utils/u_popup.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -71,152 +72,33 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
   // Show error modal
   void _showErrorModal(String title, String message, {bool isNetworkError = false, VoidCallback? onRetry}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        contentPadding: EdgeInsets.all(24.w),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: isNetworkError ? Colors.orange.withOpacity(0.1) : errorColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isNetworkError ? Icons.wifi_off : Icons.error_outline,
-                color: isNetworkError ? Colors.orange : errorColor,
-                size: 40.sp,
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: darkBackground,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey.shade600,
-              ),
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 24.h),
-            Row(
-              children: [
-                if (onRetry != null) ...[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        onRetry();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        side: BorderSide(color: primaryColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                      ),
-                      child: Text(
-                        'Retry',
-                        style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                ],
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-                    ),
-                    child: Text(
-                      'OK',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    if (onRetry != null) {
+      UPopup.confirm(
+        context,
+        title: title,
+        message: message,
+        confirmLabel: 'Retry',
+        cancelLabel: 'OK',
+        onConfirm: onRetry,
+      );
+    } else {
+      UPopup.error(
+        context,
+        title: title,
+        message: message,
+        confirmLabel: 'OK',
+      );
+    }
   }
 
   // Show success modal
   void _showSuccessModal(String title, String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        contentPadding: EdgeInsets.all(24.w),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: successColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_circle_outline,
-                color: successColor,
-                size: 40.sp,
-              ),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w700,
-                color: darkBackground,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            SizedBox(height: 24.h),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                context.pushNamed(RouteList.bottomNavBar);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 24.w),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-              ),
-              child: Text(
-                'Continue',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
+    UPopup.success(
+      context,
+      title: title,
+      message: message,
+      confirmLabel: 'Continue',
+      onConfirm: () => context.pushNamed(RouteList.bottomNavBar),
     );
   }
 

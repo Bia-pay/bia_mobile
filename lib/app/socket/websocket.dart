@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'dart:io';
 
 class AppSocketListener extends ConsumerStatefulWidget {
   final Widget child;
@@ -23,11 +24,12 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
 
     _listenForFcmTokenRefresh(); // 👈 ADD THIS
 
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   Future.delayed(const Duration(seconds: 3), () {
-    //     _checkAndConnect();
-    //   });
-    // });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        _checkAndConnect();
+      });
+    });
+
   }
 
   @override
@@ -58,7 +60,12 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
 
       final socket = ref.read(socketProvider);
       if (socket != null && socket.connected) {
-        socket.emit('registerFcmToken', {'fcmToken': newToken});
+        final accessToken = box.get('token');
+        socket.emit('registerFcmToken', {
+          'accessToken': accessToken,
+          'fcmToken': newToken,
+          'platform': Platform.isAndroid ? 'android' : 'ios',
+        });
         print("📤 Sent refreshed FCM token to backend via socket");
       } else {
         print("⚠️ Socket not connected, will send later");

@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
+import '../custom_loader.dart';
 
 /// Callback when picture is taken: returns the file path
 typedef OnPictureTaken = void Function(String path);
@@ -183,7 +184,7 @@ class _CircularCameraState extends State<CircularCamera>
           return SizedBox(
             width: size,
             height: size,
-            child: const Center(child: CircularProgressIndicator()),
+            child: const Center(child: CustomLoader(size: 30)),
           );
         }
 
@@ -237,7 +238,7 @@ class _CircularCameraState extends State<CircularCamera>
                   ),
                   onPressed: _isTaking ? null : _takePicture,
                   child: _isTaking
-                      ? const CircularProgressIndicator()
+                      ? const CustomLoader(size: 24, color: Colors.white)
                       : Container(
                           width: 56,
                           height: 56,

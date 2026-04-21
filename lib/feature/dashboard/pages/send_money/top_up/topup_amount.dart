@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../../app/utils/image.dart';
+import '../../../../../app/utils/u_popup.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/view/widget/app_textfield.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
@@ -297,21 +298,15 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
   void _showDialog(String title, String message) {
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // close dialog
-              Navigator.pop(context); // close WebView
-            },
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+    UPopup.show(
+      context,
+      type: UPopupType.error,
+      title: title,
+      message: message,
+      confirmLabel: "OK",
+      onConfirm: () {
+        Navigator.pop(context); // close WebView
+      },
     );
   }
   @override

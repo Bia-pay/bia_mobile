@@ -8,6 +8,7 @@ import 'package:hive/hive.dart';
 import '../../../../app/utils/widgets/pin_field.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../dashboard/widgets/keypad.dart';
+import '../../../../app/utils/custom_loader.dart';
 
 /// Secure implementation of biometric enablement
 /// Flow:
@@ -233,14 +234,7 @@ class _EnableTransactionPinBiometricSecureState
                 ),
                 rightAction: ActionKey(
                   child: _isLoading
-                      ? SizedBox(
-                          width: 24.w,
-                          height: 24.h,
-                          child: const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
+                      ? const CustomLoader(size: 24, color: Colors.white)
                       : const Icon(
                           Icons.check,
                           color: Colors.white,

@@ -1,42 +1,56 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 class HausaAsrService {
-  final String _token = String.fromEnvironment('HF_TOKEN');
-  // 🟢 UPDATED ENDPOINT
-  final String _modelUrl = 'https://router.huggingface.co/hf-inference/models/NCAIR1/Hausa-ASR';
+  // 🟢 LOCAL FASTAPI ENDPOINT
+  final String _localUrl = 'http://10.248.222.162:8000/transcribe';
 
   Future<String?> transcribe(String filePath) async {
     try {
       final file = File(filePath);
       if (!await file.exists()) return null;
 
-      final audioBytes = await file.readAsBytes();
-
-      final response = await http.post(
-        Uri.parse(_modelUrl),
-        headers: {
-          'Authorization': 'Bearer $_token',
-          // 🟢 CHANGE: Use octet-stream for raw audio
-          'Content-Type': 'application/octet-stream',
-          'x-wait-for-model': 'true', // 🟢 2026 Header style
-        },
-        body: audioBytes, // 🟢 SEND RAW BYTES, NOT JSON
+      // 🟢 MULTIPART REQUEST FOR FASTAPI
+      final request = http.MultipartRequest('POST', Uri.parse(_localUrl));
+      
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file', // Must match FastAPI's parameter name
+          filePath,
+        ),
       );
+
+      // 🟢 SEND WITH INCREASED TIMEOUT (15s for local MacBook inference)
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 15),
+      );
+      
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      // 🟢 LOG RAW RESPONSE BODY FOR DEBUGGING
+      debugPrint('🎙️ ASR Raw Response: ${response.body}');
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         return result['text']?.toString() ?? '';
       } else {
-        debugPrint('❌ ASR Error: ${response.statusCode} - ${response.body}');
-        return null;
+        debugPrint('❌ Local ASR Error: ${response.statusCode} - ${response.body}');
+        return null; // Return null for generic errors
       }
+    } on SocketException {
+       // 🟢 HUB OFFLINE (No connection to host)
+       return 'HUB_OFFLINE';
+    } on TimeoutException {
+       debugPrint('❌ ASR Timeout: Inference took too long');
+       return null; // Triggers "I could not hear you" instead of "Hub Offline"
     } catch (e) {
       debugPrint('❌ ASR Exception: $e');
       return null;
     }
   }
+
 }

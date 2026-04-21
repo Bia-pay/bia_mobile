@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import '../model/recent_transaction.dart';
+import 'package:bia/app/utils/colors.dart';
 
 class TransactionDetailsScreen extends StatelessWidget {
-  final Transaction transaction;
+  final TransactionItem transaction;
 
   const TransactionDetailsScreen({
     super.key,
@@ -12,312 +14,287 @@ class TransactionDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final status = transaction.status?.toUpperCase() ?? "SUCCESSFUL";
+    final isCredit = transaction.isCredit;
+
+    // Exact color codes matching Transaction History for perfect alignment
+    final Color statusColor = status == "PENDING"
+        ? const Color(0xFFFACC15) // History Yellow
+        : isCredit
+            ? const Color(0xFF22C55E) // History Green
+            : const Color(0xFFEF4444); // History Red
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F5F5),
         elevation: 0,
+        backgroundColor: const Color(0xFFF5F5F5),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF2D2D2D)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF2D2D2D)),
           onPressed: () => Navigator.pop(context),
         ),
+        centerTitle: true,
         title: Text(
           'Transaction Details',
           style: TextStyle(
-            fontSize: 18.sp,
+            fontSize: 16.sp,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF2D2D2D),
           ),
         ),
-        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Color(0xFF2D2D2D)),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        child: Column(
-          children: [
-            // Main Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          child: Column(
+            children: [
+              // Main Card
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(24.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      _getServiceTitle(transaction),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF666666),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      '₦${NumberFormat('#,##0.00').format(transaction.amount)}',
+                      style: TextStyle(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2D2D2D),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildStatusBadge(status, statusColor),
+                    SizedBox(height: 32.h),
+
+                    _buildTimeline(transaction, status, statusColor),
+                    SizedBox(height: 32.h),
+
+                    _buildAmountBreakdown(transaction),
+                    SizedBox(height: 32.h),
+
+                    _buildTransactionDetails(transaction, status),
+                  ],
+                ),
               ),
-              padding: EdgeInsets.all(20.w),
-              child: Column(
+              
+              SizedBox(height: 24.h),
+
+              // Action Buttons
+              Row(
                 children: [
-                  // Transaction Type & Amount
-                  Text(
-                    transaction.type,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: const Color(0xFF666666),
+                  Expanded(
+                    child: _buildActionButton(
+                      'Report Issue',
+                      Colors.white,
+                      const Color(0xFF2D2D2D),
+                      () {},
+                      hasBorder: true,
                     ),
                   ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '₦${NumberFormat('#,##0').format(transaction.amount)}',
-                    style: TextStyle(
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2D2D2D),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: _buildActionButton(
+                      'Share Receipt',
+                      primaryColor,
+                      Colors.white,
+                      () {},
                     ),
                   ),
-                  SizedBox(height: 8.h),
-                  _buildStatusBadge(transaction.status),
-                  SizedBox(height: 24.h),
-
-                  // Timeline
-                  _buildTimeline(transaction),
-                  SizedBox(height: 24.h),
-
-                  // Amount Breakdown
-                  _buildAmountBreakdown(transaction),
-                  SizedBox(height: 20.h),
-                  const Divider(color: Color(0xFFEEEEEE)),
-                  SizedBox(height: 20.h),
-
-                  // Transaction Details
-                  _buildTransactionDetails(transaction),
                 ],
               ),
-            ),
-            SizedBox(height: 24.h),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    'Report issue',
-                    const Color(0xFFE8D5F7),
-                    const Color(0xFF7B4FA2),
-                        () {},
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: _buildActionButton(
-                    'Share receipt',
-                    const Color(0xFF6B4EE6),
-                    Colors.white,
-                        () {},
-                  ),
-                ),
-              ],
-            ),
-          ],
+              SizedBox(height: 32.h),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusBadge(TransactionStatus status) {
-    final colors = {
-      TransactionStatus.successful: const Color(0xFF4CAF50),
-      TransactionStatus.failed: const Color(0xFFE53935),
-      TransactionStatus.pending: const Color(0xFFFF9800),
-    };
-
+  Widget _buildStatusBadge(String status, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: colors[status]!.withOpacity(0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(
-        status.name.capitalize(),
+        status,
         style: TextStyle(
           fontSize: 12.sp,
           fontWeight: FontWeight.w600,
-          color: colors[status],
+          color: color,
         ),
       ),
     );
   }
 
-  Widget _buildTimeline(Transaction transaction) {
-    final steps = _getTimelineSteps(transaction);
+  Widget _buildTimeline(TransactionItem tx, String status, Color statusColor) {
+    final creationTime = tx.createdAt ?? DateTime.now();
+    final isDone = status == "SUCCESSFUL";
+    final isFailed = status == "FAILED";
+    final isPending = status == "PENDING";
 
-    return Column(
-      children: steps.asMap().entries.map((entry) {
-        final index = entry.key;
-        final step = entry.value;
-        final isLast = index == steps.length - 1;
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Timeline line and dot
-            Column(
-              children: [
-                Container(
-                  width: 24.w,
-                  height: 24.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: step.isCompleted
-                        ? const Color(0xFF4CAF50)
-                        : step.isFailed
-                        ? const Color(0xFFE53935)
-                        : const Color(0xFFE0E0E0),
-                    border: Border.all(
-                      color: step.isCompleted || step.isFailed
-                          ? Colors.transparent
-                          : const Color(0xFFBDBDBD),
-                      width: 2,
-                    ),
-                  ),
-                  child: step.isCompleted
-                      ? Icon(Icons.check, color: Colors.white, size: 14.sp)
-                      : step.isFailed
-                      ? Icon(Icons.close, color: Colors.white, size: 14.sp)
-                      : null,
-                ),
-                if (!isLast)
-                  Container(
-                    width: 2.w,
-                    height: 40.h,
-                    color: step.isCompleted
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFFE0E0E0),
-                  ),
-              ],
-            ),
-            SizedBox(width: 12.w),
-
-            // Step content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    step.title,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF2D2D2D),
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    step.time,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: const Color(0xFF999999),
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                ],
-              ),
-            ),
-          ],
-        );
-      }).toList(),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.h),
+      child: Row(
+        children: [
+          _buildHorizontalStep(
+            'Initiated',
+            DateFormat('HH:mm').format(creationTime),
+            isCompleted: true,
+            activeColor: const Color(0xFF22C55E),
+          ),
+          _buildHorizontalLine(
+            isCompleted: isDone || isFailed, 
+            activeColor: statusColor
+          ),
+          _buildHorizontalStep(
+            isDone ? 'Success' : (isFailed ? 'Failed' : (isPending ? 'Pending' : 'Processing')),
+            DateFormat('HH:mm').format(creationTime),
+            isCompleted: isDone || isFailed || isPending,
+            activeColor: statusColor,
+          ),
+        ],
+      ),
     );
   }
 
-  List<TimelineStep> _getTimelineSteps(Transaction transaction) {
-    final dateFormat = DateFormat('MM-dd HH:mm:ss');
+  Widget _buildHorizontalStep(String title, String time, {bool isCompleted = false, Color activeColor = successColor}) {
+    Color dotColor = const Color(0xFFE0E0E0);
+    if (isCompleted) dotColor = activeColor;
 
-    switch (transaction.status) {
-      case TransactionStatus.successful:
-        return [
-          TimelineStep(
-            title: '${transaction.type} is being processed',
-            time: dateFormat.format(transaction.createdAt),
-            isCompleted: true,
-          ),
-          TimelineStep(
-            title: '${transaction.type} processing',
-            time: dateFormat.format(transaction.createdAt.add(const Duration(minutes: 1))),
-            isCompleted: true,
-          ),
-          TimelineStep(
-            title: '${transaction.type} successful',
-            time: dateFormat.format(transaction.completedAt!),
-            isCompleted: true,
-          ),
-        ];
-      case TransactionStatus.failed:
-        return [
-          TimelineStep(
-            title: '${transaction.type} is being processed',
-            time: dateFormat.format(transaction.createdAt),
-            isCompleted: true,
-          ),
-          TimelineStep(
-            title: '${transaction.type} processing',
-            time: dateFormat.format(transaction.createdAt.add(const Duration(minutes: 1))),
-            isCompleted: true,
-          ),
-          TimelineStep(
-            title: '${transaction.type} failed',
-            time: dateFormat.format(transaction.failedAt!),
-            isFailed: true,
-          ),
-        ];
-      case TransactionStatus.pending:
-        return [
-          TimelineStep(
-            title: '${transaction.type} is being processed',
-            time: dateFormat.format(transaction.createdAt),
-            isCompleted: true,
-          ),
-          TimelineStep(
-            title: '${transaction.type} processing',
-            time: dateFormat.format(transaction.createdAt.add(const Duration(minutes: 1))),
-            isCompleted: false,
-          ),
-        ];
-    }
-  }
-
-  Widget _buildAmountBreakdown(Transaction transaction) {
     return Column(
       children: [
-        _buildAmountRow('Amount', '₦${NumberFormat('#,##0').format(transaction.amount)}'),
-        SizedBox(height: 12.h),
-        _buildAmountRow('Fee', '₦${NumberFormat('#,##0').format(transaction.fee)}'),
-        SizedBox(height: 12.h),
-        _buildAmountRow('Amount Paid', '₦${NumberFormat('#,##0').format(transaction.amountPaid)}', isBold: true),
+        Container(
+          width: 10.w,
+          height: 10.w,
+          decoration: BoxDecoration(
+            color: dotColor,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w600,
+            color: isCompleted ? const Color(0xFF2D2D2D) : const Color(0xFF999999),
+          ),
+        ),
+        Text(
+          time,
+          style: TextStyle(
+            fontSize: 9.sp,
+            color: const Color(0xFF999999),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildAmountRow(String label, String value, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHorizontalLine({bool isCompleted = false, Color activeColor = successColor}) {
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 24.h), // Align with the dots
+        child: Container(
+          height: 2.h,
+          color: isCompleted ? activeColor : const Color(0xFFE0E0E0),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAmountBreakdown(TransactionItem tx) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          'Amount Breakdown',
           style: TextStyle(
-            fontSize: 13.sp,
-            color: const Color(0xFF666666),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13.sp,
-            fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
             color: const Color(0xFF2D2D2D),
           ),
         ),
+        SizedBox(height: 16.h),
+        _buildAmountRow('Transaction Amount', tx.amount),
+        _buildAmountRow('Transaction Fee', 0.00), // Original had fixed layout
+        const Divider(height: 24, thickness: 1, color: Color(0xFFF5F5F5)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Total Amount',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2D2D2D),
+              ),
+            ),
+            Text(
+              '₦${NumberFormat('#,##0.00').format(tx.amount)}',
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildTransactionDetails(Transaction transaction) {
-    final details = [
-      _DetailItem('Bank', transaction.bankName),
-      _DetailItem('Account Name', transaction.accountName),
-      _DetailItem('Transaction No.', transaction.transactionNumber),
-      _DetailItem('Payment Method', transaction.paymentMethod),
-      _DetailItem('Transaction Date', DateFormat('MMM dd,yyyy,HH:mm:ss').format(transaction.createdAt)),
-      _DetailItem('Session ID', transaction.sessionId),
-    ];
+  Widget _buildAmountRow(String label, double amount) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: const Color(0xFF999999),
+            ),
+          ),
+          Text(
+            '₦${NumberFormat('#,##0.00').format(amount)}',
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF2D2D2D),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildTransactionDetails(TransactionItem tx, String status) {
+    String accountName = tx.isCredit 
+        ? (tx.senderName ?? "External Account")
+        : (tx.receiverName ?? "External Account");
+        
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -325,12 +302,17 @@ class TransactionDetailsScreen extends StatelessWidget {
           'Transaction Details',
           style: TextStyle(
             fontSize: 14.sp,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             color: const Color(0xFF2D2D2D),
           ),
         ),
         SizedBox(height: 16.h),
-        ...details.map((detail) => _buildDetailRow(detail.label, detail.value)),
+        _buildDetailRow('Bank/Provider', tx.provider ?? "Bia Wallet"),
+        _buildDetailRow('Account Name', accountName),
+        _buildDetailRow('Transaction No.', tx.transactionId ?? "N/A"),
+        _buildDetailRow('Payment Method', "Bia Wallet"),
+        _buildDetailRow('Transaction Date', DateFormat('MMM dd, yyyy HH:mm').format(tx.createdAt ?? DateTime.now())),
+        _buildDetailRow('Status', status),
       ],
     );
   }
@@ -369,19 +351,15 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(
-      String text,
-      Color backgroundColor,
-      Color textColor,
-      VoidCallback onTap,
-      ) {
-    return GestureDetector(
+  Widget _buildActionButton(String text, Color bgColor, Color textColor, VoidCallback onTap, {bool hasBorder = false}) {
+    return InkWell(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 14.h),
+        height: 50.h,
         decoration: BoxDecoration(
-          color: backgroundColor,
+          color: bgColor,
           borderRadius: BorderRadius.circular(12.r),
+          border: hasBorder ? Border.all(color: const Color(0xFFE0E0E0)) : null,
         ),
         child: Center(
           child: Text(
@@ -396,67 +374,16 @@ class TransactionDetailsScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-// Data Models
-enum TransactionStatus { successful, failed, pending }
+  String _getServiceTitle(TransactionItem tx) {
+    final List<String> serviceTypes = ['AIRTIME', 'DATA', 'CABLE', 'ELECTRICITY', 'TOPUP'];
+    final normalized = tx.serviceType?.toUpperCase();
 
-class Transaction {
-  final String type; // "Coin Withdrawal", "Coin Deposited", etc.
-  final double amount;
-  final double fee;
-  final double amountPaid;
-  final TransactionStatus status;
-  final String bankName;
-  final String accountName;
-  final String transactionNumber;
-  final String paymentMethod;
-  final DateTime createdAt;
-  final DateTime? completedAt;
-  final DateTime? failedAt;
-  final String sessionId;
-
-  Transaction({
-    required this.type,
-    required this.amount,
-    required this.fee,
-    required this.amountPaid,
-    required this.status,
-    required this.bankName,
-    required this.accountName,
-    required this.transactionNumber,
-    required this.paymentMethod,
-    required this.createdAt,
-    this.completedAt,
-    this.failedAt,
-    required this.sessionId,
-  });
-}
-
-class TimelineStep {
-  final String title;
-  final String time;
-  final bool isCompleted;
-  final bool isFailed;
-
-  TimelineStep({
-    required this.title,
-    required this.time,
-    this.isCompleted = false,
-    this.isFailed = false,
-  });
-}
-
-class _DetailItem {
-  final String label;
-  final String value;
-
-  _DetailItem(this.label, this.value);
-}
-
-// Extension for capitalize
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
+    if (serviceTypes.contains(normalized)) {
+      if (normalized == 'CABLE') return 'Cable TV';
+      if (normalized == 'TOPUP') return 'Top Up';
+      return normalized![0] + normalized.substring(1).toLowerCase();
+    }
+    return normalized ?? "Transaction";
   }
 }

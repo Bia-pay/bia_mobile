@@ -2,7 +2,9 @@ import 'package:bia/app/socket/socket_provider.dart';
 import 'package:bia/app/socket/connection_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive/hive.dart';
+import '../utils/u_popup.dart';
 
 /// Debug widget to test WebSocket connection
 /// Add this to your dashboard or settings page to test the connection
@@ -187,19 +189,7 @@ class SocketDebugWidget extends ConsumerWidget {
 
   void _runConnectionTests(BuildContext context) async {
     // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('Running connection tests...'),
-          ],
-        ),
-      ),
-    );
+    UPopup.loading(context, message: 'Running connection tests...');
 
     try {
       final token = await _getToken();
@@ -209,52 +199,49 @@ class SocketDebugWidget extends ConsumerWidget {
       if (context.mounted) {
         Navigator.of(context).pop(); // Close loading dialog
         
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Connection Test Results'),
-            content: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...results.entries.map((entry) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          entry.value ? Icons.check_circle : Icons.error,
-                          color: entry.value ? Colors.green : Colors.red,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            entry.key.replaceAll('_', ' ').toUpperCase(),
-                            style: TextStyle(
-                              color: entry.value ? Colors.green : Colors.red,
-                            ),
+        UPopup.show(
+          context,
+          type: UPopupType.info,
+          title: 'Connection Test Results',
+          message: 'Summary of the WebSocket connection analysis.',
+          confirmLabel: 'OK',
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...results.entries.map((entry) => Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4.h),
+                  child: Row(
+                    children: [
+                      Icon(
+                        entry.value ? Icons.check_circle : Icons.error,
+                        color: entry.value ? Colors.green : Colors.red,
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          entry.key.replaceAll('_', ' ').toUpperCase(),
+                          style: TextStyle(
+                            color: entry.value ? Colors.green : Colors.red,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
-                  )),
-                  const Divider(),
-                  const Text('Recommendations:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  ...recommendations.map((rec) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(rec, style: const TextStyle(fontSize: 12)),
-                  )),
-                ],
-              ),
+                      ),
+                    ],
+                  ),
+                )),
+                const Divider(),
+                Text('Recommendations:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
+                SizedBox(height: 8.h),
+                ...recommendations.map((rec) => Padding(
+                  padding: EdgeInsets.symmetric(vertical: 2.h),
+                  child: Text(rec, style: TextStyle(fontSize: 11.sp, color: Colors.grey[700])),
+                )),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
           ),
         );
       }
