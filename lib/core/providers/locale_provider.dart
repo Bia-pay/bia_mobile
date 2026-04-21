@@ -41,7 +41,7 @@ class AppLocaleNotifier extends StateNotifier<Locale> {
   String translate(String key) {
     final Map<String, Map<String, String>> localizedStrings = {
       'en': {
-        'hub_settings': 'Hub Settings',
+        'hub_settings': 'Settings',
         'hub_desc': 'Manage your account security and preferences',
         'security_login': 'Security & Login',
         'prefs_support': 'Preferences & Support',
