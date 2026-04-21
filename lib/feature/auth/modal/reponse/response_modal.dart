@@ -29,6 +29,7 @@ class ResponseBody {
   final String? accessToken;
   final String? refreshToken;
   final String? status;
+  final List<dynamic>? recentTransactions;
 
   // ✅ ADD THESE
   final String? reference;
@@ -48,6 +49,7 @@ class ResponseBody {
     this.senderBalance,
     this.receiverName,
     this.status,
+    this.recentTransactions,
   });
 
   factory ResponseBody.fromJson(Map<String, dynamic> json) {
@@ -64,6 +66,7 @@ class ResponseBody {
       amount: json['amount'],
       senderBalance: json['senderBalance'],
       receiverName: json['receiverName'],
+      recentTransactions: json['recentTransactions'],
     );
   }
 }
@@ -159,6 +162,7 @@ class WalletResponse {
   final String? currency;
   final String? createdAt;
   final String? updatedAt;
+  final Map<String, dynamic>? limits;
 
   WalletResponse({
     this.id,
@@ -167,6 +171,7 @@ class WalletResponse {
     this.currency,
     this.createdAt,
     this.updatedAt,
+    this.limits,
   });
 
   factory WalletResponse.fromJson(Map<String, dynamic> json) {
@@ -177,6 +182,7 @@ class WalletResponse {
       currency: json['currency'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
+      limits: json['limits'] != null ? Map<String, dynamic>.from(json['limits']) : null,
     );
   }
 }

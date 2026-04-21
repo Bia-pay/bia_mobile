@@ -19,14 +19,24 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPending = tx.status?.toUpperCase() == 'PENDING';
+    final status = tx.status?.toUpperCase();
+    final isPending = status == 'PENDING';
+    final isFailed = status == 'FAILED';
     final isCredit = tx.isCredit;
 
-    final Color amountColor = isPending
-        ?  pendingColor
-        : isCredit
-            ?  successColor
-            :  errorColor;
+    final Color displayColor = isPending
+        ? pendingColor
+        : isFailed
+            ? errorColor
+            : successColor; // Green for success (both credit & debit)
+
+    final Color statusLabelColor = isPending
+        ? pendingColor
+        : isFailed
+            ? errorColor
+            : isCredit
+                ? successColor // Credits stay Green
+                : errorColor;  // Debits stay Red to show difference
 
     final List<String> serviceTitles = ['AIRTIME', 'DATA', 'CABLE', 'ELECTRICITY', 'TOPUP'];
     final normalizedService = tx.serviceType?.toUpperCase();
@@ -70,12 +80,12 @@ class TransactionTile extends StatelessWidget {
               height: 38.w,
               width: 38.w,
               decoration: BoxDecoration(
-                color: amountColor.withOpacity(0.10),
+                color: displayColor.withOpacity(0.10),
                 borderRadius: BorderRadius.circular(10.r),
               ),
               child: Icon(
                 iconData,
-                color: amountColor,
+                color: displayColor,
                 size: 17.sp,
               ),
             ),
@@ -120,7 +130,7 @@ class TransactionTile extends StatelessWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     fontSize: 12.sp,
-                    color: amountColor,
+                    color: displayColor,
                   ),
                 ),
                 SizedBox(height: 3.h),
@@ -130,7 +140,7 @@ class TransactionTile extends StatelessWidget {
                     vertical: 1.5.h,
                   ),
                   decoration: BoxDecoration(
-                    color: amountColor.withOpacity(0.10),
+                    color: statusLabelColor.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
@@ -138,7 +148,7 @@ class TransactionTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 8.sp,
                       fontWeight: FontWeight.w600,
-                      color: amountColor,
+                      color: statusLabelColor,
                     ),
                   ),
                 ),

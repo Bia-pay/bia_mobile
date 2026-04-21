@@ -17,6 +17,7 @@ import '../model/favourite_beneficiary.dart';
 import '../model/recent_transaction.dart';
 import '../model/recent_transfer.dart';
 import '../model/verify_transactions.dart';
+import '../model/notification_model.dart';
 
 final dashboardRepositoryProvider = Provider((ref) {
   final apiClient = ref.read(apiClientProvider);
@@ -26,6 +27,58 @@ final dashboardRepositoryProvider = Provider((ref) {
 class DashboardRepository {
   final ApiClient _apiClient;
   DashboardRepository(this._apiClient);
+
+  // ---------------- NOTIFICATIONS ----------------
+
+  Future<NotificationResponse> fetchNotifications({int page = 1, int limit = 10}) async {
+    try {
+      final response = await _apiClient.getData('${ApiConstant.GET_NOTIFICATIONS}?page=$page&limit=$limit');
+      final jsonResponse = jsonDecode(response.body);
+      return NotificationResponse.fromJson(jsonResponse);
+    } catch (e) {
+      return NotificationResponse(
+        responseSuccessful: false,
+        responseMessage: e.toString(),
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchUnreadCount() async {
+    try {
+      final response = await _apiClient.getData(ApiConstant.UNREAD_NOTIFICATION_COUNT);
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'responseSuccessful': false, 'responseMessage': e.toString()};
+    }
+  }
+
+  Future<ResponseModel> markAllAsRead() async {
+    try {
+      final response = await _apiClient.patchData(ApiConstant.MARK_ALL_NOTIFICATIONS_READ, {});
+      final jsonResponse = jsonDecode(response.body);
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: e.toString(),
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> markAsRead(String id) async {
+    try {
+      final response = await _apiClient.patchData(ApiConstant.MARK_NOTIFICATION_READ(id), {});
+      final jsonResponse = jsonDecode(response.body);
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: e.toString(),
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
 
   //  Transfer money
 // sendMoney in dashboardRepository

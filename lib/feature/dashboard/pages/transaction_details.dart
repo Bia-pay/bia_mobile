@@ -1,10 +1,19 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:media_store_plus/media_store_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../model/recent_transaction.dart';
 import 'package:bia/app/utils/colors.dart';
+import '../../../app/utils/custom_loader.dart';
 
-class TransactionDetailsScreen extends StatelessWidget {
+import '../widgets/branded_receipt.dart';
+
+class TransactionDetailsScreen extends StatefulWidget {
   final TransactionItem transaction;
 
   const TransactionDetailsScreen({
@@ -13,16 +22,54 @@ class TransactionDetailsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final status = transaction.status?.toUpperCase() ?? "SUCCESSFUL";
-    final isCredit = transaction.isCredit;
+  State<TransactionDetailsScreen> createState() => _TransactionDetailsScreenState();
+}
 
-    // Exact color codes matching Transaction History for perfect alignment
-    final Color statusColor = status == "PENDING"
-        ? const Color(0xFFFACC15) // History Yellow
-        : isCredit
-            ? const Color(0xFF22C55E) // History Green
-            : const Color(0xFFEF4444); // History Red
+class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
+  final GlobalKey _boundaryKey = GlobalKey();
+  final GlobalKey _receiptKey = GlobalKey();
+  bool _isProcessing = false;
+
+  Future<void> _handleShare() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    try {
+      final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+
+      final image = await boundary.toImage(pixelRatio: 4.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/receipt_${widget.transaction.reference}.png');
+      await file.writeAsBytes(pngBytes);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: "Transaction Receipt - ₦${NumberFormat('#,##0.00').format(widget.transaction.amount)}",
+      );
+    } catch (e) {
+      debugPrint("Share error: $e");
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final transaction = widget.transaction;
+    final status = transaction.status?.toUpperCase() ?? "SUCCESSFUL";
+    final isFailed = status == "FAILED";
+    final isPending = status == "PENDING";
+    final theme = Theme.of(context);
+
+    final Color statusColor = isPending
+        ? pendingColor
+        : isFailed
+            ? errorColor
+            : successColor;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -30,7 +77,7 @@ class TransactionDetailsScreen extends StatelessWidget {
         elevation: 0,
         backgroundColor: const Color(0xFFF5F5F5),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2D2D2D)),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF2D2D2D)),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
@@ -42,88 +89,97 @@ class TransactionDetailsScreen extends StatelessWidget {
             color: const Color(0xFF2D2D2D),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline, color: Color(0xFF2D2D2D)),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-          child: Column(
-            children: [
-              // Main Card
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _getServiceTitle(transaction),
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF666666),
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      '₦${NumberFormat('#,##0.00').format(transaction.amount)}',
-                      style: TextStyle(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF2D2D2D),
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    _buildStatusBadge(status, statusColor),
-                    SizedBox(height: 32.h),
-
-                    _buildTimeline(transaction, status, statusColor),
-                    SizedBox(height: 32.h),
-
-                    _buildAmountBreakdown(transaction),
-                    SizedBox(height: 32.h),
-
-                    _buildTransactionDetails(transaction, status),
-                  ],
-                ),
-              ),
-              
-              SizedBox(height: 24.h),
-
-              // Action Buttons
-              Row(
+      body: Stack(
+        children: [
+          // Hidden Receipt for capture
+          Positioned(
+            left: -1000,
+            child: RepaintBoundary(
+              key: _receiptKey,
+              child: BrandedReceipt(transaction: transaction),
+            ),
+          ),
+          
+          SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      'Report Issue',
-                      Colors.white,
-                      const Color(0xFF2D2D2D),
-                      () {},
-                      hasBorder: true,
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(24.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          _getServiceTitle(transaction),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: const Color(0xFF666666),
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          '₦${NumberFormat('#,##0.00').format(transaction.amount)}',
+                          style: TextStyle(
+                            fontSize: 28.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2D2D2D),
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildStatusBadge(status, statusColor),
+                        SizedBox(height: 32.h),
+
+                        if (transaction.isBankTransfer) ...[
+                          _buildTimeline(transaction, status, statusColor),
+                          SizedBox(height: 32.h),
+                        ],
+
+                        _buildAmountBreakdown(transaction),
+                        SizedBox(height: 32.h),
+
+                        _buildTransactionDetails(transaction, status),
+                      ],
                     ),
                   ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: _buildActionButton(
-                      'Share Receipt',
-                      primaryColor,
-                      Colors.white,
-                      () {},
-                    ),
+                  
+                  SizedBox(height: 24.h),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionButton(
+                          'Report Issue',
+                          Colors.white,
+                          const Color(0xFF2D2D2D),
+                          () {},
+                          hasBorder: true,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: _buildActionButton(
+                          'Share Receipt',
+                          primaryColor,
+                          Colors.white,
+                          _handleShare,
+                          isLoading: _isProcessing,
+                        ),
+                      ),
+                    ],
                   ),
+                  SizedBox(height: 32.h),
                 ],
               ),
-              SizedBox(height: 32.h),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -148,7 +204,7 @@ class TransactionDetailsScreen extends StatelessWidget {
 
   Widget _buildTimeline(TransactionItem tx, String status, Color statusColor) {
     final creationTime = tx.createdAt ?? DateTime.now();
-    final isDone = status == "SUCCESSFUL";
+    final isDone = status == "SUCCESSFUL" || status == "SUCCESS";
     final isFailed = status == "FAILED";
     final isPending = status == "PENDING";
 
@@ -157,54 +213,84 @@ class TransactionDetailsScreen extends StatelessWidget {
       child: Row(
         children: [
           _buildHorizontalStep(
-            'Initiated',
-            DateFormat('HH:mm').format(creationTime),
+            'Sent',
+            DateFormat('hh:mm a').format(creationTime),
+            Icons.send_rounded,
             isCompleted: true,
             activeColor: const Color(0xFF22C55E),
           ),
           _buildHorizontalLine(
-            isCompleted: isDone || isFailed, 
-            activeColor: statusColor
+            isCompleted: !isPending, 
+            activeColor: isFailed ? errorColor : successColor,
           ),
           _buildHorizontalStep(
-            isDone ? 'Success' : (isFailed ? 'Failed' : (isPending ? 'Pending' : 'Processing')),
-            DateFormat('HH:mm').format(creationTime),
-            isCompleted: isDone || isFailed || isPending,
-            activeColor: statusColor,
+            'Processing',
+            isPending ? 'Ongoing' : DateFormat('hh:mm a').format(creationTime),
+            Icons.sync_rounded,
+            isCompleted: !isPending,
+            activeColor: isFailed ? errorColor : (isPending ? pendingColor : successColor),
+          ),
+          _buildHorizontalLine(
+            isCompleted: isDone || isFailed, 
+            activeColor: isFailed ? errorColor : successColor,
+          ),
+          _buildHorizontalStep(
+            isFailed ? 'Failed' : 'Received',
+            isDone || isFailed ? DateFormat('hh:mm a').format(creationTime.add(const Duration(minutes: 2))) : 'Pending',
+            isFailed ? Icons.error_rounded : Icons.check_circle_rounded,
+            isCompleted: isDone || isFailed,
+            activeColor: isFailed ? errorColor : successColor,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHorizontalStep(String title, String time, {bool isCompleted = false, Color activeColor = successColor}) {
-    Color dotColor = const Color(0xFFE0E0E0);
-    if (isCompleted) dotColor = activeColor;
+  Widget _buildHorizontalStep(String title, String time, IconData icon, {bool isCompleted = false, Color activeColor = successColor}) {
+    Color dotColor = const Color(0xFFE2E8F0);
+    Color iconColor = const Color(0xFF94A3B8);
+    
+    if (isCompleted) {
+      dotColor = activeColor;
+      iconColor = Colors.white;
+    }
 
     return Column(
       children: [
         Container(
-          width: 10.w,
-          height: 10.w,
+          width: 28.w,
+          height: 28.w,
           decoration: BoxDecoration(
             color: dotColor,
             shape: BoxShape.circle,
+            boxShadow: isCompleted ? [
+              BoxShadow(
+                color: activeColor.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              )
+            ] : null,
+          ),
+          child: Icon(
+            icon,
+            size: 14.sp,
+            color: iconColor,
           ),
         ),
         SizedBox(height: 8.h),
         Text(
           title,
           style: TextStyle(
-            fontSize: 11.sp,
+            fontSize: 10.sp,
             fontWeight: FontWeight.w600,
-            color: isCompleted ? const Color(0xFF2D2D2D) : const Color(0xFF999999),
+            color: isCompleted ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
           ),
         ),
         Text(
           time,
           style: TextStyle(
-            fontSize: 9.sp,
-            color: const Color(0xFF999999),
+            fontSize: 8.sp,
+            color: const Color(0xFF94A3B8),
           ),
         ),
       ],
@@ -214,16 +300,23 @@ class TransactionDetailsScreen extends StatelessWidget {
   Widget _buildHorizontalLine({bool isCompleted = false, Color activeColor = successColor}) {
     return Expanded(
       child: Padding(
-        padding: EdgeInsets.only(bottom: 24.h), // Align with the dots
+        padding: EdgeInsets.only(bottom: 24.h), // Align with the icons
         child: Container(
           height: 2.h,
-          color: isCompleted ? activeColor : const Color(0xFFE0E0E0),
+          decoration: BoxDecoration(
+            color: isCompleted ? activeColor : const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(1),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildAmountBreakdown(TransactionItem tx) {
+    final serviceType = tx.serviceType?.toUpperCase() ?? '';
+    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'ELECTRICITY';
+    final showFee = tx.fee > 0 || !isUtility;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -237,8 +330,8 @@ class TransactionDetailsScreen extends StatelessWidget {
         ),
         SizedBox(height: 16.h),
         _buildAmountRow('Transaction Amount', tx.amount),
-        _buildAmountRow('Transaction Fee', 0.00), // Original had fixed layout
-        const Divider(height: 24, thickness: 1, color: Color(0xFFF5F5F5)),
+        if (showFee) _buildAmountRow('Transaction Fee', tx.fee),
+        Divider(height: 24, thickness: 1, color: lightBackground),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -251,7 +344,7 @@ class TransactionDetailsScreen extends StatelessWidget {
               ),
             ),
             Text(
-              '₦${NumberFormat('#,##0.00').format(tx.amount)}',
+              '₦${NumberFormat('#,##0.00').format(tx.amount + tx.fee)}',
               style: TextStyle(
                 fontSize: 13.sp,
                 fontWeight: FontWeight.bold,
@@ -261,6 +354,20 @@ class TransactionDetailsScreen extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDashedDivider() {
+    return Row(
+      children: List.generate(20, (index) {
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 2.w),
+            height: 1,
+            color: Color(0xFFE2E8F0),
+          ),
+        );
+      }),
     );
   }
 
@@ -291,10 +398,13 @@ class TransactionDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildTransactionDetails(TransactionItem tx, String status) {
-    String accountName = tx.isCredit 
-        ? (tx.senderName ?? "External Account")
-        : (tx.receiverName ?? "External Account");
-        
+    final serviceType = tx.serviceType?.toUpperCase() ?? '';
+    final isTransfer = serviceType == 'TRANSFER';
+    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'ELECTRICITY';
+    
+    final metadata = tx.metadata ?? {};
+    final info = metadata['info'] as Map<String, dynamic>?;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -307,12 +417,35 @@ class TransactionDetailsScreen extends StatelessWidget {
           ),
         ),
         SizedBox(height: 16.h),
-        _buildDetailRow('Bank/Provider', tx.provider ?? "Bia Wallet"),
-        _buildDetailRow('Account Name', accountName),
-        _buildDetailRow('Transaction No.', tx.transactionId ?? "N/A"),
+        
+        // --- Dynamic Fields based on Service Type ---
+        if (isTransfer) ...[
+          if (tx.isBankTransfer) ...[
+             _buildDetailRow('Recipient Name', metadata['recipientName'] ?? tx.receiverName ?? "N/A"),
+             _buildDetailRow('Account Number', metadata['recipientAccount'] ?? "N/A"),
+             _buildDetailRow('Bank Name', tx.provider ?? "External Bank"),
+          ] else ...[
+             _buildDetailRow(tx.isCredit ? 'Sender Name' : 'Recipient Name', tx.isCredit ? tx.senderName ?? "N/A" : tx.receiverName ?? "N/A"),
+             if (!tx.isCredit && metadata['receiverPhone'] != null)
+                _buildDetailRow('Recipient Phone', metadata['receiverPhone'].toString()),
+             if (tx.isCredit && metadata['senderPhone'] != null)
+                _buildDetailRow('Sender Phone', metadata['senderPhone'].toString()),
+          ],
+        ] else if (isUtility) ...[
+          if (info != null) ...[
+             _buildDetailRow('Beneficiary', info['phone'] ?? info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
+             _buildDetailRow('Provider', info['network'] ?? tx.provider ?? "N/A"),
+          ] else ...[
+             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+          ]
+        ] else ...[
+          _buildDetailRow('Service', _getServiceTitle(tx)),
+          if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+        ],
+
+        _buildDetailRow('Transaction No.', tx.reference ?? "N/A"),
         _buildDetailRow('Payment Method', "Bia Wallet"),
-        _buildDetailRow('Transaction Date', DateFormat('MMM dd, yyyy HH:mm').format(tx.createdAt ?? DateTime.now())),
-        _buildDetailRow('Status', status),
+        _buildDetailRow('Transaction Date', DateFormat('MMM dd, yyyy hh:mm a').format(tx.createdAt ?? DateTime.now())),
       ],
     );
   }
@@ -351,9 +484,9 @@ class TransactionDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(String text, Color bgColor, Color textColor, VoidCallback onTap, {bool hasBorder = false}) {
+  Widget _buildActionButton(String text, Color bgColor, Color textColor, VoidCallback onTap, {bool hasBorder = false, bool isLoading = false}) {
     return InkWell(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         height: 50.h,
         decoration: BoxDecoration(
@@ -362,14 +495,20 @@ class TransactionDetailsScreen extends StatelessWidget {
           border: hasBorder ? Border.all(color: const Color(0xFFE0E0E0)) : null,
         ),
         child: Center(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-            ),
-          ),
+          child: isLoading
+              ? SizedBox(
+                  height: 20.h,
+                  width: 20.h,
+                  child: CustomLoader(size: 20, color: textColor),
+                )
+              : Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
         ),
       ),
     );

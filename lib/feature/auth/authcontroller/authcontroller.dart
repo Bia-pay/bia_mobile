@@ -16,6 +16,7 @@ import '../../../core/services/biometric_service.dart';
 import '../interceptor/interceptor.dart';
 import '../authrepo/repo.dart';
 import '../modal/reponse/response_modal.dart';
+import '../../dashboard/model/recent_transaction.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<bool>>((ref) {

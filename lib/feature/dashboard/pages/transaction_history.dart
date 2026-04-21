@@ -270,6 +270,23 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF8FAFC),
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          onPressed: () => context.pop(),
+          icon: Icon(Icons.arrow_back_rounded, size: 20.sp, color: const Color(0xFF1E293B)),
+        ),
+        title: Text(
+          'Transactions',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 16.sp,
+            color: const Color(0xFF1E293B),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -290,32 +307,19 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                   // ── Header + Filters ──────────────────────────
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+                      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Transactions',
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16.sp,
-                                      color: const Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${transactions.length} results',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: const Color(0xFF94A3B8),
-                                      fontSize: 11.sp,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                '${transactions.length} results',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF94A3B8),
+                                  fontSize: 11.sp,
+                                ),
                               ),
                               Row(
                                 children: [

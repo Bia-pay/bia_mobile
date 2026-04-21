@@ -7,7 +7,11 @@ class TransactionItem {
   final String? provider;       // NEW
   final String? serviceType;    // NEW
   final String? status;         // NEW
-  final String? transactionId;    // NEW
+  final String? transactionId;       // NEW
+  final String? reference;    // NEW
+  final double fee;             // NEW
+  final bool isBankTransfer;    // NEW
+  final Map<String, dynamic>? metadata; // NEW
   final DateTime? createdAt;
 
   TransactionItem({
@@ -20,12 +24,17 @@ class TransactionItem {
     this.serviceType,
     this.status,
     this.transactionId,
+    this.reference,
+    this.fee = 0.0,
+    this.isBankTransfer = false,
+    this.metadata,
     this.createdAt,
   });
 
   factory TransactionItem.fromJson(Map<String, dynamic> json) {
     DateTime? parsedDate;
     final createdAtRaw = json['createdAt'];
+    final reference = json['reference'];
 
     if (createdAtRaw != null) {
       if (createdAtRaw is String) {
@@ -42,6 +51,8 @@ class TransactionItem {
     } else {
       senderName = json['senderName'] ?? 
                    json['sourceAccountName'] ?? 
+                   json['fromAccountName'] ??
+                   json['from_account_name'] ??
                    json['sender_name'];
     }
 
@@ -51,10 +62,28 @@ class TransactionItem {
     } else {
       receiverName = json['receiverName'] ?? 
                      json['destinationAccountName'] ?? 
+                     json['toAccountName'] ??
+                     json['to_account_name'] ??
                      json['accountName'] ?? 
                      json['account_name'] ?? 
                      json['beneficiaryName'] ?? 
-                     json['beneficiary_name'];
+                     json['beneficiary_name'] ??
+                     json['recipientName'] ??
+                     json['recipient_name'];
+    }
+
+    // Deep extract from metadata if still null (common for external transfers)
+    final metadata = json['metadata'];
+    if (metadata != null && metadata is Map) {
+      senderName ??= metadata['senderName'] ?? 
+                     metadata['sender_name'] ??
+                     metadata['fromAccountName'];
+
+      receiverName ??= metadata['receiverName'] ?? 
+                       metadata['recipientName'] ?? 
+                       metadata['beneficiaryName'] ?? 
+                       metadata['accountName'] ??
+                       metadata['toAccountName'];
     }
 
 
@@ -95,8 +124,22 @@ class TransactionItem {
       provider: rawProvider,
       serviceType: rawServiceType,
       status: json['status'],
-      transactionId: json['transactionId'],
-
+      reference: json['reference'],
+      transactionId: json['reference'] ?? json['transactionId'],
+      fee: (() {
+        if (metadata != null && metadata is Map) {
+          final rawFee = metadata['fee'];
+          if (rawFee != null) {
+            if (rawFee is num) return rawFee.toDouble();
+            if (rawFee is String) return double.tryParse(rawFee) ?? 0.0;
+          }
+        }
+        return 0.0;
+      })(),
+      isBankTransfer: (!json['isCredit'] && 
+                      json['serviceType']?.toString().toUpperCase() == 'TRANSFER' && 
+                      json['receiverId'] == null),
+      metadata: metadata is Map<String, dynamic> ? metadata : null,
       createdAt: parsedDate,
     );
   }
@@ -111,7 +154,11 @@ class TransactionItem {
       'provider': provider,              // ✅ include
       'serviceType': serviceType,        // ✅ include
       'status': status,                  // ✅ include
-      'transactionId': transactionId,    // ✅ include
+      'transactionId': transactionId,     // ✅ include
+      'reference': reference,    // ✅ include
+      'fee': fee,                        // ✅ include
+      'isBankTransfer': isBankTransfer,  // ✅ include
+      'metadata': metadata,              // ✅ include
       'createdAt': createdAt?.toIso8601String(),
     };
   }

@@ -5,15 +5,20 @@ import '../dashboard_repo/repo.dart';
 import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
 
-final userIdProvider = StateProvider<String>((ref) => '');
+final userIdProvider = StateProvider<String>((ref) {
+  final box = Hive.box('authBox');
+  final userId = box.get('userId')?.toString() ?? '';
+  final phone = box.get('phone')?.toString() ?? '';
+  return userId.isNotEmpty ? userId : phone;
+});
 class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionItem>>> {
   final DashboardRepository repository;
   final String userId;
   bool _isFetching = false;
   bool _initialized = false;
 
-  RecentTransactionsNotifier(this.repository, this.userId)
-      : super(const AsyncValue.loading()) {
+  RecentTransactionsNotifier(this.repository, this.userId, {List<TransactionItem>? initialData})
+      : super(AsyncValue.data(initialData ?? [])) {
     _init();
   }
 
@@ -28,90 +33,57 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
       return;
     }
 
-    // 🔥 Check if we have fresh pre-loaded cache first
-    final hasValidCache = await TransactionCache.isCacheValid(userId);
-    final cached = await TransactionCache.getTransactions(userId);
+    // 🔥 Check if we have pre-loaded cache first (Recent Bucket)
+    final cached = await TransactionCache.getTransactions(userId, suffix: 'recent');
 
-    if (cached.isNotEmpty && hasValidCache) {
-      print('✅ Using pre-loaded cache with ${cached.length} transactions');
+    if (cached.isNotEmpty) {
+      print('✅ Using RECENT cache with ${cached.length} items');
       state = AsyncValue.data(cached);
-      // Still refresh in background but silently
-      _fetchFresh(silent: true);
-    } else if (cached.isNotEmpty) {
-      // Cache exists but stale - show it while refreshing
-      print('⏰ Stale cache found, showing while refreshing');
-      state = AsyncValue.data(cached);
-      await _fetchFresh(silent: false);
     } else {
-      // No cache - must fetch
-      print('📭 No cache found, fetching fresh data');
-      state = const AsyncValue.loading();
-      await _fetchFresh(silent: false);
+      // If empty, we stay at data([]) to avoid showing a spinner.
+      // THE FIX: We NO LONGER trigger an automatic _fetchFresh here.
+      // Data will appear when the user manual refreshes, 
+      // or it should have been primed by login.
+      print('ℹ️ No recent transactions in cache, waiting for manual refresh.');
+      state = const AsyncValue.data([]);
     }
   }
 
   Future<void> _fetchFresh({bool silent = false}) async {
-    if (_isFetching) {
-      print('⚠️ Already fetching, skipping...');
-      return;
-    }
-
+    if (_isFetching) return;
     _isFetching = true;
 
     try {
-      print('📡 Fetching fresh transactions from API...');
       final response = await repository.getRecentTransactions();
 
       if (response.responseSuccessful) {
         final fresh = response.transactions;
-        print('✅ Received ${fresh.length} transactions from API');
 
-        // Merge with existing data to avoid duplicates
-        final Map<int, TransactionItem> map = {};
-
-        // Add existing transactions
+        final Map<String, TransactionItem> map = {};
         for (var tx in state.value ?? []) {
-          map[tx.id] = tx;
+          map[tx.reference ?? tx.id.toString()] = tx;
         }
-
-        // Add/update with fresh transactions
         for (var tx in fresh) {
-          map[tx.id] = tx;
+          map[tx.reference ?? tx.id.toString()] = tx;
         }
 
-        // Sort by date (newest first)
         final merged = map.values.toList()
           ..sort((a, b) {
             if (a.createdAt == null || b.createdAt == null) return 0;
             return b.createdAt!.compareTo(a.createdAt!);
           });
 
-        // Limit to recent 50 transactions
-        final limited = merged.take(50).toList();
+        final limited = merged.take(2).toList();
 
-        // Update UI only if not silent or if we have new data
         if (!silent || limited.length != (state.value?.length ?? 0)) {
           state = AsyncValue.data(limited);
         }
 
-        // Save to cache
-        await TransactionCache.saveTransactions(userId, limited);
-        print('💾 Saved ${limited.length} transactions to cache');
-      } else {
-        print('⚠️ API returned unsuccessful response');
-        if (!silent && state.value == null) {
-          state = AsyncValue.error(
-            'Failed to load transactions',
-            StackTrace.current,
-          );
-        }
+        // Save to RECENT bucket
+        await TransactionCache.saveTransactions(userId, limited, suffix: 'recent');
       }
-    } catch (e, st) {
-      print('❌ Error fetching transactions: $e');
-      // Only show error if we don't have cached data
-      if (!silent && (state.value == null || state.value!.isEmpty)) {
-        state = AsyncValue.error(e, st);
-      }
+    } catch (e) {
+      print('❌ Error fetching recent transactions: $e');
     } finally {
       _isFetching = false;
     }
@@ -126,17 +98,20 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
   /// Force refresh (clears cache and fetches)
   Future<void> forceRefresh() async {
     print('🔄 Force refresh triggered');
-    await TransactionCache.clearTransactions(userId);
+    await TransactionCache.clearTransactions(userId, suffix: 'recent');
     state = const AsyncValue.loading();
     await _fetchFresh(silent: false);
   }
 }
 final recentTransactionsProvider =
-StateNotifierProvider.family<RecentTransactionsNotifier,
-    AsyncValue<List<TransactionItem>>, String>((ref, userId) {
-
+    StateNotifierProvider.family<RecentTransactionsNotifier,
+        AsyncValue<List<TransactionItem>>, String>((ref, userId) {
   final repo = ref.watch(dashboardRepositoryProvider);
-  return RecentTransactionsNotifier(repo, userId);
+  
+  // 🔥 Sync check: Grab data instantly before the first frame builds
+  final cached = TransactionCache.getTransactionsSync(userId, suffix: 'recent');
+  
+  return RecentTransactionsNotifier(repo, userId, initialData: cached);
 });
 
 
@@ -165,15 +140,13 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
   }
 
   Future<void> _init() async {
-    print('🔄 Initializing transactions for user: $userId');
-
     if (userId.isEmpty) {
       state = const AsyncValue.data([]);
       return;
     }
 
-    // 🔥 ALWAYS LOAD USER-SPECIFIC CACHE
-    final cached = await TransactionCache.getTransactions(userId);
+    // 🔥 ALWAYS LOAD USER-SPECIFIC HISTORY CACHE (All Bucket)
+    final cached = await TransactionCache.getTransactions(userId, suffix: 'all');
 
     if (cached.isNotEmpty) {
       state = AsyncValue.data(cached);
@@ -181,34 +154,25 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
       state = const AsyncValue.loading();
     }
 
-    // 🔥 ALWAYS FETCH FRESH DATA FOR NEW USER (Page 1)
     _currentPage = 1;
     _hasNextPage = true;
-    await _fetchFresh(silent: cached.isNotEmpty, page: 1);
+    _fetchFresh(silent: cached.isNotEmpty, page: 1); // Background fetch
   }
 
   Future<void> _fetchFresh({bool silent = false, int page = 1}) async {
     if (_isFetching) return;
-    
-    if (!silent) {
-      state = const AsyncValue.loading();
-    }
-    
+    if (!silent) state = const AsyncValue.loading();
     _isFetching = true;
 
     try {
-      print('📡 Fetching transactions (Page $page) from API...');
-      final response = await repository.getTransactions(page: page, limit: _pageSize);
+      final response = await repository.
+      getTransactions(page: page, limit: _pageSize);
 
       if (response.responseSuccessful) {
         final fresh = response.transactions;
-        print('✅ Received ${fresh.length} transactions for page $page');
-
         _hasNextPage = fresh.length == _pageSize;
         _currentPage = page;
 
-        // DISCRETE PAGINATION: Replace current list with fresh page data
-        // Sort by date (usually the API should handle this, but for safety)
         final sorted = fresh
           ..sort((a, b) {
             if (a.createdAt == null || b.createdAt == null) return 0;
@@ -217,21 +181,14 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
 
         state = AsyncValue.data(sorted);
         
-        // Cache only page 1 for the dashboard preview
-        if (page == 1) {
-          await TransactionCache.saveTransactions(userId, sorted.take(20).toList());
-          print('💾 Cached top 20 transactions');
-        }
+        // ✅ Save to ALL HISTORY bucket (merges automatically)
+        await TransactionCache.saveTransactions(userId, sorted, suffix: 'all');
       } else {
         if (!silent || state.value == null) {
-          state = AsyncValue.error(
-            'Failed to load transactions',
-            StackTrace.current,
-          );
+          state = AsyncValue.error('Failed to load transactions', StackTrace.current);
         }
       }
     } catch (e, st) {
-      print('❌ Error fetching transactions: $e');
       if (!silent || (state.value == null || state.value!.isEmpty)) {
         state = AsyncValue.error(e, st);
       }

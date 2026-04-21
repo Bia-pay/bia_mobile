@@ -44,19 +44,26 @@ class _SplashScreenState extends ConsumerState<Splash> {
   }
 
   Future<void> _checkAuthStatus() async {
-    // Artificial delay removed for instantaneous boot
-    await Future.delayed(const Duration(milliseconds: 1000));
+    // 🚀 Artificial delay removed for instantaneous boot
+    // await Future.delayed(const Duration(milliseconds: 1000));
 
 
     try {
       final box = Hive.box("authBox");
       final token = box.get("token");
+      final userId = box.get("userId");
+      final phone = box.get("phone");
+      
+      final bool hasIdentity = (userId != null && userId.toString().isNotEmpty) || 
+                               (phone != null && phone.toString().isNotEmpty);
 
       if (!mounted) return;
 
-      if (token != null && token.toString().isNotEmpty) {
+      if (hasIdentity) {
+        // ✅ Known user: Always send to Welcome Back to enforce local security (PIN/Biometric)
         context.go(RouteList.welcomeBackScreen);
       } else {
+        // 🆕 Totally fresh user: Send to onboarding
         context.go(RouteList.getStarted);
       }
     } catch (_) {

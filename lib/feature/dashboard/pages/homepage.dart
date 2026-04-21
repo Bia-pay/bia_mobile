@@ -431,7 +431,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 },
               );
             },
-            loading: () => const Center(child: CustomLoader()),
+            // 🚀 Fail-safe: No spinner even during sync loading frame
+            loading: () => const SizedBox.shrink(),
             error: (e, _) => Center(child: Text("Error: $e")),
           );
         },

@@ -244,23 +244,24 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                               Text(fullname ?? "User", textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
                               SizedBox(height: innerGap / 2),
                               
-                              PinInputWidget(
-                                title: "",
-                                subtitle: _showPasswordField ? "Enter 6-digit PIN" : "Protecting your account",
-                                fieldType: InputFieldType.pin,
-                                inputLength: 6,
-                                showKeypad: _showPasswordField || !_biometricEnabled,
-                                textColor: accentColor,
-                                dotColor: accentColor,
-                                keyColor: grey100,
-                                keypadHeight: keypadH,
-                                onPinComplete: (val) => _performLogin(phone!, val),
-                                onBiometricAction: _biometricEnabled ? _authenticate : null,
-                                onForgotPin: () => context.go(RouteList.forgotPassword),
-                              ),
+                              if (_showPasswordField || !_biometricEnabled)
+                                PinInputWidget(
+                                  title: "",
+                                  subtitle: _showPasswordField ? "Enter 6-digit Password" : "Protecting your account",
+                                  fieldType: InputFieldType.pin,
+                                  inputLength: 6,
+                                  showKeypad: _showPasswordField || !_biometricEnabled,
+                                  textColor: accentColor,
+                                  dotColor: accentColor,
+                                  keyColor: grey100,
+                                  keypadHeight: keypadH,
+                                  onPinComplete: (val) => _performLogin(phone!, val),
+                                  onBiometricAction: _biometricEnabled ? _authenticate : null,
+                                  onForgotPin: () => context.go(RouteList.forgotPassword),
+                                ),
                               
                               if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
-                                SizedBox(height: innerGap),
+                                SizedBox(height: innerGap * 1.5),
                                 _buildBiometricPrompt(),
                               ],
                             ],
@@ -316,7 +317,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
         SizedBox(height: 8.h),
         TextButton(
           onPressed: () => setState(() => _showPasswordField = true), 
-          child: Text("Use PIN Instead", style: TextStyle(color: accentColor, fontSize: 13.sp, fontWeight: FontWeight.bold))
+          child: Text("Use Password Instead", style: TextStyle(color: accentColor, fontSize: 13.sp, fontWeight: FontWeight.bold))
         ),
       ],
     );

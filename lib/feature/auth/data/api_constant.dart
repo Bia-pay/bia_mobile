@@ -48,4 +48,10 @@ class ApiConstant {
   static const String VERIFY_ELECTRICITY_METER = '/api/v1/billpayment/electricity/meter/verify';
   static const String PURCHASE_ELECTRICITY_UNIT = '//api/v1/billpayment/electricity/purchase';
   static const String GET_CHARGES = "/api/v1/payment/charges";
+
+  // ------------ NOTIFICATIONS
+  static const String GET_NOTIFICATIONS = '/api/v1/notification';
+  static const String UNREAD_NOTIFICATION_COUNT = '/api/v1/notification/unread-count';
+  static const String MARK_ALL_NOTIFICATIONS_READ = '/api/v1/notification/read-all';
+  static String MARK_NOTIFICATION_READ(String id) => '/api/v1/notification/$id/read';
 }

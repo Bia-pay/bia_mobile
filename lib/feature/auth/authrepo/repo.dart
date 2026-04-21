@@ -139,9 +139,16 @@ class AuthRepository {
         _ref.invalidate(allTransactionsProvider);
         _ref.invalidate(recentTransactionsProvider);
 
-        // 🔥 PRE-FETCH TRANSACTIONS IMMEDIATELY (Eager loading)
-        // This ensures data is available before dashboard loads
-        await _prefetchTransactions(effectiveId, accessToken);
+        // 🔥 PRIME TRANSACTION CACHE (Same as Balance Card)
+        final List<dynamic> recentRaw = responseBody['recentTransactions'] ?? [];
+        if (recentRaw.isNotEmpty) {
+          final List<TransactionItem> transactions = recentRaw
+              .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
+          
+          await TransactionCache.saveTransactions(effectiveId, transactions, suffix: 'recent');
+          debugPrint('💾 Primed recent transactions cache: ${transactions.length} items');
+        }
 
         // Save password for biometric login (user-specific)
         if (!fromBiometric && body.containsKey('password')) {
@@ -221,68 +228,6 @@ class AuthRepository {
     }
   }
 
-  /// Pre-fetch transactions during login so they're ready when dashboard loads
-  Future<void> _prefetchTransactions(String userId, String token) async {
-    if (userId.isEmpty) return;
-
-    try {
-      print('🔄 Pre-fetching transactions during login for user: $userId');
-
-      // 🔥 FIX: Use the existing _apiClient instead of creating new one
-      // It's already configured with the base URL and interceptors
-      _apiClient.updateHeaders(token);
-
-      // Fetch recent transactions - 🔥 FIX: Use correct endpoint
-      final recentResponse = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
-      if (recentResponse.statusCode == 200) {
-        final jsonResponse = jsonDecode(recentResponse.body);
-        final responseBody = jsonResponse['responseBody'] ?? {};
-        final transactionsList = responseBody['transactions'] as List<dynamic>? ?? [];
-
-        // 🔥 FIX: Explicitly cast to List<TransactionItem>
-        final List<TransactionItem> transactions = transactionsList
-            .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
-
-        // Save to cache immediately
-        await TransactionCache.saveTransactions(userId, transactions);
-        print('✅ Pre-fetched and cached ${transactions.length} transactions');
-      }
-
-      // Also fetch all transactions in background (don't await)
-      _fetchAllTransactionsInBackground(userId, token);
-
-    } catch (e) {
-      print('⚠️ Pre-fetch failed (non-critical): $e');
-      // Don't fail login if pre-fetch fails - provider will handle it
-    }
-  }
-
-  Future<void> _fetchAllTransactionsInBackground(String userId, String token) async {
-    try {
-      // 🔥 FIX: Use existing _apiClient
-      _apiClient.updateHeaders(token);
-
-      // 🔥 FIX: Use correct endpoint - check your ApiConstant for the right one
-      // Using RECENT_TRANSFER as fallback - replace with your actual "all transactions" endpoint
-      final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        final responseBody = jsonResponse['responseBody'] ?? {};
-        final transactionsList = responseBody['transactions'] as List<dynamic>? ?? [];
-
-        // 🔥 FIX: Explicitly cast to List<TransactionItem>
-        final List<TransactionItem> transactions = transactionsList
-            .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
-
-        await TransactionCache.saveTransactions(userId, transactions);
-        print('✅ Background fetch: Cached ${transactions.length} total transactions');
-      }
-    } catch (e) {
-      print('⚠️ Background fetch failed: $e');
-    }
-  }
 
   /// ---------------- SET PIN ----------------
   Future<ResponseModel> setPin(String pin, String confirmPin) async {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../feature/dashboard/dashboardcontroller/unread_count_notifier.dart';
 
 import '../../utils/colors.dart';
 
@@ -96,13 +98,49 @@ class HomeHeader extends StatelessWidget {
           ),
           GestureDetector(
             onTap: () => context.pushNamed(notificationRoute),
-            child: Container(
-              height: 22.r,
-              width: 22.r,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: SvgPicture.asset(bell),
+            child: Consumer(
+              builder: (context, ref, _) {
+                final unreadCount = ref.watch(unreadCountProvider);
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      height: 22.r,
+                      width: 22.r,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: SvgPicture.asset(bell),
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        top: -5,
+                        right: -5,
+                        child: Container(
+                          padding: EdgeInsets.all(4.r),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16.r,
+                            minHeight: 16.r,
+                          ),
+                          child: Center(
+                            child: Text(
+                              unreadCount > 9 ? '9+' : unreadCount.toString(),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ],

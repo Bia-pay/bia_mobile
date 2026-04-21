@@ -4,8 +4,8 @@ import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
 import '../../../app/utils/colors.dart';
 import '../../../core/easy_loading_config.dart';
-import '../../../core/helper/helper.dart';
-import '../../auth/modal/reponse/response_modal.dart' hide WalletResponse;
+import '../../../core/helper/helper.dart' hide WalletResponse;
+import '../../auth/modal/reponse/response_modal.dart';
 import '../../auth/modal/verify_bank.dart';
 import '../../settings/model/qr_code.dart';
 import '../dashboard_repo/repo.dart';
@@ -28,7 +28,28 @@ StateNotifierProvider<DashboardController, AsyncValue<ResponseBody?>>((ref) {
 class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   final DashboardRepository dashboardRepository;
 
-  DashboardController(this.dashboardRepository) : super(const AsyncLoading());
+  DashboardController(this.dashboardRepository) : super(const AsyncData(null)) {
+    // Initial state setup from Hive
+    _initWalletState();
+  }
+
+  void _initWalletState() {
+    final box = Hive.box('authBox');
+    final savedBalance = box.get('balance', defaultValue: '0');
+    final savedCurrency = box.get('currency', defaultValue: 'NGN');
+    final savedLimits = Map<String, dynamic>.from(box.get('limits', defaultValue: {}));
+
+    state = AsyncValue.data(ResponseBody(
+      wallet: WalletResponse(
+        balance: savedBalance.toString(),
+        currency: savedCurrency,
+        limits: savedLimits,
+      ),
+    ));
+    
+    // 🔥 NO automatic loadWalletBalance() networking here.
+    // Fresh data only comes through manual pull-to-refresh or explicit actions.
+  }
 
 
   Future<ResponseModel?> sendMoney(BuildContext context,String account,String amount,String narration,String pin,{required bool save}) async {
@@ -298,24 +319,26 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     final box = Hive.box('authBox');
     final savedBalance = box.get('balance', defaultValue: '0');
     final savedCurrency = box.get('currency', defaultValue: 'NGN');
-    final savedTier = box.get('tier', defaultValue: 'BASIC');
     final savedLimits = Map<String, dynamic>.from(box.get('limits', defaultValue: {}));
 
-    state = AsyncValue.data(WalletResponse(
-      balance: savedBalance.toString(),
-      currency: savedCurrency,
-      limits: savedLimits,
+    state = AsyncValue.data(ResponseBody(
+      wallet: WalletResponse(
+        balance: savedBalance.toString(),
+        currency: savedCurrency,
+        limits: savedLimits,
+      ),
     ));
 
     // Fetch fresh balance in the background
     try {
       final freshBalance = await dashboardRepository.getWalletBalance();
       if (freshBalance != null) {
-        state = AsyncValue.data(refreshWalletBalance
-        as ResponseBody?);
+        state = AsyncValue.data(ResponseBody(
+          wallet: freshBalance,
+        ));
       }
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      debugPrint('❌ Error loading wallet balance: $e');
     }
   }
 

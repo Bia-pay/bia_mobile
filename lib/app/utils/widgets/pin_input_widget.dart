@@ -238,7 +238,7 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
               child: TextButton(
                 onPressed: widget.onForgotPin,
                 child: Text(
-                  'Forgot PIN?',
+                  'Forgot Password?',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: widget.textColor ?? primaryColor,
                     fontWeight: FontWeight.w600,

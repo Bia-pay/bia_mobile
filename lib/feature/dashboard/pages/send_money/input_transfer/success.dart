@@ -10,12 +10,16 @@ import 'package:media_store_plus/media_store_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:math' as math;
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/custom_loader.dart';
+import '../../../widgets/branded_receipt.dart';
+import '../../../model/recent_transaction.dart';
 
 class SuccessScreen extends StatefulWidget {
   final String? amount;
@@ -41,7 +45,9 @@ class SuccessScreen extends StatefulWidget {
 
 class _SuccessScreenState extends State<SuccessScreen> {
   final GlobalKey _boundaryKey = GlobalKey();
-  bool _isProcessing = false;
+  final GlobalKey _receiptKey = GlobalKey(); // Key for hidden receipt
+  bool _isSharing = false;
+  bool _isDownloading = false;
 
   // Get status config based on type
   Map<String, dynamic> get _statusConfig {
@@ -85,15 +91,17 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
   Future<File?> _captureAndSave() async {
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject()
+      // Find the hidden receipt boundary
+      final boundary = _receiptKey.currentContext?.findRenderObject()
       as RenderRepaintBoundary?;
 
       if (boundary == null) {
-        _showError('Unable to capture screenshot');
+        _showError('Unable to capture receipt');
         return null;
       }
 
-      final image = await boundary.toImage(pixelRatio: 3.0);
+      // Capture at high resolution
+      final image = await boundary.toImage(pixelRatio: 4.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData == null) {
@@ -103,7 +111,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
       final pngBytes = byteData.buffer.asUint8List();
       final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/transaction_${widget.type}.png');
+      final file = File('${directory.path}/receipt_${DateTime.now().millisecondsSinceEpoch}.png');
       await file.writeAsBytes(pngBytes);
 
       return file;
@@ -115,12 +123,12 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   Future<void> _downloadToGallery() async {
-    if (_isProcessing) return;
+    if (_isDownloading || _isSharing) return;
 
-    setState(() => _isProcessing = true);
+    setState(() => _isDownloading = true);
 
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject()
+      final boundary = _receiptKey.currentContext?.findRenderObject()
       as RenderRepaintBoundary?;
 
       if (boundary == null) {
@@ -128,7 +136,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
         return;
       }
 
-      final image = await boundary.toImage(pixelRatio: 3.0);
+      final image = await boundary.toImage(pixelRatio: 4.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData == null) {
@@ -147,13 +155,13 @@ class _SuccessScreenState extends State<SuccessScreen> {
       );
 
       if (mounted) {
-        _showSuccess('Saved to gallery');
+        _showSuccess('Receipt saved to gallery');
       }
     } catch (e) {
       debugPrint("Download error: $e");
       _showError('Failed to save to gallery');
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) setState(() => _isDownloading = false);
     }
   }
 
@@ -165,9 +173,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   Future<void> _handleShare() async {
-    if (_isProcessing) return;
+    if (_isSharing || _isDownloading) return;
 
-    setState(() => _isProcessing = true);
+    setState(() => _isSharing = true);
 
     try {
       final file = await _captureAndSave();
@@ -181,7 +189,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
       debugPrint("Share error: $e");
       _showError('Failed to share receipt');
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) setState(() => _isSharing = false);
     }
   }
 
@@ -208,7 +216,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   String get _formattedDate {
-    return DateFormat('MMM dd, yyyy • HH:mm').format(DateTime.now());
+    return DateFormat('MMM dd, yyyy • hh:mm a').format(DateTime.now());
   }
 
   @override
@@ -228,63 +236,98 @@ class _SuccessScreenState extends State<SuccessScreen> {
             final isNarrow = screenWidth < 360;
 
             final badgeSize = isSmallHeight
-                ? screenWidth * 0.22
+                ? math.min(screenWidth * 0.22, screenHeight * 0.12)
                 : (isNarrow ? screenWidth * 0.28 : screenWidth * 0.32);
 
             final verticalSpacing = isSmallHeight ? 10.h : 20.h;
             final horizontalPadding = isNarrow ? 16.w : screenWidth * 0.05;
 
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Column(
-                children: [
-                  SizedBox(height: isSmallHeight ? 12.h : 24.h),
-
-                  // Status Badge
-                  _buildStatusBadge(badgeSize, config),
-
-                  SizedBox(height: verticalSpacing),
-
-                  // Capture Area
-                  Expanded(
-                    child: RepaintBoundary(
-                      key: _boundaryKey,
-                      child: Container(
-                        color: Colors.white,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            _buildTitle(textTheme, isSmallHeight, config),
-                            SizedBox(height: 8.h),
-                            _buildAmount(textTheme, isSmallHeight),
-                            SizedBox(height: verticalSpacing),
-                            _buildDetailsCard(isSmallHeight, isNarrow, config),
-                          ],
-                        ),
+            return Stack(
+              children: [
+                // Hidden Receipt (Off-screen)
+                Positioned(
+                  left: -1000,
+                  child: RepaintBoundary(
+                    key: _receiptKey,
+                    child: BrandedReceipt(
+                      transaction: TransactionItem(
+                        id: DateTime.now().millisecondsSinceEpoch % 1000000,
+                        amount: double.tryParse(widget.amount?.replaceAll(',', '') ?? '0') ?? 0.0,
+                        isCredit: false,
+                        receiverName: widget.recipientName,
+                        provider: widget.channel,
+                        reference: widget.reference,
+                        createdAt: DateTime.now(),
+                        metadata: {
+                          'recipientAccount': widget.recipientAccount,
+                        },
                       ),
+                      statusTitle: config['title'],
                     ),
                   ),
+                ),
 
-                  SizedBox(height: verticalSpacing),
+                // Main App UI
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: Column(
+                    children: [
+                      Spacer(flex: isSmallHeight ? 1 : 2),
 
-                  // Action Buttons (only for success/pending)
-                  if (config['showActions'])
-                    _buildActionButtons(),
+                      // Status Badge
+                      _buildStatusBadge(badgeSize, config),
 
-                  if (config['showActions'])
-                    SizedBox(height: verticalSpacing),
+                      Spacer(flex: 1),
 
-                  // Done Button
-                  CustomButton(
-                    buttonName: "Done",
-                    buttonColor: config['color'],
-                    buttonTextColor: Colors.white,
-                    onPressed: () => context.pushNamed(RouteList.bottomNavBar),
+                      // Success Content
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: _buildTitle(textTheme, isSmallHeight, config),
+                      ),
+                      SizedBox(height: 4.h),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: _buildAmount(textTheme, isSmallHeight),
+                      ),
+
+                      Spacer(flex: 1),
+
+                      // Transaction Details Card (Flexible & Scaling)
+                      Flexible(
+                        flex: 10,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: _buildDetailsCard(isSmallHeight, isNarrow, config, screenWidth - (horizontalPadding * 2)),
+                        ),
+                      ),
+
+                      Spacer(flex: isSmallHeight ? 1 : 2),
+
+                      // Action Buttons & Done Button (Fixed at bottom)
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (config['showActions'])
+                            _buildActionButtons(),
+
+                          if (config['showActions'])
+                            SizedBox(height: 12.h),
+
+                          // Done Button
+                          CustomButton(
+                            buttonName: "Done",
+                            buttonColor: config['color'],
+                            buttonTextColor: Colors.white,
+                            onPressed: () => context.pushNamed(RouteList.bottomNavBar),
+                          ),
+
+                          SizedBox(height: isSmallHeight ? 16.h : 24.h),
+                        ],
+                      ),
+                    ],
                   ),
-
-                  SizedBox(height: 16.h),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),
@@ -310,10 +353,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: config['color'].withOpacity(0.3),
-                  blurRadius: 30,
-                  spreadRadius: 5,
-                  offset: const Offset(0, 8),
+                  color: config['color'].withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
@@ -322,14 +364,13 @@ class _SuccessScreenState extends State<SuccessScreen> {
           config['icon'] != null
               ? SvgPicture.asset(
             config['icon'],
-            height: badgeSize * 0.5,
-            width: badgeSize * 0.5,
-            colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            height: badgeSize * 1.2,
+            width: badgeSize * 1.2,
           )
               : Icon(
             widget.type == 'failed' ? Icons.close : Icons.access_time,
             color: Colors.white,
-            size: badgeSize * 0.4,
+            size: badgeSize * 0.8,
           ),
         ],
       ),
@@ -337,38 +378,31 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   Widget _buildTitle(TextTheme textTheme, bool isSmallHeight, Map<String, dynamic> config) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        config['title'],
-        style: textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          fontSize: isSmallHeight ? 18.sp : 22.sp,
-          color: darkBackground,
-          letterSpacing: -0.5,
-        ),
+    return Text(
+      config['title'],
+      style: textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+        fontSize: isSmallHeight ? 18.sp : 22.sp,
+        color: darkBackground,
       ),
     );
   }
 
   Widget _buildAmount(TextTheme textTheme, bool isSmallHeight) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        "₦${widget.amount ?? "0.00"}",
-        style: textTheme.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w900,
-          fontSize: isSmallHeight ? 28.sp : 36.sp,
-          color: darkBackground,
-          letterSpacing: -1,
-        ),
+    return Text(
+      "₦${widget.amount ?? "0.00"}",
+      style: textTheme.headlineMedium?.copyWith(
+        fontWeight: FontWeight.w900,
+        fontSize: isSmallHeight ? 32.sp : 40.sp,
+        color: darkBackground,
+        letterSpacing: -1,
       ),
     );
   }
 
-  Widget _buildDetailsCard(bool isSmallHeight, bool isNarrow, Map<String, dynamic> config) {
+  Widget _buildDetailsCard(bool isSmallHeight, bool isNarrow, Map<String, dynamic> config, double availableWidth) {
     return Container(
-      width: double.infinity,
+      width: availableWidth,
       padding: EdgeInsets.all(isSmallHeight ? 12.w : 20.w),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.r),
@@ -386,27 +420,23 @@ class _SuccessScreenState extends State<SuccessScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Status Row
-          _buildDetailRow("Status", config['title'], isNarrow,
-              valueColor: config['color']),
-          _buildDivider(),
-          _buildDetailRow("Recipient", widget.recipientName ?? "-", isNarrow),
-          _buildDivider(),
-          _buildDetailRow("Account", widget.recipientAccount ?? "-", isNarrow),
-          _buildDivider(),
-          _buildDetailRow("Reference", widget.reference ?? "-", isNarrow),
-          _buildDivider(),
-          _buildDetailRow("Channel", widget.channel ?? "Transfer", isNarrow),
-          _buildDivider(),
-          _buildDetailRow("Date", _formattedDate, isNarrow),
+          _buildDetailRow("Recipient", widget.recipientName ?? "-", isNarrow, isSmallHeight),
+          _buildDivider(isSmallHeight),
+          _buildDetailRow("Account", widget.recipientAccount ?? "-", isNarrow, isSmallHeight),
+          _buildDivider(isSmallHeight),
+          _buildDetailRow("Reference", widget.reference ?? "-", isNarrow, isSmallHeight),
+          _buildDivider(isSmallHeight),
+          _buildDetailRow("Channel", widget.channel ?? "Transfer", isNarrow, isSmallHeight),
+          _buildDivider(isSmallHeight),
+          _buildDetailRow("Date", _formattedDate, isNarrow, isSmallHeight),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String title, String value, bool isNarrow, {Color? valueColor}) {
+  Widget _buildDetailRow(String title, String value, bool isNarrow, bool isSmallHeight, {Color? valueColor}) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isNarrow ? 10.h : 14.h),
+      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 6.h : (isNarrow ? 10.h : 14.h)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +447,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
               title,
               style: TextStyle(
                 color: Colors.grey.shade600,
-                fontSize: isNarrow ? 12.sp : 14.sp,
+                fontSize: isSmallHeight ? 11.sp : (isNarrow ? 12.sp : 14.sp),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -429,9 +459,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
               textAlign: TextAlign.right,
               style: TextStyle(
                 color: valueColor ?? darkBackground,
-                fontSize: isNarrow ? 13.sp : 15.sp,
+                fontSize: isSmallHeight ? 12.sp : (isNarrow ? 13.sp : 15.sp),
                 fontWeight: FontWeight.w600,
-                height: 1.3,
+                height: 1.2,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -442,11 +472,28 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-  Widget _buildDivider() {
-    return Divider(
-      color: Colors.grey.shade100,
-      thickness: 1,
-      height: 1,
+  Widget _buildDivider(bool isSmallHeight) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 2.h : 4.h),
+      child: Divider(
+        color: grey200,
+        thickness: 0.8,
+        height: 1,
+      ),
+    );
+  }
+
+  Widget _buildDashedDivider() {
+    return Row(
+      children: List.generate(20, (index) {
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 2.w),
+            height: 1,
+            color: grey300,
+          ),
+        );
+      }),
     );
   }
 
@@ -457,8 +504,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
           child: _ActionButton(
             icon: Icons.share_outlined,
             label: "Share",
-            onTap: _isProcessing ? null : _handleShare,
-            isLoading: _isProcessing,
+            onTap: (_isSharing || _isDownloading) ? null : _handleShare,
+            isLoading: _isSharing,
           ),
         ),
         SizedBox(width: 12.w),
@@ -466,8 +513,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
           child: _ActionButton(
             icon: Icons.download_outlined,
             label: "Download",
-            onTap: _isProcessing ? null : _downloadToGallery,
-            isLoading: _isProcessing,
+            onTap: (_isSharing || _isDownloading) ? null : _downloadToGallery,
+            isLoading: _isDownloading,
           ),
         ),
       ],

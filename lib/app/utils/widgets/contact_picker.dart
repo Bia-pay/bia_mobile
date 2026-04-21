@@ -3,10 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../colors.dart';
-import '../u_popup.dart';
 
 class ContactsPickerSuffix extends StatelessWidget {
   final Function(String phoneNumber, String? name) onContactSelected;
@@ -48,21 +46,9 @@ class ContactsPickerSuffix extends StatelessWidget {
   }
 
   Future<void> _pickContact(BuildContext context) async {
-    final permissionStatus = await Permission.contacts.request();
-
-    if (permissionStatus.isDenied || permissionStatus.isPermanentlyDenied) {
-      _showPermissionDialog(context);
-      return;
-    }
-
-    if (!permissionStatus.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contact permission required')),
-      );
-      return;
-    }
-
     try {
+      // ✅ USE NATIVE PICKER: Per Play Store policy, we delegate to the system picker.
+      // This DOES NOT require broad READ_CONTACTS permission.
       final contact = await FlutterContacts.openExternalPick();
 
       if (contact != null && contact.phones.isNotEmpty) {
@@ -95,14 +81,4 @@ class ContactsPickerSuffix extends StatelessWidget {
     return cleaned;
   }
 
-  void _showPermissionDialog(BuildContext context) {
-    UPopup.confirm(
-      context,
-      title: 'Contacts Permission',
-      message: 'This app needs access to your contacts to help you select phone numbers easily.',
-      confirmLabel: 'Open Settings',
-      cancelLabel: 'Cancel',
-      onConfirm: () => openAppSettings(),
-    );
-  }
 }

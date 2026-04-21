@@ -63,8 +63,6 @@ class _UProfileState extends ConsumerState<UProfile> {
         {'title': '${t.translate('pay_with')} $_biometricTypeName', 'image': 'assets/svg/key.svg'},
       ],
       'login': [
-        {'title': t.translate('change_password'), 'image': 'assets/svg/l-key.svg'},
-        {'title': t.translate('forget_password'), 'image': 'assets/svg/l-key.svg'},
         {'title': t.translate('auto_logout_settings'), 'image': 'assets/svg/l-key.svg'},
         {'title': '${t.translate('login_with')} $_biometricTypeName', 'image': 'assets/svg/l-key.svg'},
       ],
@@ -315,9 +313,9 @@ class _UProfileState extends ConsumerState<UProfile> {
     return GestureDetector(
       onTap: () => context.pushNamed(RouteList.userSettings),
       child: Container(
-        padding: EdgeInsets.all(22.r),
+        padding: EdgeInsets.symmetric(horizontal:12.r, vertical: 10.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: lightBackground,
           borderRadius: BorderRadius.circular(28.r),
           boxShadow: [
             BoxShadow(
@@ -363,13 +361,13 @@ class _UProfileState extends ConsumerState<UProfile> {
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Icon(Icons.verified_user_rounded, color: successColor, size: 14.sp),
-                      SizedBox(width: 4.w),
+                      Icon(Icons.verified_user_rounded, color: successColor, size: 12.sp),
+                      SizedBox(width: 3.w),
                       Text(
                         ref.read(appLocaleProvider.notifier).translate('verified_account'),
                         style: TextStyle(
                           color: lightSecondaryText,
-                          fontSize: 12.sp,
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -380,12 +378,12 @@ class _UProfileState extends ConsumerState<UProfile> {
             ),
 
             Container(
-              padding: EdgeInsets.all(10.r),
+              padding: EdgeInsets.all(8.r),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFFF4F7FA),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.keyboard_arrow_right_rounded, color: primaryColor, size: 22),
+              child:  Icon(Icons.keyboard_arrow_right_rounded, color: primaryColor, size: 20.sp),
             ),
           ],
         ),
@@ -396,7 +394,7 @@ class _UProfileState extends ConsumerState<UProfile> {
   Widget _buildGroupedSection(List<Map<String, dynamic>> items) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: lightBackground,
         borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
@@ -416,7 +414,7 @@ class _UProfileState extends ConsumerState<UProfile> {
               if (!isLast)
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  child: const Divider(height: 1, color: lightBackground),
                 ),
             ],
           );

@@ -170,6 +170,8 @@ void main() async {
   await Hive.initFlutter();
   final authBox = await Hive.openBox("authBox");
   await Hive.openBox("appBox");
+  // 🔥 Pre-warm the transaction cache for zero-flicker sync loading
+  await Hive.openBox("transactionCacheBox");
 
   // Fetch and store FCM token on startup
   try {

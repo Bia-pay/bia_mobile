@@ -885,7 +885,7 @@ class _DataAmountSelectorState extends ConsumerState<DataAmountSelector>
   int? selectedAmount;
   int? selectedIndex;
 
-  final List<String> _tabs = ['Gifting', 'Corporate', 'SME', 'Hot', 'Exclusive'];
+  final List<String> _tabs = ['SME', 'Gifting', 'Corporate', 'Hot', 'Exclusive'];
 
   late final TabController _tabController;
 
