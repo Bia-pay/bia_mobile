@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../dashboard_repo/repo.dart';
 import '../model/notification_model.dart';
+import '../model/pagination_model.dart';
 import 'unread_count_notifier.dart';
 
 class NotificationState {

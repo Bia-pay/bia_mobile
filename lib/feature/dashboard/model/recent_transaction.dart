@@ -1,3 +1,5 @@
+import 'pagination_model.dart';
+
 class TransactionItem {
   final int id;
   final double amount;
@@ -163,29 +165,35 @@ class TransactionItem {
     };
   }
 }
+
 class TransactionResponse {
   final bool responseSuccessful;
   final String responseMessage;
   final List<TransactionItem> transactions;
+  final Pagination? pagination;
 
   TransactionResponse({
     required this.responseSuccessful,
     required this.responseMessage,
     required this.transactions,
+    this.pagination,
   });
 
   factory TransactionResponse.fromJson(Map<String, dynamic> json) {
-    final list = (json['responseBody']?['transactions'] as List?) ?? [];
+    final body = json['responseBody'] ?? {};
+    final list = (body['transactions'] as List?) ?? [];
     return TransactionResponse(
       responseSuccessful: json['responseSuccessful'] ?? false,
       responseMessage: json['responseMessage'] ?? '',
       transactions: list.map((e) => TransactionItem.fromJson(e)).toList(),
+      pagination: body['pagination'] == null ? null : Pagination.fromJson(body['pagination']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'responseSuccessful': responseSuccessful,
-    'responseMessage': responseMessage,
-    'transactions': transactions.map((e) => e.toJson()).toList(),
-  };
+        'responseSuccessful': responseSuccessful,
+        'responseMessage': responseMessage,
+        'transactions': transactions.map((e) => e.toJson()).toList(),
+        'pagination': pagination,
+      };
 }

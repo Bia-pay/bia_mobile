@@ -44,7 +44,7 @@ import '../../../feature/settings/presentation/loginSettings/enable_login_finger
 import '../../../feature/settings/presentation/qr_code.dart';
 import '../../../feature/settings/presentation/user_settings.dart';
 import '../../../feature/settings/presentation/language_settings.dart';
-import '../../../features/profile/pages/enable_login_fingerprint.dart';
+import '../../../feature/settings/presentation/enable_login_fingerprint.dart';
 import '../../socket/socket_test_page.dart';
 import 'keyboard_observer.dart';
 import '../../../feature/settings/presentation/auto_logout_settings.dart';
