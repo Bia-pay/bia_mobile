@@ -139,7 +139,7 @@ class TransactionItem {
       isBankTransfer: (!json['isCredit'] && 
                       json['serviceType']?.toString().toUpperCase() == 'TRANSFER' && 
                       json['receiverId'] == null),
-      metadata: metadata is Map<String, dynamic> ? metadata : null,
+      metadata: metadata is Map ? Map<String, dynamic>.from(metadata) : null,
       createdAt: parsedDate,
     );
   }

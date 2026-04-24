@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../model/recent_transaction.dart';
 import 'package:bia/app/utils/colors.dart';
 import '../../../app/utils/custom_loader.dart';
+import 'package:flutter/services.dart';
 
 import '../widgets/branded_receipt.dart';
 
@@ -403,7 +404,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'CABLE_TV' || serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL';
     
     final metadata = tx.metadata ?? {};
-    final info = metadata['info'] as Map<String, dynamic>?;
+    final info = metadata['info'] as Map?;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,9 +442,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           ]
         ] else if (serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL') ...[
           if (info != null) ...[
-             _buildDetailRow('Meter Number', info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
-             if (info['token'] != null) _buildDetailRow('Token', info['token']),
-             _buildDetailRow('Provider', info['provider'] ?? tx.provider ?? "N/A"),
+             _buildDetailRow('Meter Number', info['meterNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A"),
+             ...(() {
+                final cName = info['Customer_Name'] ?? info['customerName'] ?? info['customer_name'] ?? info['name'] ?? info['CustomerName'] ?? info['Customer_name'];
+                final addr = info['Address'] ?? info['address'] ?? info['customerAddress'] ?? info['meterAddress'];
+                return [
+                  if (cName != null && cName.toString().trim().isNotEmpty)
+                    _buildDetailRow('Customer Name', cName.toString()),
+                  if (addr != null && addr.toString().trim().isNotEmpty)
+                    _buildDetailRow('Address', addr.toString()),
+                ];
+             })(),
+             if (info['token'] != null && info['token'].toString().isNotEmpty) 
+                _buildDetailRow('Token', info['token'].toString(), isCopyable: true),
+             _buildDetailRow('Provider', info['provider']?.toString() ?? tx.provider ?? "N/A"),
           ] else ...[
              if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
           ]
@@ -466,7 +478,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, {bool isCopyable = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Row(
@@ -485,14 +497,38 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           ),
           Expanded(
             flex: 3,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF2D2D2D),
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF2D2D2D),
+                    ),
+                  ),
+                ),
+                if (isCopyable) ...[
+                  SizedBox(width: 6.w),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: value));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$label copied to clipboard'),
+                          behavior: SnackBarBehavior.floating,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: Icon(Icons.copy_rounded, size: 14.sp, color: primaryColor),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

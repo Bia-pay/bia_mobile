@@ -102,15 +102,15 @@ class BrandedReceipt extends StatelessWidget {
                             ...(() {
                               final st = transaction.serviceType?.toUpperCase() ?? '';
                               final md = transaction.metadata ?? {};
-                              final info = md['info'] as Map<String, dynamic>?;
+                              final info = md['info'] as Map?;
 
                               if (st == 'CABLE' || st == 'CABLE_TV') {
                                 return [
                                   if (info != null) ...[
-                                    _buildReceiptRow("Provider", info['provider'] ?? transaction.provider ?? "N/A"),
-                                    _buildReceiptRow("Card Number", info['cardNumber'] ?? info['accountNumber'] ?? "N/A"),
+                                    _buildReceiptRow("Provider", info['provider']?.toString() ?? transaction.provider ?? "N/A"),
+                                    _buildReceiptRow("Card Number", info['cardNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A"),
                                     if (info['package'] != null)
-                                      _buildReceiptRow("Package", info['package']),
+                                      _buildReceiptRow("Package", info['package'].toString()),
                                   ] else ...[
                                     _buildReceiptRow("Provider", transaction.provider ?? "N/A"),
                                   ]
@@ -118,10 +118,20 @@ class BrandedReceipt extends StatelessWidget {
                               } else if (st == 'ELECTRICITY' || st == 'ELECTRICITY_BILL') {
                                 return [
                                   if (info != null) ...[
-                                    _buildReceiptRow("Provider", info['provider'] ?? transaction.provider ?? "N/A"),
-                                    _buildReceiptRow("Meter Number", info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
-                                    if (info['token'] != null)
-                                      _buildReceiptRow("Token", info['token']),
+                                    _buildReceiptRow("Provider", info['provider']?.toString() ?? transaction.provider ?? "N/A"),
+                                    _buildReceiptRow("Meter Number", info['meterNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A"),
+                                    ...(() {
+                                      final cName = info['Customer_Name'] ?? info['customerName'] ?? info['customer_name'] ?? info['name'] ?? info['CustomerName'] ?? info['Customer_name'];
+                                      final addr = info['Address'] ?? info['address'] ?? info['customerAddress'] ?? info['meterAddress'];
+                                      return [
+                                        if (cName != null && cName.toString().trim().isNotEmpty)
+                                          _buildReceiptRow("Customer Name", cName.toString()),
+                                        if (addr != null && addr.toString().trim().isNotEmpty)
+                                          _buildReceiptRow("Address", addr.toString()),
+                                      ];
+                                    })(),
+                                    if (info['token'] != null && info['token'].toString().isNotEmpty)
+                                      _buildReceiptRow("Token", info['token'].toString()),
                                   ] else ...[
                                     _buildReceiptRow("Provider", transaction.provider ?? "N/A"),
                                   ]
