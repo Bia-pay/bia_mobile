@@ -38,10 +38,7 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      final userId = ref.read(userIdProvider);
-      ref.read(allTransactionsProvider(userId).notifier).loadMore();
-    }
+    // Disabled for discrete pagination
   }
 
   void _applyDatePreset(String preset) {
@@ -263,13 +260,13 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
-
+    
     // Responsive column count
     final int crossAxisCount = screenWidth > 900 ? 3 : (screenWidth > 600 ? 2 : 1);
     final isTablet = screenWidth > 600;
-
+    
     final userId = ref.watch(userIdProvider);
-    final state = ref.watch(allTransactionsProvider(userId));
+    final asyncTx = ref.watch(allTransactionsProvider(userId));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -295,270 +292,351 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: 1200.w),
             child: RefreshIndicator(
-              color: primaryColor,
-              onRefresh: _handleRefresh,
-              child: (state.isLoading && state.transactions.isEmpty)
-                  ? const Center(child: CustomLoader())
-                  : (state.error != null && state.transactions.isEmpty)
-                      ? Center(child: Text('Error: ${state.error}'))
-                      : Builder(
-                          builder: (context) {
-                            final transactions = _applyFilter(state.transactions);
+          color: primaryColor,
+          onRefresh: _handleRefresh,
+          child: asyncTx.when(
+            loading: () => const Center(child: CustomLoader()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (allTransactions) {
+              final transactions = _applyFilter(allTransactions);
 
-                            return CustomScrollView(
-                              controller: _scrollController,
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              slivers: [
-                                // ── Header + Filters ──────────────────────────
-                                SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '${transactions.length} results',
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                color: const Color(0xFF94A3B8),
-                                                fontSize: 11.sp,
-                                              ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                if (_selectedDateRange != null)
-                                                  GestureDetector(
-                                                    onTap: () => setState(() {
-                                                      _selectedDateRange = null;
-                                                      _selectedDatePreset = null;
-                                                    }),
-                                                    child: Container(
-                                                      padding: EdgeInsets.all(6.w),
-                                                      margin: EdgeInsets.only(right: 8.w),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.red.withOpacity(0.1),
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                      child: Icon(
-                                                        Icons.close_rounded,
-                                                        size: 16.sp,
-                                                        color: Colors.red,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                PopupMenuButton<String>(
-                                                  onSelected: _applyDatePreset,
-                                                  itemBuilder: (context) => [
-                                                    'Today',
-                                                    'Yesterday',
-                                                    'Last 7 Days',
-                                                    'Last 30 Days',
-                                                    'Custom Range',
-                                                  ].map((String choice) {
-                                                    return PopupMenuItem<String>(
-                                                      value: choice,
-                                                      child: Text(
-                                                        choice,
-                                                        style: TextStyle(
-                                                          fontSize: 13.sp,
-                                                          color: const Color(0xFF1E293B),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }).toList(),
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(8.w),
-                                                    decoration: BoxDecoration(
-                                                      color: _selectedDateRange != null
-                                                          ? primaryColor.withOpacity(0.1)
-                                                          : Colors.white,
-                                                      borderRadius: BorderRadius.circular(10.r),
-                                                      border: Border.all(
-                                                        color: _selectedDateRange != null
-                                                            ? primaryColor
-                                                            : const Color(0xFFE2E8F0),
-                                                      ),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.calendar_month_rounded,
-                                                      size: 20.sp,
-                                                      color: _selectedDateRange != null
-                                                          ? primaryColor
-                                                          : const Color(0xFF64748B),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 12.h),
-
-                                        // ── Filter Chips ──
-                                        SizedBox(
-                                          height: 32.h,
-                                          child: ListView.separated(
-                                            scrollDirection: Axis.horizontal,
-                                            itemCount: _filters.length,
-                                            separatorBuilder: (_, __) => SizedBox(width: 8.w),
-                                            itemBuilder: (context, i) {
-                                              final filter = _filters[i];
-                                              final isSelected = _selectedFilter == filter;
-                                              return GestureDetector(
-                                                onTap: () => setState(() => _selectedFilter = filter),
-                                                child: AnimatedContainer(
-                                                  duration: const Duration(milliseconds: 200),
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 14.w,
-                                                    vertical: 6.h,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: isSelected ? primaryColor : Colors.white,
-                                                    borderRadius: BorderRadius.circular(20.r),
-                                                    border: Border.all(
-                                                      color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
-                                                    ),
-                                                    boxShadow: isSelected
-                                                        ? [
-                                                            BoxShadow(
-                                                              color: primaryColor.withOpacity(0.25),
-                                                              blurRadius: 6,
-                                                              offset: const Offset(0, 2),
-                                                            ),
-                                                          ]
-                                                        : [],
-                                                  ),
-                                                  child: Text(
-                                                    filter,
-                                                    style: TextStyle(
-                                                      fontSize: 12.sp,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: isSelected ? Colors.white : const Color(0xFF64748B),
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        if (_selectedDateRange != null)
-                                          Padding(
-                                            padding: EdgeInsets.only(top: 8.h),
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.info_outline_rounded,
-                                                  size: 14.sp,
-                                                  color: primaryColor,
-                                                ),
-                                                SizedBox(width: 6.w),
-                                                Text(
-                                                  'Showing: ${_selectedDatePreset ?? "${DateFormat('MMM dd').format(_selectedDateRange!.start)} - ${DateFormat('MMM dd, yyyy').format(_selectedDateRange!.end)}"}',
-                                                  style: TextStyle(
-                                                    fontSize: 11.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: primaryColor,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        SizedBox(height: 12.h),
-                                      ],
-                                    ),
-                                  ),
+              return CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // ── Header + Filters ──────────────────────────
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${transactions.length} results',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF94A3B8),
+                                  fontSize: 11.sp,
                                 ),
-
-                                // ── Transaction List ───────────────────────────
-                                if (transactions.isEmpty)
-                                  SliverFillRemaining(
-                                    hasScrollBody: false,
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.all(20.w),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F5F9),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.receipt_long_outlined,
-                                              size: 44.sp,
-                                              color: const Color(0xFF94A3B8),
-                                            ),
-                                          ),
-                                          SizedBox(height: 14.h),
-                                          Text(
-                                            _selectedFilter == 'All'
-                                                ? 'No transactions yet'
-                                                : 'No $_selectedFilter transactions',
-                                            style: theme.textTheme.titleSmall?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF1E293B),
-                                            ),
-                                          ),
-                                          SizedBox(height: 4.h),
-                                          Text(
-                                            'Your activity will appear here',
-                                            style: theme.textTheme.bodySmall?.copyWith(
-                                              color: const Color(0xFF94A3B8),
-                                            ),
-                                          ),
-                                        ],
+                              ),
+                              Row(
+                                children: [
+                                  if (_selectedDateRange != null)
+                                    GestureDetector(
+                                      onTap: () => setState(() {
+                                        _selectedDateRange = null;
+                                        _selectedDatePreset = null;
+                                      }),
+                                      child: Container(
+                                        padding: EdgeInsets.all(6.w),
+                                        margin: EdgeInsets.only(right: 8.w),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withOpacity(0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.close_rounded,
+                                          size: 16.sp,
+                                          color: Colors.red,
+                                        ),
                                       ),
                                     ),
-                                  )
-                                else
-                                  SliverPadding(
-                                    padding: EdgeInsets.fromLTRB(
-                                        isTablet ? 24.w : 16.w, 8.h, isTablet ? 24.w : 16.w, 20.h),
-                                    sliver: SliverGrid(
-                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: crossAxisCount,
-                                        mainAxisExtent: 70.h,
-                                        crossAxisSpacing: 12.w,
-                                        mainAxisSpacing: 0,
+                                  PopupMenuButton<String>(
+                                    onSelected: _applyDatePreset,
+                                    itemBuilder: (context) => [
+                                      'Today',
+                                      'Yesterday',
+                                      'Last 7 Days',
+                                      'Last 30 Days',
+                                      'Custom Range',
+                                    ].map((String choice) {
+                                      return PopupMenuItem<String>(
+                                        value: choice,
+                                        child: Text(
+                                          choice,
+                                          style: TextStyle(
+                                            fontSize: 13.sp,
+                                            color: const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                    child: Container(
+                                      padding: EdgeInsets.all(8.w),
+                                      decoration: BoxDecoration(
+                                        color: _selectedDateRange != null 
+                                            ? primaryColor.withOpacity(0.1) 
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(10.r),
+                                        border: Border.all(
+                                          color: _selectedDateRange != null 
+                                              ? primaryColor 
+                                              : const Color(0xFFE2E8F0),
+                                        ),
                                       ),
-                                      delegate: SliverChildBuilderDelegate(
-                                        (context, index) {
-                                          final tx = transactions[index];
-                                          return TransactionTile(
-                                            tx: tx,
-                                            onTap: () => context.pushNamed(
-                                              RouteList.transactionDetailsScreen,
-                                              extra: tx,
-                                            ),
-                                          );
-                                        },
-                                        childCount: transactions.length,
+                                      child: Icon(
+                                        Icons.calendar_month_rounded,
+                                        size: 20.sp,
+                                        color: _selectedDateRange != null 
+                                            ? primaryColor 
+                                            : const Color(0xFF64748B),
                                       ),
                                     ),
                                   ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 12.h),
 
-                                if (state.isLoadMore)
-                                  SliverToBoxAdapter(
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 20.h),
-                                      child: const Center(child: CircularProgressIndicator(color: primaryColor)),
+                          // ── Filter Chips ──
+                          SizedBox(
+                            height: 32.h,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _filters.length,
+                              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                              itemBuilder: (context, i) {
+                                final filter = _filters[i];
+                                final isSelected = _selectedFilter == filter;
+                                return GestureDetector(
+                                  onTap: () => setState(() => _selectedFilter = filter),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 14.w,
+                                      vertical: 6.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? primaryColor : Colors.white,
+                                      borderRadius: BorderRadius.circular(20.r),
+                                      border: Border.all(
+                                        color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: primaryColor.withOpacity(0.25),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    child: Text(
+                                      filter,
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                      ),
                                     ),
                                   ),
-                                SliverToBoxAdapter(child: SizedBox(height: 30.h)),
-                              ],
+                                );
+                              },
+                            ),
+                          ),
+                          if (_selectedDateRange != null)
+                            Padding(
+                              padding: EdgeInsets.only(top: 8.h),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 14.sp,
+                                    color: primaryColor,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    'Showing: ${_selectedDatePreset ?? "${DateFormat('MMM dd').format(_selectedDateRange!.start)} - ${DateFormat('MMM dd, yyyy').format(_selectedDateRange!.end)}" }',
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          SizedBox(height: 12.h),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // ── Transaction List ───────────────────────────
+                  if (transactions.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(20.w),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.receipt_long_outlined,
+                                size: 44.sp,
+                                color: const Color(0xFF94A3B8),
+                              ),
+                            ),
+                            SizedBox(height: 14.h),
+                            Text(
+                              _selectedFilter == 'All'
+                                  ? 'No transactions yet'
+                                  : 'No $_selectedFilter transactions',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1E293B),
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              'Your activity will appear here',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        isTablet ? 24.w : 16.w, 
+                        8.h, 
+                        isTablet ? 24.w : 16.w, 
+                        20.h
+                      ),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisExtent: 70.h,
+                          crossAxisSpacing: 12.w,
+                          mainAxisSpacing: 0, 
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final tx = transactions[index];
+                            return TransactionTile(
+                              tx: tx,
+                              onTap: () => context.pushNamed(
+                                RouteList.transactionDetailsScreen,
+                                extra: tx,
+                              ),
                             );
                           },
+                          childCount: transactions.length,
                         ),
-            ),
+                      ),
+                    ),
+                  
+                  
+                  // ── Pagination Bar ──
+                  if (transactions.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 30.h),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildPaginationButton(
+                              label: 'Previous',
+                              icon: Icons.chevron_left_rounded,
+                              onPressed: ref.read(allTransactionsProvider(userId).notifier).hasPreviousPage
+                                  ? () {
+                                      ref.read(allTransactionsProvider(userId).notifier).previousPage();
+                                      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                                    }
+                                  : null,
+                            ),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(color: lightBorderColor),
+                              ),
+                              child: Text(
+                                'Page ${ref.watch(allTransactionsProvider(userId).notifier).currentPage}',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: lightSecondaryText,
+                                ),
+                              ),
+                            ),
+                            _buildPaginationButton(
+                              label: 'Next',
+                              icon: Icons.chevron_right_rounded,
+                              isRight: true,
+                              onPressed: ref.read(allTransactionsProvider(userId).notifier).hasNextPage
+                                  ? () {
+                                      ref.read(allTransactionsProvider(userId).notifier).nextPage();
+                                      _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                                    }
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
+        ),
+      ),
+    ),
+  ),
+);
+  }
+
+  Widget _buildPaginationButton({
+    required String label,
+    required IconData icon,
+    bool isRight = false,
+    VoidCallback? onPressed,
+  }) {
+    final bool isDisabled = onPressed == null;
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12.r),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isDisabled ? Colors.transparent : Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isDisabled ? const Color(0xFFE2E8F0).withOpacity(0.5) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isRight) Icon(icon, size: 18.sp, color: isDisabled ? const Color(0xFF94A3B8) : primaryColor),
+            if (!isRight) SizedBox(width: 4.w),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: isDisabled ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
+              ),
+            ),
+            if (isRight) SizedBox(width: 4.w),
+            if (isRight) Icon(icon, size: 18.sp, color: isDisabled ? const Color(0xFF94A3B8) : primaryColor),
+          ],
         ),
       ),
     );
   }
-
-
-
 }
-

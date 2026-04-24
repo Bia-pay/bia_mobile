@@ -3,7 +3,6 @@ import 'package:hive/hive.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../dashboard_repo/repo.dart';
 import '../model/deposit.dart';
-import '../model/pagination_model.dart';
 import '../model/recent_transaction.dart';
 
 final userIdProvider = StateProvider<String>((ref) {
@@ -123,133 +122,108 @@ final depositProvider = FutureProvider.family<DepositResponseModel, double>(
   },
 );
 
-class TransactionHistoryState {
-  final List<TransactionItem> transactions;
-  final bool isLoading;
-  final bool isLoadMore;
-  final String? error;
-  final Pagination? pagination;
-
-  TransactionHistoryState({
-    required this.transactions,
-    this.isLoading = false,
-    this.isLoadMore = false,
-    this.error,
-    this.pagination,
-  });
-
-  TransactionHistoryState copyWith({
-    List<TransactionItem>? transactions,
-    bool? isLoading,
-    bool? isLoadMore,
-    String? error,
-    Pagination? pagination,
-  }) {
-    return TransactionHistoryState(
-      transactions: transactions ?? this.transactions,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadMore: isLoadMore ?? this.isLoadMore,
-      error: error,
-      pagination: pagination ?? this.pagination,
-    );
-  }
-}
-
-class AllTransactionsNotifier extends StateNotifier<TransactionHistoryState> {
+class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionItem>>> {
   final DashboardRepository repository;
   final String userId;
+  bool _isFetching = false;
+  int _currentPage = 1;
+  bool _hasNextPage = true;
   final int _pageSize = 20;
 
+  int get currentPage => _currentPage;
+  bool get hasNextPage => _hasNextPage;
+  bool get hasPreviousPage => _currentPage > 1;
+
   AllTransactionsNotifier(this.repository, this.userId)
-      : super(TransactionHistoryState(transactions: [])) {
+      : super(const AsyncValue.loading()) {
     _init();
   }
 
   Future<void> _init() async {
-    if (userId.isEmpty) return;
+    if (userId.isEmpty) {
+      state = const AsyncValue.data([]);
+      return;
+    }
 
     // 🔥 ALWAYS LOAD USER-SPECIFIC HISTORY CACHE (All Bucket)
     final cached = await TransactionCache.getTransactions(userId, suffix: 'all');
 
     if (cached.isNotEmpty) {
-      state = state.copyWith(transactions: cached);
+      state = AsyncValue.data(cached);
     } else {
-      state = state.copyWith(isLoading: true);
+      state = const AsyncValue.loading();
     }
 
-    refresh(); // Initial fetch
+    _currentPage = 1;
+    _hasNextPage = true;
+    _fetchFresh(silent: cached.isNotEmpty, page: 1); // Background fetch
   }
 
-  Future<void> refresh() async {
-    if (state.isLoading) return;
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> _fetchFresh({bool silent = false, int page = 1}) async {
+    if (_isFetching) return;
+    if (!silent) state = const AsyncValue.loading();
+    _isFetching = true;
 
     try {
-      final response = await repository.getTransactions(page: 1, limit: _pageSize);
+      final response = await repository.
+      getTransactions(page: page, limit: _pageSize);
 
       if (response.responseSuccessful) {
-        final sorted = response.transactions
+        final fresh = response.transactions;
+        _hasNextPage = fresh.length == _pageSize;
+        _currentPage = page;
+
+        final sorted = fresh
           ..sort((a, b) {
             if (a.createdAt == null || b.createdAt == null) return 0;
             return b.createdAt!.compareTo(a.createdAt!);
           });
 
-        state = state.copyWith(
-          transactions: sorted,
-          pagination: response.pagination,
-          isLoading: false,
-        );
-
-        // ✅ Save to ALL HISTORY bucket
+        state = AsyncValue.data(sorted);
+        
+        // ✅ Save to ALL HISTORY bucket (merges automatically)
         await TransactionCache.saveTransactions(userId, sorted, suffix: 'all');
       } else {
-        state = state.copyWith(isLoading: false, error: response.responseMessage);
+        if (!silent || state.value == null) {
+          state = AsyncValue.error('Failed to load transactions', StackTrace.current);
+        }
       }
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+    } catch (e, st) {
+      if (!silent || (state.value == null || state.value!.isEmpty)) {
+        state = AsyncValue.error(e, st);
+      }
+    } finally {
+      _isFetching = false;
     }
   }
 
-  Future<void> loadMore() async {
-    if (state.isLoadMore || state.pagination == null) return;
-    if (state.pagination!.page >= state.pagination!.totalPages) return;
+  Future<void> nextPage() async {
+    if (_isFetching || !_hasNextPage) return;
+    await _fetchFresh(silent: false, page: _currentPage + 1);
+  }
 
-    state = state.copyWith(isLoadMore: true);
-    final nextPage = state.pagination!.page + 1;
+  Future<void> previousPage() async {
+    if (_isFetching || _currentPage <= 1) return;
+    await _fetchFresh(silent: false, page: _currentPage - 1);
+  }
 
-    try {
-      final response = await repository.getTransactions(page: nextPage, limit: _pageSize);
-
-      if (response.responseSuccessful) {
-        final fresh = response.transactions;
-        final merged = [...state.transactions, ...fresh]..sort((a, b) {
-            if (a.createdAt == null || b.createdAt == null) return 0;
-            return b.createdAt!.compareTo(a.createdAt!);
-          });
-
-        state = state.copyWith(
-          transactions: merged,
-          pagination: response.pagination,
-          isLoadMore: false,
-        );
-
-        // ✅ Save to ALL HISTORY bucket
-        await TransactionCache.saveTransactions(userId, merged, suffix: 'all');
-      } else {
-        state = state.copyWith(isLoadMore: false);
-      }
-    } catch (e) {
-      state = state.copyWith(isLoadMore: false);
-    }
+  Future<void> refresh() async {
+    print('🔄 Manual refresh all transactions');
+    _currentPage = 1;
+    _hasNextPage = true;
+    await _fetchFresh(silent: false, page: 1);
   }
 }
 
-final allTransactionsProvider = StateNotifierProvider.autoDispose
-    .family<AllTransactionsNotifier, TransactionHistoryState, String>((ref, userId) {
+final allTransactionsProvider =
+StateNotifierProvider.autoDispose.family<
+    AllTransactionsNotifier,
+    AsyncValue<List<TransactionItem>>,
+    String>((ref, userId) {
+
   final repo = ref.watch(dashboardRepositoryProvider);
   return AllTransactionsNotifier(repo, userId);
 });
-
 
 final balanceVisibilityProvider = StateProvider<bool>((ref) => true);
 

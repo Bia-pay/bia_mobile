@@ -228,6 +228,7 @@ class _CardOneState extends State<CardOne> {
   Timer? _debounce;
   String? _customerName;
   String? _address;
+  String? _minPurchaseAmount;
   bool _isVerifying = false;
 
   bool showMeterLengthWarning = false;
@@ -242,10 +243,13 @@ class _CardOneState extends State<CardOne> {
         _customerName != "Invalid meter" &&
         !_isVerifying;
 
-    final isAmountValid = amount >= 100;
-    final hasSufficientBalance = amount <= balance;
+    double minAmount = 0;
+    if (_minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty) {
+      minAmount = double.tryParse(_minPurchaseAmount!) ?? 0;
+    }
 
-    bool showMinimumAmountWarning = false;
+    final isAmountValid = amount > 0 && amount >= minAmount;
+    final hasSufficientBalance = amount <= balance;
 
     return widget.selectedProvider != null &&
         isMeterValid &&
@@ -265,13 +269,18 @@ class _CardOneState extends State<CardOne> {
   void _validateAmount(int amount) {
     final balance = _getWalletBalance();
 
+    double minAmount = 0;
+    if (_minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty) {
+      minAmount = double.tryParse(_minPurchaseAmount!) ?? 0;
+    }
+
     setState(() {
       walletBalance = balance;
 
       showInsufficientFundsWarning = amount > 0 && amount > balance;
 
       showMinimumAmountWarning =
-          amount > 0 && amount < 100;
+          amount > 0 && amount < minAmount;
     });
   }
 
@@ -282,6 +291,7 @@ class _CardOneState extends State<CardOne> {
       showMeterLengthWarning = value.isNotEmpty && value.length < 13;
       _customerName = null; // reset until valid
       _address = null;
+      _minPurchaseAmount = null;
     });
 
     // 🚫 Don't verify if not 13 digits
@@ -331,14 +341,20 @@ class _CardOneState extends State<CardOne> {
       setState(() {
         _customerName = result['Customer_Name'];
         _address = result['Address'];
+        _minPurchaseAmount = result['Min_Purchase_Amount']?.toString();
         _isVerifying = false;
       });
+      final amount = int.tryParse(_amountController.text) ?? 0;
+      _validateAmount(amount);
     } else {
       setState(() {
         _customerName = "Invalid meter";
         _address = "";
+        _minPurchaseAmount = null;
         _isVerifying = false;
       });
+      final amount = int.tryParse(_amountController.text) ?? 0;
+      _validateAmount(amount);
     }
   }
 
@@ -498,6 +514,14 @@ class _CardOneState extends State<CardOne> {
                               fontSize: isTablet ? 14.sp : 12.sp,
                             ),
                           ),
+                        if (_customerName != "Invalid meter" && _minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty)
+                          Text(
+                            'Min Amount: ₦$_minPurchaseAmount',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: isTablet ? 14.sp : 12.sp,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -539,6 +563,47 @@ class _CardOneState extends State<CardOne> {
                     ],
                   ),
                 ),
+                SizedBox(height: isTablet ? 16.h : 12.h),
+                Wrap(
+                  spacing: 10.w,
+                  runSpacing: 10.h,
+                  children: [200, 500, 1000, 2000, 3000, 5000, 10000, 20000].map((presetAmount) {
+                    double minAmount = 0;
+                    if (_minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty) {
+                      minAmount = double.tryParse(_minPurchaseAmount!) ?? 0;
+                    }
+                    final isEnabled = presetAmount >= minAmount;
+
+                    return GestureDetector(
+                      onTap: isEnabled
+                          ? () {
+                              _amountController.text = presetAmount.toString();
+                              _validateAmount(presetAmount);
+                              setState(() {});
+                            }
+                          : null,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: isEnabled ? Colors.white : Colors.grey.shade200,
+                          border: Border.all(
+                            color: isEnabled ? primaryColor : Colors.grey.shade300,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          '₦$presetAmount',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: isEnabled ? primaryColor : Colors.grey.shade500,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTablet ? 14.sp : 12.sp,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
                 if (showMinimumAmountWarning)
                   Padding(
                     padding: EdgeInsets.only(top: 6.h, left: 4.w),
@@ -549,7 +614,7 @@ class _CardOneState extends State<CardOne> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            "Minimum amount is ₦100",
+                            "Minimum amount is ₦${_minPurchaseAmount ?? '0'}",
                             style: TextStyle(
                               color: errorColor,
                               fontWeight: FontWeight.w600,
