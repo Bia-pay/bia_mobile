@@ -99,11 +99,52 @@ class BrandedReceipt extends StatelessWidget {
 
                             // Details
                             _buildReceiptRow("Sender", transaction.senderName ?? "BIA Wallet"),
-                            _buildReceiptRow("Recipient", transaction.receiverName ?? "N/A"),
-                            if (transaction.isBankTransfer)
-                              _buildReceiptRow("Recipient Bank", transaction.provider ?? "External Bank"),
-                            if (transaction.metadata?['recipientAccount'] != null)
-                              _buildReceiptRow("Account", transaction.metadata!['recipientAccount'].toString()),
+                            ...(() {
+                              final st = transaction.serviceType?.toUpperCase() ?? '';
+                              final md = transaction.metadata ?? {};
+                              final info = md['info'] as Map<String, dynamic>?;
+
+                              if (st == 'CABLE' || st == 'CABLE_TV') {
+                                return [
+                                  if (info != null) ...[
+                                    _buildReceiptRow("Provider", info['provider'] ?? transaction.provider ?? "N/A"),
+                                    _buildReceiptRow("Card Number", info['cardNumber'] ?? info['accountNumber'] ?? "N/A"),
+                                    if (info['package'] != null)
+                                      _buildReceiptRow("Package", info['package']),
+                                  ] else ...[
+                                    _buildReceiptRow("Provider", transaction.provider ?? "N/A"),
+                                  ]
+                                ];
+                              } else if (st == 'ELECTRICITY' || st == 'ELECTRICITY_BILL') {
+                                return [
+                                  if (info != null) ...[
+                                    _buildReceiptRow("Provider", info['provider'] ?? transaction.provider ?? "N/A"),
+                                    _buildReceiptRow("Meter Number", info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
+                                    if (info['token'] != null)
+                                      _buildReceiptRow("Token", info['token']),
+                                  ] else ...[
+                                    _buildReceiptRow("Provider", transaction.provider ?? "N/A"),
+                                  ]
+                                ];
+                              } else if (st == 'AIRTIME' || st == 'DATA') {
+                                return [
+                                  if (info != null) ...[
+                                    _buildReceiptRow("Provider", info['network'] ?? transaction.provider ?? "N/A"),
+                                    _buildReceiptRow("Beneficiary", info['phone'] ?? info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
+                                  ] else ...[
+                                    _buildReceiptRow("Provider", transaction.provider ?? "N/A"),
+                                  ]
+                                ];
+                              } else {
+                                return [
+                                  _buildReceiptRow("Recipient", transaction.receiverName ?? "N/A"),
+                                  if (transaction.isBankTransfer)
+                                    _buildReceiptRow("Recipient Bank", transaction.provider ?? "External Bank"),
+                                  if (md['recipientAccount'] != null)
+                                    _buildReceiptRow("Account", md['recipientAccount'].toString()),
+                                ];
+                              }
+                            })(),
                             _buildReceiptRow("Reference", transaction.reference ?? transaction.transactionId ?? "N/A"),
 
                           ],

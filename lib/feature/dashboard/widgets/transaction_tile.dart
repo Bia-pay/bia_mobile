@@ -38,12 +38,13 @@ class TransactionTile extends StatelessWidget {
                 ? successColor // Credits stay Green
                 : errorColor;  // Debits stay Red to show difference
 
-    final List<String> serviceTitles = ['AIRTIME', 'DATA', 'CABLE', 'ELECTRICITY', 'TOPUP'];
+    final List<String> serviceTitles = ['AIRTIME', 'DATA', 'CABLE', 'CABLE_TV', 'ELECTRICITY', 'ELECTRICITY_BILL', 'TOPUP'];
     final normalizedService = tx.serviceType?.toUpperCase();
 
     final String titleText = serviceTitles.contains(normalizedService)
-        ? (normalizedService == 'CABLE' ? 'Cable TV' : 
+        ? (normalizedService == 'CABLE' || normalizedService == 'CABLE_TV' ? 'Cable TV' : 
            normalizedService == 'TOPUP' ? 'Top Up' : 
+           (normalizedService?.startsWith('ELECTRICITY') == true) ? 'Electricity' :
            normalizedService![0] + normalizedService.substring(1).toLowerCase())
         : isCredit
             ? (tx.senderName ?? tx.provider ?? 'Transfer')
@@ -169,8 +170,10 @@ class TransactionTile extends StatelessWidget {
       case 'DATA':
         return Icons.wifi_rounded;
       case 'CABLE':
+      case 'CABLE_TV':
         return Icons.live_tv_rounded;
       case 'ELECTRICITY':
+      case 'ELECTRICITY_BILL':
         return Icons.bolt_rounded;
       default:
         return isCredit

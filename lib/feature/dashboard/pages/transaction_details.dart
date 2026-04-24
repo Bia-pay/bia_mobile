@@ -314,7 +314,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
   Widget _buildAmountBreakdown(TransactionItem tx) {
     final serviceType = tx.serviceType?.toUpperCase() ?? '';
-    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'ELECTRICITY';
+    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'CABLE_TV' || serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL';
     final showFee = tx.fee > 0 || !isUtility;
 
     return Column(
@@ -400,7 +400,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   Widget _buildTransactionDetails(TransactionItem tx, String status) {
     final serviceType = tx.serviceType?.toUpperCase() ?? '';
     final isTransfer = serviceType == 'TRANSFER';
-    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'ELECTRICITY';
+    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'CABLE_TV' || serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL';
     
     final metadata = tx.metadata ?? {};
     final info = metadata['info'] as Map<String, dynamic>?;
@@ -431,6 +431,22 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
              if (tx.isCredit && metadata['senderPhone'] != null)
                 _buildDetailRow('Sender Phone', metadata['senderPhone'].toString()),
           ],
+        ] else if (serviceType == 'CABLE' || serviceType == 'CABLE_TV') ...[
+          if (info != null) ...[
+             _buildDetailRow('Card Number', info['cardNumber'] ?? info['accountNumber'] ?? "N/A"),
+             if (info['package'] != null) _buildDetailRow('Package', info['package']),
+             _buildDetailRow('Provider', info['provider'] ?? tx.provider ?? "N/A"),
+          ] else ...[
+             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+          ]
+        ] else if (serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL') ...[
+          if (info != null) ...[
+             _buildDetailRow('Meter Number', info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
+             if (info['token'] != null) _buildDetailRow('Token', info['token']),
+             _buildDetailRow('Provider', info['provider'] ?? tx.provider ?? "N/A"),
+          ] else ...[
+             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+          ]
         ] else if (isUtility) ...[
           if (info != null) ...[
              _buildDetailRow('Beneficiary', info['phone'] ?? info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
@@ -515,12 +531,13 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   }
 
   String _getServiceTitle(TransactionItem tx) {
-    final List<String> serviceTypes = ['AIRTIME', 'DATA', 'CABLE', 'ELECTRICITY', 'TOPUP'];
+    final List<String> serviceTypes = ['AIRTIME', 'DATA', 'CABLE', 'CABLE_TV', 'ELECTRICITY', 'ELECTRICITY_BILL', 'TOPUP'];
     final normalized = tx.serviceType?.toUpperCase();
 
     if (serviceTypes.contains(normalized)) {
-      if (normalized == 'CABLE') return 'Cable TV';
+      if (normalized == 'CABLE' || normalized == 'CABLE_TV') return 'Cable TV';
       if (normalized == 'TOPUP') return 'Top Up';
+      if (normalized?.startsWith('ELECTRICITY') == true) return 'Electricity';
       return normalized![0] + normalized.substring(1).toLowerCase();
     }
     return normalized ?? "Transaction";

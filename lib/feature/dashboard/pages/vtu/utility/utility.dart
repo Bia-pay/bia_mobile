@@ -467,6 +467,17 @@ class _CardOneState extends State<CardOne> {
                       ],
                     ),
                   ),
+                if (_customerName != "Invalid meter" && _minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Text(
+                      'Min Amount: ₦$_minPurchaseAmount',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: isTablet ? 14.sp : 12.sp,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
                 if (_isVerifying)
                   Padding(
                     padding: EdgeInsets.only(top: isTablet ? 12.h : 8.h),
@@ -514,17 +525,11 @@ class _CardOneState extends State<CardOne> {
                               fontSize: isTablet ? 14.sp : 12.sp,
                             ),
                           ),
-                        if (_customerName != "Invalid meter" && _minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty)
-                          Text(
-                            'Min Amount: ₦$_minPurchaseAmount',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: isTablet ? 14.sp : 12.sp,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
+
                       ],
                     ),
                   ),
+
                 SizedBox(height: isTablet ? 28.h : 20.h),
                 Text(
                   'Amount',
