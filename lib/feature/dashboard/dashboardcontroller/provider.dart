@@ -39,13 +39,12 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
     if (cached.isNotEmpty) {
       print('✅ Using RECENT cache with ${cached.length} items');
       state = AsyncValue.data(cached);
+      // Background refresh if stale (optional, but keep it snappy)
+      _fetchFresh(silent: true);
     } else {
-      // If empty, we stay at data([]) to avoid showing a spinner.
-      // THE FIX: We NO LONGER trigger an automatic _fetchFresh here.
-      // Data will appear when the user manual refreshes, 
-      // or it should have been primed by login.
-      print('ℹ️ No recent transactions in cache, waiting for manual refresh.');
-      state = const AsyncValue.data([]);
+      print('ℹ️ No recent transactions in cache, triggering initial fetch.');
+      state = const AsyncValue.loading();
+      await _fetchFresh(silent: false);
     }
   }
 

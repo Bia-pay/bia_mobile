@@ -202,7 +202,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         backgroundColor: Colors.transparent, // Glassmorphic
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon:  Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(

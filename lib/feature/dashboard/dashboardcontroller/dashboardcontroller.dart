@@ -27,10 +27,26 @@ StateNotifierProvider<DashboardController, AsyncValue<ResponseBody?>>((ref) {
 
 class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   final DashboardRepository dashboardRepository;
+  Box? _authBox;
+  Box? _recentBeneficiariesBox;
 
   DashboardController(this.dashboardRepository) : super(const AsyncData(null)) {
     // Initial state setup from Hive
     _initWalletState();
+  }
+
+  Future<Box> _getAuthBox() async {
+    if (_authBox == null || !_authBox!.isOpen) {
+      _authBox = await Hive.openBox("authBox");
+    }
+    return _authBox!;
+  }
+
+  Future<Box> _getRecentBeneficiariesBox() async {
+    if (_recentBeneficiariesBox == null || !_recentBeneficiariesBox!.isOpen) {
+      _recentBeneficiariesBox = await Hive.openBox("recentBeneficiaries");
+    }
+    return _recentBeneficiariesBox!;
   }
 
   void _initWalletState() {
@@ -79,7 +95,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         'save': save.toString(),
       };
 
-      debugPrint("➡️ Sending funds: $body");
+      // debugPrint("➡️ Sending funds: $body");
 
       // Call repository (assuming dashboardRepository is defined)
       final ResponseModel response = await dashboardRepository.sendMoney(body);
@@ -123,7 +139,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     try {
       LoadingHelper.show('');
       Map<String, dynamic> body = {'pin': pin, 'confirmPin': confirmPin};
-      debugPrint("➡️ Setting PIN: $body");
+      // debugPrint("➡️ Setting PIN: $body");
 
       final ResponseModel response = await dashboardRepository.setPin(body);
       LoadingHelper.dismiss();
@@ -164,7 +180,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     try {
       LoadingHelper.show('');
       final Map<String, dynamic> body = {"account": account.trim()};
-      debugPrint("➡️ Verifying account: $body");
+      // debugPrint("➡️ Verifying account: $body");
       final ResponseModel response = await dashboardRepository.verifyAccount(body);
 
       LoadingHelper.dismiss();
@@ -182,11 +198,11 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     }
   }
 
-  Future<QrCodeResponse?> getUserQrCode(BuildContext context) async {
+  Future<QrCodeResponse?> getUserQrCode(BuildContext context, {double? amount, String? narration}) async {
     try {
       LoadingHelper.show('');
 
-      final qrResponse = await dashboardRepository.getUserQrCode();
+      final qrResponse = await dashboardRepository.getUserQrCode(amount: amount, narration: narration);
       LoadingHelper.dismiss();
 
       ToastHelper.showToast(
@@ -242,8 +258,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
   Future<List<RecentBeneficiaryItem>> getRecentBeneficiary(BuildContext context) async {
     try {
-      final box = await Hive.openBox('recentBeneficiaries');
-      final authBox = await Hive.openBox('authBox');
+      final box = await _getRecentBeneficiariesBox();
+      final authBox = await _getAuthBox();
       final userId = authBox.get('userId', defaultValue: '');
 
       if (userId.isEmpty) {
@@ -507,7 +523,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         "newPin": newPin,
         "confirmNewPin": confirmNewPin,
       };
-      debugPrint("➡️ Updating PIN: $body");
+      // debugPrint("➡️ Updating PIN: $body");
       final response = await dashboardRepository.changePin(body);
       LoadingHelper.dismiss();
       ToastHelper.showToast(
@@ -959,7 +975,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       LoadingHelper.show('');
 
       final response =
-      await dashboardRepository.verifyPhoneNumber(phone);
+      await dashboardRepository.verifyPhone(phone);
 
       LoadingHelper.dismiss();
 

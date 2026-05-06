@@ -23,7 +23,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  bool showMore = false;
+
 
   Future<void> _handleRefresh() async {
     final userId = ref.read(userIdProvider);
@@ -38,38 +38,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     await Future.wait([txFuture, walletFuture]);
   }
 
-  List<Map<String, dynamic>> _quickActions(BuildContext context) => [
-    {
-      'label': 'Airtime',
-      'icon': Icon(Icons.bar_chart, color: primaryColor, size: 20.sp),
-      'onTap': () => context.pushNamed(RouteList.airtime),
-    },
-    {
-      'label': 'Data',
-      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor, size: 20.sp),
-      'onTap': () => context.pushNamed(RouteList.data),
-    },
-    {
-      'label': 'Cable TV',
-      'icon': Icon(Icons.tv, color: primaryColor, size: 20.sp),
-      'onTap': () => context.pushNamed(RouteList.cable),
-    },
-    {
-      'label': 'Tiktok Coin',
-      'icon': Image.asset(tiktok, height: 22.h),
-      'onTap': () {},
-    },
-    {
-      'label': 'Utility Bill',
-      'icon': Icon(Icons.electrical_services, color: primaryColor, size: 20.sp),
-      'onTap': () => context.pushNamed(RouteList.electricity),
-    },
-    {
-      'label': 'Internet',
-      'icon': Icon(Icons.wifi, color: primaryColor, size: 20.sp),
-      'onTap': () {},
-    },
-  ];
+
 
   @override
   void initState() {
@@ -138,7 +107,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const BalanceCard(),
                             SizedBox(height: sectionSpacing),
 
-                            buildContainer(context, theme),
+                            const ActionRibbon(),
                             SizedBox(height: 12.h),
 
                             Text(
@@ -150,82 +119,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ),
                             SizedBox(height: 8.h),
 
-                            buildContainerTwo(theme, context),
+                            const BiaAiCard(),
                             SizedBox(height: sectionSpacing),
 
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                vertical: 15.h,
-                                horizontal: 4.w,
-                              ),
-                              decoration: BoxDecoration(
-                                color: offWhite,
-                                borderRadius: BorderRadius.circular(8.r),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: _quickActions(context)
-                                        .take(4)
-                                        .map(
-                                          (item) => QuickActionButton(
-                                        label: item['label'],
-                                        icon: item['icon'],
-                                        onTap: item['onTap'],
-                                      ),
-                                    )
-                                        .toList(),
-                                  ),
-
-                                  if (showMore)
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 10.h),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                        children: _quickActions(context)
-                                            .skip(4)
-                                            .map(
-                                              (item) => QuickActionButton(
-                                            label: item['label'],
-                                            icon: item['icon'],
-                                            onTap: item['onTap'],
-                                          ),
-                                        )
-                                            .toList(),
-                                      ),
-                                    ),
-
-                                  GestureDetector(
-                                    onTap: () => setState(() => showMore = !showMore),
-                                    child: Padding(
-                                      padding: EdgeInsets.only(top: 8.h),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            showMore ? "Less" : "More",
-                                            style: TextStyle(
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w600,
-                                              color: primaryColor,
-                                            ),
-                                          ),
-                                          Icon(
-                                            showMore
-                                                ? Icons.keyboard_arrow_up
-                                                : Icons.keyboard_arrow_down,
-                                            color: primaryColor,
-                                            size: 20.sp,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            const QuickActionsGrid(),
                             SizedBox(height: sectionSpacing),
 
                             Row(
@@ -253,7 +150,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ),
                             SizedBox(height: 8.h),
 
-                            buildExpanded(theme),
+                            const RecentTransactionsList(),
 
                             SizedBox(height: 24.h),
                           ],
@@ -270,7 +167,78 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Container buildContainerTwo(ThemeData theme, BuildContext context) {
+}
+
+class ActionRibbon extends StatelessWidget {
+  const ActionRibbon({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 14.h),
+      decoration: BoxDecoration(
+        color: offWhite,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ActionButton(
+            label: 'Send TP',
+            icon: SvgPicture.asset(send, height: 22.h),
+            onTap: () => context.pushNamed(RouteList.sendMoneyTransfer),
+          ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ActionButton(
+                label: 'Bia Trike',
+                icon: Icon(Icons.car_crash_sharp, color: primaryColor, size: 22.sp),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bia Trike coming soon!')),
+                  );
+                },
+              ),
+              Positioned(
+                top: -5.h,
+                right: -20.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: primaryGreenColor,
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    'Coming Soon',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 6.sp,
+                      color: whiteBackground,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          ActionButton(
+            label: 'Withdrawal',
+            icon: Image.asset(atm, height: 22.h),
+            onTap: () => context.pushNamed(RouteList.sendMoneyToBank),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BiaAiCard extends ConsumerWidget {
+  const BiaAiCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: 20.h,
@@ -334,112 +302,55 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+}
 
-  Container buildContainer(BuildContext context, ThemeData theme) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 14.h),
-      decoration: BoxDecoration(
-        color: offWhite,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          ActionButton(
-            label: 'Send TP',
-            icon: SvgPicture.asset(send, height: 22.h),
-            onTap: () => context.pushNamed(RouteList.sendMoneyTransfer),
-          ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              ActionButton(
-                label: 'Bia Trike',
-                icon: Icon(Icons.car_crash_sharp, color: primaryColor, size: 22.sp),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Bia Trike coming soon!')),
-                  );
-                },
-              ),
-              Positioned(
-                top: -5.h,
-                right: -20.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: primaryGreenColor,
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    'Coming Soon',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 6.sp,
-                      color: whiteBackground,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          ActionButton(
-            label: 'Withdrawal',
-            icon: Image.asset(atm, height: 22.h),
-            onTap: () => context.pushNamed(RouteList.sendMoneyToBank),
-          ),
-        ],
-      ),
-    );
-  }
+class RecentTransactionsList extends ConsumerWidget {
+  const RecentTransactionsList({super.key});
 
-  Widget buildExpanded(ThemeData theme) {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userId = ref.watch(userIdProvider);
+    final asyncTx = ref.watch(recentTransactionsProvider(userId));
+
     return SizedBox(
       width: double.infinity,
-      child: Consumer(
-        builder: (context, ref, _) {
-          final userId = ref.watch(userIdProvider);
-
-          final asyncTx = ref.watch(recentTransactionsProvider(userId));
-          return asyncTx.when(
-            data: (transactions) {
-              if (transactions.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.receipt, size: 60, color: inactiveColor),
-                      Text("No recent transactions"),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: transactions.length > 2 ? 2 : transactions.length,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemBuilder: (context, index) {
-                  final tx = transactions[index];
-                  return TransactionTile(
-                    tx: tx,
-                    onTap: () => context.pushNamed(
-                      RouteList.transactionDetailsScreen,
-                      extra: tx,
-                    ),
-                  );
-                },
+      child: asyncTx.when(
+        data: (transactions) {
+          if (transactions.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.receipt, size: 60, color: inactiveColor),
+                  Text("No recent transactions"),
+                ],
+              ),
+            );
+          }
+          return ListView.builder(
+            shrinkWrap: true,
+            itemCount: transactions.length > 2 ? 2 : transactions.length,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemBuilder: (context, index) {
+              final tx = transactions[index];
+              return TransactionTile(
+                tx: tx,
+                onTap: () => context.pushNamed(
+                  RouteList.transactionDetailsScreen,
+                  extra: tx,
+                ),
               );
             },
-            // 🚀 Fail-safe: No spinner even during sync loading frame
-            loading: () => const SizedBox.shrink(),
-            error: (e, _) => Center(child: Text("Error: $e")),
           );
         },
+        loading: () => const SizedBox.shrink(),
+        error: (e, _) => Center(child: Text("Error: $e")),
       ),
     );
   }
 }
+
 
 class BalanceCard extends ConsumerWidget {
   const BalanceCard({super.key});
@@ -595,6 +506,130 @@ class ActionButton extends StatelessWidget {
     );
   }
 }
+
+class QuickActionsGrid extends StatefulWidget {
+  const QuickActionsGrid({super.key});
+
+  @override
+  State<QuickActionsGrid> createState() => _QuickActionsGridState();
+}
+
+class _QuickActionsGridState extends State<QuickActionsGrid> {
+  bool showMore = false;
+
+  static List<Map<String, dynamic>> getActions(BuildContext context) => [
+    {
+      'label': 'Airtime',
+      'icon': Icon(Icons.bar_chart, color: primaryColor, size: 20.sp),
+      'onTap': () => context.pushNamed(RouteList.airtime),
+    },
+    {
+      'label': 'Data',
+      'icon': Icon(Icons.four_g_plus_mobiledata, color: primaryColor, size: 20.sp),
+      'onTap': () => context.pushNamed(RouteList.data),
+    },
+    {
+      'label': 'Cable TV',
+      'icon': Icon(Icons.tv, color: primaryColor, size: 20.sp),
+      'onTap': () => context.pushNamed(RouteList.cable),
+    },
+    {
+      'label': 'Tiktok Coin',
+      'icon': Image.asset(tiktok, height: 22.h),
+      'onTap': () {},
+    },
+    {
+      'label': 'Utility Bill',
+      'icon': Icon(Icons.electrical_services, color: primaryColor, size: 20.sp),
+      'onTap': () => context.pushNamed(RouteList.electricity),
+    },
+    {
+      'label': 'Internet',
+      'icon': Icon(Icons.wifi, color: primaryColor, size: 20.sp),
+      'onTap': () {},
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = getActions(context);
+    return Container(
+      padding: EdgeInsets.symmetric(
+        vertical: 15.h,
+        horizontal: 4.w,
+      ),
+      decoration: BoxDecoration(
+        color: offWhite,
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: actions
+                .take(4)
+                .map(
+                  (item) => QuickActionButton(
+                label: item['label'],
+                icon: item['icon'],
+                onTap: item['onTap'],
+              ),
+            )
+                .toList(),
+          ),
+
+          if (showMore)
+            Padding(
+              padding: EdgeInsets.only(top: 10.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: actions
+                    .skip(4)
+                    .map(
+                      (item) => QuickActionButton(
+                    label: item['label'],
+                    icon: item['icon'],
+                    onTap: item['onTap'],
+                  ),
+                )
+                    .toList(),
+              ),
+            ),
+
+          GestureDetector(
+            onTap: () => setState(() => showMore = !showMore),
+            child: Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    showMore ? "Less" : "More",
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
+                  Icon(
+                    showMore
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: primaryColor,
+                    size: 20.sp,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
 
 class QuickActionButton extends StatelessWidget {
   final String label;

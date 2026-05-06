@@ -2,7 +2,7 @@ class Constants {
   Constants._();
 
   static String nairaCurrencySymbol = "₦";
-  static String appName = 'niigma Provider';
+  static String appName = 'bia ';
   static String prodFlavorName = 'production';
   static String devAppName = 'niigma Provider';
   static String devFlavorName = 'dev';

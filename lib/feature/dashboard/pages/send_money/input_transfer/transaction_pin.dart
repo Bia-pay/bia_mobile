@@ -21,6 +21,7 @@ class TransactionPin extends ConsumerStatefulWidget {
   final bool saveAsBeneficiary;
   final String type; // airtime | data | transfer | cable | electricity
   final Map<String, dynamic>? meta;
+  final String? narration;
 
   const TransactionPin({
     super.key,
@@ -30,6 +31,7 @@ class TransactionPin extends ConsumerStatefulWidget {
     required this.saveAsBeneficiary,
     required this.type,
     this.meta,
+    this.narration,
   });
 
   @override
@@ -140,7 +142,7 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
       } else if (widget.type == "electricity") {
         response = await controller.buyElectricity(context, serviceId: widget.meta?['serviceId'], meterNumber: widget.recipientAccount, variationCode: widget.meta?['variationCode'], amount: widget.amount.toInt(), phone: widget.recipientAccount, pin: transactionPin);
       } else {
-        response = await controller.sendMoney(context, widget.recipientAccount, widget.amount.toStringAsFixed(2), 'Transfer', transactionPin, save: widget.saveAsBeneficiary);
+        response = await controller.sendMoney(context, widget.recipientAccount, widget.amount.toStringAsFixed(2), widget.narration ?? 'Transfer', transactionPin, save: widget.saveAsBeneficiary);
       }
 
       EasyLoading.dismiss();

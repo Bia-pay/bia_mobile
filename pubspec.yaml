@@ -78,13 +78,18 @@ dependencies:
   flutter_animate: ^4.5.2
   google_fonts: ^7.0.2
   pinput: ^6.0.1
-  flutter_contacts: ^1.1.9+2
   shimmer: ^3.0.0
   speech_to_text: ^7.3.0
   audioplayers: ^6.6.0
   record: ^5.1.0
   path: ^1.8.3
   google_generative_ai: ^0.4.7
+  flutter_native_contact_picker: ^0.0.11
+  qr_flutter: ^4.1.0
+  lottie: ^3.3.3
+  screenshot: ^3.0.0
+  gal: ^2.3.2
+  confetti: ^0.8.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

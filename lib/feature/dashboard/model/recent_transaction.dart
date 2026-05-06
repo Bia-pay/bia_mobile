@@ -175,7 +175,15 @@ class TransactionResponse {
   });
 
   factory TransactionResponse.fromJson(Map<String, dynamic> json) {
-    final list = (json['responseBody']?['transactions'] as List?) ?? [];
+    final dynamic body = json['responseBody'];
+    List<dynamic> list = [];
+
+    if (body is List) {
+      list = body;
+    } else if (body is Map) {
+      list = (body['transactions'] as List?) ?? (body['recentTransactions'] as List?) ?? [];
+    }
+
     return TransactionResponse(
       responseSuccessful: json['responseSuccessful'] ?? false,
       responseMessage: json['responseMessage'] ?? '',

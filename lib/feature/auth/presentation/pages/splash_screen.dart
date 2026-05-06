@@ -22,40 +22,25 @@ class _SplashScreenState extends ConsumerState<Splash> {
     super.initState();
 
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      await _handleFirstLaunch();
       await _checkAuthStatus();
     });
   }
 
-  /// 🔹 Only request permission — DO NOT generate token here
-  Future<void> _handleFirstLaunch() async {
-    final box = Hive.box('appBox');
-    final isFirstLaunch = box.get('first_launch', defaultValue: true);
-
-    if (isFirstLaunch) {
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-
-      await box.put('first_launch', false);
-    }
-  }
-
   Future<void> _checkAuthStatus() async {
-    // 🚀 Artificial delay removed for instantaneous boot
-    // await Future.delayed(const Duration(milliseconds: 1000));
-
+    // 🚀 Minimum delay so the user can actually see the brand logo
+    // but not so long that it feels sluggish.
+    final minDelay = Future.delayed(const Duration(milliseconds: 1200));
 
     try {
       final box = Hive.box("authBox");
-      final token = box.get("token");
       final userId = box.get("userId");
       final phone = box.get("phone");
       
       final bool hasIdentity = (userId != null && userId.toString().isNotEmpty) || 
                                (phone != null && phone.toString().isNotEmpty);
+
+      // Wait for both the check and the minimum delay
+      await minDelay;
 
       if (!mounted) return;
 
@@ -67,6 +52,7 @@ class _SplashScreenState extends ConsumerState<Splash> {
         context.go(RouteList.getStarted);
       }
     } catch (_) {
+      await minDelay;
       if (!mounted) return;
       context.go(RouteList.getStarted);
     }

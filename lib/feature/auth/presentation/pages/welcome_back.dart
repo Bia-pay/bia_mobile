@@ -127,8 +127,10 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
         _showErrorModal('Login Failed', 'Invalid credentials. Please try again.');
         _resetState(isBiometric);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       LoadingHelper.dismiss();
+      debugPrint('❌ Login process failed with exception: $e');
+      debugPrint('Stack trace: $stackTrace');
       _showErrorModal('Login Error', 'Something went wrong. Please try again later.');
       _resetState(isBiometric);
     }

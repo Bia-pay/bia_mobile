@@ -189,27 +189,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return;
       }
 
-      // Verify token exists
-      final box = await Hive.openBox("authBox");
-      final token = box.get("token");
-      final savedPhone = box.get("phone");
-
-      if (token != null && token.isNotEmpty && savedPhone == fullPhoneNumber) {
-        if (mounted) {
-          context.go(RouteList.bottomNavBar);
-        }
-      } else {
-        await box.delete("token");
-        _showErrorModal(
-          'Login Failed',
-          'Unable to complete login. Please try again.',
-        );
+      // After successful logIn, the repository has already persisted tokens to SecureStorage.
+      // We can trust the 'success' boolean and the controller's state.
+      if (mounted) {
+        context.go(RouteList.bottomNavBar);
+      }
         setState(() {
           isLoading = false;
           _isLoginInProgress = false;
         });
-      }
-    } on TimeoutException catch (e) {
+      } on TimeoutException catch (e) {
       LoadingHelper.dismiss();
       _showErrorModal(
         'Connection Timeout',

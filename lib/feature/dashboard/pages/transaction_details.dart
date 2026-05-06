@@ -11,6 +11,7 @@ import '../model/recent_transaction.dart';
 import 'package:bia/app/utils/colors.dart';
 import '../../../app/utils/custom_loader.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 
 import '../widgets/branded_receipt.dart';
 
@@ -444,11 +445,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           if (info != null) ...[
              _buildDetailRow('Meter Number', info['meterNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A"),
              ...(() {
+                final localName = Hive.isBoxOpen('authBox') ? Hive.box('authBox').get('fullname') : null;
                 final cName = info['Customer_Name'] ?? info['customerName'] ?? info['customer_name'] ?? info['name'] ?? info['CustomerName'] ?? info['Customer_name'];
                 final addr = info['Address'] ?? info['address'] ?? info['customerAddress'] ?? info['meterAddress'];
                 return [
+                  if (localName != null && localName.toString().trim().isNotEmpty)
+                    _buildDetailRow('Account Name', localName.toString()),
                   if (cName != null && cName.toString().trim().isNotEmpty)
-                    _buildDetailRow('Customer Name', cName.toString()),
+                    _buildDetailRow('Meter Name', cName.toString()),
                   if (addr != null && addr.toString().trim().isNotEmpty)
                     _buildDetailRow('Address', addr.toString()),
                 ];

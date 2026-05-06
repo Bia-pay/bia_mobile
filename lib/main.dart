@@ -142,51 +142,64 @@ void setupNotificationTapHandlers() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // 1. Critical Core Initialization (Sequential)
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await Hive.initFlutter();
   
-  // Register background handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // 2. Parallelize Box Openings for speed
+  final boxes = await Future.wait([
+    Hive.openBox("authBox"),
+    Hive.openBox("appBox"),
+    Hive.openBox("transactionCacheBox"),
+    MediaStore.ensureInitialized(),
+  ]);
   
-  await MediaStore.ensureInitialized();
+  final authBox = boxes[0] as Box;
   MediaStore.appFolder = "Bia";
-  await initLocalNotifications();
-  listenForForegroundMessages();
-  setupNotificationTapHandlers();
-  
-  // Request permissions on startup
-  await FirebaseMessaging.instance.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
 
-
+  // 3. System UI setup (Non-blocking)
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
 
-  await Hive.initFlutter();
-  final authBox = await Hive.openBox("authBox");
-  await Hive.openBox("appBox");
-  // 🔥 Pre-warm the transaction cache for zero-flicker sync loading
-  await Hive.openBox("transactionCacheBox");
+  // 4. Run App immediately to dismiss native splash faster
+  runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 
-  // Fetch and store FCM token on startup
+  // 5. Defer Non-Critical Initialization (Async/Non-blocking)
+  _initSecondaryServices(authBox);
+}
+
+/// Handles secondary initialization tasks in the background to avoid blocking the main UI thread on boot.
+Future<void> _initSecondaryServices(Box authBox) async {
   try {
+    // Register background handler
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // Notifications
+    await initLocalNotifications();
+    listenForForegroundMessages();
+    setupNotificationTapHandlers();
+    
+    // Permissions & Tokens
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
     final fcmToken = await FirebaseMessaging.instance.getToken();
     if (fcmToken != null) {
       await authBox.put('fcmToken', fcmToken);
-      debugPrint("🔥 Initial FCM Token stored: $fcmToken");
+      debugPrint("🔥 Background FCM Token stored: $fcmToken");
     }
   } catch (e) {
-    debugPrint("⚠️ Error fetching FCM token on startup: $e");
+    debugPrint("⚠️ Secondary initialization error: $e");
   }
-
-  runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
-
 }
+
 
 
 // NOTE: navigatorKey is defined in feature/auth/interceptor/interceptor.dart
@@ -212,6 +225,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
 
     // Initialize the session service
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeEasyLoadingOnce();
       final String currentLocation = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
       ref.read(sessionServiceProvider.notifier).init(currentLocation);
     });
@@ -279,7 +293,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       designSize: const Size(390, 844),
       minTextAdapt: true,
       builder: (context, child) {
-        _initializeEasyLoadingOnce();
 
         return GestureDetector(
           behavior: HitTestBehavior.translucent,

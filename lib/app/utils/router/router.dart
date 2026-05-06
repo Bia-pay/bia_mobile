@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
 import '../../../feature/ai_chat/ui/ai_chat_screen.dart';
 import '../../../feature/ai_chat/ui/bia_language_onboarding.dart';
@@ -179,6 +180,8 @@ class AppRouter {
             controller: args['controller'] ?? TextEditingController(),
             recipientName: args['recipientName'] ?? '',
             recipientAccount: args['recipientAccount'] ?? '',
+            initialAmount: args['amount'],
+            initialNarration: args['narration'],
           );
         },
       ),
@@ -232,7 +235,13 @@ class AppRouter {
       GoRoute(
         path: '/scanner-onboarding',
         name: RouteList.scannerOnboarding,
-        builder: (context, state) => const ScannerOnboarding(),
+        builder: (context, state) {
+          final bool completed = Hive.box('authBox').get('qr_onboarding_completed', defaultValue: false);
+          if (completed) {
+            return const QrScannerScreen();
+          }
+          return const ScannerOnboarding();
+        },
       ),
       GoRoute(
         path: '/qr-scanner',

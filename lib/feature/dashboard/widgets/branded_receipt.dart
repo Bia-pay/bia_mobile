@@ -4,6 +4,8 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../../app/utils/image.dart';
 import '../model/recent_transaction.dart';
 import 'package:bia/app/utils/colors.dart';
+import 'package:hive/hive.dart';
+
 class BrandedReceipt extends StatelessWidget {
   final TransactionItem transaction;
   final String? statusTitle;
@@ -121,11 +123,14 @@ class BrandedReceipt extends StatelessWidget {
                                     _buildReceiptRow("Provider", info['provider']?.toString() ?? transaction.provider ?? "N/A"),
                                     _buildReceiptRow("Meter Number", info['meterNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A"),
                                     ...(() {
+                                      final localName = Hive.isBoxOpen('authBox') ? Hive.box('authBox').get('fullname') : null;
                                       final cName = info['Customer_Name'] ?? info['customerName'] ?? info['customer_name'] ?? info['name'] ?? info['CustomerName'] ?? info['Customer_name'];
                                       final addr = info['Address'] ?? info['address'] ?? info['customerAddress'] ?? info['meterAddress'];
                                       return [
+                                        if (localName != null && localName.toString().trim().isNotEmpty)
+                                          _buildReceiptRow("Account Name", localName.toString()),
                                         if (cName != null && cName.toString().trim().isNotEmpty)
-                                          _buildReceiptRow("Customer Name", cName.toString()),
+                                          _buildReceiptRow("Meter Name", cName.toString()),
                                         if (addr != null && addr.toString().trim().isNotEmpty)
                                           _buildReceiptRow("Address", addr.toString()),
                                       ];

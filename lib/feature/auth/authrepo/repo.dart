@@ -24,13 +24,21 @@ final authRepositoryProvider = Provider((ref) {
 class AuthRepository {
   final ApiClient _apiClient;
   final Ref _ref;
+  Box? _authBox;
 
   AuthRepository(this._apiClient, this._ref);
+
+  Future<Box> _getAuthBox() async {
+    if (_authBox == null || !_authBox!.isOpen) {
+      _authBox = await Hive.openBox("authBox");
+    }
+    return _authBox!;
+  }
 
 // ---------------- LOGOUT ----------------
   Future<ResponseModel> logout() async {
     try {
-      final box = await Hive.openBox('authBox');
+      final box = await _getAuthBox();
 
       // Get current user info for logging
       final userId = box.get('userId', defaultValue: '');
@@ -103,7 +111,7 @@ class AuthRepository {
       body['ipAddress'] = ipAddress;
       body['device'] = deviceName;
 
-      print("📤 Final body sent to backend: $body");
+
 
       final response =
       await _apiClient.postData(ApiConstant.LOGIN, body);
@@ -112,16 +120,19 @@ class AuthRepository {
 
       if (response.statusCode == 200 ||
           response.statusCode == 201) {
-        print("✅ Login Success: $jsonResponse");
 
-        final box = await Hive.openBox('authBox');
+
+        final box = await _getAuthBox();
         final responseBody = jsonResponse['responseBody'] ?? {};
         final userJson =
         Map<String, dynamic>.from(responseBody['user'] ?? {});
         final walletJson =
         Map<String, dynamic>.from(responseBody['wallet'] ?? {});
-        final accessToken = responseBody['accessToken'] ?? '';
-        final refreshToken = responseBody['refreshToken'] ?? '';
+        final accessToken = responseBody['accessToken'] ?? userJson['accessToken'] ?? '';
+        final refreshToken = responseBody['refreshToken'] ?? userJson['refreshToken'] ?? '';
+        
+
+
         final newUserId = userJson['id']?.toString() ?? '';
         final phone = userJson['phone']?.toString() ?? '';
         final effectiveId = newUserId.isNotEmpty ? newUserId : phone;
@@ -166,16 +177,15 @@ class AuthRepository {
               // Write false explicitly so the key exists but biometric is OFF by default
               await biometricService.setLoginEnabled(effectiveId, false);
               await biometricService.markInitialPromptShown(effectiveId);
-              debugPrint('🔐 First login for $effectiveId — biometric OFF by default');
             } else {
-              final current = await biometricService.isLoginEnabled(effectiveId);
-              debugPrint('🔐 Returning user $effectiveId — keeping biometric setting: $current');
+              await biometricService.isLoginEnabled(effectiveId);
             }
           }
         }
 
-        await box.put("token", accessToken);
-        await box.put("refreshToken", refreshToken);
+        // Tokens are now stored exclusively in SecureStorage via ApiClient for security.
+        // await box.put("token", accessToken);
+        // await box.put("refreshToken", refreshToken);
         await box.put("userId", newUserId);
         await box.put("fullname", userJson['fullname'] ?? '');
         await box.put("phone", phone);
@@ -199,7 +209,7 @@ class AuthRepository {
         try {
           await BiometricMigration.migrateToUserSpecificSettings();
         } catch (e) {
-          debugPrint('⚠️ Biometric migration skipped: $e');
+          debugPrint('⚠️ Biometric migration skipped');
         }
 
         return ResponseModel(
@@ -208,6 +218,7 @@ class AuthRepository {
               'Login successful',
           responseSuccessful: true,
           statusCode: response.statusCode,
+          responseBody: ResponseBody.fromJson(responseBody),
         );
       }
 
@@ -219,7 +230,6 @@ class AuthRepository {
         statusCode: response.statusCode,
       );
     } catch (e) {
-      print('🔥 Login Exception: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Try again.',
         responseSuccessful: false,
@@ -237,10 +247,9 @@ class AuthRepository {
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        print("✅ PIN set successfully: $jsonResponse");
 
         // Save PIN securely for biometric use
-        final authBox = await Hive.openBox('authBox');
+        final authBox = await _getAuthBox();
         final userId = authBox.get('userId', defaultValue: '');
         final phone = authBox.get('phone', defaultValue: '');
         final effectiveUserId = userId.isNotEmpty ? userId : phone;
@@ -248,7 +257,6 @@ class AuthRepository {
         if (effectiveUserId.isNotEmpty) {
           final biometricService = BiometricService();
           await biometricService.saveTransactionPin(effectiveUserId, pin);
-          print("🔐 PIN saved securely for biometric use: $effectiveUserId");
         }
 
         return ResponseModel(
@@ -264,7 +272,6 @@ class AuthRepository {
         statusCode: response.statusCode,
       );
     } catch (e) {
-      print("🔥 Set PIN Exception: $e");
       return ResponseModel(
         responseMessage: 'Something went wrong. Try again.',
         responseSuccessful: false,
@@ -275,7 +282,7 @@ class AuthRepository {
 
   Future<ResponseModel?> biometricLogin() async {
     try {
-      final box = await Hive.openBox('authBox');
+      final box = await _getAuthBox();
       final biometricService = BiometricService();
 
       final userId = box.get('userId', defaultValue: '');
@@ -283,7 +290,6 @@ class AuthRepository {
       final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
       if (effectiveUserId.isEmpty) {
-        debugPrint('⚠️ No userId found for biometric login');
         return null;
       }
 
@@ -292,7 +298,6 @@ class AuthRepository {
       final canCheck = await biometricService.canCheckBiometrics();
 
       if (!canCheck || !enabled) {
-        debugPrint('⚠️ Biometric not available or not enabled');
         return null;
       }
 
@@ -308,7 +313,6 @@ class AuthRepository {
       final password = await biometricService.getLoginPassword(effectiveUserId);
 
       if (phone.isEmpty || password == null) {
-        debugPrint('⚠️ Missing credentials for biometric login');
         return null;
       }
 
@@ -317,7 +321,6 @@ class AuthRepository {
         "password": password,
       }, fromBiometric: true);
     } catch (e) {
-      debugPrint("🔥 Exception during biometric login: $e");
       return null;
     }
   }
@@ -334,12 +337,11 @@ class AuthRepository {
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        print("✅ Success response: $jsonResponse");
 
         final responseModel =
         ResponseModel.fromJson(jsonResponse, response.statusCode);
 
-        final box = Hive.box("authBox");
+      final box = await _getAuthBox();
         await box.put("userId", responseModel.responseBody?.user?.id?.toString() ?? '');
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("phone", responseModel.responseBody?.user?.phone);
@@ -349,7 +351,6 @@ class AuthRepository {
       }
 
       // Error
-      print("❌ Error response: $jsonResponse");
       return ResponseModel(
         responseMessage: jsonResponse["responseMessage"] ?? "Unknown error",
         responseSuccessful: false,
@@ -357,7 +358,6 @@ class AuthRepository {
       );
 
     } catch (e) {
-      print('❌ Exception during register step 1: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong',
         responseSuccessful: false,
@@ -375,7 +375,6 @@ class AuthRepository {
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("✅ Success response: $jsonResponse");
 
         final responseBody = jsonResponse['responseBody'] ?? {};
         final userJson =
@@ -385,9 +384,10 @@ class AuthRepository {
         final accessToken = responseBody['accessToken'] ?? '';
         final refreshToken = responseBody['refreshToken'] ?? '';
 
-        final box = await Hive.openBox("authBox");
-        await box.put("token", accessToken);
-        await box.put("refreshToken", refreshToken);
+        final box = await _getAuthBox();
+        // Tokens are now stored exclusively in SecureStorage via ApiClient for security.
+        // await box.put("token", accessToken);
+        // await box.put("refreshToken", refreshToken);
         await box.put("userId", userJson['id']?.toString() ?? '');
         await box.put("fullname", userJson['fullname']);
         await box.put("phone", userJson['phone']);
@@ -399,9 +399,7 @@ class AuthRepository {
 
         // Generate and save FCM token after successful registration
         final fcmToken = await FirebaseMessaging.instance.getToken();
-        debugPrint('🔥 FCM TOKEN GENERATED: $fcmToken');
         await box.put('fcmToken', fcmToken);
-        print('💾 FCM token saved to Hive');
 
         _apiClient.updateHeaders(accessToken);
 
@@ -424,7 +422,6 @@ class AuthRepository {
         );
       }
 
-      print("❌ Error response: $jsonResponse");
       return ResponseModel(
         responseMessage:
         jsonResponse["responseMessage"] ?? "OTP failed",
@@ -432,7 +429,6 @@ class AuthRepository {
         statusCode: response.statusCode,
       );
     } catch (e) {
-      print('🔥 Exception during registerStepTwo: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong',
         responseSuccessful: false,
@@ -450,12 +446,11 @@ class AuthRepository {
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("✅ Success response: $jsonResponse");
 
         final responseModel =
         ResponseModel.fromJson(jsonResponse, response.statusCode);
 
-        final box = Hive.box("authBox");
+      final box = await _getAuthBox();
         await box.put("userId", responseModel.responseBody?.user?.id?.toString() ?? '');
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("has_pin", false);
@@ -464,12 +459,9 @@ class AuthRepository {
         await box.put("pin", responseModel.responseBody?.user?.pin);
         await box.put("balance", responseModel.responseBody?.wallet?.balance ?? 0);
 
-        final picture = box.get('picture', defaultValue: 'picture');
-        print('User Picture✅ $picture');
         return responseModel;
       }
 
-      print("❌ Error response: $jsonResponse");
       return ResponseModel(
         responseMessage:
         jsonResponse["responseMessage"] ?? "Registration failed",
@@ -477,7 +469,6 @@ class AuthRepository {
         statusCode: response.statusCode,
       );
     } catch (e) {
-      print('❌ Exception during register step 3: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong',
         responseSuccessful: false,
@@ -487,7 +478,6 @@ class AuthRepository {
   }
 // ---------------- FORGOT PASSWORD ----------------
   Future<ResponseModel> forgotPassword(Map<String, dynamic> body) async {
-    debugPrint('📡 Sending forgot password request...');
 
     try {
       http.Response response = await _apiClient.postData(

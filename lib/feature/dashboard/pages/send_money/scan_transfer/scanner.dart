@@ -1,12 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-
-import '../../../../../app/utils/colors.dart';
-import '../../../../../app/utils/router/route_constant.dart';
+import 'package:bia/app/utils/colors.dart';
+import 'package:bia/app/utils/custom_loader.dart';
+import 'package:bia/app/utils/router/router.dart';
+import 'package:bia/app/utils/router/route_constant.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
@@ -16,309 +23,472 @@ class QrScannerScreen extends ConsumerStatefulWidget {
   ConsumerState<QrScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
-    with SingleTickerProviderStateMixin {
-  // Created lazily in initState so the controller only exists once
-  // the widget is fully attached to the tree.
-  late final MobileScannerController _scannerController;
-
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  bool _isProcessing = false;
-  bool _scanLocked = false;
-
-  bool isVerified = false;
-  String? verifiedName;
-  String? verifiedAccount;
-
-  /// Guard: tracks whether the controller has already been disposed so we
-  /// never call dispose() twice (e.g. _goToAmountPage already stopped it).
-  bool _controllerDisposed = false;
+class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTickerProviderStateMixin {
+  late MobileScannerController controller;
+  bool isScanning = true;
+  bool flashOn = false;
 
   @override
   void initState() {
     super.initState();
-
-    // autoStart: false — we start the camera manually after the first frame
-    // so the controller is never restarted by MobileScanner's mount/unmount cycle.
-    _scannerController = MobileScannerController(
-      autoStart: false,
+    controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+      formats: [BarcodeFormat.qrCode],
     );
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _animation = Tween<double>(begin: 0, end: 1).animate(_animationController);
-
-    // Start the camera after the first frame — avoids triggering it inside build.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _scannerController.start();
-    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
-    _safeDisposeScanner();
+    controller.dispose();
     super.dispose();
   }
 
-  /// Disposes the MobileScannerController at most once.
-  void _safeDisposeScanner() {
-    if (!_controllerDisposed) {
-      _controllerDisposed = true;
-      _scannerController.dispose();
+  void _onDetect(BarcodeCapture capture) {
+    if (!isScanning) return;
+    
+    final List<Barcode> barcodes = capture.barcodes;
+    if (barcodes.isNotEmpty) {
+      final String? code = barcodes.first.displayValue;
+      if (code != null) {
+        _handleQrResult(code);
+      }
     }
   }
 
-  void _goToAmountPage(BuildContext context) async {
-    if (verifiedName == null || verifiedAccount == null) return;
-
-    // Stop scanning and dispose before navigating.
-    // Capture the router before the async gap to satisfy use_build_context_synchronously
-    final router = GoRouter.of(context);
-
-    await _scannerController.stop();
-    _safeDisposeScanner();
-
-    if (!mounted) return;
-    final name = verifiedName;
-    final account = verifiedAccount;
-
-    router.pushReplacementNamed(
-      RouteList.amountPage,
-      extra: {
-        'recipientName': name,
-        'recipientAccount': account,
-        'controller': TextEditingController(),
-      },
-    );
-  }
-
-  void _onDetect(BarcodeCapture capture) async {
-    if (_isProcessing || _scanLocked) return;
-
-    _isProcessing = true;
-
-    final barcode = capture.barcodes.first;
-    final rawValue = barcode.rawValue;
-
-    if (rawValue == null) {
-      _isProcessing = false;
-      return;
-    }
-
+  Future<void> _handleQrResult(String result) async {
+    setState(() => isScanning = false);
+    debugPrint("📥 Scanned Result: $result");
+    
     try {
-      Map<String, dynamic>? data;
-
-      try {
-        data = jsonDecode(rawValue);
-      } catch (_) {
-        data = jsonDecode(rawValue.replaceAll("'", '"'));
+      // 1. Handle single quotes (common in some QR generators)
+      String jsonStr = result;
+      if (result.contains("'") && !result.contains('"')) {
+        jsonStr = result.replaceAll("'", '"');
+      }
+      
+      final Map<String, dynamic> data = jsonDecode(jsonStr);
+      
+      // 2. Validate Type
+      if (data['type'] != 'bia_wallet') {
+        debugPrint("⚠️ QR Type mismatch: expected bia_wallet, got ${data['type']}");
+        _showError("Invalid Bia QR Code");
+        return;
       }
 
-      if (data != null &&
-          data['type'] == 'bia_wallet' &&
-          data.containsKey('account')) {
-        final account = data['account'].toString();
+      final String account = data['account'] ?? "";
+      final double? amount = (data['amount'] as num?)?.toDouble();
+      final String? narration = data['narration'];
 
-        final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
-        final result = await dashboardCtrl.verifyAccount(context, account);
-
-        if (result?.responseSuccessful == true) {
-          final fullname =
-              result?.responseBody?.user?.fullname ?? 'Unknown User';
-
-          // Stop scanning via the controller — do NOT remove MobileScanner from
-          // the tree, as that would teardown/reinit the Camera2 pipeline.
-          await _scannerController.stop();
-
-          if (mounted) {
-            setState(() {
-              isVerified = true;
-              verifiedName = fullname;
-              verifiedAccount = account;
-              _scanLocked = true;
-            });
-          }
-          return;
-        } else {
-          _showError(result?.responseMessage ?? 'Verification failed');
-        }
-      } else {
-        _showError('Invalid QR Code');
+      if (account.isEmpty) {
+        _showError("Invalid Account in QR");
+        return;
       }
+
+      // 3. Verify Receiver
+      _verifyAndProceed(account, amount, narration);
+
     } catch (e) {
-      _showError('Invalid QR Format');
+      debugPrint("❌ QR Parsing Error: $e");
+      _showError("Invalid QR Code format");
     }
+  }
 
-    _isProcessing = false;
+  Future<void> _verifyAndProceed(String account, double? amount, String? narration) async {
+    debugPrint("🔍 Verifying receiver: $account");
+    final dashboardController = ref.read(dashboardControllerProvider.notifier);
+    
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CustomLoader()),
+    );
+
+    final response = await dashboardController.verifyAccount(
+      context,
+      account,
+    );
+
+    Navigator.pop(context); // Dismiss loading
+
+    if (response?.responseSuccessful == true) {
+      final fullname = response?.responseBody?.user?.fullname ?? "Unknown";
+      debugPrint("✅ Receiver verified: $fullname");
+      
+      // Navigate to Payment Confirmation / Input
+      // If amount is present, go to amount page with pre-filled amount
+      // Both go to amountPage as it handles the confirmation sheet trigger
+      context.pushNamed(
+        RouteList.amountPage,
+        extra: {
+          'recipientAccount': account,
+          'recipientName': fullname,
+          'amount': amount,
+          'narration': narration ?? "",
+        },
+      );
+    } else {
+      debugPrint("❌ Verification failed: ${response?.responseMessage}");
+      _showError(response?.responseMessage ?? "Verification failed");
+    }
   }
 
   void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    debugPrint("⚠️ Scanner UI Error: $message");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: errorColor,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    // Resume scanning after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => isScanning = true);
+    });
+  }
+
+  Future<void> _pickFromGallery() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (image != null) {
+      debugPrint("🖼️ Selected gallery image: ${image.path}");
+      
+      try {
+        // Pre-process: Compress and resize to ensure detection works better
+        final tempDir = await getTemporaryDirectory();
+        final targetPath = "${tempDir.path}/temp_qr_scan.jpg";
+        
+        final compressedFile = await FlutterImageCompress.compressAndGetFile(
+          image.path,
+          targetPath,
+          quality: 90,
+          minWidth: 1024,
+          minHeight: 1024,
+        );
+
+        final String pathToAnalyze = compressedFile?.path ?? image.path;
+        debugPrint("🧪 Analyzing optimized image: $pathToAnalyze");
+
+        final capture = await controller.analyzeImage(pathToAnalyze);
+        
+        if (capture == null || capture.barcodes.isEmpty) {
+          debugPrint("❌ No QR found in optimized image");
+          _showError("No QR Code found in image");
+        } else {
+          final String? code = capture.barcodes.first.displayValue;
+          debugPrint("✅ Found QR in optimized image: $code");
+          if (code != null) {
+            _handleQrResult(code);
+          }
+        }
+      } catch (e) {
+        debugPrint("❌ Image processing error: $e");
+        _showError("Failed to process image");
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    const double boxSize = 290;
-
     return Scaffold(
-      backgroundColor: darkBackground,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 🔲 SCANNER FRAME
-                Container(
-                  width: boxSize.w,
-                  height: boxSize.w,
-                  decoration: BoxDecoration(
-                    color: darkSurface,
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: primaryColor, width: 3.w),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20.r),
-                    child: Stack(
-                      children: [
-                    // MobileScanner stays in the tree at all times.
-                    // The controller's stop()/start() gates active scanning
-                    // without tearing down the Camera2 pipeline.
-                    MobileScanner(
-                      controller: _scannerController,
-                      onDetect: _onDetect,
-                    ),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 1. Scanner view
+          MobileScanner(
+            controller: controller,
+            onDetect: _onDetect,
+          ),
 
-                        // 🔵 Scanning line animation
-                        AnimatedBuilder(
-                          animation: _animation,
-                          builder: (context, child) {
-                            return Positioned(
-                              top: boxSize * _animation.value,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                height: 3.h,
-                                color: primaryColor,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+          // 2. Immersive Overlay
+          _buildOverlay(),
+
+          // 3. Top Controls
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildCircularButton(
+                    Icons.close,
+                    () => Navigator.pop(context),
+                  ),
+                  Text(
+                    "Scan to Pay",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-
-                SizedBox(height: 20.h),
-
-                // 🟩 VERIFIED CONTAINER
-                if (isVerified) ...[
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: EdgeInsets.all(15.w),
-                    decoration: BoxDecoration(
-                      color: lightSurface,
-                      borderRadius: BorderRadius.circular(15.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 6.r,
-                          offset: Offset(0, 3.h),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.verified_rounded,
-                                color: primaryColor, size: 22.sp),
-                            SizedBox(width: 8.w),
-                            Text(
-                              'Account Verified',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10.h),
-                        Text('Name: $verifiedName',
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(fontWeight: FontWeight.w600)),
-                        Text('Account: $verifiedAccount',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                                color: darkSecondaryText)),
-                        SizedBox(height: 15.h),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: EdgeInsets.symmetric(vertical: 12.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                            onPressed: () => _goToAmountPage(context),
-                            child: Text(
-                              'Send Money',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                  color: lightText,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  _buildCircularButton(
+                    flashOn ? Icons.flash_on : Icons.flash_off,
+                    () {
+                      setState(() => flashOn = !flashOn);
+                      controller.toggleTorch();
+                    },
                   ),
-                  SizedBox(height: 20.h),
                 ],
+              ),
+            ),
+          ),
 
+          // 4. Bottom Actions
+          Positioned(
+            bottom: 40.h,
+            left: 0,
+            right: 0,
+            child: Column(
+              children: [
                 Text(
-                  'Align the QR code inside the box',
-                  style: theme.textTheme.bodyLarge
-                      ?.copyWith(color: Colors.white70),
-                  textAlign: TextAlign.center,
+                  "Align QR code within the frame to scan",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14.sp,
+                  ),
                 ),
-
-                SizedBox(height: 40.h),
-
-                // 🔦 TORCH BUTTON
-                ValueListenableBuilder<MobileScannerState>(
-                  valueListenable: _scannerController,
-                  builder: (context, state, child) {
-                    final torch = state.torchState;
-
-                    return IconButton(
-                      icon: Icon(
-                        torch == TorchState.on
-                            ? Icons.flash_on
-                            : Icons.flash_off,
-                        size: 38.sp,
-                        color: primaryColor,
+                SizedBox(height: 30.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildBottomAction(
+                      Icons.photo_library_rounded,
+                      "Gallery",
+                      _pickFromGallery,
+                    ),
+                    SizedBox(width: 40.w),
+                    _buildBottomAction(
+                      Icons.qr_code_2_rounded,
+                      "Receive",
+                      () => context.pushReplacementNamed(RouteList.qrScreen),
+                    ),
+                  ],
+                ),
+                
+                // Privacy Toggle (if needed)
+                if (Hive.box('authBox').get('qr_payments_enabled', defaultValue: false))
+                  Padding(
+                    padding: EdgeInsets.only(top: 20.h),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20.r),
                       ),
-                      onPressed: _scannerController.toggleTorch,
-                    );
-                  },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.security, color: successColor, size: 16.sp),
+                          SizedBox(width: 8.w),
+                          Text(
+                            "Secure QR Payment Active",
+                            style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverlay() {
+    return Stack(
+      children: [
+        // Darken outside
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            Colors.black.withOpacity(0.5),
+            BlendMode.srcOut,
+          ),
+          child: Stack(
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  backgroundBlendMode: BlendMode.dstOut,
                 ),
+              ),
+              Center(
+                child: Container(
+                  height: 260.r,
+                  width: 260.r,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(40.r),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Scan Frame
+        Center(
+          child: Container(
+            height: 260.r,
+            width: 260.r,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+              borderRadius: BorderRadius.circular(40.r),
+            ),
+            child: Stack(
+              children: [
+                // Animated Scanning Line
+                const _ScanningLine(),
+                
+                // Corners
+                ..._buildCorners(),
               ],
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  List<Widget> _buildCorners() {
+    const double length = 40;
+    const double width = 4;
+    return [
+      // Top Left
+      Positioned(top: 0, left: 0, child: _corner(top: true, left: true)),
+      // Top Right
+      Positioned(top: 0, right: 0, child: _corner(top: true, left: false)),
+      // Bottom Left
+      Positioned(bottom: 0, left: 0, child: _corner(top: false, left: true)),
+      // Bottom Right
+      Positioned(bottom: 0, right: 0, child: _corner(top: false, left: false)),
+    ];
+  }
+
+  Widget _corner({required bool top, required bool left}) {
+    return Container(
+      width: 40.r,
+      height: 40.r,
+      decoration: BoxDecoration(
+        border: Border(
+          top: top ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
+          bottom: !top ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
+          left: left ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
+          right: !left ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: top && left ? Radius.circular(20.r) : Radius.zero,
+          topRight: top && !left ? Radius.circular(20.r) : Radius.zero,
+          bottomLeft: !top && left ? Radius.circular(20.r) : Radius.zero,
+          bottomRight: !top && !left ? Radius.circular(20.r) : Radius.zero,
+        ),
       ),
+    );
+  }
+
+  Widget _buildCircularButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(10.r),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.5),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20.sp),
+      ),
+    );
+  }
+
+  Widget _buildBottomAction(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 28.sp),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScanningLine extends StatefulWidget {
+  const _ScanningLine();
+
+  @override
+  State<_ScanningLine> createState() => __ScanningLineState();
+}
+
+class __ScanningLineState extends State<_ScanningLine> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Positioned(
+          top: _controller.value * 260.r,
+          left: 0,
+          right: 0,
+          child: Container(
+            height: 2.h,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0),
+                  Colors.white,
+                  Colors.white.withOpacity(0),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.5),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

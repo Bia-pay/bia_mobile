@@ -34,7 +34,10 @@ class ApiClient {
   String _tokenKey(String userId) => 'access_token_$userId';
   String _refreshTokenKey(String userId) => 'refresh_token_$userId';
 
+  Future<void>? _initFuture;
+
   ApiClient({required this.apiHelper, required this.ref}) {
+    // Initial sync load from Hive (legacy fallback)
     final box = Hive.box('authBox');
     token = box.get('token', defaultValue: '') ?? '';
     _userId = box.get('userId', defaultValue: '') ?? '';
@@ -44,6 +47,36 @@ class ApiClient {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
     };
+
+    // Immediately start async load from SecureStorage
+    _initFuture = _ensureTokensLoaded();
+  }
+
+  Future<void> _ensureTokensLoaded() async {
+    try {
+      if (_userId.isEmpty) {
+        final box = await Hive.openBox('authBox');
+        _userId = box.get('userId', defaultValue: '') ?? '';
+      }
+      
+      if (_userId.isNotEmpty) {
+        final secureToken = await _storage.read(key: _tokenKey(_userId));
+        if (secureToken != null && secureToken.isNotEmpty) {
+          token = secureToken;
+          _mainHeaders['Authorization'] = 'Bearer $token';
+          debugPrint('🔐 Tokens loaded securely from storage for user: $_userId');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error loading secure tokens: $e');
+    }
+  }
+
+  Future<void> _waitForInit() async {
+    if (_initFuture != null) {
+      await _initFuture;
+      _initFuture = null;
+    }
   }
 
   // ── Called after a successful login to prime the client ──────────────────
@@ -83,10 +116,10 @@ class ApiClient {
         await _storage.delete(key: _refreshTokenKey(_userId));
       }
 
-      // Clear Hive tokens (keep userId, phone, fullname for WelcomeBack screen)
-      final box = await Hive.openBox('authBox');
-      await box.delete('token');
-      await box.delete('refreshToken');
+      // Hive tokens are no longer used for "Highly Secure" mode.
+      // final box = await Hive.openBox('authBox');
+      // await box.delete('token');
+      // await box.delete('refreshToken');
 
       token = '';
       _mainHeaders['Authorization'] = 'Bearer ';
@@ -155,10 +188,11 @@ class ApiClient {
           return false;
         }
 
-        // Persist updated tokens
-        final box = await Hive.openBox('authBox');
-        await box.put('token', newAccessToken);
-        await box.put('refreshToken', newRefreshToken);
+        // Tokens are now stored exclusively in SecureStorage for "Highly Secure" mode.
+        // We stop writing them to the unencrypted Hive box.
+        // final box = await Hive.openBox('authBox');
+        // await box.put('token', newAccessToken);
+        // await box.put('refreshToken', newRefreshToken);
 
         if (_userId.isNotEmpty) {
           await _storage.write(
@@ -197,6 +231,7 @@ class ApiClient {
   Future<http.Response> _authorizedRequest(
     Future<http.Response> Function() apiCall,
   ) async {
+    await _waitForInit();
     http.Response response = await apiCall();
 
     if (response.statusCode == 401) {

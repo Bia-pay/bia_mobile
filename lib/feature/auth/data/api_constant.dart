@@ -46,7 +46,7 @@ class ApiConstant {
   static const String PURCHASE_CABLE = '/api/v1/billpayment/cabletv/purchase';
   static const String GET_ELECTRICITY_PROVIDERS = "/api/v1/billpayment/electricity/service-ids";
   static const String VERIFY_ELECTRICITY_METER = '/api/v1/billpayment/electricity/meter/verify';
-  static const String PURCHASE_ELECTRICITY_UNIT = '//api/v1/billpayment/electricity/purchase';
+  static const String PURCHASE_ELECTRICITY_UNIT = '/api/v1/billpayment/electricity/purchase';
   static const String GET_CHARGES = "/api/v1/payment/charges";
 
   // ------------ NOTIFICATIONS

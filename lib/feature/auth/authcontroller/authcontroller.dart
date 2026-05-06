@@ -76,8 +76,10 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         );
         return false;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       LoadingHelper.dismiss();
+      debugPrint('🔥 AuthController.logIn Exception: $e');
+      debugPrint('Stack trace: $stackTrace');
       // Clear last response on error
       _lastResponse = null;
       ToastHelper.showToast(
@@ -235,7 +237,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       Map<String, dynamic> body = {'otp': otp, 'phone': phone};
 
-      debugPrint("➡️ Sending verify OTP: $body");
+      // debugPrint("➡️ Sending verify OTP: $body");
 
       final ResponseModel response = await authRepository.registerStepTwo(body);
 
@@ -300,7 +302,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         'password': password,
       };
 
-      debugPrint(" Registering: $body");
+      // debugPrint(" Registering: $body");
 
       final ResponseModel response = await authRepository.registerStepThree(
         body,
@@ -362,7 +364,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       Map<String, dynamic> body = {'phone': phone};
 
-      debugPrint(" Sending forgot password OTP: $body");
+      // debugPrint(" Sending forgot password OTP: $body");
 
       final ResponseModel response = await authRepository.forgotPassword(body);
 
@@ -444,7 +446,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         'confirmNewPassword': confirmNewPassword,
        };
 
-      debugPrint(" Resetting password: $body");
+      // debugPrint(" Resetting password: $body");
 
       final ResponseModel response = await authRepository.resetPassword(body);
 

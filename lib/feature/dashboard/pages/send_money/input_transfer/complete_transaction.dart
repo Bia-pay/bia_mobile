@@ -69,7 +69,10 @@ class BiaToBiaCompleteTransactionBottomSheet extends ConsumerStatefulWidget {
     required this.recipientName,
     required this.recipientAccount,
     this.recipientIconPath,
+    this.narration,
   });
+
+  final String? narration;
 
   @override
   ConsumerState<BiaToBiaCompleteTransactionBottomSheet> createState() =>

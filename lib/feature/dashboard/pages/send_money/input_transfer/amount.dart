@@ -23,7 +23,12 @@ class AmountPage extends ConsumerStatefulWidget {
     required this.recipientAccount,
     this.recipientIconPath,
     this.title = "Enter Amount",
+    this.initialAmount,
+    this.initialNarration,
   });
+
+  final double? initialAmount;
+  final String? initialNarration;
 
   @override
   ConsumerState<AmountPage> createState() => _AmountPageState();
@@ -33,6 +38,16 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   String amount = "0";
   bool showMinWarning = false;
   bool showInsufficientFundsWarning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      amount = '₦${widget.initialAmount!.toStringAsFixed(0)}';
+      widget.controller.text = amount;
+      _checkAmountValidation();
+    }
+  }
 
   void addDigit(String value) {
     setState(() {
@@ -111,6 +126,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
         recipientName: widget.recipientName,
         recipientAccount: widget.recipientAccount,
         recipientIconPath: widget.recipientIconPath,
+        narration: widget.initialNarration,
       ),
     );
   }

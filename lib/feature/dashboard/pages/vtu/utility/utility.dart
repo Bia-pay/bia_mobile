@@ -231,14 +231,12 @@ class _CardOneState extends State<CardOne> {
   String? _minPurchaseAmount;
   bool _isVerifying = false;
 
-  bool showMeterLengthWarning = false;
-
   bool get _isFormValid {
     final amount = int.tryParse(_amountController.text) ?? 0;
     final balance = _getWalletBalance();
 
     final isMeterValid =
-        _meterController.text.length == 13 &&
+        _meterController.text.isNotEmpty &&
         _customerName != null &&
         _customerName != "Invalid meter" &&
         !_isVerifying;
@@ -288,18 +286,12 @@ class _CardOneState extends State<CardOne> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
     setState(() {
-      showMeterLengthWarning = value.isNotEmpty && value.length < 13;
       _customerName = null; // reset until valid
       _address = null;
       _minPurchaseAmount = null;
     });
 
-    // 🚫 Don't verify if not 13 digits
-    if (value.length != 13) return;
-
-    _debounce = Timer(const Duration(milliseconds: 800), () {
-      _verifyMeter(value);
-    });
+    // 🚫 Manual verification preferred now
   }
 
   @override
@@ -325,6 +317,9 @@ class _CardOneState extends State<CardOne> {
       _address = null;
     });
 
+    final providerName = widget.selectedProvider?['name']?.toString().toLowerCase() ?? "";
+    final type = providerName.contains("postpaid") ? "postpaid" : "prepaid";
+
     final repo = ProviderScope.containerOf(
       context,
     ).read(dashboardRepositoryProvider);
@@ -332,7 +327,7 @@ class _CardOneState extends State<CardOne> {
     final result = await repo.verifyElectricityMeter(
       serviceId: serviceId,
       meterNumber: meter,
-      type: "prepaid",
+      type: type,
     );
 
     if (!mounted) return;
@@ -422,15 +417,11 @@ class _CardOneState extends State<CardOne> {
                       Expanded(
                         child: CustomTextField(
                           hint: 'Meter Number',
-                          maxLength: 13,
                           keyboardType: TextInputType.number,
                           controller: _meterController,
                           inputFormatters: [
                             FilteringTextInputFormatter
                                 .digitsOnly, // 👈 numbers only
-                            LengthLimitingTextInputFormatter(
-                              13,
-                            ), // 👈 hard limit
                           ],
 
                           //fontSize: fontSize,
@@ -440,33 +431,35 @@ class _CardOneState extends State<CardOne> {
                           },
                         ),
                       ),
+                      TextButton(
+                        onPressed: _meterController.text.isNotEmpty &&
+                                !_isVerifying
+                            ? () => _verifyMeter(_meterController.text)
+                            : null,
+                        child: _isVerifying
+                            ? SizedBox(
+                                height: 20.h,
+                                width: 20.w,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: primaryColor,
+                                ),
+                              )
+                            : Text(
+                                'Verify',
+                                style: TextStyle(
+                                  color: _meterController.text.isNotEmpty
+                                      ? primaryColor
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isTablet ? 16.sp : 14.sp,
+                                ),
+                              ),
+                      ),
                     ],
                   ),
                 ),
-                if (showMeterLengthWarning)
-                  Padding(
-                    padding: EdgeInsets.only(top: 6.h, left: 4.w),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: errorColor,
-                          size: 16.sp,
-                        ),
-                        SizedBox(width: 4.w),
-                        Expanded(
-                          child: Text(
-                            "Meter number must be 13 digits",
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: errorColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: isTablet ? 12.sp : 11.sp,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
                 if (_customerName != "Invalid meter" && _minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty)
                   Align(
                     alignment: Alignment.topRight,
