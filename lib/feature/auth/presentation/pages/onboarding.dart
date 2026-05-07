@@ -1,5 +1,6 @@
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,10 +10,8 @@ import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
 
-
 class OnBoardingScreen extends ConsumerStatefulWidget {
   const OnBoardingScreen({super.key});
-
 
   @override
   ConsumerState<OnBoardingScreen> createState() => _OnBoardingScreenState();
@@ -20,21 +19,29 @@ class OnBoardingScreen extends ConsumerStatefulWidget {
 
 class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
   final PageController _pageController = PageController();
+  int _currentIndex = 0;
 
   final List<OnboardingData> onboardingPages = [
     OnboardingData(
       title: 'Manage Your Transport',
-      titleColor: 'with Ease',
-      subtitle: 'A fast, cashless way to pay for rides —\nanytime, anywhere.',
+      titleHighlight: 'with Ease',
+      subtitle: 'A fast, cashless way to pay for rides — anytime, anywhere.',
       imagePath: onboardingFirstPng,
-      slidePath: onboardingFirstSvg,
+      isSvg: false,
     ),
     OnboardingData(
       title: 'Bia Pay Keeps',
-      titleColor: 'You Moving',
-      subtitle: 'Secure your wallet now and enjoy smooth,\nstress-free trips.',
+      titleHighlight: 'You Moving',
+      subtitle: 'Secure your wallet now and enjoy smooth, stress-free trips.',
       imagePath: onboardingSecondPng,
-      slidePath: onboardingSecondSvg,
+      isSvg: false,
+    ),
+    OnboardingData(
+      title: 'Experience Financial',
+      titleHighlight: 'Freedom',
+      subtitle: 'Take control of your spending and grow your wealth with Bia.',
+      imagePath: onboardingThirdSvg,
+      isSvg: true,
     ),
   ];
 
@@ -46,21 +53,112 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: lightBackground,
-      body: PageView.builder(
-        controller: _pageController,
-        itemCount: onboardingPages.length,
-        itemBuilder: (context, index) {
-          final pageData = onboardingPages[index];
-          final isLastPage = index == onboardingPages.length - 1;
+    final theme = Theme.of(context);
+    final screenHeight = MediaQuery.of(context).size.height;
 
-          return _OnboardingPage(
-            data: pageData,
-            pageController: _pageController,
-            isLastPage: isLastPage,
-          );
-        },
+    return Scaffold(
+      backgroundColor: inactiveColorOp,
+      body: Stack(
+        children: [
+          // 1. Subtle Background Elements
+          _buildBackgroundElements(),
+
+          // 2. Main Content Slider
+          PageView.builder(
+            controller: _pageController,
+            itemCount: onboardingPages.length,
+            onPageChanged: (index) => setState(() => _currentIndex = index),
+            itemBuilder: (context, index) {
+              return _OnboardingPageContent(
+                data: onboardingPages[index],
+                theme: theme,
+                screenHeight: screenHeight,
+              );
+            },
+          ),
+
+          // 3. Navigation Footer
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 30.h,
+            left: 24.w,
+            right: 24.w,
+            child: _buildFooter(theme),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackgroundElements() {
+    return Stack(
+      children: [
+        Positioned(
+          top: -50.h,
+          right: -50.w,
+          child: Container(
+            width: 250.r,
+            height: 250.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: primaryColor.withOpacity(0.03),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFooter(ThemeData theme) {
+    final isLastPage = _currentIndex == onboardingPages.length - 1;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Pill Indicators
+        Row(
+          children: List.generate(
+            onboardingPages.length,
+            (index) => _buildIndicator(index == _currentIndex),
+          ),
+        ),
+
+        // Action Button
+        SizedBox(
+          width: 140.w,
+          height: 56.h,
+          child: CustomButton(
+            buttonColor: primaryColor,
+            buttonTextColor: Colors.white,
+            buttonName: isLastPage ? 'Get Started' : 'Next',
+            onPressed: () {
+              if (isLastPage) {
+                context.go(RouteList.phoneRegScreen);
+              } else {
+                _pageController.nextPage(
+                  duration: 500.ms,
+                  curve: Curves.easeOutQuart,
+                );
+              }
+            },
+            textStyle: theme.textTheme.headlineMedium?.copyWith(
+              fontSize: 16.spMin,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1);
+  }
+
+  Widget _buildIndicator(bool isActive) {
+    return AnimatedContainer(
+      duration: 300.ms,
+      margin: EdgeInsets.only(right: 8.w),
+      height: 8.h,
+      width: isActive ? 24.w : 8.w,
+      decoration: BoxDecoration(
+        color: isActive ? primaryColor : primaryColor.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(100),
       ),
     );
   }
@@ -68,156 +166,104 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
 
 class OnboardingData {
   final String title;
-  final String titleColor;
+  final String titleHighlight;
   final String subtitle;
   final String imagePath;
-  final String slidePath;
+  final bool isSvg;
 
   OnboardingData({
     required this.title,
-    required this.titleColor,
+    required this.titleHighlight,
     required this.subtitle,
     required this.imagePath,
-    required this.slidePath,
+    this.isSvg = false,
   });
 }
 
-class _OnboardingPage extends StatelessWidget {
+class _OnboardingPageContent extends StatelessWidget {
   final OnboardingData data;
-  final PageController pageController;
-  final bool isLastPage;
+  final ThemeData theme;
+  final double screenHeight;
 
-  const _OnboardingPage({
+  const _OnboardingPageContent({
     required this.data,
-    required this.pageController,
-    required this.isLastPage,
+    required this.theme,
+    required this.screenHeight,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        children: [
+          const Spacer(flex: 3),
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screenHeight = constraints.maxHeight;
-        final screenWidth = constraints.maxWidth;
-
-        double imageHeight;
-        if (screenWidth < 350) {
-          imageHeight = screenHeight * 0.22;
-        } else if (screenWidth < 600) {
-          imageHeight = screenHeight * 0.25;
-        } else {
-          imageHeight = 260; // tablet cap
-        }
-
-        return Container(
-          color: lightBackground,
-          child: SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.08,
-                  ),
-                  child: Column(
-                    children: [
-
-                      SizedBox(height: screenHeight * 0.32),
-
-                      /// IMAGE
-                      Image.asset(
-                        data.imagePath,
-                        height: imageHeight,
-                        fit: BoxFit.contain,
-                      ),
-
-                      const Spacer(),
-                      /// TITLE
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              data.title,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                color: lightText,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 26.spMin,
-                              ),
-                            ),
-                            Text(
-                              data.titleColor,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 28.spMin,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(height: 16.h),
-
-                      /// SUBTITLE
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          data.subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: lightSecondaryText,
-                            fontSize: 15.spMin,
-                            height: 1.6,
-                          ),
-                        ),
-                      ),
-
-
-
-                      /// INDICATOR + BUTTON
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SvgPicture.asset(
-                            data.slidePath,
-                            height: 6.h,
-                          ),
-                          SizedBox(
-                            width: screenWidth * 0.28,
-                            child: CustomButton(
-                              buttonColor: primaryColor,
-                              buttonTextColor: secondaryColor,
-                              buttonName:
-                              isLastPage ? 'Done' : 'Next',
-                              onPressed: () {
-                                if (isLastPage) {
-                                  context.go(
-                                      RouteList.phoneRegScreen);
-                                } else {
-                                  pageController.nextPage(
-                                    duration: const Duration(
-                                        milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: screenHeight * 0.05),
-                    ],
-                  ),
+          /// 🔥 Illustration (Top Half)
+          Container(
+            width: double.infinity,
+            height: screenHeight * 0.35,
+            padding: EdgeInsets.all(20.r),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(40.r),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withOpacity(0.06),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
                 ),
-              ),
+              ],
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(30.r),
+              child: data.isSvg 
+                ? SvgPicture.asset(data.imagePath, fit: BoxFit.contain)
+                : Image.asset(data.imagePath, fit: BoxFit.contain),
+            ),
+          ).animate(key: ValueKey(data.imagePath)).fadeIn().scale(begin: const Offset(0.9, 0.9)),
+
+          const Spacer(flex: 1),
+
+          /// 🔥 Typography (Bottom Half)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontSize: 32.sp,
+                    fontWeight: FontWeight.w900,
+                    color: primaryColor,
+                    height: 1.1,
+                  ),
+                  children: [
+                    TextSpan(text: '${data.title}\n'),
+                    TextSpan(
+                      text: data.titleHighlight,
+                      style: TextStyle(color: accentColor.withOpacity(0.8)),
+                    ),
+                  ],
+                ),
+              ).animate(key: ValueKey(data.title)).fadeIn(delay: 200.ms).slideX(begin: 0.1),
+
+              SizedBox(height: 18.h),
+
+              Text(
+                data.subtitle,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: primaryColor.withOpacity(0.5),
+                  height: 1.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ).animate(key: ValueKey(data.subtitle)).fadeIn(delay: 400.ms).slideX(begin: 0.1),
+            ],
           ),
-        );
-      },
+
+          const Spacer(flex: 5),
+        ],
+      ),
     );
   }
 }

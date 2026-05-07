@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class CustomButton extends ConsumerWidget {
+class CustomButton extends StatefulWidget {
   const CustomButton({
     super.key,
     required this.buttonColor,
@@ -12,14 +12,14 @@ class CustomButton extends ConsumerWidget {
     this.onPressed,
     this.textStyle,
     this.buttonBorderColor,
-
-    // One of these 3
     this.icon,
     this.imageAsset,
     this.svgAsset,
-
     this.iconSize,
     this.spacing,
+    this.isLoading = false,
+    this.elevation = 4.0,
+    this.borderRadius = 14.0,
   });
 
   final Color buttonColor;
@@ -36,67 +36,154 @@ class CustomButton extends ConsumerWidget {
 
   final double? iconSize;
   final double? spacing;
+  final bool isLoading;
+  final double elevation;
+  final double borderRadius;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  State<CustomButton> createState() => _CustomButtonState();
+}
+
+class _CustomButtonState extends State<CustomButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    if (widget.onPressed != null && !widget.isLoading) {
+      _controller.forward();
+      HapticFeedback.lightImpact();
+    }
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    if (widget.onPressed != null && !widget.isLoading) {
+      _controller.reverse();
+    }
+  }
+
+  void _onTapCancel() {
+    if (widget.onPressed != null && !widget.isLoading) {
+      _controller.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDisabled = widget.onPressed == null;
 
     Widget? leading;
 
-    if (icon != null) {
+    if (widget.icon != null) {
       leading = Icon(
-        icon,
-        size: iconSize ?? 18.sp,
-        color: buttonTextColor,
+        widget.icon,
+        size: widget.iconSize ?? 20.sp,
+        color: widget.buttonTextColor,
       );
-    } else if (imageAsset != null) {
+    } else if (widget.imageAsset != null) {
       leading = Image.asset(
-        imageAsset!,
-        width: iconSize ?? 18.sp,
-        height: iconSize ?? 18.sp,
+        widget.imageAsset!,
+        width: widget.iconSize ?? 20.sp,
+        height: widget.iconSize ?? 20.sp,
       );
-    } else if (svgAsset != null) {
+    } else if (widget.svgAsset != null) {
       leading = SvgPicture.asset(
-        svgAsset!,
-        width: iconSize ?? 18.sp,
-        height: iconSize ?? 18.sp,
+        widget.svgAsset!,
+        width: widget.iconSize ?? 20.sp,
+        height: widget.iconSize ?? 20.sp,
         colorFilter: ColorFilter.mode(
-          buttonTextColor,
+          widget.buttonTextColor,
           BlendMode.srcIn,
         ),
       );
     }
 
     return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 15.h, horizontal: 10.w),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: buttonBorderColor ?? Colors.transparent,
-            width: 0.3.w,
-          ),
-          color: buttonColor,
-          borderRadius: BorderRadius.circular(11),
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      onTap: () {
+        if (!widget.isLoading && widget.onPressed != null) {
+          HapticFeedback.mediumImpact();
+          widget.onPressed!();
+        }
+      },
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
         ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (leading != null) ...[
-                leading,
-                SizedBox(width: spacing ?? 8.w),
-              ],
-              Text(
-                buttonName,
-                style: textStyle ??
-                    theme.textTheme.bodyMedium?.copyWith(
-                      color: buttonTextColor,
-                      fontWeight: FontWeight.w600,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+          decoration: BoxDecoration(
+            color: widget.buttonColor.withOpacity(isDisabled ? 0.6 : 1.0),
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            border: Border.all(
+              color: widget.buttonBorderColor ?? Colors.transparent,
+              width: 1.w,
+            ),
+            boxShadow: isDisabled || widget.buttonColor == Colors.transparent
+                ? []
+                : [
+                    BoxShadow(
+                      color: widget.buttonColor.withOpacity(0.3),
+                      blurRadius: widget.elevation * 2,
+                      offset: Offset(0, widget.elevation),
                     ),
-              ),
-            ],
+                  ],
+          ),
+          child: Center(
+            child: widget.isLoading
+                ? SizedBox(
+                    height: 24.sp,
+                    width: 24.sp,
+                    child: CircularProgressIndicator(
+                      color: widget.buttonTextColor,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (leading != null) ...[
+                        leading,
+                        SizedBox(width: widget.spacing ?? 12.w),
+                      ],
+                      Text(
+                        widget.buttonName,
+                        style: widget.textStyle ??
+                            theme.textTheme.bodyLarge?.copyWith(
+                              color: widget.buttonTextColor
+                                  .withOpacity(isDisabled ? 0.8 : 1.0),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

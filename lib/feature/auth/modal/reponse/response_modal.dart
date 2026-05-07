@@ -28,6 +28,7 @@ class ResponseBody {
   final WalletResponse? wallet;
   final String? accessToken;
   final String? refreshToken;
+  final String? token;
   final String? status;
   final List<dynamic>? recentTransactions;
 
@@ -43,6 +44,7 @@ class ResponseBody {
     this.wallet,
     this.accessToken,
     this.refreshToken,
+    this.token,
     this.reference,
     this.transactionId,
     this.amount,
@@ -58,8 +60,7 @@ class ResponseBody {
       wallet: json['wallet'] != null ? WalletResponse.fromJson(json['wallet']) : null,
       accessToken: json['accessToken'],
       refreshToken: json['refreshToken'],
-
-      // ✅ ADD THESE
+      token: json['token']?.toString() ?? json['mainToken']?.toString() ?? json['purchasedToken']?.toString(),
       reference: json['reference'],
       status: json['status'],
       transactionId: json['transactionId'],
@@ -69,6 +70,20 @@ class ResponseBody {
       recentTransactions: json['recentTransactions'],
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'user': user?.toJson(),
+    'wallet': wallet?.toJson(),
+    'accessToken': accessToken,
+    'refreshToken': refreshToken,
+    'reference': reference,
+    'status': status,
+    'transactionId': transactionId,
+    'amount': amount,
+    'senderBalance': senderBalance,
+    'receiverName': receiverName,
+    'recentTransactions': recentTransactions,
+  };
 }
 
 class UserResponse {
@@ -185,4 +200,14 @@ class WalletResponse {
       limits: json['limits'] != null ? Map<String, dynamic>.from(json['limits']) : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'balance': balance,
+    'currency': currency,
+    'createdAt': createdAt,
+    'updatedAt': updatedAt,
+    'limits': limits,
+  };
 }

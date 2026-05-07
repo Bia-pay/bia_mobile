@@ -1118,11 +1118,14 @@ class DashboardRepository {
       final body = {
         "serviceID": serviceId,
         "billersCode": meterNumber,
+        "biller_code": meterNumber, // Secondary key just in case
         "variation_code": variationCode,
         "amount": amount,
         "phone": phone,
         "pin": pin,
       };
+
+      print("📤 ELECTRICITY REQUEST PAYLOAD: $body");
 
       final response = await _apiClient.postData(
         ApiConstant.PURCHASE_ELECTRICITY_UNIT,
@@ -1130,14 +1133,17 @@ class DashboardRepository {
       );
 
       final jsonResponse = jsonDecode(response.body);
+      
+      print("📥 ELECTRICITY API RESPONSE: $jsonResponse");
 
       return ResponseModel.fromJson(
         jsonResponse,
         response.statusCode,
       );
     } catch (e) {
+      print("❌ ELECTRICITY PURCHASE EXCEPTION: $e");
       return ResponseModel(
-        responseMessage: "Purchase failed",
+        responseMessage: "Purchase failed: $e",
         responseSuccessful: false,
         statusCode: 500,
       );

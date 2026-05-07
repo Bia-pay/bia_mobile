@@ -140,7 +140,15 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
       } else if (widget.type == "cable") {
         response = await controller.buyCable(context, serviceId: widget.meta?['serviceId'], smartcard: widget.recipientAccount, packageName: widget.meta?['packageName'] ?? widget.meta?['variationCode'], variationCode: widget.meta?['variationCode'], amount: widget.amount.toInt(), phone: widget.recipientAccount, pin: transactionPin);
       } else if (widget.type == "electricity") {
-        response = await controller.buyElectricity(context, serviceId: widget.meta?['serviceId'], meterNumber: widget.recipientAccount, variationCode: widget.meta?['variationCode'], amount: widget.amount.toInt(), phone: widget.recipientAccount, pin: transactionPin);
+        response = await controller.buyElectricity(
+          context, 
+          serviceId: widget.meta?['serviceId'], 
+          meterNumber: widget.recipientAccount, 
+          variationCode: widget.meta?['variationCode'], 
+          amount: widget.amount.toInt(), 
+          phone: widget.meta?['userPhone'] ?? widget.recipientAccount, 
+          pin: transactionPin
+        );
       } else {
         response = await controller.sendMoney(context, widget.recipientAccount, widget.amount.toStringAsFixed(2), widget.narration ?? 'Transfer', transactionPin, save: widget.saveAsBeneficiary);
       }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
 import 'package:svg_flutter/svg.dart';
+import 'package:bia/feature/dashboard/dashboardcontroller/qr_onboarding_provider.dart';
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/image.dart';
@@ -21,10 +22,14 @@ class ScannerOnboarding extends ConsumerStatefulWidget {
 class _ScannerOnboardingState extends ConsumerState<ScannerOnboarding> {
 
   Future<void> _completeOnboarding() async {
-    final box = Hive.box('authBox');
-    await box.put('qr_onboarding_completed', true);
+    await ref.read(qrOnboardingProvider.notifier).completeOnboarding();
+    // No need to push if it's in the BottomNavBar, it will rebuild
+    // But if it's pushed from Settings, we should replace it
     if (mounted) {
-      context.pushReplacementNamed(RouteList.qrScannerScreen);
+      final location = GoRouterState.of(context).uri.toString();
+      if (location == '/scanner-onboarding') {
+        context.pushReplacementNamed(RouteList.qrScannerScreen);
+      }
     }
   }
 

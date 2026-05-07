@@ -59,6 +59,16 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       final response = await authRepository.logIn(body);
 
+      // Print login response for debugging
+      debugPrint('====== LOGIN RESPONSE ======');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Message: ${response.responseMessage}');
+      debugPrint('Successful: ${response.responseSuccessful}');
+      if (response.responseBody != null) {
+        debugPrint('Body: ${response.responseBody?.toJson()}');
+      }
+      debugPrint('============================');
+
       // Store the response
       _lastResponse = response;
 

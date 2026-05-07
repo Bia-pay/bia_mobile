@@ -189,7 +189,7 @@ class _UProfileState extends ConsumerState<UProfile> {
       final allowed = await _showScanConfirmation(context);
       if (allowed == true) {
         await box.put('scan_to_receive', true);
-        if (mounted) context.pushNamed(RouteList.qrScannerScreen);
+        if (mounted) context.pushNamed(RouteList.scannerOnboarding);
         setState(() {});
       }
     } else {

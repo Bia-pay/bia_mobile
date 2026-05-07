@@ -4,8 +4,13 @@ import 'package:bia/core/constants.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'dart:io';
+
+import '../../feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../feature/dashboard/dashboardcontroller/notification_notifier.dart';
+import '../../feature/dashboard/dashboardcontroller/provider.dart';
 
 class AppSocketListener extends ConsumerStatefulWidget {
   final Widget child;
@@ -40,8 +45,14 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    final box = await Hive.openBox('authBox');
-    final token = box.get('token', defaultValue: '');
+    final authBox = await Hive.openBox('authBox');
+    final userId = authBox.get('userId', defaultValue: '');
+    String? token = authBox.get('token');
+    
+    if ((token == null || token.isEmpty) && userId.isNotEmpty) {
+      const storage = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
+      token = await storage.read(key: 'access_token_$userId');
+    }
 
     if (token == null || token.isEmpty) return;
 
@@ -82,12 +93,18 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
     try {
       // Open box asynchronously to avoid blocking
       final authBox = await Hive.openBox('authBox');
-      final token = authBox.get('token', defaultValue: '');
+      final userId = authBox.get('userId', defaultValue: '');
+      String? token = authBox.get('token');
+      
+      if ((token == null || token.isEmpty) && userId.isNotEmpty) {
+        const storage = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
+        token = await storage.read(key: 'access_token_$userId');
+      }
 
       if (token != null && token.isNotEmpty) {
         final socketNotifier = ref.read(socketNotifierProvider.notifier);
         if (!socketNotifier.isConnected) {
-          print('🔌 User is logged in, connecting Socket.IO...');
+          print('🔌 User is logged in (id: $userId), connecting Socket.IO...');
           socketNotifier.connect();
         }
       } else {
@@ -116,6 +133,7 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
     socket.on('deposit_success', (data) => _handleSocketEvent(context, {'event': 'deposit_success', ...data}));
     socket.on('deposit_completed', (data) => _handleSocketEvent(context, {'event': 'deposit_completed', ...data}));
     socket.on('deposit', (data) => _handleSocketEvent(context, {'event': 'deposit', ...data}));
+    socket.on('transaction_success', (data) => _handleSocketEvent(context, {'event': 'transaction_success', ...data}));
 
     socket.on('transfer_received', (data) => _handleSocketEvent(context, {'event': 'transfer_received', ...data}));
     socket.on('credit_alert', (data) => _handleSocketEvent(context, {'event': 'credit_alert', ...data}));
@@ -183,6 +201,10 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
       case "deposit_completed":
       case "deposit":
         _showDepositNotification(context, json);
+        break;
+
+      case "transaction_success":
+        _showTransactionSuccessNotification(context, json);
         break;
 
       case "transfer_received":
@@ -287,6 +309,20 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
           textColor: Colors.white,
           onPressed: () {},
         ),
+      ),
+    );
+  }
+  void _showTransactionSuccessNotification(BuildContext context, Map<String, dynamic> data) {
+    final amount = data['amount'] ?? '0';
+    final type = data['type'] ?? 'Transaction';
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("✅ $type of ₦$amount was successful!"),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 4),
       ),
     );
   }

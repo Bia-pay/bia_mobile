@@ -74,6 +74,7 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
 
         final limited = merged.take(2).toList();
 
+        if (!mounted) return;
         if (!silent || limited.length != (state.value?.length ?? 0)) {
           state = AsyncValue.data(limited);
         }
@@ -84,7 +85,7 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
     } catch (e) {
       print('❌ Error fetching recent transactions: $e');
     } finally {
-      _isFetching = false;
+      if (mounted) _isFetching = false;
     }
   }
 
@@ -160,7 +161,9 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
 
   Future<void> _fetchFresh({bool silent = false, int page = 1}) async {
     if (_isFetching) return;
-    if (!silent) state = const AsyncValue.loading();
+    if (!silent) {
+      if (mounted) state = const AsyncValue.loading();
+    }
     _isFetching = true;
 
     try {
@@ -178,21 +181,21 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
             return b.createdAt!.compareTo(a.createdAt!);
           });
 
-        state = AsyncValue.data(sorted);
+        if (mounted) state = AsyncValue.data(sorted);
         
         // ✅ Save to ALL HISTORY bucket (merges automatically)
         await TransactionCache.saveTransactions(userId, sorted, suffix: 'all');
       } else {
         if (!silent || state.value == null) {
-          state = AsyncValue.error('Failed to load transactions', StackTrace.current);
+          if (mounted) state = AsyncValue.error('Failed to load transactions', StackTrace.current);
         }
       }
     } catch (e, st) {
       if (!silent || (state.value == null || state.value!.isEmpty)) {
-        state = AsyncValue.error(e, st);
+        if (mounted) state = AsyncValue.error(e, st);
       }
     } finally {
-      _isFetching = false;
+      if (mounted) _isFetching = false;
     }
   }
 

@@ -194,8 +194,11 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final frameSize = screenWidth * 0.65; // Dynamic frame size
+    
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: darkBackground,
       body: Stack(
         children: [
           // 1. Scanner view
@@ -205,7 +208,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
           ),
 
           // 2. Immersive Overlay
-          _buildOverlay(),
+          _buildOverlay(frameSize),
 
           // 3. Top Controls
           SafeArea(
@@ -240,7 +243,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
 
           // 4. Bottom Actions
           Positioned(
-            bottom: 40.h,
+            bottom: MediaQuery.of(context).padding.bottom + 100.h,
             left: 0,
             right: 0,
             child: Column(
@@ -301,7 +304,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
     );
   }
 
-  Widget _buildOverlay() {
+  Widget _buildOverlay(double frameSize) {
     return Stack(
       children: [
         // Darken outside
@@ -318,10 +321,11 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                   backgroundBlendMode: BlendMode.dstOut,
                 ),
               ),
-              Center(
+              Align(
+                alignment: const Alignment(0, -0.4),
                 child: Container(
-                  height: 260.r,
-                  width: 260.r,
+                  height: frameSize,
+                  width: frameSize,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(40.r),
@@ -331,12 +335,13 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
             ],
           ),
         ),
-        
+
         // Scan Frame
-        Center(
+        Align(
+          alignment: const Alignment(0, -0.4),
           child: Container(
-            height: 260.r,
-            width: 260.r,
+            height: frameSize,
+            width: frameSize,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
               borderRadius: BorderRadius.circular(40.r),
@@ -344,8 +349,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
             child: Stack(
               children: [
                 // Animated Scanning Line
-                const _ScanningLine(),
-                
+                _ScanningLine(frameSize: frameSize),
+
                 // Corners
                 ..._buildCorners(),
               ],
@@ -435,7 +440,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
 }
 
 class _ScanningLine extends StatefulWidget {
-  const _ScanningLine();
+  final double frameSize;
+  const _ScanningLine({required this.frameSize});
 
   @override
   State<_ScanningLine> createState() => __ScanningLineState();
@@ -465,7 +471,7 @@ class __ScanningLineState extends State<_ScanningLine> with SingleTickerProvider
       animation: _controller,
       builder: (context, child) {
         return Positioned(
-          top: _controller.value * 260.r,
+          top: _controller.value * widget.frameSize,
           left: 0,
           right: 0,
           child: Container(

@@ -64,6 +64,10 @@ const semiTransparentBlack = Color(0xDD000000);
 const transparentBlack54 = Color(0x8A000000);
 const transparentBlack87 = Color(0xDD000000);
 
+/// 🌌 PREMIUM DARK THEME COLORS
+const darkNavy = Color(0xFF0A192F);
+const deepDarkSpace = Color(0xFF010A1A);
+
 /// ⚙️ SHARED NEUTRALS
 const Color kGray = Color(0xFF757575);
 

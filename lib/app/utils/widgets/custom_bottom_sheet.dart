@@ -258,7 +258,10 @@ class ConfirmationBottomSheet {
                               final phone =
                                   getValue("Phone Number") ??
                                       getValue("Smartcard") ??
+                                      getValue("Meter Number") ??
                                       "";
+
+                              final userPhone = Hive.box('authBox').get('phone', defaultValue: '');
 
                               final variationCode = config.details
                                   .firstWhere(
@@ -291,7 +294,8 @@ class ConfirmationBottomSheet {
                                     "serviceId": serviceId,
                                     "variationCode": variationCode,
                                     "packageName": packageName,
-                                    "meterNumber": meterNumber, // 🔥 ADD THIS
+                                    "meterNumber": meterNumber, 
+                                    "userPhone": userPhone, // Pass user's phone
                                   },
                                 },
                               );

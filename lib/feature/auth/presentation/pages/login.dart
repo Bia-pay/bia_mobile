@@ -4,10 +4,12 @@ import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
 import 'package:bia/core/easy_loading_config.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../app/utils/colors.dart';
@@ -278,53 +280,113 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
+      backgroundColor: primaryColor, // Modern dark top bg
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Image.asset(
-              login,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Positioned.fill(
+          // Decorative background circles
+          Positioned(
+            top: -50.h,
+            right: -50.w,
             child: Container(
-              color: darkBackground.withValues(alpha:0.05),
+              width: 200.w,
+              height: 200.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
             ),
           ),
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final screenHeight = constraints.maxHeight;
-                final screenWidth = constraints.maxWidth;
+          Positioned(
+            top: 150.h,
+            left: -80.w,
+            child: Container(
+              width: 150.w,
+              height: 150.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: secondaryColor.withOpacity(0.1),
+              ),
+            ),
+          ),
 
-                return Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: 480,
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(10.r),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: Colors.white),
+                        ),
+                      ).animate().fadeIn().slideX(begin: -0.1),
+
+                      SizedBox(height: 30.h),
+                      Text(
+                        'Welcome Back',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontSize: 32.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.1,
+                        ),
+                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+                      SizedBox(height: 10.h),
+                      Text(
+                        'Login to access your Bia account.',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: Colors.white.withOpacity(0.8),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 20.h),
+
+                // Form Section (Bottom Sheet style)
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 30.h),
+                    decoration: BoxDecoration(
+                      color: lightBackground,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(40.r),
+                        topRight: Radius.circular(40.r),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -5),
+                        ),
+                      ],
                     ),
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        screenWidth * 0.08,
-                        screenHeight * 0.10,
-                        screenWidth * 0.08,
-                        MediaQuery.of(context).viewInsets.bottom + 30.h,
-                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Login to Your Account',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.headlineLarge?.copyWith(
-                              fontSize: 26.spMin,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: screenHeight * 0.06),
+                          SizedBox(height: 10.h),
+                          
                           PhoneInputWidget(
                             controller: phoneController,
                             focusNode: phoneFocusNode,
@@ -333,7 +395,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               FocusScope.of(context).requestFocus(passwordFocusNode);
                             },
                             label: 'Mobile Number',
-                            hintText: '8012345678',
+                            hintText: '801 234 5678',
                             validator: (value) {
                               if (value.isEmpty) return 'Phone number is required';
                               if (value.length < 10) return 'Phone number too short';
@@ -342,13 +404,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             onCountryChanged: (country) {
                               _countryDialCode = country.dialCode.replaceAll('+', '');
                             },
-                          ),
-                          SizedBox(height: 25.h),
+                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+
+                          SizedBox(height: 24.h),
+
                           CustomTextFormField(
                             label: 'Password',
                             focusNode: passwordFocusNode,
                             controller: passwordController,
-                            hintText: 'Enter your password',
+                            hintText: '******',
                             obscureText: _obscurePassword,
                             keyboardType: TextInputType.number,
                             maxLength: 6,
@@ -360,6 +424,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 _obscurePassword
                                     ? Icons.visibility_off_outlined
                                     : Icons.visibility_outlined,
+                                color: primaryColor.withOpacity(0.4),
                               ),
                               onPressed: () {
                                 setState(() {
@@ -367,63 +432,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 });
                               },
                             ),
-                          ),
-                          SizedBox(height: 12.h),
+                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+
+                          SizedBox(height: 16.h),
+                          
                           Align(
                             alignment: Alignment.centerRight,
                             child: GestureDetector(
                               onTap: () => context.go(RouteList.forgotPassword),
                               child: Text(
-                                'Forget Password?',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: lightText,
-                                  fontWeight: FontWeight.w500,
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14.sp,
                                 ),
                               ),
                             ),
-                          ),
+                          ).animate().fadeIn(delay: 500.ms),
+
                           SizedBox(height: 40.h),
-                          SizedBox(
-                            width: double.infinity,
-                            child: CustomButton(
-                              buttonColor: _canLogin ? primaryColor : inactiveColor,
-                              buttonTextColor: lightBackground,
-                              buttonName: isLoading ? 'Logging in...' : 'Login',
-                              onPressed: (!_canLogin || isLoading) ? null : _login,
-                            ),
-                          ),
-                          SizedBox(height: 25.h),
-                          GestureDetector(
-                            onTap: () => context.go(RouteList.phoneRegScreen),
+
+                          CustomButton(
+                            buttonColor: _canLogin ? primaryColor : inactiveColor,
+                            buttonTextColor: Colors.white,
+                            buttonName: 'Login',
+                            isLoading: isLoading,
+                            onPressed: _canLogin ? _login : null,
+                            elevation: _canLogin ? 8.0 : 0.0,
+                          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
+
+                          SizedBox(height: 30.h),
+
+                          Center(
                             child: RichText(
-                              textAlign: TextAlign.center,
                               text: TextSpan(
+                                text: "Don't have an account?  ",
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14.sp,
+                                ),
                                 children: [
                                   TextSpan(
-                                    text: 'Don\'t have an account? ',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: lightSecondaryText,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  TextSpan(
                                     text: 'Sign Up',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                    style: TextStyle(
                                       color: primaryColor,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
                                     ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () => context.go(RouteList.phoneRegScreen),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                          SizedBox(height: 40.h),
+                          ).animate().fadeIn(delay: 700.ms),
+                          SizedBox(height: 20.h + bottomInset),
                         ],
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ),
         ],

@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/widgets/pin_field.dart';
 import '../../../dashboard/widgets/keypad.dart';
 import '../../authcontroller/authcontroller.dart';
@@ -18,13 +19,10 @@ class CreateAccountVerifyOtpScreen extends ConsumerStatefulWidget {
   const CreateAccountVerifyOtpScreen({super.key, required this.phone});
 
   @override
-  ConsumerState<CreateAccountVerifyOtpScreen> createState() {
-    return _CreateAccountVerifyOtpScreenState();
-  }
+  ConsumerState<CreateAccountVerifyOtpScreen> createState() => _CreateAccountVerifyOtpScreenState();
 }
 
-class _CreateAccountVerifyOtpScreenState
-    extends ConsumerState<CreateAccountVerifyOtpScreen> {
+class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVerifyOtpScreen> {
   final TextEditingController otpController = TextEditingController();
   int _secondsRemaining = 60;
   bool _canResend = false;
@@ -35,7 +33,6 @@ class _CreateAccountVerifyOtpScreenState
   void _startTimer() {
     _secondsRemaining = 60;
     _canResend = false;
-
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining == 0) {
         timer.cancel();
@@ -46,16 +43,10 @@ class _CreateAccountVerifyOtpScreenState
     });
   }
 
-  void _restartTimer() {
-    _timer?.cancel();
-    _startTimer();
-  }
-
   @override
   void initState() {
     super.initState();
     _startTimer();
-    debugPrint(widget.phone);
   }
 
   @override
@@ -81,58 +72,21 @@ class _CreateAccountVerifyOtpScreenState
     });
   }
 
-  Future<void> _resendOtp() async {
-    setState(() => _isLoading = true);
-
-    final authState = ref.read(authControllerProvider.notifier);
-
-    final response = await authState.registerStepOne(
-      context,
-      widget.phone,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (response?.responseSuccessful == true) {
-      _restartTimer();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('OTP resent successfully'),
-          backgroundColor: successColor,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            response?.responseMessage ?? 'Failed to resend OTP',
-          ),
-          backgroundColor: errorColor,
-        ),
-      );
-    }
-  }
-
   Future<void> _verifyOtp() async {
-    final otp = otpController.text.trim();
-    final authState = ref.read(authControllerProvider.notifier);
+    if (otpController.text.length < 6 || _isLoading) return;
 
-    final response = await authState.registerStepTwo(
-      context,
-      otp,
-      widget.phone,
-    );
+    setState(() => _isLoading = true);
+    final authState = ref.read(authControllerProvider.notifier);
+    final response = await authState.registerStepTwo(context, otpController.text, widget.phone);
+    setState(() => _isLoading = false);
 
     if (response?.responseSuccessful == true) {
       context.pushNamed(RouteList.createAccountScreen);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            response?.responseMessage ?? 'Registration failed',
-          ),
-          backgroundColor: errorColor,
+          content: Text(response?.responseMessage ?? 'Verification failed'),
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -142,201 +96,176 @@ class _CreateAccountVerifyOtpScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenHeight < 700;
-    final isLargeScreen = screenHeight > 900;
-    final isTablet = screenWidth > 600;
-
-    // Adaptive spacing
-    final headerSpacing = isSmallScreen ? 8.h : 16.h;
-    final sectionSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 30.h : 25.h);
-    final pinSpacing = isSmallScreen ? 14.h : (isLargeScreen ? 40.h : 35.h);
-    final keypadSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 40.h : 30.h);
-
-    // Adaptive keypad height
-    final keypadHeight = isSmallScreen
-        ? screenHeight * 0.35 // Slightly shorter on small screens
-        : (isLargeScreen ? screenHeight * 0.48 : screenHeight * 0.40);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    isTablet ? 40.w : 20.w,
-                    isSmallScreen ? 10.h : 15.h,
-                    isTablet ? 40.w : 18.w,
-                    MediaQuery.of(context).viewInsets.bottom + 16.h,
-                  ),
+      backgroundColor: primaryColor, // Modern top bg
+      body: Stack(
+        children: [
+          // Decorative background circles
+          Positioned(
+            top: -50.h,
+            right: -50.w,
+            child: Container(
+              width: 200.w,
+              height: 200.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 150.h,
+            left: -80.w,
+            child: Container(
+              width: 150.w,
+              height: 150.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: secondaryColor.withOpacity(0.1),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Back Button
                       GestureDetector(
                         onTap: () => context.pop(),
                         child: Container(
-                          padding: EdgeInsets.all(isSmallScreen ? 8.w : 10.w),
+                          padding: EdgeInsets.all(10.r),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
-                          child: Icon(
-                            Icons.arrow_back_ios_new,
-                            size: isSmallScreen ? 18.sp : 20.sp,
-                            color: Colors.black,
-                          ),
+                          child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: Colors.white),
                         ),
-                      ),
+                      ).animate().fadeIn().slideX(begin: -0.1),
 
-                      SizedBox(height: headerSpacing),
-
-                      // Title
+                      SizedBox(height: 30.h),
                       Text(
-                        'Enter 6-digit code',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp),
+                        'Verify Account',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontSize: 32.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.1,
                         ),
-                      ),
-
-                      SizedBox(height: 8.h),
-
-                      // Subtitle
+                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+                      SizedBox(height: 10.h),
                       Text(
-                        "We've sent a verification code to",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: borderColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 12.sp : 14.sp,
+                        "We've sent a 6-digit code to your number.",
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: Colors.white.withOpacity(0.8),
+                          fontWeight: FontWeight.w400,
                         ),
+                      ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 20.h),
+
+                // Form Section (Bottom Sheet style)
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 30.h),
+                    decoration: BoxDecoration(
+                      color: lightBackground,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(40.r),
+                        topRight: Radius.circular(40.r),
                       ),
-
-                      SizedBox(height: 2.h),
-
-                      // Phone number
-                      RichText(
-                        text: TextSpan(
-                          text: 'Your phone number ',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: borderColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: isSmallScreen ? 12.sp : 14.sp,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: widget.phone,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: isSmallScreen ? 12.sp : 14.sp,
-                              ),
-                            ),
-                          ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, -5),
                         ),
-                      ),
-
-                      SizedBox(height: sectionSpacing),
-
-                      // PIN Field
-                      Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 40.w : 10.w,
-                          ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 20.h),
+                        Center(
                           child: AppPinCodeField(
                             controller: otpController,
                             length: 6,
-                            fillColor: lightBackground,
-                            inactiveColor: pinBorderColor,
+                            fillColor: Colors.transparent,
+                            inactiveColor: primaryColor.withOpacity(0.1),
                             activeColor: primaryColor,
-                            selectedColor: primaryColor,
+                            selectedColor: secondaryColor,
                             onCompleted: (code) => _verifyOtp(),
                           ),
-                        ),
-                      ),
+                        ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
 
-                      SizedBox(height: pinSpacing),
-
-                      // Resend Code
-                      Center(
-                        child: RichText(
+                        SizedBox(height: 10.h),
+                        
+                        RichText(
                           text: TextSpan(
-                            text: "You didn't receive any code? ",
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: borderColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: isSmallScreen ? 12.sp : 14.sp,
+                            text: "Didn't receive code?  ",
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14.sp,
                             ),
                             children: [
                               TextSpan(
-                                text: _canResend
-                                    ? 'Resend code'
-                                    : 'Resend code in $_secondsRemaining s',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: _canResend ? primaryColor : borderColor, // 🔥 CHANGED: Improved visibility (was keyAColor)
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: isSmallScreen ? 12.sp : 14.sp,
+                                text: _canResend ? 'Resend' : 'Resend in ${_secondsRemaining}s',
+                                style: TextStyle(
+                                  color: _canResend ? primaryColor : primaryColor.withOpacity(0.5),
+                                  fontWeight: FontWeight.w800,
                                 ),
                                 recognizer: TapGestureRecognizer()
-                                  ..onTap = _canResend ? _resendOtp : null,
+                                  ..onTap = _canResend ? () {
+                                    _startTimer();
+                                  } : null,
                               ),
                             ],
                           ),
-                        ),
-                      ),
+                        ).animate().fadeIn(delay: 400.ms),
 
-                      SizedBox(height: keypadSpacing),
+                        const Spacer(),
 
-                      // Keypad
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: SizedBox(
-                          height: keypadHeight,
+                        SizedBox(
+                          height: screenHeight * 0.38,
                           child: CustomGridKeypad(
                             onNumberPressed: addDigit,
                             leftAction: ActionKey(
-                              child: SvgPicture.asset(
-                                'assets/svg/cancel.svg',
-                                height: isSmallScreen ? 18.h : 22.h,
-                                colorFilter: ColorFilter.mode(
-                                  primaryColor,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              backgroundColor: primaryColor.withOpacity(0.1),
+                              child: Icon(Icons.backspace_outlined, color: primaryColor, size: 24.sp),
+                              backgroundColor: primaryColor.withOpacity(0.05),
                               onTap: removeDigit,
                             ),
                             rightAction: ActionKey(
-                              child: Icon(
-                                Icons.arrow_forward,
-                                color: lightBackground,
-                                size: isSmallScreen ? 22.sp : 26.sp,
-                              ),
+                              child: _isLoading 
+                                ? SizedBox(width: 20.w, height: 20.w, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : Icon(Icons.check, color: Colors.white, size: 24.sp),
                               backgroundColor: primaryColor,
                               onTap: _verifyOtp,
                             ),
                           ),
-                        ),
-                      ),
+                        ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
 
-                      SizedBox(height: isSmallScreen ? 8.h : 16.h),
-                    ],
+                        const Spacer(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

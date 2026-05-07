@@ -14,9 +14,12 @@ import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
 import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
 import '../../../../../app/view/widget/quick_access_app_bar.dart';
+import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboard_repo/repo.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../dashboardcontroller/provider.dart';
+import '../../../model/recent_transaction.dart';
 import '../../../widgets/transaction.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -746,7 +749,65 @@ class _CardOneState extends State<CardOne> {
                                   ),
                                 ],
                               ),
-                              onConfirm: (pin) {},
+                              onConfirm: (pin) async {
+                                final authBox = Hive.box('authBox');
+                                final phone = authBox.get('phone', defaultValue: '');
+                                final providerName = widget.selectedProvider?['name']?.toString().toLowerCase() ?? "";
+                                final variationCode = providerName.contains("postpaid") ? "postpaid" : "prepaid";
+
+                                LoadingHelper.show('');
+                                
+                                final controller = ProviderScope.containerOf(context).read(dashboardControllerProvider.notifier);
+                                
+                                final response = await controller.buyElectricity(
+                                  context,
+                                  serviceId: serviceId.toString(),
+                                  meterNumber: meter,
+                                  variationCode: variationCode,
+                                  amount: amount,
+                                  phone: phone,
+                                  pin: pin,
+                                );
+                                
+                                LoadingHelper.dismiss();
+
+                                if (!context.mounted) return;
+
+                                if (response != null && response.responseSuccessful) {
+                                  // Construct a TransactionItem to pass to the details screen
+                                  final transaction = TransactionItem(
+                                    id: response.responseBody?.transactionId ?? 0,
+                                    amount: amount.toDouble(),
+                                    isCredit: false,
+                                    serviceType: 'ELECTRICITY_BILL',
+                                    provider: widget.selectedProvider?['name'],
+                                    status: 'SUCCESSFUL',
+                                    reference: response.responseBody?.reference,
+                                    createdAt: DateTime.now(),
+                                    metadata: {
+                                      'info': {
+                                        'meterNumber': meter,
+                                        'Customer_Name': _customerName,
+                                        'address': _address,
+                                        'token': response.responseBody?.token, // Recharge token
+                                        'provider': widget.selectedProvider?['name'],
+                                      }
+                                    },
+                                  );
+
+                                  context.push(
+                                    RouteList.transactionDetailsScreen,
+                                    extra: transaction,
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(response?.responseMessage ?? "Transaction failed"),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
                             );
                           }
                         : null,

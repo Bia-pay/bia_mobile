@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:gal/gal.dart';
 import 'package:lottie/lottie.dart';
@@ -18,6 +19,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/custom_loader.dart';
+import '../../../app/utils/router/route_constant.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 
 class QrScreen extends ConsumerStatefulWidget {
@@ -168,7 +170,13 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.goNamed(RouteList.bottomNavBar);
+                        }
+                      },
                     ),
                     Expanded(
                       child: Text(

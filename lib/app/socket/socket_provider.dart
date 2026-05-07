@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io';
 import '../../core/constants.dart';
+import '../../feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../feature/dashboard/dashboardcontroller/notification_notifier.dart';
+import '../../feature/dashboard/dashboardcontroller/provider.dart';
 
 // Socket connection state
 enum SocketState { idle, connecting, connected, disconnected, error }
@@ -17,8 +21,10 @@ class SocketNotifier extends StateNotifier<SocketState> {
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 5;
+  final Ref _ref;
+  Timer? _debounceTimer;
 
-  SocketNotifier() : super(SocketState.idle);
+  SocketNotifier(this._ref) : super(SocketState.idle);
 
   IO.Socket? get socket => _socket;
   bool get isConnected => state == SocketState.connected && _socket?.connected == true;
@@ -37,18 +43,33 @@ class SocketNotifier extends StateNotifier<SocketState> {
       state = SocketState.connecting;
       print('🔌 Attempting Socket.IO connection...');
 
-      // Get user token from Hive
+      // Get user info from Hive
       final authBox = await Hive.openBox('authBox');
-      _token = authBox.get('token', defaultValue: '');
+      final userId = authBox.get('userId', defaultValue: '');
       this.fcmToken = authBox.get('fcmToken');
-      if (_token == null || this.fcmToken == null || _token!.isEmpty || this.fcmToken!.isEmpty) {
-        print('⚠️ No token found, Socket.IO cannot connect');
+      
+      // Try Hive first (legacy)
+      _token = authBox.get('token');
+      
+      // Fallback to SecureStorage (New flow)
+      if (_token == null || _token!.isEmpty) {
+        print('🔍 Hive token empty, checking SecureStorage for userId: $userId');
+        const storage = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
+        _token = await storage.read(key: 'access_token_$userId');
+      }
+
+      if (_token == null || _token!.isEmpty) {
+        print('⚠️ No access token found in Hive or SecureStorage. Socket.IO cannot connect');
         state = SocketState.idle;
         return;
       }
 
-      // Build Socket.IO URL
-      String socketUrl = AppConstants.baseUrl;
+      if (this.fcmToken == null || this.fcmToken!.isEmpty) {
+        print('⚠️ No FCM token found. Socket.IO will connect but registration might fail');
+      }
+
+      // Build Socket.IO URL - Use wsUrl if available, else baseUrl
+      String socketUrl = AppConstants.wsUrl.isNotEmpty ? AppConstants.wsUrl : AppConstants.baseUrl;
 
       // Remove trailing slash if present
       if (socketUrl.endsWith('/')) {
@@ -56,29 +77,35 @@ class SocketNotifier extends StateNotifier<SocketState> {
       }
 
       print('🔌 Connecting to: $socketUrl');
-      print('🔑 Using token: ${_token!.substring(0, 20)}...');
-      print('🔥 FCM TOKEN (FULL): $fcmToken');
+      if (_token != null && _token!.length > 10) {
+        print('🔑 Token found (starts with: ${_token!.substring(0, 10)}...)');
+      }
+      print('🔥 FCM TOKEN: $fcmToken');
 
       // Disconnect existing socket if any
       await _disconnect();
 
       // Create Socket.IO connection with authentication
       _socket = IO.io(socketUrl, IO.OptionBuilder()
-          .setTransports(['websocket', 'polling']) // Allow fallback to polling
+          .setTransports(['websocket', 'polling']) 
           .enableAutoConnect()
           .enableReconnection()
-          .setReconnectionAttempts(5)
-          .setReconnectionDelay(3000)
-          .setReconnectionDelayMax(10000)
-          .setTimeout(30000) // Increased timeout
-          .enableForceNew() // Force new connection
+          .setReconnectionAttempts(10)
+          .setReconnectionDelay(2000)
+          .setReconnectionDelayMax(5000)
+          .setTimeout(20000) 
+          .enableForceNew()
           .setExtraHeaders({
-        'Authorization': 'Bearer $_token',
-        'x-fcm-token': fcmToken,
-      })
+            'Authorization': 'Bearer $_token',
+            'x-fcm-token': fcmToken ?? '',
+          })
           .setAuth({
-        'token': _token,
-        'fcmToken': fcmToken,
+            'token': _token,
+            'fcmToken': fcmToken ?? '',
+          })
+          .setQuery({
+            'token': _token,
+            'fcmToken': fcmToken ?? '',
           })
           .build());
 
@@ -99,8 +126,10 @@ class SocketNotifier extends StateNotifier<SocketState> {
     if (_socket == null) return;
 
     // Connection successful
-    _socket!.onConnect((_) {
+    _socket!.onConnect((data) {
       print('✅ Socket.IO connected successfully');
+      print('📡 Socket ID: ${_socket?.id}');
+      print('🔗 Connect response data: $data');
       state = SocketState.connected;
       _reconnectAttempts = 0;
 
@@ -108,23 +137,35 @@ class SocketNotifier extends StateNotifier<SocketState> {
       final authBox = Hive.box('authBox');
       final userId = authBox.get('userId', defaultValue: '');
 
-      // Send registration after connection
-      print('📤 Registering FCM Token with backend ($fcmToken)');
-      _socket!.emit('registerFcmToken', {
+      // Send registration after connection with ACK callback
+      final payload = {
         'accessToken': _token,
         'fcmToken': fcmToken,
         'userId': userId,
         'platform': Platform.isAndroid ? 'android' : 'ios',
+      };
+      print('📤 Emitting registerFcmToken with payload: $payload');
+      _socket!.emitWithAck('registerFcmToken', payload, ack: (ackData) {
+        print('🎉 registerFcmToken ACK received from server: $ackData');
       });
-
     });
 
     // Connection error
     _socket!.onConnectError((error) {
       print('❌ Socket.IO connection error: $error');
+      print('🔍 Error type: ${error.runtimeType}');
       state = SocketState.error;
       _handleDisconnection();
     });
+
+    // Raw connect response (catches all data on first connect)
+    _socket!.on('connect', (data) {
+      print('📨 Raw connect event data: $data');
+    });
+
+    // Ping / pong for latency debugging
+    _socket!.on('ping', (_) => print('🏓 Ping sent to server'));
+    _socket!.on('pong', (latency) => print('🏓 Pong received, latency: ${latency}ms'));
 
     // Disconnection
     _socket!.onDisconnect((reason) {
@@ -157,36 +198,67 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Authentication response
     _socket!.on('authenticated', (data) {
-      print('🔐 Socket.IO authenticated: $data');
+      print('====== SOCKET AUTHENTICATED ======');
+      print('🔐 Auth data: $data');
+      print('==================================');
     });
 
     // Authentication error
     _socket!.on('auth_error', (error) {
-      print('❌ Socket.IO authentication error: $error');
+      print('====== SOCKET AUTH ERROR ======');
+      print('❌ Auth error: $error');
+      print('===============================');
       state = SocketState.error;
     });
 
     // Generic message handler
     _socket!.on('message', (data) {
       print('📥 Socket.IO message: $data');
+      print('   Type: ${data.runtimeType}');
     });
 
     // Transaction updates
     _socket!.on('transaction_update', (data) {
-      print('💰 Transaction update: $data');
-      // Handle transaction updates here
+      print('====== TRANSACTION UPDATE ======');
+      print('💰 Data: $data');
+      print('================================');
+      _refetchAllData();
+    });
+
+    // Transaction success (specific event requested by user)
+    _socket!.on('transaction_success', (data) {
+      print('🎯 Transaction success event received, refetching all data...');
+      _refetchAllData();
     });
 
     // Balance updates
     _socket!.on('balance_update', (data) {
-      print('💳 Balance update: $data');
-      // Handle balance updates here
+      print('====== BALANCE UPDATE ======');
+      print('💳 Data: $data');
+      print('============================');
+      _ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
     });
+
+    // Dynamic wallet update (wallet:update:userId)
+    final userId = _ref.read(userIdProvider);
+    if (userId.isNotEmpty) {
+      _socket!.on('wallet:update:$userId', (data) {
+        print('💳 Wallet update received for user $userId: $data');
+        _ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
+        _refetchAllData(); // Refresh history too as balance changed
+      });
+    }
 
     // Notification updates
     _socket!.on('notification', (data) {
-      print('🔔 Notification: $data');
-      // Handle notifications here
+      print('====== NOTIFICATION ======');
+      print('🔔 Data: $data');
+      print('==========================');
+    });
+
+    // Catch-all for any other events
+    _socket!.onAny((event, data) {
+      print('📡 [ANY EVENT] Event: "$event" | Data: $data');
     });
 
     // Reconnection attempt
@@ -284,10 +356,37 @@ class SocketNotifier extends StateNotifier<SocketState> {
     _socket?.off(event);
   }
 
+  void _refetchAllData() {
+    // Debounce to prevent multiple refreshes within a short window
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      try {
+        // 1. Refetch Balance
+        _ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
+
+        // 2. Refetch Transactions
+        final userId = _ref.read(userIdProvider);
+        if (userId.isNotEmpty) {
+          _ref.read(recentTransactionsProvider(userId).notifier).refresh();
+          _ref.read(allTransactionsProvider(userId).notifier).refresh();
+        }
+
+        // 3. Refetch Notifications
+        _ref.read(notificationNotifierProvider.notifier).refresh();
+        
+        print('✅ All data refetched successfully via Socket event (debounced)');
+      } catch (e) {
+        print('❌ Error refetching data: $e');
+      }
+    });
+  }
+
   @override
   void dispose() {
     _shouldReconnect = false;
     _reconnectTimer?.cancel();
+    _debounceTimer?.cancel();
     _disconnect();
     super.dispose();
   }
@@ -295,7 +394,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
 // Provider for socket state
 final socketNotifierProvider = StateNotifierProvider<SocketNotifier, SocketState>((ref) {
-  return SocketNotifier();
+  return SocketNotifier(ref);
 });
 
 // Provider for the Socket.IO instance
