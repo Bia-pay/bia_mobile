@@ -64,10 +64,13 @@ class CablePlanConfig {
       return 'assets/images/startimes_classic.webp';
     }
     if (code.contains('smart') || name.contains('smart')) {
-      return 'assets/images/yanga.jpg';
+      return 'assets/images/sta.jpg';
     }
     if (code.contains('super') || name.contains('super')) {
-      return 'assets/images/premium.jpeg';
+      return 'assets/images/startimes_super.jpeg';
+    }
+    if (code.contains('SHS') || name.contains('super')) {
+      return 'assets/images/startimes_super.jpeg';
     }
 
     /// SHOWMAX
@@ -111,6 +114,7 @@ class CablePlanConfig {
       'smart': 'More variety and content.',
       'classic': 'Premium movies and sports.',
       'super': 'Full premium package.',
+      'shs': 'Full premium package.',
 
       /// SHOWMAX
       'showmax': 'Stream movies and series anytime.',

@@ -224,8 +224,8 @@ class CardTwo extends ConsumerStatefulWidget {
 class _CardTwoState extends ConsumerState<CardTwo> {
   final List<Map<String, dynamic>> _providers = [
     {'name': 'MTN', 'logo': 'assets/svg/mtn.jpg', 'id': 'mtn', 'color': const Color(0xFFFFCC00)},
-    {'name': 'Airtel', 'logo': 'assets/svg/airtel.png', 'id': 'airtel', 'color': const Color(0xFFFF0000)},
-    {'name': 'Glo', 'logo': 'assets/svg/glo.jpg', 'id': 'glo', 'color': const Color(0xFF339933)},
+    {'name': 'Airtel', 'logo': 'assets/svg/airtel.png', 'id': 'airtel', 'color': errorColor},
+    {'name': 'Glo', 'logo': 'assets/svg/glo.jpg', 'id': 'glo', 'color':  successColor},
     {'name': '9mobile', 'logo': 'assets/svg/9mobile.png', 'id': '9mobile', 'color': const Color(0xFF005F54)},
   ];
 
