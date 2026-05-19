@@ -544,11 +544,6 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
       'icon': Icon(Icons.electrical_services, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.electricity),
     },
-    {
-      'label': 'Internet',
-      'icon': Icon(Icons.wifi, color: primaryColor, size: 20.sp),
-      'onTap': () {},
-    },
   ];
 
   @override

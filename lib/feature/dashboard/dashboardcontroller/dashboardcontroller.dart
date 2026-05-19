@@ -200,6 +200,37 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     }
   }
 
+  // ✅ VERIFY TAG (Before Transfer)
+  Future<ResponseModel?> verifyTag(BuildContext context, String tag) async {
+    if (tag.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Enter a valid BIA tag",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final ResponseModel response = await dashboardRepository.verifyTag(tag);
+      LoadingHelper.dismiss();
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Error: $e",
+        icon: Icons.error,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
   Future<QrCodeResponse?> getUserQrCode(BuildContext context, {double? amount, String? narration}) async {
     try {
       LoadingHelper.show('');
@@ -430,6 +461,61 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       ToastHelper.showToast(
         context: context,
         message: "Error updating profile: $e",
+        icon: Icons.error,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> updateUserTag(
+    BuildContext context,
+    String tag,
+  ) async {
+    if (tag.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Tag is required.",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final body = {"tag": tag.trim().replaceAll('@', '')};
+      final response = await dashboardRepository.updateTag(body);
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        // Refresh local user profile to sync Hive and State
+        await fetchUserProfile(context);
+
+        ToastHelper.showToast(
+          context: context,
+          message: "BIA Tag updated successfully",
+          icon: Icons.check_circle,
+          iconColor: successColor,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.error,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: "Error updating tag: $e",
         icon: Icons.error,
         iconColor: errorColor,
         position: ToastPosition.top,

@@ -96,6 +96,7 @@ class UserResponse {
   final String? roles;
   final String? pin;
   final String? picture;
+  final String? tag;
   final bool? isVerified;
   final String? createdAt;
   final String? updatedAt;
@@ -110,6 +111,7 @@ class UserResponse {
     this.roles,
     this.pin,
     this.picture,
+    this.tag,
     this.isVerified,
     this.createdAt,
     this.updatedAt,
@@ -126,6 +128,7 @@ class UserResponse {
       roles: json['roles'],
       pin: json['pin'],
       picture: json['picture'],
+      tag: json['tag'],
       isVerified: json['isVerified'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
@@ -142,6 +145,7 @@ class UserResponse {
     'roles': roles,
     'pin': pin,
     'picture': picture,
+    'tag': tag,
     'isVerified': isVerified,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
@@ -151,6 +155,7 @@ class UserResponse {
     String? email,
     String? phone,
     String? picture,
+    String? tag,
   }) {
     return UserResponse(
       id: id,
@@ -162,6 +167,7 @@ class UserResponse {
       roles: roles,
       pin: pin,
       picture: picture ?? this.picture,
+      tag: tag ?? this.tag,
       isVerified: isVerified,
       createdAt: createdAt,
       updatedAt: updatedAt,

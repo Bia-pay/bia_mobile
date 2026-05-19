@@ -1,8 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:media_store_plus/media_store_plus.dart';
@@ -10,9 +10,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:confetti/confetti.dart';
 
 import '../../../../../app/utils/colors.dart';
-import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/custom_loader.dart';
 import '../../../widgets/branded_receipt.dart';
@@ -44,45 +44,66 @@ class _SuccessScreenState extends State<SuccessScreen> {
   final GlobalKey _receiptKey = GlobalKey();
   bool _isSharing = false;
   bool _isDownloading = false;
+  late ConfettiController _confettiController;
+  late String _reference;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 4));
+    final status = widget.type?.toLowerCase() ?? 'success';
+    if (status == 'success') {
+      _confettiController.play();
+    }
+
+    // Set stable reference fallback if backend returns empty/null
+    final refVal = widget.reference;
+    if (refVal == null || refVal.trim().isEmpty || refVal == '-') {
+      final rand = DateTime.now().millisecondsSinceEpoch.toString();
+      final suffix = rand.length > 10 ? rand.substring(rand.length - 10) : rand;
+      _reference = 'BIA$suffix';
+    } else {
+      _reference = refVal;
+    }
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   Map<String, dynamic> get _statusConfig {
     final status = widget.type?.toLowerCase() ?? 'success';
     switch (status) {
       case 'success':
         return {
-          'title': 'Payment Successful',
-          'color': successColor,
+          'title': 'Transfer Successful',
+          'color': const Color(0xFF00C853),
           'showActions': true,
-          'gradientColors': [
-            successColor,
-            successColor.withOpacity(0.85),
-          ],
-          'icon': Icons.check_circle_rounded,
+          'icon': Icons.check_rounded,
         };
       case 'pending':
         return {
-          'title': 'Payment Pending',
-          'color': pendingColor,
+          'title': 'Transaction Pending',
+          'color': const Color(0xFFFFAB00),
           'showActions': true,
-          'gradientColors': [
-            pendingColor,
-            pendingColor.withOpacity(0.85),
-          ],
           'icon': Icons.hourglass_empty_rounded,
         };
       case 'failed':
       default:
         return {
-          'title': 'Payment Failed',
-          'color': errorColor,
+          'title': 'Transaction Failed',
+          'color': const Color(0xFFFF1744),
           'showActions': false,
-          'gradientColors': [
-            errorColor,
-            errorColor.withOpacity(0.85),
-          ],
-          'icon': Icons.cancel_rounded,
+          'icon': Icons.close_rounded,
         };
     }
+  }
+
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    _showSuccess('Reference copied to clipboard');
   }
 
   Future<File?> _captureAndSave() async {
@@ -181,8 +202,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.sp)),
-        backgroundColor: successColor,
+        content: Text(message, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.sp, color: Colors.white)),
+        backgroundColor: const Color(0xFF00C853),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(16.w),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
@@ -193,8 +214,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.sp)),
-        backgroundColor: Colors.red.shade600,
+        content: Text(message, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.sp, color: Colors.white)),
+        backgroundColor: const Color(0xFFFF1744),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(16.w),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
@@ -208,13 +229,11 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
     final config = _statusConfig;
     final primaryThemeColor = config['color'] as Color;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF4F6F9), // Soft dynamic blue-grey background
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -223,9 +242,11 @@ class _SuccessScreenState extends State<SuccessScreen> {
             final isSmallHeight = screenHeight < 720;
             final isNarrow = screenWidth < 360;
 
-            final badgeSize = isSmallHeight ? 85.r : 110.r;
-            final verticalSpacing = isSmallHeight ? 12.h : 24.h;
+            final badgeSize = isSmallHeight ? 60.r : 72.r;
             final horizontalPadding = isNarrow ? 18.w : 24.w;
+
+            // Pixel perfect Y position for notches and dashed line
+            final notchY = 166.h;
 
             return Stack(
               children: [
@@ -241,7 +262,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                         isCredit: false,
                         receiverName: widget.recipientName,
                         provider: widget.channel,
-                        reference: widget.reference,
+                        reference: _reference,
                         createdAt: DateTime.now(),
                         metadata: {
                           'recipientAccount': widget.recipientAccount,
@@ -252,102 +273,189 @@ class _SuccessScreenState extends State<SuccessScreen> {
                   ),
                 ),
 
-                // Top Gradient Wash
+                // Top Glowing Radial mesh wash
                 Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: isSmallHeight ? 180.h : 240.h,
+                  top: -80.h,
+                  left: -50.w,
+                  right: -50.w,
+                  height: 300.h,
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
                         colors: [
                           primaryThemeColor.withOpacity(0.08),
-                          const Color(0xFFF8FAFC).withOpacity(0),
+                          primaryThemeColor.withOpacity(0),
                         ],
                       ),
                     ),
                   ),
                 ),
 
-                // Main Content
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  child: Column(
-                    children: [
-                      SizedBox(height: isSmallHeight ? 20.h : 40.h),
+                // Scrollable viewport covering the entire body to ensure complete responsiveness
+                SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    child: Column(
+                      children: [
+                        SizedBox(height: isSmallHeight ? 16.h : 32.h),
 
-                      // Gorgeous Animated Ring Status Badge
-                      _buildAnimatedBadge(badgeSize, config, primaryThemeColor),
+                        // Floating Header Status Badge
+                        _buildHeaderBadge(badgeSize, primaryThemeColor, config['icon'] as IconData),
 
-                      SizedBox(height: verticalSpacing),
+                        SizedBox(height: 12.h),
 
-                      // Payment Status Title & Amount
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            config['title'],
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              fontSize: isSmallHeight ? 16.sp : 19.sp,
-                              color: const Color(0xFF1E293B),
-                              letterSpacing: 0.1,
-                            ),
-                          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
-                          SizedBox(height: 6.h),
-                          Text(
-                            "₦${widget.amount ?? "0.00"}",
-                            style: textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              fontSize: isSmallHeight ? 32.sp : 38.sp,
-                              color: const Color(0xFF0F172A),
-                              letterSpacing: -0.8,
-                            ),
-                          ).animate().fadeIn(delay: 150.ms, duration: 400.ms).scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), curve: Curves.easeOutBack),
-                        ],
-                      ),
-
-                      SizedBox(height: verticalSpacing * 1.2),
-
-                      // Premium Transaction Details Card
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            children: [
-                              _buildDetailsCard(isSmallHeight, isNarrow, primaryThemeColor),
-                              SizedBox(height: 20.h),
-                            ],
+                        // Status Title
+                        Text(
+                          config['title'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: isSmallHeight ? 15.sp : 17.sp,
+                            color: const Color(0xFF64748B),
+                            letterSpacing: 0.5,
                           ),
-                        ).animate().fadeIn(delay: 300.ms, duration: 500.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad),
-                      ),
+                        ).animate().fadeIn(duration: 400.ms),
 
-                      // Actions Block Fixed at Bottom
-                      Container(
-                        color: const Color(0xFFF8FAFC),
-                        padding: EdgeInsets.only(bottom: isSmallHeight ? 16.h : 24.h, top: 8.h),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (config['showActions']) ...[
-                              _buildActionButtons(),
-                              SizedBox(height: 16.h),
-                            ],
-                            CustomButton(
-                              buttonName: "Done",
-                              buttonColor: primaryThemeColor,
-                              buttonTextColor: Colors.white,
-                              onPressed: () => context.pushNamed(RouteList.bottomNavBar),
+                        SizedBox(height: isSmallHeight ? 16.h : 24.h),
+
+                        // Master Receipt Card (with side notches and dashed lines)
+                        ClipPath(
+                          clipper: TicketClipper(notchRadius: 10.r, notchY: notchY),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F172A).withOpacity(0.04),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 12),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ).animate().fadeIn(delay: 450.ms, duration: 400.ms),
-                    ],
+                            child: Column(
+                              children: [
+                                // Top Receipt Header Section (exactly sized to notchY)
+                                Container(
+                                  height: notchY,
+                                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Large Amount Display
+                                      Text(
+                                        "₦${widget.amount ?? "0.00"}",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: isSmallHeight ? 32.sp : 38.sp,
+                                          color: const Color(0xFF0F172A),
+                                          letterSpacing: -1,
+                                        ),
+                                      ).animate().fadeIn(delay: 100.ms, duration: 400.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), curve: Curves.easeOutBack),
+                                      
+                                      SizedBox(height: 16.h),
+                                      
+                                      // Flow line diagram
+                                      _buildTimelineFlow(primaryThemeColor),
+                                    ],
+                                  ),
+                                ),
+
+                                // Mid Dashed perforated line aligned exactly at notchY
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 18.w),
+                                  child: Row(
+                                    children: List.generate(
+                                      24,
+                                      (index) => Expanded(
+                                        child: Container(
+                                          height: 1.2.h,
+                                          margin: EdgeInsets.symmetric(horizontal: 2.5.w),
+                                          color: const Color(0xFFCBD5E1),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Bottom Details section
+                                Padding(
+                                  padding: EdgeInsets.all(20.w),
+                                  child: Column(
+                                    children: [
+                                      _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                      _buildTicketRow("Payment Channel", widget.channel ?? "Bank Transfer", isSmallHeight),
+                                      _buildTicketRow("Transaction Date", _formattedDate, isSmallHeight),
+                                      _buildReferenceRow(_reference, isSmallHeight),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.08, end: 0, curve: Curves.easeOutQuad),
+
+                        SizedBox(height: 24.h),
+
+                        // Action Buttons block
+                        if (config['showActions']) ...[
+                          _buildActionButtons(),
+                          SizedBox(height: 16.h),
+                        ],
+
+                        // Main Slate Confirmation Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => context.pushNamed(RouteList.bottomNavBar),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F172A), // Luxury dark slate
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                              padding: EdgeInsets.symmetric(vertical: 18.h),
+                            ),
+                            child: Text(
+                              "Go to Dashboard",
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ).animate().fadeIn(delay: 350.ms),
+
+                        SizedBox(height: 36.h),
+                      ],
+                    ),
                   ),
                 ),
+
+                // Celebratory confetti overlay
+                if (widget.type == null || widget.type!.toLowerCase() == 'success')
+                  IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConfettiWidget(
+                        confettiController: _confettiController,
+                        blastDirectionality: BlastDirectionality.explosive,
+                        shouldLoop: false,
+                        maxBlastForce: 15,
+                        minBlastForce: 5,
+                        emissionFrequency: 0.05,
+                        numberOfParticles: 45,
+                        gravity: 0.12,
+                        colors: const [
+                          Color(0xFF00C853),
+                          Color(0xFF2979FF),
+                          Color(0xFFFF3D00),
+                          Color(0xFFFFEA00),
+                          Color(0xFFD500F9),
+                          Color(0xFF00E5FF),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             );
           },
@@ -356,142 +464,151 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-  Widget _buildAnimatedBadge(double badgeSize, Map<String, dynamic> config, Color primaryColor) {
-    return Hero(
-      tag: 'status_badge_${widget.type}',
+  Widget _buildHeaderBadge(double size, Color color, IconData icon) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withOpacity(0.08),
+      ),
       child: Center(
         child: Container(
-          width: badgeSize,
-          height: badgeSize,
+          width: size - 14.r,
+          height: size - 14.r,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.12),
-                blurRadius: 24,
-                spreadRadius: 2,
-                offset: const Offset(0, 12),
-              ),
-            ],
+            color: color,
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Outer pulsing ring
-              Container(
-                width: badgeSize - 12.r,
-                height: badgeSize - 12.r,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: primaryColor.withOpacity(0.06),
-                ),
-              ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-               .scale(begin: const Offset(0.92, 0.92), end: const Offset(1.05, 1.05), duration: 1500.ms, curve: Curves.easeInOut),
-
-              // Solid Icon container
-              Container(
-                width: badgeSize - 28.r,
-                height: badgeSize - 28.r,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: config['gradientColors'],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Icon(
-                  config['icon'] as IconData,
-                  color: Colors.white,
-                  size: badgeSize * 0.45,
-                ),
-              ).animate().scale(begin: const Offset(0.3, 0.3), end: const Offset(1, 1), duration: 400.ms, curve: Curves.elasticOut),
-            ],
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: size * 0.45,
           ),
         ),
       ),
-    );
+    ).animate().scale(begin: const Offset(0.3, 0.3), end: const Offset(1, 1), duration: 550.ms, curve: Curves.elasticOut);
   }
 
-  Widget _buildDetailsCard(bool isSmallHeight, bool isNarrow, Color themeColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24.r),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withOpacity(0.03),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Card Header Info (Visual indicator of Transaction)
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: themeColor.withOpacity(0.04),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(23.r),
-                topRight: Radius.circular(23.r),
+  Widget _buildTimelineFlow(Color themeColor) {
+    final recipientNameVal = widget.recipientName ?? "Recipient";
+    final recipientInitials = recipientNameVal.isNotEmpty
+        ? recipientNameVal.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        : "RE";
+
+    return Row(
+      children: [
+        // Sender Account Bubble
+        Column(
+          children: [
+            CircleAvatar(
+              radius: 20.r,
+              backgroundColor: primaryColor.withOpacity(0.08),
+              child: Text(
+                "BIA",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11.sp,
+                  color: primaryColor,
+                ),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            SizedBox(height: 6.h),
+            Text(
+              "My Wallet",
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+
+        // Line flow connecting
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w),
+            child: Column(
               children: [
-                Icon(Icons.description_outlined, size: 14.sp, color: themeColor),
-                SizedBox(width: 6.w),
-                Text(
-                  "TRANSACTION RECEIPT",
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w800,
-                    color: themeColor,
-                    letterSpacing: 1.2,
+                Row(
+                  children: List.generate(
+                    8,
+                    (index) => Expanded(
+                      child: Container(
+                        height: 2.h,
+                        margin: EdgeInsets.symmetric(horizontal: 1.2.w),
+                        decoration: BoxDecoration(
+                          color: themeColor.withOpacity(index == 3 || index == 4 ? 1 : 0.25),
+                          borderRadius: BorderRadius.circular(1.r),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: themeColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    widget.channel ?? "Transfer",
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w800,
+                      color: themeColor,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            child: Column(
-              children: [
-                _buildModernDetailRow("Recipient", widget.recipientName ?? "-", Icons.person_outline_rounded, isNarrow, isSmallHeight),
-                _buildDivider(),
-                _buildModernDetailRow("Account", widget.recipientAccount ?? "-", Icons.wallet_outlined, isNarrow, isSmallHeight),
-                _buildDivider(),
-                _buildModernDetailRow("Reference", widget.reference ?? "-", Icons.receipt_long_outlined, isNarrow, isSmallHeight),
-                _buildDivider(),
-                _buildModernDetailRow("Channel", widget.channel ?? "Transfer", Icons.swap_horiz_rounded, isNarrow, isSmallHeight),
-                _buildDivider(),
-                _buildModernDetailRow("Date", _formattedDate, Icons.calendar_today_rounded, isNarrow, isSmallHeight),
-              ],
+        ),
+
+        // Recipient Account Bubble
+        Column(
+          children: [
+            CircleAvatar(
+              radius: 20.r,
+              backgroundColor: themeColor.withOpacity(0.08),
+              child: Text(
+                recipientInitials,
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11.sp,
+                  color: themeColor,
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
+            SizedBox(height: 6.h),
+            Text(
+              recipientNameVal.length > 12 ? "${recipientNameVal.substring(0, 10)}..." : recipientNameVal,
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _buildModernDetailRow(String title, String value, IconData icon, bool isNarrow, bool isSmallHeight) {
+  Widget _buildTicketRow(String label, String value, bool isSmallHeight) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 10.h : 14.h),
+      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 9.h : 12.h),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: isSmallHeight ? 15.sp : 18.sp, color: const Color(0xFF64748B)),
-          SizedBox(width: 10.w),
           Text(
-            title,
+            label,
             style: TextStyle(
-              color: const Color(0xFF64748B),
-              fontSize: isSmallHeight ? 12.sp : 14.sp,
+              color: const Color(0xFF94A3B8),
+              fontSize: 13.sp,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -503,12 +620,10 @@ class _SuccessScreenState extends State<SuccessScreen> {
               textAlign: TextAlign.right,
               style: TextStyle(
                 color: const Color(0xFF1E293B),
-                fontSize: isSmallHeight ? 12.sp : 14.sp,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w700,
                 height: 1.25,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -516,11 +631,61 @@ class _SuccessScreenState extends State<SuccessScreen> {
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(
-      color: Color(0xFFF1F5F9),
-      thickness: 1,
-      height: 1,
+  Widget _buildReferenceRow(String reference, bool isSmallHeight) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 9.h : 12.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Reference",
+            style: TextStyle(
+              color: const Color(0xFF94A3B8),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          Expanded(
+            flex: 4,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    reference,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: const Color(0xFF1E293B),
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                GestureDetector(
+                  onTap: () => _copyToClipboard(reference),
+                  child: Container(
+                    padding: EdgeInsets.all(4.r),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Icon(
+                      Icons.copy_rounded,
+                      size: 12.sp,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -564,30 +729,20 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(18.r),
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 14.h),
+          padding: EdgeInsets.symmetric(vertical: 16.h),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(18.r),
             border: Border.all(
-              color: onTap == null ? const Color(0xFFE2E8F0) : primaryColor.withOpacity(0.4),
+              color: onTap == null ? const Color(0xFFE2E8F0) : primaryColor.withOpacity(0.25),
               width: 1.2,
             ),
             color: onTap == null ? const Color(0xFFF8FAFC) : Colors.white,
-            boxShadow: onTap == null
-                ? []
-                : [
-                    BoxShadow(
-                      color: primaryColor.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -601,14 +756,14 @@ class _ActionButton extends StatelessWidget {
                 Icon(
                   icon,
                   color: onTap == null ? const Color(0xFF94A3B8) : primaryColor,
-                  size: 18.sp,
+                  size: 16.sp,
                 ),
               SizedBox(width: 8.w),
               Text(
                 label,
                 style: TextStyle(
                   color: onTap == null ? const Color(0xFF94A3B8) : primaryColor,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   fontSize: 14.sp,
                 ),
               ),
@@ -618,4 +773,63 @@ class _ActionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// Ultra-Premium Custom Clipper for Receipt Slips
+class TicketClipper extends CustomClipper<Path> {
+  final double notchRadius;
+  final double notchY;
+
+  TicketClipper({required this.notchRadius, required this.notchY});
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // Start top left
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    
+    // Top right to right notch
+    path.lineTo(size.width, notchY - notchRadius);
+    // Right notch arc cutout
+    path.arcToPoint(
+      Offset(size.width, notchY + notchRadius),
+      radius: Radius.circular(notchRadius),
+      clockwise: false,
+    );
+    // Right notch to bottom right
+    path.lineTo(size.width, size.height);
+    
+    // Perforated/Zigzag bottom edge
+    double toothWidth = 8.0;
+    double toothHeight = 4.0;
+    int teethCount = (size.width / toothWidth).floor();
+    double remainingWidth = size.width - (teethCount * toothWidth);
+    
+    path.lineTo(size.width - remainingWidth / 2, size.height);
+    for (int i = 0; i < teethCount; i++) {
+      double curX = size.width - (remainingWidth / 2) - (i * toothWidth);
+      path.lineTo(curX - toothWidth / 2, size.height - toothHeight);
+      path.lineTo(curX - toothWidth, size.height);
+    }
+    path.lineTo(0, size.height);
+    
+    // Bottom left to left notch
+    path.lineTo(0, notchY + notchRadius);
+    // Left notch arc cutout
+    path.arcToPoint(
+      Offset(0, notchY - notchRadius),
+      radius: Radius.circular(notchRadius),
+      clockwise: false,
+    );
+    // Left notch to top left
+    path.lineTo(0, 0);
+    
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

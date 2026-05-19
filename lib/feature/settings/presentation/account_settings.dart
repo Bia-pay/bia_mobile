@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import '../../../../../app/utils/router/route_constant.dart';
@@ -38,41 +37,42 @@ class _UProfileState extends ConsumerState<UProfile> {
   List<Map<String, dynamic>> get securityItems {
     final t = ref.watch(appLocaleProvider.notifier);
     return [
-      {'id': 'pin', 'title': t.translate('pin_settings'), 'image': 'assets/svg/key.svg', 'hasDropdown': true},
-      {'id': 'login', 'title': t.translate('login_settings'), 'image': 'assets/svg/blocked.svg', 'hasDropdown': true},
-      {'id': 'payment', 'title': t.translate('payment_settings'), 'image': 'assets/svg/invoice.svg', 'hasDropdown': true},
+      {'id': 'pin', 'title': t.translate('pin_settings'), 'icon': Icons.lock_outline_rounded, 'hasDropdown': true},
+      {'id': 'login', 'title': t.translate('login_settings'), 'icon': Icons.fingerprint_rounded, 'hasDropdown': true},
+      {'id': 'payment', 'title': t.translate('payment_settings'), 'icon': Icons.payment_rounded, 'hasDropdown': true},
     ];
   }
 
   List<Map<String, dynamic>> get othersItems {
     final t = ref.watch(appLocaleProvider.notifier);
     return [
-      {'id': 'language', 'title': t.translate('language'), 'image': 'assets/svg/world.svg', 'hasDropdown': false},
-      {'id': 'help', 'title': t.translate('help'), 'image': 'assets/svg/help.svg', 'hasDropdown': true},
-      {'id': 'generate_qr', 'title': t.translate('generate_qr'), 'image': 'assets/svg/qr-code-1.svg', 'hasDropdown': false},
-      {'id': 'privacy', 'title': 'Privacy Policy', 'image': 'assets/svg/blocked.svg', 'hasDropdown': false},
-      {'id': 'logout', 'title': t.translate('log_out'), 'image': 'assets/svg/logout.svg', 'hasDropdown': false},
+      {'id': 'language', 'title': t.translate('language'), 'icon': Icons.language_rounded, 'hasDropdown': false},
+      {'id': 'bia_tag', 'title': 'BIA Tag', 'icon': Icons.alternate_email_rounded, 'hasDropdown': false},
+      {'id': 'help', 'title': t.translate('help'), 'icon': Icons.help_outline_rounded, 'hasDropdown': true},
+      {'id': 'generate_qr', 'title': t.translate('generate_qr'), 'icon': Icons.qr_code_2_rounded, 'hasDropdown': false},
+      {'id': 'privacy', 'title': 'Privacy Policy', 'icon': Icons.shield_outlined, 'hasDropdown': false},
+      {'id': 'logout', 'title': t.translate('log_out'), 'icon': Icons.logout_rounded, 'hasDropdown': false},
     ];
   }
 
-  Map<String, List<Map<String, String>>> get dropdownContent {
+  Map<String, List<Map<String, dynamic>>> get dropdownContent {
     final t = ref.watch(appLocaleProvider.notifier);
     return {
       'pin': [
-        {'title': t.translate('set_pin'), 'image': 'assets/svg/l-key.svg'},
-        {'title': t.translate('change_payment_pin'), 'image': 'assets/svg/key.svg'},
-        {'title': t.translate('forget_payment_pin'), 'image': 'assets/svg/key.svg'},
-        {'title': '${t.translate('pay_with')} $_biometricTypeName', 'image': 'assets/svg/key.svg'},
+        {'title': t.translate('set_pin'), 'icon': Icons.lock_rounded},
+        {'title': t.translate('change_payment_pin'), 'icon': Icons.lock_reset_rounded},
+        {'title': t.translate('forget_payment_pin'), 'icon': Icons.lock_open_rounded},
+        {'title': '${t.translate('pay_with')} $_biometricTypeName', 'icon': Icons.fingerprint_rounded},
       ],
       'login': [
-        {'title': t.translate('auto_logout_settings'), 'image': 'assets/svg/l-key.svg'},
-        {'title': '${t.translate('login_with')} $_biometricTypeName', 'image': 'assets/svg/l-key.svg'},
+        {'title': t.translate('auto_logout_settings'), 'icon': Icons.timer_outlined},
+        {'title': '${t.translate('login_with')} $_biometricTypeName', 'icon': Icons.fingerprint_rounded},
       ],
       'help': [
-        {'title': t.translate('help_center'), 'image': 'assets/svg/cancel.svg'},
+        {'title': t.translate('help_center'), 'icon': Icons.support_agent_rounded},
       ],
       'payment': [
-        {'title': t.translate('enable_scan_to_receive'), 'image': 'assets/svg/qr-code-1.svg'},
+        {'title': t.translate('enable_scan_to_receive'), 'icon': Icons.qr_code_scanner_rounded},
       ],
     };
   }
@@ -224,6 +224,56 @@ class _UProfileState extends ConsumerState<UProfile> {
     }
   }
 
+  void _showEditTagDialog() {
+    final controller = TextEditingController(text: _user?.tag);
+    UPopup.show(
+      context,
+      type: UPopupType.info,
+      title: "Update BIA Tag",
+      message: "Please enter your new BIA Tag below.",
+      confirmLabel: "Update",
+      cancelLabel: "Cancel",
+      content: TextField(
+        controller: controller,
+        style: TextStyle(color: lightText, fontSize: 16.sp, fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          hintText: "BIA Tag",
+          hintStyle: TextStyle(color: lightSecondaryText),
+          prefixText: "@",
+          prefixStyle: TextStyle(color: primaryColor, fontSize: 16.sp, fontWeight: FontWeight.w700),
+          filled: true,
+          fillColor: offWhiteBackground,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: primaryColor, width: 1.5),
+          ),
+        ),
+      ),
+      onConfirm: () async {
+        final newTag = controller.text.trim().replaceAll('@', '');
+        if (newTag.isEmpty) return;
+
+        final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
+        final res = await dashboardCtrl.updateUserTag(context, newTag);
+        if (res != null && res.responseSuccessful) {
+          _loadUserProfile();
+          if (mounted) {
+            UPopup.success(
+              context,
+              title: "Success",
+              message: "Your BIA Tag has been updated successfully.",
+            );
+          }
+        }
+      },
+    );
+  }
+
   void _handleItemTap(BuildContext context, String id) {
     if (id == 'generate_qr') {
       context.pushNamed(RouteList.qrScreen);
@@ -232,6 +282,8 @@ class _UProfileState extends ConsumerState<UProfile> {
     } else if (id == 'privacy') {
       final Uri url = Uri.parse('https://bia.com.ng/privacy');
       launchUrl(url, mode: LaunchMode.externalApplication);
+    } else if (id == 'bia_tag') {
+      _showEditTagDialog();
     }
   }
 
@@ -461,10 +513,10 @@ class _UProfileState extends ConsumerState<UProfile> {
                     borderRadius: BorderRadius.circular(14.r),
                   ),
                   child: Center(
-                    child: SvgPicture.asset(
-                      item['image'],
-                      height: 20.h,
-                      colorFilter: ColorFilter.mode(isLogout ? errorColor : primaryColor, BlendMode.srcIn),
+                    child: Icon(
+                      item['icon'],
+                      size: 20.sp,
+                      color: isLogout ? errorColor : primaryColor,
                     ),
                   ),
                 ),
@@ -504,7 +556,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                   child: Column(
                     children: dropdownContent[id]!.map((subItem) {
                       final subTitle = subItem['title']!;
-                      final subIcon = subItem['image']!;
+                      final subIcon = subItem['icon'] as IconData;
 
                       return Padding(
                         padding: EdgeInsets.symmetric(vertical: 10.h),
@@ -513,12 +565,12 @@ class _UProfileState extends ConsumerState<UProfile> {
                             Container(
                               width: 32.w,
                               height: 32.w,
-                              decoration: BoxDecoration(color: const Color(0xFFF1F5F9).withOpacity(0.6), shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: const Color(0xFFF1F5F9).withValues(alpha: 0.6), shape: BoxShape.circle),
                               child: Center(
-                                child: SvgPicture.asset(
+                                child: Icon(
                                   subIcon,
-                                  height: 14.h,
-                                  colorFilter: const ColorFilter.mode(primaryColor, BlendMode.srcIn),
+                                  size: 14.sp,
+                                  color: primaryColor,
                                 ),
                               ),
                             ),

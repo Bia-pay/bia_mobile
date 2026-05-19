@@ -1,12 +1,10 @@
 import 'package:bia/core/__core.dart';
 import 'package:bia/feature/auth/modal/reponse/response_modal.dart';
-import 'package:bia/feature/dashboard/dashboardcontroller/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive/hive.dart';
-import 'dart:ui';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/image.dart';
 import '../../../app/utils/u_popup.dart';
@@ -108,6 +106,56 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
               context,
               title: "Success",
               message: "Your name has been updated successfully.",
+            );
+          }
+        }
+      },
+    );
+  }
+
+  void _showEditTagDialog() {
+    final controller = TextEditingController(text: _user?.tag);
+    UPopup.show(
+      context,
+      type: UPopupType.info,
+      title: "Update BIA Tag",
+      message: "Please enter your new BIA Tag below.",
+      confirmLabel: "Update",
+      cancelLabel: "Cancel",
+      content: TextField(
+        controller: controller,
+        style: TextStyle(color: lightText, fontSize: 16.sp, fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          hintText: "BIA Tag",
+          hintStyle: TextStyle(color: lightSecondaryText),
+          prefixText: "@",
+          prefixStyle: TextStyle(color: primaryColor, fontSize: 16.sp, fontWeight: FontWeight.w700),
+          filled: true,
+          fillColor: offWhiteBackground,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: primaryColor, width: 1.5),
+          ),
+        ),
+      ),
+      onConfirm: () async {
+        final newTag = controller.text.trim().replaceAll('@', '');
+        if (newTag.isEmpty) return;
+
+        final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
+        final res = await dashboardCtrl.updateUserTag(context, newTag);
+        if (res != null && res.responseSuccessful) {
+          _loadProfile();
+          if (mounted) {
+            UPopup.success(
+              context,
+              title: "Success",
+              message: "Your BIA Tag has been updated successfully.",
             );
           }
         }
@@ -265,7 +313,13 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                           title: "Full Name",
                           subtitle: user?.fullname ?? "N/A",
                           icon: Icons.person_outline_rounded,
-                         /// onTap: _showEditNameDialog,
+                          onTap: _showEditNameDialog,
+                        ),
+                        _buildModernTile(
+                          title: "BIA Tag",
+                          subtitle: (user?.tag != null) ? "@${user?.tag}" : "N/A",
+                          icon: Icons.alternate_email_rounded,
+                          onTap: _showEditTagDialog,
                         ),
                         _buildModernTile(
                           title: "Email Address",

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
-import '../../../../../app/utils/image.dart';
 import '../../../../../core/constants.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
@@ -63,6 +61,9 @@ class BankCompleteTransactionBottomSheet extends ConsumerStatefulWidget {
   final String recipientAccount;
   final String bankName;
   final String bankCode;
+  final double? preCalculatedCharge;
+  final double? preCalculatedTotal;
+  final String? preCalculatedFeeDescription;
 
   const BankCompleteTransactionBottomSheet({
     super.key,
@@ -71,6 +72,9 @@ class BankCompleteTransactionBottomSheet extends ConsumerStatefulWidget {
     required this.recipientAccount,
     required this.bankCode,
     required this.bankName,
+    this.preCalculatedCharge,
+    this.preCalculatedTotal,
+    this.preCalculatedFeeDescription,
   });
 
   @override
@@ -88,13 +92,20 @@ class _BankCompleteTransactionBottomSheetState
   double _principalAmount = 0.0;
   double _chargeAmount = 0.0;
   double _totalAmount = 0.0;
-  String _feeType = "flat";
   String _feeDescription = "";
 
   @override
   void initState() {
     super.initState();
-    _fetchCharges();
+    _principalAmount = double.tryParse(widget.amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    if (widget.preCalculatedCharge != null && widget.preCalculatedTotal != null) {
+      _chargeAmount = widget.preCalculatedCharge!;
+      _totalAmount = widget.preCalculatedTotal!;
+      _feeDescription = widget.preCalculatedFeeDescription ?? 'Transfer Fee';
+      _isLoadingCharges = false;
+    } else {
+      _fetchCharges();
+    }
   }
 
   @override
@@ -119,11 +130,10 @@ class _BankCompleteTransactionBottomSheetState
 
     if (mounted) {
       setState(() {
-        _principalAmount = numericAmount; // ✅ Store principal separately
+        _principalAmount = numericAmount;
         if (charges != null) {
           _chargeAmount = (charges['charge'] ?? 0).toDouble();
           _totalAmount = (charges['totalAmount'] ?? numericAmount).toDouble();
-          _feeType = charges['feeType'] ?? 'flat';
           _feeDescription = charges['description'] ?? 'Transfer Fee';
         } else {
           _chargeAmount = 10.0;
@@ -148,12 +158,10 @@ class _BankCompleteTransactionBottomSheetState
   Widget build(BuildContext context) {
     final r = _ResponsiveHelper(context);
     final currencySymbol = Constants.nairaCurrencySymbol;
-    final ValueNotifier<bool> useCashback = ValueNotifier<bool>(false);
-    final theme = Theme.of(context);
 
     return Container(
       decoration: BoxDecoration(
-        color: lightBackground,
+        color: offWhiteBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(r.sheetRadius)),
       ),
       padding: EdgeInsets.symmetric(
@@ -167,412 +175,510 @@ class _BankCompleteTransactionBottomSheetState
           children: [
             // Drag Handle
             Container(
-              width: isSmallScreen(context) ? 32.w : 40.w,
-              height: isSmallScreen(context) ? 3.h : 4.h,
+              width: 40.w,
+              height: 4.h,
               decoration: BoxDecoration(
-                color: grey300,
+                color: const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
-            SizedBox(height: r.mediumSpacing),
+            SizedBox(height: 16.h),
+
             Text(
-              'Please confirm your transfer details',
+              'Confirm Bank Transfer',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontSize: r.subtitleFontSize,
-                color: grey600,
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              'Verify details before completing transaction',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: const Color(0xFF64748B),
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: r.smallSpacing),
 
-            // Title - Centered
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: r.titleFontSize,
-                  fontWeight: FontWeight.w700,
+            SizedBox(height: 16.h),
+
+            // Premium Large Amount Display
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(
+                  color: const Color(0xFFF1F5F9),
+                  width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'TOTAL SEND AMOUNT',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: const Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.w900,
+                        color: primaryColor,
+                        letterSpacing: -0.8,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
+            SizedBox(height: 16.h),
 
-            SizedBox(height: r.largeSpacing),
+            // Visual Transfer Diagram (Sender -> Bank/Recipient)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: primaryColor.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Sender Card
+                  Column(
+                    children: [
+                      Container(
+                        width: 48.r,
+                        height: 48.r,
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        'My Wallet',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
 
-            // Details Card - Responsive with max width
+                  // Connection
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(4, (index) {
+                            return Container(
+                              margin: EdgeInsets.symmetric(horizontal: 2.w),
+                              width: 5.w,
+                              height: 5.w,
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(alpha: (index + 1) * 0.25),
+                                shape: BoxShape.circle,
+                              ),
+                            );
+                          }),
+                        ),
+                        SizedBox(height: 4.h),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: primaryColor,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Bank Recipient Card
+                  Column(
+                    children: [
+                      Container(
+                        width: 48.r,
+                        height: 48.r,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFCBD5E1),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.account_balance_rounded,
+                          color: Color(0xFF475569),
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      SizedBox(
+                        width: 80.w,
+                        child: Text(
+                          widget.recipientName.isNotEmpty ? widget.recipientName.split(' ')[0] : 'Recipient',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0F172A),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            // Details Card
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: r.maxContentWidth),
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(r.cardPadding),
+                padding: EdgeInsets.all(16.r),
                 decoration: BoxDecoration(
-                  color: grey50,
-                  borderRadius: BorderRadius.circular(r.cardRadius),
-                  border: Border.all(color: grey200),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Bank Logo & Name Row
                     _buildDetailRow(
                       context,
-                      label: 'Bank',
+                      label: 'Destination Bank',
                       value: widget.bankName,
-                      logo: null,
-                      isHighlighted: false,
-                      r: r,
                     ),
-                    Divider(height: r.mediumSpacing, color: grey300),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
-                    // Recipient Name Row
                     _buildDetailRow(
                       context,
-                      label: 'Recipient',
+                      label: 'Recipient Name',
                       value: widget.recipientName,
                       isHighlighted: true,
-                      r: r,
                     ),
-                    Divider(height: r.mediumSpacing, color: grey300),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
-                    // Account Number Row
                     _buildDetailRow(
                       context,
                       label: 'Account Number',
                       value: widget.recipientAccount,
-                      r: r,
                     ),
-                    Divider(height: r.mediumSpacing, color: grey300),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
-                    // Amount Row
                     _buildDetailRow(
                       context,
-                      label: 'Amount',
+                      label: 'Principal Amount',
                       value: '$currencySymbol${widget.amount}.00',
-                      isHighlighted: true,
-                      r: r,
                     ),
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
-                    // Transfer Fee
                     if (_isLoadingCharges)
                       _buildSummaryRow(
                         context,
                         _feeDescription.isNotEmpty ? _feeDescription : 'Fee',
                         '${currencySymbol}0.00',
                         isLoading: true,
-                        primaryColor: primaryColor,
-                        r: r,
                       )
                     else
                       _buildSummaryRow(
                         context,
                         _feeDescription.isNotEmpty ? _feeDescription : 'Transfer Fee',
                         '$currencySymbol${_chargeAmount.toStringAsFixed(2)}',
-                        primaryColor: primaryColor,
-                        r: r,
                       ),
 
-                    // Total Amount
-                    Divider(height: r.mediumSpacing, color: grey300),
-                    // Save as Beneficiary Toggle
-                    SizedBox(height: r.smallSpacing),
-                    ValueListenableBuilder<bool>(
-                      valueListenable: useCashback,
-                      builder: (context, isToggled, child) {
-                        return _buildSummaryRow(
-                          context,
-                          'Save as Beneficiary',
-                          '',
-                          hasToggle: true,
-                          isToggled: _saveAsBeneficiary,
-                          onToggle: (value) {
-                            setState(() {
-                              _saveAsBeneficiary = value;
-                            });
-                          },
-                          primaryColor: primaryColor,
-                          r: r,
-                        );
-                      },
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+
+                    _buildSummaryRow(
+                      context,
+                      'Total Payable',
+                      '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
+                      isHighlighted: true,
                     ),
 
-                    // Wallet Balance
-                    Divider(height: r.mediumSpacing, color: grey300),
-                    _buildWalletBalanceRow(
+                    const Divider(height: 20, color: Color(0xFFF1F5F9)),
+
+                    // Save as Beneficiary Toggle Row
+                    _buildSummaryRow(
                       context,
-                      balance: _getWalletBalance().toStringAsFixed(2),
-                      currencySymbol: currencySymbol,
-                      primaryColor: primaryColor,
-                      r: r,
+                      'Save Beneficiary',
+                      '',
+                      hasToggle: true,
+                      isToggled: _saveAsBeneficiary,
+                      onToggle: (value) {
+                        setState(() {
+                          _saveAsBeneficiary = value;
+                        });
+                      },
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: r.largeSpacing),
 
-            // Continue Button - Full width responsive
+            SizedBox(height: 16.h),
+
+            // Wallet Balance Mini Card
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+              child: _buildWalletBalanceRow(
+                context,
+                balance: _getWalletBalance().toStringAsFixed(2),
+                currencySymbol: currencySymbol,
+              ),
+            ),
+
+            SizedBox(height: 24.h),
+
+            // Continue Button
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: r.maxContentWidth),
               child: SizedBox(
                 width: double.infinity,
-                height: r.buttonHeight,
                 child: CustomButton(
                   buttonColor: primaryColor,
-                  buttonTextColor: lightBackground,
-                  buttonName: 'Continue',
+                  buttonTextColor: Colors.white,
+                  buttonName: 'Continue to PIN',
                   onPressed: _isLoadingCharges
                       ? null
                       : () {
-                    FocusScope.of(context).unfocus();
-                    Navigator.pop(context);
+                          FocusScope.of(context).unfocus();
+                          Navigator.pop(context);
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BankTransactionPin(
-                          recipientAccount: widget.recipientAccount,
-                          recipientName: widget.recipientName,
-                          amount: _principalAmount, // ✅ Fixed: Send principal, not total
-                          saveAsBeneficiary: _saveAsBeneficiary,
-                          bankCode: widget.bankCode,
-                          bankName: widget.bankName,
-                        ),
-                      ),
-                    );
-                  },
+                          // Navigate to PIN screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BankTransactionPin(
+                                recipientAccount: widget.recipientAccount,
+                                recipientName: widget.recipientName,
+                                amount: _principalAmount,
+                                saveAsBeneficiary: _saveAsBeneficiary,
+                                bankCode: widget.bankCode,
+                                bankName: widget.bankName,
+                              ),
+                            ),
+                          );
+                        },
                 ),
               ),
             ),
-            SizedBox(height: r.mediumSpacing),
-
-            // Cancel Button
-            // TextButton(
-            //   onPressed: () => Navigator.pop(context),
-            //   child: Text(
-            //     'Cancel',
-            //     style: theme.textTheme.bodyMedium?.copyWith(
-            //       color: grey,
-            //       fontSize: r.bodyFontSize,
-            //     ),
-            //   ),
-            // ),
+            SizedBox(height: 12.h),
           ],
         ),
       ),
     );
   }
 
-  static bool isSmallScreen(BuildContext context) {
-    return MediaQuery.of(context).size.width < 360;
-  }
-
   static Widget _buildDetailRow(
-      BuildContext context, {
-        required String label,
-        required String value,
-        String? logo,
-        bool isHighlighted = false,
-        required _ResponsiveHelper r,
-      }) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: r.smallSpacing / 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Flexible(
-            flex: 2,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: grey600,
-                fontSize: r.bodyFontSize,
-              ),
+    BuildContext context, {
+    required String label,
+    required String value,
+    bool isHighlighted = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          SizedBox(width: 8.w),
-          Flexible(
-            flex: 3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (logo != null)
-                  Container(
-                    width: r.logoSize,
-                    height: r.logoSize,
-                    margin: EdgeInsets.only(right: 6.w),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage(logo),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                Flexible(
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.right,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isHighlighted ? primaryGreenColor600 : transparentBlack87,
-                      fontSize: r.bodyFontSize,
-                      fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+        ),
+        SizedBox(width: 8.w),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: isHighlighted ? primaryGreenColor600 : const Color(0xFF0F172A),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.bold,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   static Widget _buildSummaryRow(
-      BuildContext context,
-      String title,
-      String value, {
-        bool isHighlighted = false,
-        bool hasToggle = false,
-        bool isToggled = false,
-        bool isLoading = false,
-        ValueChanged<bool>? onToggle,
-        required Color primaryColor,
-        required _ResponsiveHelper r,
-      }) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: r.smallSpacing),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(
-              title,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: grey600,
-                fontSize: r.bodyFontSize,
+    BuildContext context,
+    String title,
+    String value, {
+    bool isHighlighted = false,
+    bool hasToggle = false,
+    bool isToggled = false,
+    bool isLoading = false,
+    ValueChanged<bool>? onToggle,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: isHighlighted ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+            fontSize: 13.sp,
+            fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
+          ),
+        ),
+        if (isLoading)
+          SizedBox(
+            height: 12.h,
+            width: 12.w,
+            child: PulsingLogoIndicator(logoPath: 'assets/svg/logo-b.png'),
+          )
+        else if (value.isNotEmpty)
+          Text(
+            value,
+            style: TextStyle(
+              color: isHighlighted ? primaryColor : const Color(0xFF0F172A),
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        else if (hasToggle)
+          GestureDetector(
+            onTap: () {
+              if (onToggle != null) {
+                onToggle(!isToggled);
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 38.w,
+              height: 22.h,
+              decoration: BoxDecoration(
+                color: isToggled ? primaryColor : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(11.h),
               ),
-              overflow: TextOverflow.ellipsis,
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 200),
+                alignment: isToggled ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: 18.w,
+                  height: 18.w,
+                  margin: EdgeInsets.symmetric(horizontal: 2.w),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
             ),
           ),
-          SizedBox(width: 8.w),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isLoading)
-                SizedBox(
-                  height: 12.h,
-                  width: 12.w,
-                  child: PulsingLogoIndicator(logoPath: 'assets/svg/logo-b.png'),
-                )
-              else if (value.isNotEmpty)
-                Text(
-                  value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isHighlighted ? primaryGreenColor600 : transparentBlack87,
-                    fontSize: r.bodyFontSize,
-                    fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
-                  ),
-                ),
-              SizedBox(width: 8.w),
-              if (hasToggle)
-                GestureDetector(
-                  onTap: () {
-                    if (onToggle != null) {
-                      onToggle(!isToggled);
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: r.toggleWidth,
-                    height: r.toggleHeight,
-                    decoration: BoxDecoration(
-                      color: isToggled ? primaryColor : grey300,
-                      borderRadius: BorderRadius.circular(r.toggleHeight / 2),
-                    ),
-                    child: AnimatedAlign(
-                      duration: const Duration(milliseconds: 200),
-                      alignment: isToggled
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        width: r.toggleKnobSize,
-                        height: r.toggleKnobSize,
-                        margin: EdgeInsets.symmetric(horizontal: 2.w),
-                        decoration: const BoxDecoration(
-                          color: lightBackground,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
+      ],
     );
   }
 
   static Widget _buildWalletBalanceRow(
-      BuildContext context, {
-        required String balance,
-        required String currencySymbol,
-        required Color primaryColor,
-        required _ResponsiveHelper r,
-      }) {
+    BuildContext context, {
+    required String balance,
+    required String currencySymbol,
+  }) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        vertical: r.mediumSpacing,
-        horizontal: r.cardPadding,
+        vertical: 12.h,
+        horizontal: 16.w,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: grey300),
-        borderRadius: BorderRadius.circular(r.buttonRadius),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.account_balance_wallet,
-            color: primaryColor,
-            size: r.iconSize,
+          Container(
+            padding: EdgeInsets.all(8.r),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_rounded,
+              color: primaryColor,
+              size: 20,
+            ),
           ),
-          SizedBox(width: 10.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Wallet Balance',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: grey600,
-                    fontSize: r.smallFontSize,
+                  style: TextStyle(
+                    color: const Color(0xFF64748B),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(height: 2.h),
                 Text(
                   '$currencySymbol$balance',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: r.bodyFontSize,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.check_circle,
+          const Icon(
+            Icons.check_circle_rounded,
             color: primaryColor,
-            size: r.iconSize,
+            size: 20,
           ),
         ],
       ),

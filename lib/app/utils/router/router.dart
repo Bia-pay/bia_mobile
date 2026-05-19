@@ -164,7 +164,12 @@ class AppRouter {
       GoRoute(
         path: '/send-money',
         name: RouteList.sendMoneyTransfer,
-        builder: (context, state) => const SendMoneyTransfer(),
+        builder: (context, state) => const SendMoneyTransfer(initialIndex: 0),
+      ),
+      GoRoute(
+        path: '/send-by-tag',
+        name: RouteList.sendByTag,
+        builder: (context, state) => const SendMoneyTransfer(initialIndex: 1),
       ),
       GoRoute(
         path: '/send-to-bank',

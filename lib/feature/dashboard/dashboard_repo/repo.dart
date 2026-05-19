@@ -180,6 +180,69 @@ class DashboardRepository {
     }
   }
 
+  //  Verify Tag
+  Future<ResponseModel> verifyTag(String tag) async {
+    try {
+      final response = await _apiClient.getData('/api/v1/user/resolve-tag/${tag.trim()}');
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> verifyBody = (jsonResponse['responseBody'] ?? {}) as Map<String, dynamic>;
+
+        final wrappedResponseBody = ResponseBody(
+          user: UserResponse.fromJson(verifyBody),
+        );
+
+        return ResponseModel(
+          responseSuccessful: true,
+          responseMessage: jsonResponse["responseMessage"] ?? "Tag resolved successfully",
+          statusCode: response.statusCode,
+          responseBody: wrappedResponseBody,
+        );
+      } else {
+        return ResponseModel(
+          responseMessage: jsonResponse["responseMessage"] ?? "Tag not found",
+          responseSuccessful: false,
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong. Please try again.',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  //  Update user Tag
+  Future<ResponseModel> updateTag(Map<String, dynamic> body) async {
+    try {
+      final response = await _apiClient.putData(ApiConstant.UPDATE_TAG, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ResponseModel(
+          responseSuccessful: true,
+          responseMessage: jsonResponse["responseMessage"] ?? "Tag updated successfully",
+          statusCode: response.statusCode,
+        );
+      } else {
+        return ResponseModel(
+          responseMessage: jsonResponse["responseMessage"] ?? "Failed to update tag",
+          responseSuccessful: false,
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong. Please try again.',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
   //  Fetch user QR code
   Future<QrCodeResponse> getUserQrCode({double? amount, String? narration}) async {
     try {

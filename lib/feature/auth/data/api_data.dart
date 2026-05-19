@@ -267,6 +267,7 @@ class ApiClient {
         headers: _mainHeaders,
         body: jsonEncode(body),
       );
+      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
       return apiHelper.handleResponse(response);
     });
   }
@@ -282,6 +283,7 @@ class ApiClient {
         headers: _mainHeaders,
         body: jsonEncode(body),
       );
+      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
       return apiHelper.handleResponse(response);
     });
   }
@@ -297,6 +299,7 @@ class ApiClient {
         headers: _mainHeaders,
         body: jsonEncode(body),
       );
+      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
       return apiHelper.handleResponse(response);
     });
   }
@@ -310,6 +313,7 @@ class ApiClient {
         fullUrl,
         headers: _mainHeaders,
       );
+      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
       return apiHelper.handleResponse(response);
     });
   }
@@ -323,6 +327,7 @@ class ApiClient {
         fullUrl,
         headers: _mainHeaders,
       );
+      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
       return apiHelper.handleResponse(response);
     });
   }

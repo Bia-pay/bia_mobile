@@ -74,4 +74,5 @@ class RouteList {
   static const String userSettings = '/user-settings';
   static const String languageSettings = '/language-settings';
   static const String autoLogoutSettings = '/auto-logout-settings';
+  static const String sendByTag = '/send-by-tag';
 }

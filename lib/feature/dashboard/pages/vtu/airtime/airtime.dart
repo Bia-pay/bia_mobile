@@ -237,18 +237,6 @@ class _CardTwoState extends ConsumerState<CardTwo> {
   @override
   void initState() {
     super.initState();
-    // Listen to provider changes to support autofill/beneficiary sync
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _phoneController.addListener(() {
-        final formPhone = ref.read(airtimeFormProvider).phoneNumber;
-        if (_phoneController.text != formPhone) {
-          _phoneController.text = formPhone;
-          _phoneController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _phoneController.text.length),
-          );
-        }
-      });
-    });
   }
 
   @override
