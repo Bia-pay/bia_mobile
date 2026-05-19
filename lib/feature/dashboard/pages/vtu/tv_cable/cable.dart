@@ -538,13 +538,13 @@ class _CableProviderDropdownState extends ConsumerState<CableProviderDropdown> {
   String getProviderLogo(String name) {
     switch (name.toLowerCase()) {
       case 'dstv':
-        return 'assets/svg/logo.png';
+        return 'assets/svg/dstv.png';
       case 'gotv':
-        return 'assets/svg/logo.png';
+        return 'assets/svg/gotv.png';
       case 'startimes':
-        return 'assets/svg/logo.png';
+        return 'assets/svg/startimes.png';
       case 'showmax':
-        return 'assets/svg/logo.png';
+        return 'assets/svg/showmax.png';
       default:
         return 'assets/svg/logo.png';
     }

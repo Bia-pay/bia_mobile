@@ -63,14 +63,13 @@ class CablePlanConfig {
     if (code.contains('classic') || name.contains('classic')) {
       return 'assets/images/startimes_classic.webp';
     }
-    if (code.contains('smart') || name.contains('smart')) {
-      return 'assets/images/sta.jpg';
+    if (code.contains('smart') || name.contains('smart') || 
+        code.contains('global') || name.contains('global') ||
+        code.contains('dish') || name.contains('dish')) {
+      return 'assets/images/startimes_smart.png';
     }
-    if (code.contains('super') || name.contains('super')) {
-      return 'assets/images/startimes_super.jpeg';
-    }
-    if (code.contains('SHS') || name.contains('super')) {
-      return 'assets/images/startimes_super.jpeg';
+    if (code.contains('super') || name.contains('super') || code.contains('shs') || name.contains('shs')) {
+      return 'assets/images/startimes_super.webp';
     }
 
     /// SHOWMAX
