@@ -18,6 +18,7 @@ import '../../auth/modal/reponse/response_modal.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../auth/authcontroller/authcontroller.dart';
 import '../../../core/providers/locale_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UProfile extends ConsumerStatefulWidget {
   const UProfile({super.key});
@@ -49,6 +50,7 @@ class _UProfileState extends ConsumerState<UProfile> {
       {'id': 'language', 'title': t.translate('language'), 'image': 'assets/svg/world.svg', 'hasDropdown': false},
       {'id': 'help', 'title': t.translate('help'), 'image': 'assets/svg/help.svg', 'hasDropdown': true},
       {'id': 'generate_qr', 'title': t.translate('generate_qr'), 'image': 'assets/svg/qr-code-1.svg', 'hasDropdown': false},
+      {'id': 'privacy', 'title': 'Privacy Policy', 'image': 'assets/svg/blocked.svg', 'hasDropdown': false},
       {'id': 'logout', 'title': t.translate('log_out'), 'image': 'assets/svg/logout.svg', 'hasDropdown': false},
     ];
   }
@@ -227,6 +229,9 @@ class _UProfileState extends ConsumerState<UProfile> {
       context.pushNamed(RouteList.qrScreen);
     } else if (id == 'language') {
       context.pushNamed(RouteList.languageSettings);
+    } else if (id == 'privacy') {
+      final Uri url = Uri.parse('https://bia.com.ng/privacy');
+      launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
