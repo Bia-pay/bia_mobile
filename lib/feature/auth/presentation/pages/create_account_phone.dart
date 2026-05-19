@@ -25,8 +25,12 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
   String _countryDialCode = '234';
   final FocusNode phoneFocusNode = FocusNode();
 
-  bool get _canProceed =>
-      phoneController.text.trim().length >= 10 && _agreed;
+  bool get _canProceed {
+    final text = phoneController.text.trim();
+    final isValidPhone = (text.length == 10 && !text.startsWith('0')) ||
+                         (text.length == 11 && text.startsWith('0'));
+    return isValidPhone && _agreed;
+  }
 
   @override
   void initState() {
@@ -188,11 +192,15 @@ class _PhoneRegScreenState extends ConsumerState<PhoneRegScreen> {
                             label: 'Mobile Number',
                             hintText: '801 234 5678',
                             validator: (value) {
-                              if (value == null || value.isEmpty) {
+                              if (value == null || value.trim().isEmpty) {
                                 return 'Phone number is required';
                               }
-                              if (value.length < 10) {
-                                return 'Phone number too short';
+                              final text = value.trim();
+                              if (text.length == 11 && !text.startsWith('0')) {
+                                return '11-digit number must start with 0';
+                              }
+                              if (text.length != 10 && text.length != 11) {
+                                return 'Phone number must be 10 or 11 digits';
                               }
                               return null;
                             },

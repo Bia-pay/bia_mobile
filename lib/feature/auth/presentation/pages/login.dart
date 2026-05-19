@@ -273,8 +273,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _refresh() => setState(() {});
 
   bool get _canLogin {
-    return phoneController.text.trim().isNotEmpty &&
-        passwordController.text.trim().isNotEmpty;
+    final text = phoneController.text.trim();
+    final isValidPhone = (text.length == 10 && !text.startsWith('0')) ||
+                         (text.length == 11 && text.startsWith('0'));
+    return isValidPhone && passwordController.text.trim().isNotEmpty;
   }
 
   @override
@@ -396,9 +398,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             },
                             label: 'Mobile Number',
                             hintText: '801 234 5678',
-                            validator: (value) {
+                             validator: (value) {
                               if (value.isEmpty) return 'Phone number is required';
-                              if (value.length < 10) return 'Phone number too short';
+                              final text = value.trim();
+                              if (text.length == 11 && !text.startsWith('0')) {
+                                return '11-digit number must start with 0';
+                              }
+                              if (text.length != 10 && text.length != 11) {
+                                return 'Phone number must be 10 or 11 digits';
+                              }
                               return null;
                             },
                             onCountryChanged: (country) {

@@ -533,13 +533,13 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
       'icon': Icon(Icons.tv, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.cable),
     },
+    // {
+    //   'label': 'Tiktok Coin',
+    //   'icon': Image.asset(tiktok, height: 22.h),
+    //   'onTap': () {},
+    // },
     {
-      'label': 'Tiktok Coin',
-      'icon': Image.asset(tiktok, height: 22.h),
-      'onTap': () {},
-    },
-    {
-      'label': 'Utility Bill',
+      'label': 'Electricity',
       'icon': Icon(Icons.electrical_services, color: primaryColor, size: 20.sp),
       'onTap': () => context.pushNamed(RouteList.electricity),
     },

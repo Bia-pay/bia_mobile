@@ -113,8 +113,9 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   }
 
   void _checkPhoneNumberComplete() {
-    final phoneNumber = _phoneController.text;
-    bool isComplete = phoneNumber.replaceAll(RegExp(r'\D'), '').length >= 10;
+    final phoneNumber = _phoneController.text.replaceAll(RegExp(r'\D'), '').trim();
+    final isComplete = (phoneNumber.length == 10 && !phoneNumber.startsWith('0')) ||
+                       (phoneNumber.length == 11 && phoneNumber.startsWith('0'));
 
     if (_isPhoneNumberComplete != isComplete) {
       setState(() {
@@ -200,7 +201,13 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                                     borderColor: primaryColor,
                                     validator: (value) {
                                       if (value.isEmpty) return 'Phone number is required';
-                                      if (value.length < 10) return 'Phone number too short';
+                                      final text = value.trim();
+                                      if (text.length == 11 && !text.startsWith('0')) {
+                                        return '11-digit number must start with 0';
+                                      }
+                                      if (text.length != 10 && text.length != 11) {
+                                        return 'Phone number must be 10 or 11 digits';
+                                      }
                                       return null;
                                     },
                                     onCountryChanged: (CountryCode? newValue) {

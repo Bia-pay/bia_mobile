@@ -1,5 +1,4 @@
 import 'package:bia/app/utils/colors.dart';
-import 'package:bia/app/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -96,12 +95,12 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
 
     phoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
 
-    if (phoneNumber.length > 10) {
-      phoneNumber = phoneNumber.substring(0, 10);
-    }
-
     if (phoneNumber.startsWith('0')) {
       phoneNumber = phoneNumber.substring(1);
+    }
+
+    if (phoneNumber.length > 10) {
+      phoneNumber = phoneNumber.substring(0, 10);
     }
 
     final dialCode = _selectedCountry.dialCode.replaceAll('+', '');
@@ -149,7 +148,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                 child: TextFormField(
                   controller: widget.controller,
                   keyboardType:  TextInputType.phone,
-                  maxLength: 10,
+                  maxLength: 11,
                   inputFormatters: _isKeyboardDisabled
                       ? null
                       : [FilteringTextInputFormatter.digitsOnly],
