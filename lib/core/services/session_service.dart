@@ -4,15 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import '../../feature/auth/authcontroller/authcontroller.dart';
 import '../../app/utils/router/route_constant.dart';
+import '../../core/local/transaction_cache.dart';
+import 'package:go_router/go_router.dart';
+import '../../feature/auth/interceptor/interceptor.dart';
 
-
-enum SessionState { active, warning, loggedOut }
+enum SessionState { active, warning, loggedOut, locked }
 
 class SessionNotifier extends StateNotifier<SessionState> {
   final Ref ref;
   Timer? _inactivityTimer;
   Timer? _countdownTimer;
   int _remainingSeconds = 30;
+
+  DateTime? _backgroundedAt;
+  bool _isLockScreenVisible = false;
 
   // Routes that should NOT trigger inactivity logout
   final Set<String> _excludedRoutes = {
@@ -28,10 +33,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
     RouteList.forgotPasswordReset,
   };
 
-
-  SessionNotifier(this.ref) : super(SessionState.active) {
-    // We don't call _init in constructor to avoid async issues in initializer
-  }
+  SessionNotifier(this.ref) : super(SessionState.active);
 
   int get remainingSeconds => _remainingSeconds;
 
@@ -49,8 +51,6 @@ class SessionNotifier extends StateNotifier<SessionState> {
     }
   }
 
-
-
   void handleRouteChange(String path) {
     if (_excludedRoutes.contains(path)) {
       _cancelTimers();
@@ -66,14 +66,11 @@ class SessionNotifier extends StateNotifier<SessionState> {
   }
 
   void resetTimer([String? currentPath]) async {
-    // If we're on an excluded page, don't run the timer
     if (currentPath != null && _excludedRoutes.contains(currentPath)) {
       _cancelTimers();
       return;
     }
 
-
-    // Ensure box is open
     final box = await Hive.openBox('settingsBox');
     final isEnabled = box.get('auto_logout_enabled', defaultValue: true);
     
@@ -94,14 +91,12 @@ class SessionNotifier extends StateNotifier<SessionState> {
     });
   }
 
-
   void _startWarning() {
     state = SessionState.warning;
     _remainingSeconds = 30;
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
         _remainingSeconds--;
-        // Re-assign state to notify listeners of the time change
         state = SessionState.warning; 
       } else {
         timer.cancel();
@@ -114,19 +109,54 @@ class SessionNotifier extends StateNotifier<SessionState> {
     _inactivityTimer?.cancel();
     _countdownTimer?.cancel();
     state = SessionState.loggedOut;
-    // Call the unified logout in AuthController
+    _isLockScreenVisible = false;
+    _backgroundedAt = null;
     await ref.read(authControllerProvider.notifier).logout();
+  }
+
+  void clearLockState() {
+    _isLockScreenVisible = false;
+    _backgroundedAt = null;
   }
 
   void handleAppLifecycle(AppLifecycleState lifeCycleState, [String? currentPath]) {
     if (lifeCycleState == AppLifecycleState.paused || 
         lifeCycleState == AppLifecycleState.hidden) {
-      // Security: Logout immediately if the app is backgrounded from a protected screen
-      if (currentPath != null && !_excludedRoutes.contains(currentPath)) {
-        debugPrint("🔐 App backgrounded on protected route ($currentPath). Triggering auto-logout.");
-        logout();
+      // 🔐 App goes background: Preserve current stack/routes but set background time for lock evaluation
+      if (currentPath != null && !_excludedRoutes.contains(currentPath) && !_isLockScreenVisible) {
+        debugPrint("🔐 App backgrounded on protected route ($currentPath). Setting lock checkpoint.");
+        _backgroundedAt = DateTime.now();
       }
     } else if (lifeCycleState == AppLifecycleState.resumed) {
+      if (_backgroundedAt != null && currentPath != null && !_excludedRoutes.contains(currentPath)) {
+        final elapsed = DateTime.now().difference(_backgroundedAt!);
+        debugPrint("🔐 App resumed. Time spent in background: ${elapsed.inSeconds} seconds.");
+        
+        final navContext = navigatorKey.currentContext;
+        if (navContext != null && !_isLockScreenVisible) {
+          _isLockScreenVisible = true;
+          
+          if (elapsed.inMinutes < 10) {
+            // ⏰ Under 10 minutes: Unlock & pop back to the exact current screen (preserving stack)
+            debugPrint("🔐 Within 10 min window. Pushing Welcome Back screen as session lock.");
+            navContext.pushNamed(
+              RouteList.welcomeBackScreen,
+              extra: {'isSessionLock': true, 'forceHome': false},
+            );
+          } else {
+            // 🚨 Over 10 minutes: Timeout. Force home/dashboard navigation after unlock, clear cached transaction states
+            debugPrint("🔐 Timeout window exceeded. Pushing Welcome Back to unlock and redirect to Home.");
+            TransactionCache.clearAllTransactions();
+            
+            navContext.pushNamed(
+              RouteList.welcomeBackScreen,
+              extra: {'isSessionLock': true, 'forceHome': true},
+            );
+          }
+        }
+      }
+      _backgroundedAt = null;
+
       if (currentPath != null) {
         handleRouteChange(currentPath);
       } else {
@@ -134,8 +164,6 @@ class SessionNotifier extends StateNotifier<SessionState> {
       }
     }
   }
-
-
 
   @override
   void dispose() {

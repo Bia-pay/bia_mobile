@@ -63,9 +63,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final userProfile = ref.watch(userProfileProvider);
     final box = Hive.box('authBox');
-    final fullname = box.get('fullname', defaultValue: 'User');
-    final picture = box.get('picture');
+    final fullname = userProfile?.fullname ?? box.get('fullname', defaultValue: 'User');
+    final picture = userProfile?.picture ?? box.get('picture');
     
     // 🔥 Fluid spacing using consistent ScreenUtil values
     final headerSpacing = 8.h; 

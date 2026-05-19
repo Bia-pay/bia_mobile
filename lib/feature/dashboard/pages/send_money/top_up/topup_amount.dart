@@ -229,13 +229,14 @@ class PaymentWebViewPage extends ConsumerStatefulWidget {
   ConsumerState<PaymentWebViewPage> createState() => _PaymentWebViewPageState();
 }
 
-class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
+class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> with WidgetsBindingObserver {
   late final WebViewController _controller;
   bool _hasVerified = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -248,7 +249,6 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
             } else if (url.contains('your-failure-return-url')) {
               _showDialog("Failed", "Payment was not completed.");
               return NavigationDecision.prevent;
-
             }
             return NavigationDecision.navigate;
           },
@@ -258,6 +258,25 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint("🔄 Payment Webview resumed. Auto-checking deposit status for ref: ${widget.reference}");
+      // Wait briefly for the lock overlay to complete presentations/unlocks
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted && !_hasVerified) {
+          _verifyPayment(widget.reference);
+        }
+      });
+    }
   }
 
   Future<void> _verifyPayment(String reference) async {
@@ -270,9 +289,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
           .verifyDeposit(context, reference);
 
       if (res != null && res.responseSuccessful && res.data != null) {
-
         if (!mounted) return;
-
         Navigator.pop(context);
 
         context.pushNamed(
@@ -283,12 +300,10 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
             "reference": res.data!.reference,
           },
         );
-
       } else {
         _hasVerified = false;
         _showDialog("Failed", "Payment was not completed.");
       }
-
     } catch (e) {
       _hasVerified = false;
       _showDialog("Error", "Verification failed.");
@@ -309,6 +324,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -4,12 +4,43 @@ import '../../../core/local/transaction_cache.dart';
 import '../dashboard_repo/repo.dart';
 import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
+import '../../auth/modal/reponse/response_modal.dart';
 
 final userIdProvider = StateProvider<String>((ref) {
   final box = Hive.box('authBox');
   final userId = box.get('userId')?.toString() ?? '';
   final phone = box.get('phone')?.toString() ?? '';
   return userId.isNotEmpty ? userId : phone;
+});
+
+class UserProfileNotifier extends StateNotifier<UserResponse?> {
+  UserProfileNotifier() : super(null) {
+    _init();
+  }
+
+  void _init() {
+    final box = Hive.box('authBox');
+    final savedUserJson = box.get('saved_user_profile');
+    if (savedUserJson != null) {
+      try {
+        state = UserResponse.fromJson(Map<String, dynamic>.from(savedUserJson));
+      } catch (_) {}
+    }
+  }
+
+  void updateProfile(UserResponse? user) {
+    state = user;
+    if (user != null) {
+      final box = Hive.box('authBox');
+      box.put('saved_user_profile', user.toJson());
+      if (user.picture != null) box.put('picture', user.picture);
+      if (user.fullname != null) box.put('fullname', user.fullname);
+    }
+  }
+}
+
+final userProfileProvider = StateNotifierProvider<UserProfileNotifier, UserResponse?>((ref) {
+  return UserProfileNotifier();
 });
 class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionItem>>> {
   final DashboardRepository repository;

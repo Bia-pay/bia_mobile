@@ -14,13 +14,22 @@ import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/u_popup.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../../core/services/biometric_service.dart';
 import '../../../../app/utils/widgets/pin_input_widget.dart';
 import '../../../../app/utils/widgets/enhanced_pin_screen.dart';
 import '../../authcontroller/authcontroller.dart';
+import '../../../dashboard/dashboardcontroller/provider.dart';
 
 class WelcomeBackScreen extends ConsumerStatefulWidget {
-  const WelcomeBackScreen({super.key});
+  final bool isSessionLock;
+  final bool forceHome;
+
+  const WelcomeBackScreen({
+    super.key,
+    this.isSessionLock = false,
+    this.forceHome = false,
+  });
 
   @override
   ConsumerState<WelcomeBackScreen> createState() => _WelcomeBackScreenState();
@@ -122,7 +131,12 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       LoadingHelper.dismiss();
 
       if (success && mounted) {
-        context.go(RouteList.bottomNavBar);
+        ref.read(sessionServiceProvider.notifier).clearLockState();
+        if (widget.isSessionLock && !widget.forceHome) {
+          context.pop();
+        } else {
+          context.go(RouteList.bottomNavBar);
+        }
       } else {
         _showErrorModal('Login Failed', 'Invalid credentials. Please try again.');
         _resetState(isBiometric);
@@ -170,6 +184,9 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProfile = ref.watch(userProfileProvider);
+    final effectivePictureUrl = userProfile?.picture ?? pictureUrl;
+    final effectiveFullname = userProfile?.fullname ?? fullname ?? "User";
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -240,10 +257,10 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildAvatar(avatarR),
+                              _buildAvatar(avatarR, effectivePictureUrl),
                               SizedBox(height: innerGap),
                               Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
-                              Text(fullname ?? "User", textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
+                              Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
                               SizedBox(height: innerGap / 2),
                               
                               if (_showPasswordField || !_biometricEnabled)
@@ -290,7 +307,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     );
   }
 
-  Widget _buildAvatar(double radius) {
+  Widget _buildAvatar(double radius, String? imgUrl) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle, 
@@ -299,8 +316,8 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       child: CircleAvatar(
         radius: radius, 
         backgroundColor: accentColor.withOpacity(0.05), 
-        backgroundImage: (pictureUrl != null && pictureUrl!.isNotEmpty) ? NetworkImage(pictureUrl!) : null, 
-        child: pictureUrl == null || pictureUrl!.isEmpty ? Icon(Icons.person_outline, size: radius, color: accentColor) : null
+        backgroundImage: (imgUrl != null && imgUrl.isNotEmpty) ? NetworkImage(imgUrl) : null, 
+        child: imgUrl == null || imgUrl.isEmpty ? Icon(Icons.person_outline, size: radius, color: accentColor) : null
       ),
     );
   }

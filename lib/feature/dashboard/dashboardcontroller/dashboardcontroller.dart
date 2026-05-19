@@ -9,6 +9,7 @@ import '../../auth/modal/reponse/response_modal.dart';
 import '../../auth/modal/verify_bank.dart';
 import '../../settings/model/qr_code.dart';
 import '../dashboard_repo/repo.dart';
+import 'provider.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 import '../model/bank_model.dart';
@@ -22,15 +23,16 @@ import '../model/verify_transactions.dart';
 final dashboardControllerProvider =
 StateNotifierProvider<DashboardController, AsyncValue<ResponseBody?>>((ref) {
   final repository = ref.watch(dashboardRepositoryProvider);
-  return DashboardController(repository);
+  return DashboardController(repository, ref);
 });
 
 class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   final DashboardRepository dashboardRepository;
+  final Ref ref;
   Box? _authBox;
   Box? _recentBeneficiariesBox;
 
-  DashboardController(this.dashboardRepository) : super(const AsyncData(null)) {
+  DashboardController(this.dashboardRepository, this.ref) : super(const AsyncData(null)) {
     // Initial state setup from Hive
     _initWalletState();
   }
@@ -368,6 +370,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     try {
       // Call repository
       final user =  await dashboardRepository.getUserProfile();
+
+      if (user != null) {
+        ref.read(userProfileProvider.notifier).updateProfile(user);
+      }
 
       LoadingHelper.dismiss();
       return user;

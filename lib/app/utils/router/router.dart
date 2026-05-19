@@ -87,7 +87,12 @@ class AppRouter {
       GoRoute(
         path: '/welcome-back',
         name: RouteList.welcomeBackScreen,
-        builder: (context, state) => const WelcomeBackScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final isSessionLock = extra?['isSessionLock'] as bool? ?? false;
+          final forceHome = extra?['forceHome'] as bool? ?? false;
+          return WelcomeBackScreen(isSessionLock: isSessionLock, forceHome: forceHome);
+        },
       ),
       GoRoute(
         path: '/create-account',
