@@ -127,8 +127,36 @@ class TransactionItem {
       reference: json['reference'],
       transactionId: json['reference'] ?? json['transactionId'],
       fee: (() {
+        // Try root level keys first
+        final rootFee = json['fee'] ?? 
+                        json['charge'] ?? 
+                        json['charges'] ?? 
+                        json['feeCharged'] ?? 
+                        json['transactionFee'] ?? 
+                        json['transferFee'] ?? 
+                        json['transferCharge'] ?? 
+                        json['bankFee'] ?? 
+                        json['bankCharge'] ?? 
+                        json['chargeAmount'] ?? 
+                        json['serviceCharge'] ?? 
+                        json['sessionCharge'];
+        if (rootFee != null) {
+          if (rootFee is num) return rootFee.toDouble();
+          if (rootFee is String) return double.tryParse(rootFee) ?? 0.0;
+        }
+        // Fallback to nested metadata keys
         if (metadata != null && metadata is Map) {
-          final rawFee = metadata['fee'];
+          final rawFee = metadata['fee'] ?? 
+                         metadata['charge'] ?? 
+                         metadata['charges'] ?? 
+                         metadata['transactionFee'] ?? 
+                         metadata['transferFee'] ?? 
+                         metadata['transferCharge'] ?? 
+                         metadata['bankFee'] ?? 
+                         metadata['bankCharge'] ?? 
+                         metadata['chargeAmount'] ?? 
+                         metadata['serviceCharge'] ?? 
+                         metadata['sessionCharge'];
           if (rawFee != null) {
             if (rawFee is num) return rawFee.toDouble();
             if (rawFee is String) return double.tryParse(rawFee) ?? 0.0;

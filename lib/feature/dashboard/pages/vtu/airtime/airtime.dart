@@ -585,29 +585,32 @@ class _CardTwoState extends ConsumerState<CardTwo> {
         items: _providers.map((provider) {
           return DropdownMenuItem(
             value: provider,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: isSmall ? 24.w : (isTablet ? 36.w : 28.w),
-                  height: isSmall ? 24.h : (isTablet ? 36.h : 28.h),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage(provider['logo']),
-                      fit: BoxFit.cover,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: isSmall ? 24.w : (isTablet ? 36.w : 28.w),
+                    height: isSmall ? 24.h : (isTablet ? 36.h : 28.h),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage(provider['logo']),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: isSmall ? 8.w : 12.w),
-                Text(
-                  provider['name'],
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: isSmall ? 12.sp : 14.sp,
+                  SizedBox(width: isSmall ? 8.w : 12.w),
+                  Text(
+                    provider['name'],
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: isSmall ? 12.sp : 14.sp,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }).toList(),

@@ -97,9 +97,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           // Hidden Receipt for capture
           Positioned(
             left: -1000,
-            child: RepaintBoundary(
-              key: _receiptKey,
-              child: BrandedReceipt(transaction: transaction),
+            child: SizedBox(
+              width: 380.w,
+              child: RepaintBoundary(
+                key: _receiptKey,
+                child: BrandedReceipt(transaction: transaction),
+              ),
             ),
           ),
           
@@ -212,38 +215,44 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: Row(
-        children: [
-          _buildHorizontalStep(
-            'Sent',
-            DateFormat('hh:mm a').format(creationTime),
-            Icons.send_rounded,
-            isCompleted: true,
-            activeColor: const Color(0xFF22C55E),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(
+          width: 320.w,
+          child: Row(
+            children: [
+              _buildHorizontalStep(
+                'Sent',
+                DateFormat('hh:mm a').format(creationTime),
+                Icons.send_rounded,
+                isCompleted: true,
+                activeColor: successColor,
+              ),
+              _buildHorizontalLine(
+                isCompleted: !isPending, 
+                activeColor: isFailed ? errorColor : successColor,
+              ),
+              _buildHorizontalStep(
+                'Processing',
+                isPending ? 'Ongoing' : DateFormat('hh:mm a').format(creationTime),
+                Icons.sync_rounded,
+                isCompleted: !isPending,
+                activeColor: isFailed ? errorColor : (isPending ? pendingColor : successColor),
+              ),
+              _buildHorizontalLine(
+                isCompleted: isDone || isFailed, 
+                activeColor: isFailed ? errorColor : successColor,
+              ),
+              _buildHorizontalStep(
+                isFailed ? 'Failed' : 'Received',
+                isDone || isFailed ? DateFormat('hh:mm a').format(creationTime.add(const Duration(minutes: 2))) : 'Pending',
+                isFailed ? Icons.error_rounded : Icons.check_circle_rounded,
+                isCompleted: isDone || isFailed,
+                activeColor: isFailed ? errorColor : successColor,
+              ),
+            ],
           ),
-          _buildHorizontalLine(
-            isCompleted: !isPending, 
-            activeColor: isFailed ? errorColor : successColor,
-          ),
-          _buildHorizontalStep(
-            'Processing',
-            isPending ? 'Ongoing' : DateFormat('hh:mm a').format(creationTime),
-            Icons.sync_rounded,
-            isCompleted: !isPending,
-            activeColor: isFailed ? errorColor : (isPending ? pendingColor : successColor),
-          ),
-          _buildHorizontalLine(
-            isCompleted: isDone || isFailed, 
-            activeColor: isFailed ? errorColor : successColor,
-          ),
-          _buildHorizontalStep(
-            isFailed ? 'Failed' : 'Received',
-            isDone || isFailed ? DateFormat('hh:mm a').format(creationTime.add(const Duration(minutes: 2))) : 'Pending',
-            isFailed ? Icons.error_rounded : Icons.check_circle_rounded,
-            isCompleted: isDone || isFailed,
-            activeColor: isFailed ? errorColor : successColor,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -315,10 +324,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
   }
 
   Widget _buildAmountBreakdown(TransactionItem tx) {
-    final serviceType = tx.serviceType?.toUpperCase() ?? '';
-    final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'CABLE_TV' || serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL';
-    final showFee = tx.fee > 0 || !isUtility;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -332,29 +337,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         ),
         SizedBox(height: 16.h),
         _buildAmountRow('Transaction Amount', tx.amount),
-        if (showFee) _buildAmountRow('Transaction Fee', tx.fee),
-        Divider(height: 24, thickness: 1, color: lightBackground),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Total Amount',
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF2D2D2D),
-              ),
-            ),
-            Text(
-              '₦${NumberFormat('#,##0.00').format(tx.amount + tx.fee)}',
-              style: TextStyle(
-                fontSize: 13.sp,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-              ),
-            ),
-          ],
-        ),
+        _buildAmountRow('Transaction Fee', tx.fee),
       ],
     );
   }
@@ -476,7 +459,6 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         ],
 
         _buildDetailRow('Transaction No.', tx.reference ?? "N/A"),
-        _buildDetailRow('Payment Method', "Bia Wallet"),
         _buildDetailRow('Transaction Date', DateFormat('MMM dd, yyyy hh:mm a').format(tx.createdAt ?? DateTime.now())),
       ],
     );

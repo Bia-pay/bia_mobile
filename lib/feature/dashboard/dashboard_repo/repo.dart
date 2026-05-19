@@ -245,6 +245,7 @@ class DashboardRepository {
   Future<TransactionResponse> getRecentTransactions() async {
     try {
       final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
+      debugPrint('RAW RECENT TRANSACTIONS RESPONSE: ${response.body}');
       final jsonResponse = jsonDecode(response.body);
 
       final dynamic body = jsonResponse['responseBody'];
@@ -261,7 +262,7 @@ class DashboardRepository {
           .toList();
 
       for (var tx in parsedTransactions) {
-        debugPrint('🆔 Recent Transaction Ref: ${tx.reference}');
+        debugPrint('🆔 Recent Transaction: ${jsonEncode(tx.toJson())}');
       }
 
       debugPrint('✅ Recent transactions fetched: ${parsedTransactions.length} items');
@@ -284,6 +285,7 @@ class DashboardRepository {
   Future<TransactionResponse> getTransactions({int page = 1, int limit = 20}) async {
     try {
       final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=$page&limit=$limit");
+      debugPrint('RAW ALL TRANSACTIONS RESPONSE: ${response.body}');
       final jsonResponse = jsonDecode(response.body);
 
       final dynamic body = jsonResponse['responseBody'];
@@ -300,7 +302,7 @@ class DashboardRepository {
           .toList();
 
       for (var tx in parsedTransactions) {
-        debugPrint('🆔 Transaction History Ref: ${tx.reference}');
+        debugPrint('🆔 Transaction Item: ${jsonEncode(tx.toJson())}');
       }
 
       debugPrint('✅ All transactions fetched: ${parsedTransactions.length} items (Page: $page)');

@@ -161,6 +161,8 @@ class BrandedReceipt extends StatelessWidget {
                               }
                             })(),
                             _buildReceiptRow("Reference", transaction.reference ?? transaction.transactionId ?? "N/A"),
+                            _buildReceiptRow("Amount", "₦${NumberFormat('#,##0.00').format(transaction.amount)}"),
+                            _buildReceiptRow("Transaction Fee", "₦${NumberFormat('#,##0.00').format(transaction.fee)}"),
 
                           ],
                         ),

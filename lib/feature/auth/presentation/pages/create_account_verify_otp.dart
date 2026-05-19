@@ -115,7 +115,7 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
               height: 200.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -127,11 +127,11 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
               height: 150.w,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: secondaryColor.withOpacity(0.1),
+                color: secondaryColor.withValues(alpha: 0.1),
               ),
             ),
           ),
-
+ 
           SafeArea(
             bottom: false,
             child: Column(
@@ -148,13 +148,13 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
                         child: Container(
                           padding: EdgeInsets.all(10.r),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: Colors.white),
                         ),
                       ).animate().fadeIn().slideX(begin: -0.1),
-
+ 
                       SizedBox(height: 30.h),
                       Text(
                         'Verify Account',
@@ -171,7 +171,7 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
                           text: "We've sent a 6-digit code to ",
                           style: TextStyle(
                             fontSize: 16.sp,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w400,
                             fontFamily: 'Outfit',
                           ),
@@ -189,14 +189,14 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
                     ],
                   ),
                 ),
-
+ 
                 SizedBox(height: 20.h),
-
+ 
                 // Form Section (Bottom Sheet style)
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 30.h),
+                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
                     decoration: BoxDecoration(
                       color: lightBackground,
                       borderRadius: BorderRadius.only(
@@ -205,88 +205,75 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, -5),
                         ),
                       ],
                     ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          physics: const ClampingScrollPhysics(),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(height: topSpacing),
+                          Center(
+                            child: AppPinCodeField(
+                              controller: otpController,
+                              length: 6,
+                              fillColor: Colors.transparent,
+                              inactiveColor: primaryColor.withValues(alpha: 0.1),
+                              activeColor: primaryColor,
+                              selectedColor: secondaryColor,
+                              onCompleted: (code) => _verifyOtp(),
                             ),
-                            child: Padding(
-                              padding: EdgeInsets.only(bottom: 20.h),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(height: topSpacing),
-                                  Center(
-                                    child: AppPinCodeField(
-                                      controller: otpController,
-                                      length: 6,
-                                      fillColor: Colors.transparent,
-                                      inactiveColor: primaryColor.withOpacity(0.1),
-                                      activeColor: primaryColor,
-                                      selectedColor: secondaryColor,
-                                      onCompleted: (code) => _verifyOtp(),
-                                    ),
-                                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-
-                                  SizedBox(height: 15.h),
-                                  
-                                  RichText(
-                                    text: TextSpan(
-                                      text: "Didn't receive code?  ",
-                                      style: TextStyle(
-                                        color: Colors.black54,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 14.sp,
-                                      ),
-                                      children: [
-                                        TextSpan(
-                                          text: _canResend ? 'Resend' : 'Resend in ${_secondsRemaining}s',
-                                          style: TextStyle(
-                                            color: _canResend ? primaryColor : primaryColor.withOpacity(0.5),
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = _canResend ? () {
-                                              _startTimer();
-                                            } : null,
-                                        ),
-                                      ],
-                                    ),
-                                  ).animate().fadeIn(delay: 400.ms),
-
-                                  SizedBox(height: keypadSpacing),
-
-                                  CustomGridKeypad(
-                                    onNumberPressed: addDigit,
-                                    leftAction: ActionKey(
-                                      child: Icon(Icons.backspace_outlined, color: primaryColor, size: 24.sp),
-                                      backgroundColor: primaryColor.withOpacity(0.05),
-                                      onTap: removeDigit,
-                                    ),
-                                    rightAction: ActionKey(
-                                      child: _isLoading 
-                                        ? SizedBox(width: 20.w, height: 20.w, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                        : Icon(Icons.check, color: Colors.white, size: 24.sp),
-                                      backgroundColor: primaryColor,
-                                      onTap: _verifyOtp,
-                                    ),
-                                  ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
-                                ],
+                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+ 
+                          SizedBox(height: 15.h),
+                          
+                          RichText(
+                            text: TextSpan(
+                              text: "Didn't receive code?  ",
+                              style: TextStyle(
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14.sp,
                               ),
+                              children: [
+                                TextSpan(
+                                  text: _canResend ? 'Resend' : 'Resend in ${_secondsRemaining}s',
+                                  style: TextStyle(
+                                    color: _canResend ? primaryColor : primaryColor.withValues(alpha: 0.5),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = _canResend ? () {
+                                      _startTimer();
+                                    } : null,
+                                ),
+                              ],
                             ),
-                          ),
-                        );
-                      }
+                          ).animate().fadeIn(delay: 400.ms),
+ 
+                          SizedBox(height: keypadSpacing),
+ 
+                          CustomGridKeypad(
+                            onNumberPressed: addDigit,
+                            leftAction: ActionKey(
+                              child: Icon(Icons.backspace_outlined, color: primaryColor, size: 24.sp),
+                              backgroundColor: primaryColor.withValues(alpha: 0.05),
+                              onTap: removeDigit,
+                            ),
+                            rightAction: ActionKey(
+                              child: _isLoading 
+                                ? SizedBox(width: 20.w, height: 20.w, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : Icon(Icons.check, color: Colors.white, size: 24.sp),
+                              backgroundColor: primaryColor,
+                              onTap: _verifyOtp,
+                            ),
+                          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
+                        ],
+                      ),
                     ),
                   ),
                 ),
