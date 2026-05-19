@@ -76,7 +76,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     final numericValue =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
 
-    showMinWarning = numericValue < 50 && numericValue != 0;
+    showMinWarning = numericValue < 100 && numericValue != 0;
 
     final walletBalance = _getWalletBalance();
     showInsufficientFundsWarning =
@@ -93,7 +93,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     final numericAmount =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
 
-    if (numericAmount < 50) {
+    if (numericAmount < 100) {
       setState(() => showMinWarning = true);
       return;
     }
@@ -306,7 +306,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
                               SizedBox(width: 4.w),
                               Flexible(
                                 child: Text(
-                                  "Minimum amount you can send is ₦50",
+                                  "Minimum amount you can send is ₦100",
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: errorColor,
                                     fontWeight: FontWeight.w500,
