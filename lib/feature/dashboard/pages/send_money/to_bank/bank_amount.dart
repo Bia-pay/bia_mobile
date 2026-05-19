@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/view/widget/app_textfield.dart';
 import '../../../widgets/keypad.dart';
+import '../../../dashboardcontroller/dashboardcontroller.dart';
 import 'on_bank_complete_payment.dart';
 
 class BankAmountPage extends ConsumerStatefulWidget {
@@ -89,7 +91,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     return double.tryParse(balanceStr.replaceAll(',', '')) ?? 0.0;
   }
 
-  void _showConfirmBottomSheet() {
+  Future<void> _showConfirmBottomSheet() async {
     final numericAmount =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
 
@@ -104,18 +106,53 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BankCompleteTransactionBottomSheet(
-        amount: numericAmount.toString(),
-        recipientName: widget.recipientName,
-        recipientAccount: widget.recipientAccount,
-        bankCode: widget.bankCode,
-        bankName: widget.bankName,
-      ),
-    );
+    EasyLoading.show(status: "Calculating charges...");
+
+    try {
+      final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
+      final charges = await dashboardCtrl.getTransactionCharges(
+        context,
+        amount: numericAmount.toDouble(),
+        transactionType: "DEBIT",
+        serviceType: "TRANSFER",
+      );
+
+      EasyLoading.dismiss();
+
+      double chargeAmount = 0.0;
+      double totalAmount = numericAmount.toDouble();
+      String feeDescription = "Transfer Fee";
+
+      if (charges != null) {
+        chargeAmount = (charges['charge'] ?? 0).toDouble();
+        totalAmount = (charges['totalAmount'] ?? numericAmount).toDouble();
+        feeDescription = charges['description'] ?? 'Transfer Fee';
+      } else {
+        chargeAmount = 10.0;
+        totalAmount = numericAmount.toDouble() + chargeAmount;
+      }
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => BankCompleteTransactionBottomSheet(
+          amount: numericAmount.toString(),
+          recipientName: widget.recipientName,
+          recipientAccount: widget.recipientAccount,
+          bankCode: widget.bankCode,
+          bankName: widget.bankName,
+          preCalculatedCharge: chargeAmount,
+          preCalculatedTotal: totalAmount,
+          preCalculatedFeeDescription: feeDescription,
+        ),
+      );
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError("Failed to calculate charges");
+    }
   }
 
   @override
@@ -359,7 +396,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
                                 BlendMode.srcIn,
                               ),
                             ),
-                            backgroundColor: primaryColor.withOpacity(0.1),
+                            backgroundColor: primaryColor.withValues(alpha: 0.1),
                             onTap: removeDigit,
                           ),
                           rightAction: ActionKey(

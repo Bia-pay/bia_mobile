@@ -15,7 +15,6 @@ import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
 import '../../../../../app/view/widget/custom_textfiels_with_contact.dart';
 import '../../../../../app/view/widget/quick_access_app_bar.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
-import '../../send_money/widget/tabs.dart';
 
 // ==================== RESPONSIVE HELPERS ====================
 
@@ -284,17 +283,17 @@ class _CardTwoState extends ConsumerState<CardTwo> {
     _detectNetwork(finalPhone);
     ref.read(airtimeFormProvider.notifier).setPhoneNumber(finalPhone);
 
-    if (finalPhone.length == 11) {
-      _verifyPhoneNumber(finalPhone);
-    }
+    // if (finalPhone.length == 11) {
+    //   _verifyPhoneNumber(finalPhone);
+    // }
   }
 
-  Future<void> _verifyPhoneNumber(String phone) async {
-    if (phone.length != 11) return;
-    setState(() => _isVerifying = true);
-    await ref.read(dashboardControllerProvider.notifier).verifyPhone(context, phone);
-    if (mounted) setState(() => _isVerifying = false);
-  }
+  // Future<void> _verifyPhoneNumber(String phone) async {
+  //   if (phone.length != 11) return;
+  //   setState(() => _isVerifying = true);
+  //   await ref.read(dashboardControllerProvider.notifier).verifyPhone(context, phone);
+  //   if (mounted) setState(() => _isVerifying = false);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -449,9 +448,9 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                       setState(() => _selectedContactName = null);
                       _detectNetwork(value);
                       ref.read(airtimeFormProvider.notifier).setPhoneNumber(value);
-                      if (value.length == 11) {
-                        _verifyPhoneNumber(value);
-                      }
+                      // if (value.length == 11) {
+                      //   _verifyPhoneNumber(value);
+                      // }
                     },
                     onContactSelected: _onContactSelected,
                   ),
