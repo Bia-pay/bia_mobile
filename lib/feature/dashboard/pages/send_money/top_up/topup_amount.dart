@@ -2,13 +2,10 @@ import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/u_popup.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../app/view/widget/app_textfield.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/keypad.dart';
 
@@ -24,14 +21,12 @@ class TopUpAmountPage extends ConsumerStatefulWidget {
     this.onOk,
   });
 
-
   @override
   ConsumerState<TopUpAmountPage> createState() => _TopUpAmountPageState();
 }
 
 class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
   String amount = "0";
-  int _selectedIndex = -1;
   bool showMinWarning = false;
   final TextEditingController amountController = TextEditingController();
 
@@ -52,7 +47,7 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
       }
 
       amount = '₦$current';
-      amountController.text = amount;   // ✅ FIXED
+      amountController.text = amount; // ✅ FIXED
 
       _checkMinLimit();
     });
@@ -69,11 +64,12 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
       }
 
       amount = '₦$current';
-      amountController.text = amount;    // ✅ FIXED
+      amountController.text = amount; // ✅ FIXED
 
       _checkMinLimit();
     });
   }
+
   void _checkMinLimit() {
     final numericValue =
         num.tryParse(amount.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
@@ -106,10 +102,7 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
       // TODO: Add WebView route or use modal
       showDialog(
         context: context,
-        builder: (_) => PaymentWebViewPage(
-          url: url,
-          reference: reference,
-        ),
+        builder: (_) => PaymentWebViewPage(url: url, reference: reference),
       );
     }
   }
@@ -138,52 +131,67 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 50.h),
-            Text(
-              'Enter Amount',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(20.r),
               ),
-            ),
-            SizedBox(height: 5.h),
-            AppTextField(
-              controller: amountController,   // ✅ FIXED              readOnly: true,
-              borderRadius: 8.r,
-              hintTextAlign: TextAlign.center,
-              textAlignVertical: TextAlignVertical.center,
-              decoration: InputDecoration(
-                hintText: "₦0.00",
-                hintStyle: theme.textTheme.titleLarge?.copyWith(
-                  color: lightSecondaryText,
-                  fontSize: 23.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: primaryColor, width: 1.5),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: primaryColor, width: 1.5),
+              child: Text(
+                'Enter Amount to Fund',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: primaryColor,
                 ),
               ),
             ),
+            SizedBox(height: 24.h),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 150),
+              style: TextStyle(
+                fontSize: amount == "0" || amount == "₦0" ? 36.sp : 48.sp,
+                fontWeight: FontWeight.bold,
+                color: (amount == "0" || amount == "₦0")
+                    ? lightSecondaryText
+                    : primaryColor,
+                letterSpacing: 1.5,
+              ),
+              child: Text(
+                amount == "0" || amount == "₦0" ? "₦0.00" : amount,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 12.h),
             if (showMinWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 6.h, left: 4.w),
-                child: Text(
-                  "Minimum amount you can send is ₦50",
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: errorColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: errorColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: errorColor,
+                      size: 16.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      "Minimum amount you can send is ₦50",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: errorColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            SizedBox(height: 75.h),
+            const Spacer(),
             SizedBox(
               height: 400.h,
               child: CustomGridKeypad(
@@ -191,24 +199,19 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
                   addDigit(value);
                 },
 
-                // Bottom-left → delete
                 leftAction: ActionKey(
-                  child: Icon(
-                    Icons.backspace,
-                    color: primaryColor,
-                  ),
-                  backgroundColor: primaryColor.withOpacity(0.1),
-                  onTap: removeDigit,
-                ),
-
-                // Bottom-right → top up
-                rightAction: ActionKey(
                   child: const Icon(
-                    Icons.arrow_forward,
+                    Icons.arrow_forward_rounded,
                     color: Colors.white,
                   ),
                   backgroundColor: primaryColor,
                   onTap: _processTopUp,
+                ),
+
+                rightAction: ActionKey(
+                  child: Icon(Icons.backspace_rounded, color: primaryColor),
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  onTap: removeDigit,
                 ),
               ),
             ),
@@ -223,13 +226,18 @@ class PaymentWebViewPage extends ConsumerStatefulWidget {
   final String url;
   final String reference;
 
-  const PaymentWebViewPage({super.key, required this.url, required this.reference});
+  const PaymentWebViewPage({
+    super.key,
+    required this.url,
+    required this.reference,
+  });
 
   @override
   ConsumerState<PaymentWebViewPage> createState() => _PaymentWebViewPageState();
 }
 
-class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> with WidgetsBindingObserver {
+class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
+    with WidgetsBindingObserver {
   late final WebViewController _controller;
   bool _hasVerified = false;
 
@@ -269,7 +277,9 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> with Wi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      debugPrint("🔄 Payment Webview resumed. Auto-checking deposit status for ref: ${widget.reference}");
+      debugPrint(
+        "🔄 Payment Webview resumed. Auto-checking deposit status for ref: ${widget.reference}",
+      );
       // Wait briefly for the lock overlay to complete presentations/unlocks
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted && !_hasVerified) {

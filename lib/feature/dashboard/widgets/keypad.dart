@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../app/utils/colors.dart';
 
 typedef NumberKeyCallback = void Function(String number);
 
@@ -24,11 +23,10 @@ class CustomGridKeypad extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    // Original simplified spacing and sizing
-    final horizontalPadding = 30.w;
-    final mainSpacing = 15.h;
-    final crossSpacing = 25.w;
-    final fontSize = 26.sp;
+    final horizontalPadding = 32.w;
+    final mainSpacing = 16.h;
+    final crossSpacing = 24.w;
+    final fontSize = 24.sp;
 
     final List<String> numbers = [
       "1", "2", "3",
@@ -50,8 +48,7 @@ class CustomGridKeypad extends StatelessWidget {
       itemBuilder: (context, index) {
         Widget child;
         VoidCallback? onTap;
-        Color bgColor = keyColor ?? keyAColor;
-        Color txtColor = textColor ?? grey;
+        Color bgColor;
 
         if (index < 9) {
           final number = numbers[index];
@@ -59,43 +56,56 @@ class CustomGridKeypad extends StatelessWidget {
             number,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: fontSize,
-              fontWeight: FontWeight.w500,
-              color: txtColor,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0F172A),
             ),
           );
           onTap = () => onNumberPressed(number);
+          bgColor = const Color(0xFFF1F5F9);
         } else if (index == 9) {
           if (leftAction == null) return const SizedBox();
           child = leftAction!.child;
           onTap = leftAction!.onTap;
-          bgColor = leftAction!.backgroundColor ?? bgColor;
+          bgColor = leftAction!.backgroundColor ?? const Color(0xFFF1F5F9);
         } else if (index == 10) {
           child = Text(
             "0",
             style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: fontSize,
-              fontWeight: FontWeight.w500,
-              color: txtColor,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF0F172A),
             ),
           );
           onTap = () => onNumberPressed("0");
+          bgColor = const Color(0xFFF1F5F9);
         } else {
           if (rightAction == null) return const SizedBox();
           child = rightAction!.child;
           onTap = rightAction!.onTap;
-          bgColor = rightAction!.backgroundColor ?? bgColor;
+          bgColor = rightAction!.backgroundColor ?? const Color(0xFFF1F5F9);
         }
 
-        return InkWell(
-          borderRadius: BorderRadius.circular(50.r),
-          onTap: onTap,
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              shape: BoxShape.circle,
+        return Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Material(
+            color: bgColor,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Center(
+                child: child,
+              ),
             ),
-            alignment: Alignment.center,
-            child: child,
           ),
         );
       },

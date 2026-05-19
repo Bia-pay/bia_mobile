@@ -311,33 +311,33 @@ class _TransactionPinSecureState extends ConsumerState<TransactionPinSecure> {
                 onNumberPressed: (value) {
                   addDigit(value);
                 },
-                leftAction: ActionKey(
+                leftAction: (pin.isEmpty && _hasBiometric && _biometricEnabled)
+                    ? ActionKey(
+                        child: _isAuthenticating
+                            ? const CustomLoader(size: 30)
+                            : SvgPicture.asset(
+                                fingerPrint,
+                                height: 75.h,
+                              ),
+                        backgroundColor: Colors.transparent,
+                        onTap: _authenticateWithBiometric,
+                      )
+                    : ActionKey(
+                        child: Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 30.sp,
+                        ),
+                        backgroundColor: primaryColor,
+                        onTap: _processTransfer,
+                      ),
+                rightAction: ActionKey(
                   child: Icon(
-                    Icons.backspace,
+                    Icons.backspace_rounded,
                     color: primaryColor,
                   ),
                   backgroundColor: primaryColor.withOpacity(0.1),
                   onTap: removeDigit,
-                ),
-                rightAction: ActionKey(
-                  child: _hasBiometric && _biometricEnabled
-                      ? (_isAuthenticating
-                          ? const CustomLoader(size: 30)
-                          : SvgPicture.asset(
-                              fingerPrint,
-                              height: 75.h,
-                            ))
-                      : Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 30.sp,
-                        ),
-                  backgroundColor: _hasBiometric && _biometricEnabled
-                      ? Colors.transparent
-                      : primaryColor,
-                  onTap: _hasBiometric && _biometricEnabled
-                      ? _authenticateWithBiometric
-                      : _processTransfer,
                 ),
               ),
             ),

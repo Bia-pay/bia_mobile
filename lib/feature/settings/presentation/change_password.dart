@@ -170,7 +170,7 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
                           onNumberPressed: addDigit,
                           leftAction: ActionKey(
                             child: Icon(
-                              Icons.check,
+                              Icons.check_rounded,
                               color: Colors.white,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -179,7 +179,7 @@ class _ChangePaymentPinState extends ConsumerState<ChangePaymentPin> {
                           ),
                           rightAction: ActionKey(
                             child: Icon(
-                              Icons.backspace,
+                              Icons.backspace_rounded,
                               color: primaryColor,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -372,7 +372,7 @@ class _SetNewPinState extends ConsumerState<SetNewPin> {
                           onNumberPressed: addDigit,
                           leftAction: ActionKey(
                             child: Icon(
-                              Icons.check,
+                              Icons.check_rounded,
                               color: Colors.white,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -393,7 +393,7 @@ class _SetNewPinState extends ConsumerState<SetNewPin> {
                           ),
                           rightAction: ActionKey(
                             child: Icon(
-                              Icons.backspace,
+                              Icons.backspace_rounded,
                               color: primaryColor,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -615,7 +615,7 @@ class _ConfirmSetNewPinState extends ConsumerState<ConfirmSetNewPin> {
                           onNumberPressed: addDigit,
                           leftAction: ActionKey(
                             child: Icon(
-                              Icons.check,
+                              Icons.check_rounded,
                               color: Colors.white,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -624,7 +624,7 @@ class _ConfirmSetNewPinState extends ConsumerState<ConfirmSetNewPin> {
                           ),
                           rightAction: ActionKey(
                             child: Icon(
-                              Icons.backspace,
+                              Icons.backspace_rounded,
                               color: primaryColor,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),

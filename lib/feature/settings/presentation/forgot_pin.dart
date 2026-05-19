@@ -248,25 +248,22 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                           child: CustomGridKeypad(
                             onNumberPressed: addDigit,
                             leftAction: ActionKey(
-                              child: SvgPicture.asset(
-                                'assets/svg/cancel.svg',
-                                height: isSmallScreen ? 16.h : 22.h,
-                                colorFilter: ColorFilter.mode(
-                                  primaryColor,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              backgroundColor: primaryColor.withOpacity(0.1),
-                              onTap: removeDigit,
-                            ),
-                            rightAction: ActionKey(
                               child: Icon(
-                                Icons.arrow_forward,
+                                Icons.arrow_forward_rounded,
                                 color: lightBackground,
-                                size: isSmallScreen ? 20.sp : 26.sp,
+                                size: isSmallScreen ? 20.sp : 24.sp,
                               ),
                               backgroundColor: primaryColor,
                               onTap: _verifyOtp,
+                            ),
+                            rightAction: ActionKey(
+                              child: Icon(
+                                Icons.backspace_rounded,
+                                color: primaryColor,
+                                size: isSmallScreen ? 20.sp : 24.sp,
+                              ),
+                              backgroundColor: primaryColor.withOpacity(0.1),
+                              onTap: removeDigit,
                             ),
                           ),
                         ),

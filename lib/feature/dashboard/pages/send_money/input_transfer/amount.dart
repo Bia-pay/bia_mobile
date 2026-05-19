@@ -403,25 +403,22 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                         child: CustomGridKeypad(
                           onNumberPressed: addDigit,
                           leftAction: ActionKey(
-                            child: SvgPicture.asset(
-                              'assets/svg/cancel.svg',
-                              height: isSmallScreen ? 18.h : 22.h,
-                              colorFilter: ColorFilter.mode(
-                                primaryColor,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            backgroundColor: primaryColor.withValues(alpha: 0.1),
-                            onTap: removeDigit,
-                          ),
-                          rightAction: ActionKey(
                             child: Icon(
-                              Icons.arrow_forward,
+                              Icons.arrow_forward_rounded,
                               color: lightBackground,
-                              size: isSmallScreen ? 22.sp : 26.sp,
+                              size: isSmallScreen ? 20.sp : 24.sp,
                             ),
                             backgroundColor: primaryColor,
                             onTap: _showConfirmBottomSheet,
+                          ),
+                          rightAction: ActionKey(
+                            child: Icon(
+                              Icons.backspace_rounded,
+                              color: primaryColor,
+                              size: isSmallScreen ? 20.sp : 24.sp,
+                            ),
+                            backgroundColor: primaryColor.withValues(alpha: 0.1),
+                            onTap: removeDigit,
                           ),
                         ),
                       ),

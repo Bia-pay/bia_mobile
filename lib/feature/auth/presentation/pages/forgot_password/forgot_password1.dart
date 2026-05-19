@@ -15,7 +15,8 @@ class ForgotPasswordScreen1 extends ConsumerStatefulWidget {
   const ForgotPasswordScreen1({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen1> createState() => _ForgotPasswordScreen1State();
+  ConsumerState<ForgotPasswordScreen1> createState() =>
+      _ForgotPasswordScreen1State();
 }
 
 class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
@@ -61,15 +62,17 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   }
 
   void _checkMinLimit() {
-    final numericValue = num.tryParse(
-      _phoneController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
-    ) ?? 0;
+    final numericValue =
+        num.tryParse(
+          _phoneController.text.replaceAll(RegExp(r'[^0-9.]'), ''),
+        ) ??
+        0;
 
     showMinWarning = numericValue < 50 && numericValue != 0;
   }
 
   CountryCode _selectedCountry = CountryCodes.allCountries.firstWhere(
-        (country) => country.code == 'NG',
+    (country) => country.code == 'NG',
     orElse: () => CountryCodes.allCountries.first,
   );
 
@@ -113,9 +116,12 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   }
 
   void _checkPhoneNumberComplete() {
-    final phoneNumber = _phoneController.text.replaceAll(RegExp(r'\D'), '').trim();
-    final isComplete = (phoneNumber.length == 10 && !phoneNumber.startsWith('0')) ||
-                       (phoneNumber.length == 11 && phoneNumber.startsWith('0'));
+    final phoneNumber = _phoneController.text
+        .replaceAll(RegExp(r'\D'), '')
+        .trim();
+    final isComplete =
+        (phoneNumber.length == 10 && !phoneNumber.startsWith('0')) ||
+        (phoneNumber.length == 11 && phoneNumber.startsWith('0'));
 
     if (_isPhoneNumberComplete != isComplete) {
       setState(() {
@@ -135,11 +141,7 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
             final screenHeight = constraints.maxHeight;
             final isSmallScreen = screenHeight < 700;
             final isLargeScreen = screenHeight > 900;
-            final isTablet = screenWidth > 600;
 
-            // Adaptive spacing
-            final headerSpacing = isSmallScreen ? 30.h : (isLargeScreen ? 80.h : 60.h);
-            final cardSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 50.h : 60.h);
             final keypadHeight = isSmallScreen
                 ? screenHeight * 0.42
                 : (isLargeScreen ? screenHeight * 0.5 : screenHeight * 0.45);
@@ -159,13 +161,55 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
 
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: _getHorizontalPadding(screenWidth)),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _getHorizontalPadding(screenWidth),
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
+                        /// 🔹 Lock Icon & Header Text
+                        Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16.w),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.lock_reset_rounded,
+                                size: 40.sp,
+                                color: primaryColor,
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              "Reset Your Password",
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: darkBackground,
+                                  ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              "Enter your registered mobile number below.\nWe'll send you an OTP to verify your identity.",
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: isSmallScreen ? 11.sp : 13.sp,
+                                    color: lightSecondaryText,
+                                    height: 1.4,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 24.h),
+
                         /// 🔹 Glass Card
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
+                          borderRadius: BorderRadius.circular(24.r),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                             child: Container(
@@ -175,15 +219,15 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                                 vertical: isSmallScreen ? 16.h : 30.h,
                               ),
                               decoration: BoxDecoration(
-                                color: lightBackground,
-                                borderRadius: BorderRadius.circular(isSmallScreen ? 12.r : 16.r),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24.r),
                                 border: Border.all(
-                                  color: lightBackground.withValues(alpha:0.25),
+                                  color: lightBorderColor.withOpacity(0.5),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: darkBackground.withValues(alpha:0.08),
-                                    blurRadius: 25,
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 30,
                                     offset: const Offset(0, 10),
                                   ),
                                 ],
@@ -195,17 +239,20 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                                   PhoneInputWidget(
                                     controller: _phoneController,
                                     label: 'Mobile Number',
-                                    hintText: '8000000000',
+                                    hintText: '800 000 0000',
                                     keyboardType: TextInputType.none,
-                                    backgroundColor: lightBackground.withValues(alpha:0.2),
-                                    borderColor: primaryColor,
+                                    backgroundColor: offWhite,
+                                    borderColor: Colors.transparent,
                                     validator: (value) {
-                                      if (value.isEmpty) return 'Phone number is required';
+                                      if (value.isEmpty)
+                                        return 'Phone number is required';
                                       final text = value.trim();
-                                      if (text.length == 11 && !text.startsWith('0')) {
+                                      if (text.length == 11 &&
+                                          !text.startsWith('0')) {
                                         return '11-digit number must start with 0';
                                       }
-                                      if (text.length != 10 && text.length != 11) {
+                                      if (text.length != 10 &&
+                                          text.length != 11) {
                                         return 'Phone number must be 10 or 11 digits';
                                       }
                                       return null;
@@ -215,15 +262,6 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                                         _selectedCountry = newValue!;
                                       });
                                     },
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 10.h : 20.h),
-                                  Text(
-                                    "We'll send you a code to verify your phone number",
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: isSmallScreen ? 11.sp : 14.sp,
-                                      color: darkBackground,
-                                    ),
                                   ),
                                 ],
                               ),
@@ -237,29 +275,30 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                           child: CustomGridKeypad(
                             onNumberPressed: addDigit,
                             leftAction: ActionKey(
-                              child: SvgPicture.asset(
-                                'assets/svg/cancel.svg',
-                                height: isSmallScreen ? 16.h : 22.h,
-                                colorFilter: ColorFilter.mode(
-                                  primaryColor,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              backgroundColor: primaryColor.withValues(alpha:0.1),
-                              onTap: removeDigit,
-                            ),
-                            rightAction: ActionKey(
                               child: Icon(
-                                Icons.arrow_forward,
-                                color: _isPhoneNumberComplete ? lightBackground : lightBackground.withValues(alpha:0.5),
-                                size: isSmallScreen ? 20.sp : 26.sp,
+                                Icons.arrow_forward_rounded,
+                                color: _isPhoneNumberComplete
+                                    ? lightBackground
+                                    : lightBackground.withValues(alpha: 0.5),
+                                size: isSmallScreen ? 20.sp : 24.sp,
                               ),
                               backgroundColor: _isPhoneNumberComplete
                                   ? primaryColor
-                                  : primaryColor.withValues(alpha:0.3),
-                              onTap:_isPhoneNumberComplete
+                                  : primaryColor.withValues(alpha: 0.3),
+                              onTap: _isPhoneNumberComplete
                                   ? () => _sendForgotPasswordCode()
                                   : () {},
+                            ),
+                            rightAction: ActionKey(
+                              child: Icon(
+                                Icons.backspace_rounded,
+                                color: primaryColor,
+                                size: isSmallScreen ? 20.sp : 24.sp,
+                              ),
+                              backgroundColor: primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              onTap: removeDigit,
                             ),
                           ),
                         ),
@@ -269,7 +308,6 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
                 ),
               ],
             );
-
           },
         ),
       ),
@@ -296,7 +334,7 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
         SizedBox(width: isSmallScreen ? 32.w : 46.w),
         Expanded(
           child: Text(
-            "Forgot Password",
+            "",
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
               fontSize: isSmallScreen ? 16.sp : 20.sp,

@@ -1244,15 +1244,9 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   Future<List<Map<String, dynamic>>> fetchCableProviders(
       BuildContext context) async {
     try {
-      LoadingHelper.show('');
-
       final providers = await dashboardRepository.getCableProviders();
-
-      LoadingHelper.dismiss();
-
       return providers;
     } catch (e) {
-      LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,

@@ -330,7 +330,7 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
                                 )
                               : ActionKey(
                                   child: Icon(
-                                    Icons.check,
+                                    Icons.check_rounded,
                                     color: Colors.white,
                                     size: isSmallScreen ? 20.sp : 24.sp,
                                   ),
@@ -339,7 +339,7 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
                                 ),
                           rightAction: ActionKey(
                             child: Icon(
-                              Icons.backspace,
+                              Icons.backspace_rounded,
                               color: primaryColor,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),

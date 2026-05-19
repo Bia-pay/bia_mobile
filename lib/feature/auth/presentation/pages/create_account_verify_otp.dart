@@ -260,16 +260,16 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
                           CustomGridKeypad(
                             onNumberPressed: addDigit,
                             leftAction: ActionKey(
-                              child: Icon(Icons.backspace_outlined, color: primaryColor, size: 24.sp),
-                              backgroundColor: primaryColor.withValues(alpha: 0.05),
-                              onTap: removeDigit,
-                            ),
-                            rightAction: ActionKey(
                               child: _isLoading 
                                 ? SizedBox(width: 20.w, height: 20.w, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : Icon(Icons.check, color: Colors.white, size: 24.sp),
+                                : Icon(Icons.check_rounded, color: Colors.white, size: isSmallScreen ? 20.sp : 24.sp),
                               backgroundColor: primaryColor,
                               onTap: _verifyOtp,
+                            ),
+                            rightAction: ActionKey(
+                              child: Icon(Icons.backspace_rounded, color: primaryColor, size: isSmallScreen ? 20.sp : 24.sp),
+                              backgroundColor: primaryColor.withValues(alpha: 0.1),
+                              onTap: removeDigit,
                             ),
                           ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2),
                         ],

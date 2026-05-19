@@ -133,7 +133,7 @@ class _RestoreNewPinState extends ConsumerState<RestoreNewPin> {
               child: CustomGridKeypad(
                 onNumberPressed: addDigit,
                 leftAction: ActionKey(
-                  child: Icon(Icons.check, color: Colors.white),
+                  child: const Icon(Icons.check_rounded, color: Colors.white),
                   backgroundColor: primaryColor,
                   onTap: () {
                     if (pin.length == 4) {
@@ -147,7 +147,7 @@ class _RestoreNewPinState extends ConsumerState<RestoreNewPin> {
                   },
                 ),
                 rightAction: ActionKey(
-                  child: Icon(Icons.backspace, color: primaryColor),
+                  child: Icon(Icons.backspace_rounded, color: primaryColor),
                   backgroundColor: primaryColor.withOpacity(0.1),
                   onTap: removeDigit,
                 ),
@@ -309,12 +309,12 @@ class _ConfirmRestoreNewPinState extends ConsumerState<ConfirmRestoreNewPin> {
               child: CustomGridKeypad(
                 onNumberPressed: addDigit,
                 leftAction: ActionKey(
-                  child: Icon(Icons.check, color: Colors.white),
+                  child: const Icon(Icons.check_rounded, color: Colors.white),
                   backgroundColor: primaryColor,
                   onTap: _submit,
                 ),
                 rightAction: ActionKey(
-                  child: Icon(Icons.backspace, color: primaryColor),
+                  child: Icon(Icons.backspace_rounded, color: primaryColor),
                   backgroundColor: primaryColor.withOpacity(0.1),
                   onTap: removeDigit,
                 ),

@@ -175,7 +175,7 @@ class _SetPinState extends ConsumerState<SetPin> {
                           onNumberPressed: addDigit,
                           leftAction: ActionKey(
                             child: Icon(
-                              Icons.check,
+                              Icons.check_rounded,
                               color: Colors.white,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -193,7 +193,7 @@ class _SetPinState extends ConsumerState<SetPin> {
                           ),
                           rightAction: ActionKey(
                             child: Icon(
-                              Icons.backspace,
+                              Icons.backspace_rounded,
                               color: primaryColor,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -410,7 +410,7 @@ class _ConfirmSetPinState extends ConsumerState<ConfirmSetPin> {
                           onNumberPressed: addDigit,
                           leftAction: ActionKey(
                             child: Icon(
-                              Icons.check,
+                              Icons.check_rounded,
                               color: Colors.white,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),
@@ -419,7 +419,7 @@ class _ConfirmSetPinState extends ConsumerState<ConfirmSetPin> {
                           ),
                           rightAction: ActionKey(
                             child: Icon(
-                              Icons.backspace,
+                              Icons.backspace_rounded,
                               color: primaryColor,
                               size: isSmallScreen ? 20.sp : 24.sp,
                             ),

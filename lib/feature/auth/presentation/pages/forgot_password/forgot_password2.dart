@@ -118,7 +118,6 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    
                         /// 🔹 HEADER
                         Row(
                           children: [
@@ -130,24 +129,57 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                 color: Colors.black,
                               ),
                             ),
-                            SizedBox(width: 38.w),
-                            Text(
-                              'Change Password',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
                           ],
                         ),
-                    
-                        SizedBox(height: isSmallScreen ? 30.h : 50.h),
-                    
+
+                        SizedBox(height: isSmallScreen ? 16.h : 24.h),
+
+                        /// 🔹 Lock Icon & Header Text
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(16.w),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withOpacity(0.08),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.lock_person_rounded,
+                                  size: 40.sp,
+                                  color: primaryColor,
+                                ),
+                              ),
+                              SizedBox(height: 16.h),
+                              Text(
+                                "Create New Password",
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                "Enter the OTP sent to your phone and\nchoose a new secure password.",
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: isSmallScreen ? 11.sp : 13.sp,
+                                      color: lightSecondaryText,
+                                      height: 1.4,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        SizedBox(height: isSmallScreen ? 24.h : 36.h),
+
                         /// 🔹 GLASS CARD
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(22.r),
+                          borderRadius: BorderRadius.circular(24.r),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
                             child: Container(
@@ -157,37 +189,33 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                 vertical: 28.h,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(22.r),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24.r),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.25),
-                                  width: 1,
+                                  color: lightBorderColor.withOpacity(0.5),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
+                                    color: Colors.black.withOpacity(0.04),
                                     blurRadius: 30,
-                                    offset: const Offset(0, 15),
+                                    offset: const Offset(0, 10),
                                   ),
                                 ],
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                    
                                   /// OTP TITLE
                                   Text(
                                     'Enter OTP',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyMedium
-                                        ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
-                    
+
                                   SizedBox(height: 14.h),
-                    
+
                                   /// OTP ROW
                                   Row(
                                     children: [
@@ -199,16 +227,21 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                           maxLength: 6,
                                           inputFormatters: [
                                             LengthLimitingTextInputFormatter(6),
-                                            FilteringTextInputFormatter.digitsOnly,
+                                            FilteringTextInputFormatter
+                                                .digitsOnly,
                                           ],
                                           validator: (v) {
-                                            if (v.isEmpty) return 'OTP required';
-                                            if (v.length != 6) return 'OTP must be 6 digits';
+                                            if (v.isEmpty)
+                                              return 'OTP required';
+                                            if (v.length != 6)
+                                              return 'OTP must be 6 digits';
                                             return null;
                                           },
                                           textInputAction: TextInputAction.done,
                                           // 🔥 ADD THIS
-                                          autofillHints: const [AutofillHints.oneTimeCode],
+                                          autofillHints: const [
+                                            AutofillHints.oneTimeCode,
+                                          ],
                                         ),
                                       ),
                                       SizedBox(width: 12.w),
@@ -224,9 +257,9 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                       ),
                                     ],
                                   ),
-                    
+
                                   SizedBox(height: 28.h),
-                    
+
                                   /// NEW PASSWORD
                                   CustomTextFormField(
                                     label: 'New Password',
@@ -240,8 +273,7 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
                                     validator: (v) {
-                                      if (v.isEmpty)
-                                        return 'Password required';
+                                      if (v.isEmpty) return 'Password required';
                                       if (v.length != 6)
                                         return 'Must be 6 digits';
                                       if (v == '123456')
@@ -255,29 +287,27 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                             : Icons.visibility_outlined,
                                       ),
                                       onPressed: () {
-                                        setState(() =>
-                                        _obscureNewPassword =
-                                        !_obscureNewPassword);
+                                        setState(
+                                          () => _obscureNewPassword =
+                                              !_obscureNewPassword,
+                                        );
                                       },
                                     ),
                                   ),
-                    
+
                                   SizedBox(height: 22.h),
-                    
+
                                   /// CONFIRM PASSWORD
                                   CustomTextFormField(
                                     label: 'Confirm Password',
-                                    controller:
-                                    _confirmPasswordController,
+                                    controller: _confirmPasswordController,
                                     hintText: 'Re-enter password',
-                                    obscureText:
-                                    _obscureConfirmPassword,
+                                    obscureText: _obscureConfirmPassword,
                                     keyboardType: TextInputType.number,
                                     maxLength: 6,
                                     inputFormatters: [
                                       LengthLimitingTextInputFormatter(6),
-                                      FilteringTextInputFormatter
-                                          .digitsOnly,
+                                      FilteringTextInputFormatter.digitsOnly,
                                     ],
                                     validator: (v) {
                                       if (v.isEmpty)
@@ -285,8 +315,7 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                       if (v.length != 6)
                                         return 'Must be 6 digits';
                                       if (v !=
-                                          _newPasswordController.text
-                                              .trim())
+                                          _newPasswordController.text.trim())
                                         return 'Passwords do not match';
                                       return null;
                                     },
@@ -297,15 +326,16 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                                             : Icons.visibility_outlined,
                                       ),
                                       onPressed: () {
-                                        setState(() =>
-                                        _obscureConfirmPassword =
-                                        !_obscureConfirmPassword);
+                                        setState(
+                                          () => _obscureConfirmPassword =
+                                              !_obscureConfirmPassword,
+                                        );
                                       },
                                     ),
                                   ),
-                    
+
                                   SizedBox(height: 32.h),
-                    
+
                                   /// SUBMIT
                                   SizedBox(
                                     width: double.infinity,
