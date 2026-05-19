@@ -182,7 +182,7 @@ class _AirtimeState extends ConsumerState<Airtime> {
         SizedBox(height: 16.h),
         const CardOne().animate().fadeIn(duration: 350.ms, delay: 100.ms).slideY(begin: 0.05),
         SizedBox(height: 16.h),
-        const CardThree().animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05),
+       // const CardThree().animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05),
         SizedBox(height: 20.h),
       ],
     );
@@ -203,10 +203,10 @@ class _AirtimeState extends ConsumerState<Airtime> {
           ),
         ),
         SizedBox(width: 24.w),
-        const Expanded(
-          flex: 4,
-          child: CardThree(),
-        ),
+        // const Expanded(
+        //   flex: 4,
+        //   child: CardThree(),
+        // ),
       ],
     );
   }
@@ -223,7 +223,7 @@ class CardTwo extends ConsumerStatefulWidget {
 
 class _CardTwoState extends ConsumerState<CardTwo> {
   final List<Map<String, dynamic>> _providers = [
-    {'name': 'MTN', 'logo': 'assets/svg/mtn.jpg', 'id': 'mtn', 'color': const Color(0xFFFFCC00)},
+    {'name': 'MTN', 'logo': 'assets/svg/mtn.jpg', 'id': 'mtn', 'color': pendingColor},
     {'name': 'Airtel', 'logo': 'assets/svg/airtel.png', 'id': 'airtel', 'color': errorColor},
     {'name': 'Glo', 'logo': 'assets/svg/glo.jpg', 'id': 'glo', 'color':  successColor},
     {'name': '9mobile', 'logo': 'assets/svg/9mobile.png', 'id': '9mobile', 'color': const Color(0xFF005F54)},
@@ -323,7 +323,7 @@ class _CardTwoState extends ConsumerState<CardTwo> {
     return Container(
       padding: EdgeInsets.all(isSmall ? 16.w : 20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: lightBackground,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
@@ -816,75 +816,75 @@ class _CardOneState extends ConsumerState<CardOne> {
   }
 }
 
-// ==================== CARD THREE: BENEFICIARY ====================
-
-class CardThree extends ConsumerStatefulWidget {
-  const CardThree({super.key});
-
-  @override
-  ConsumerState<CardThree> createState() => _CardThreeState();
-}
-
-class _CardThreeState extends ConsumerState<CardThree> {
-  @override
-  Widget build(BuildContext context) {
-    final isSmall = ResponsiveConfig.isSmallScreen(context);
-    final isTablet = ResponsiveConfig.isTablet(context);
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmall ? 16.w : (isTablet ? 24.w : 20.w),
-        vertical: isSmall ? 16.h : (isTablet ? 24.h : 20.h),
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Select Beneficiary',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
-              color: const Color(0xFF1E293B),
-            ),
-          ),
-          SizedBox(height: 12.h),
-
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: isSmall ? 140.h : 165.h,
-              maxHeight: isTablet ? 400.h : 260.h,
-            ),
-            child: BeneficiaryTabSection(
-              favorites: const [
-                {"name": "Mustapha Garba", "account": "08034567890"},
-                {"name": "Aisha Bello", "account": "08014567890"},
-              ],
-              recents: const [
-                {"name": "Fatima Yusuf", "account": "08023456789"},
-                {"name": "John Musa", "account": "08034567891"},
-              ],
-              onSelectBeneficiary: (name, account) {
-                debugPrint('Selected $name - $account');
-                ref.read(airtimeFormProvider.notifier).setPhoneNumber(account);
-              },
-              onSearchTap: () => debugPrint('Search tapped'),
-              showProgress: false,
-              showLogo: true,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// // ==================== CARD THREE: BENEFICIARY ====================
+//
+// class CardThree extends ConsumerStatefulWidget {
+//   const CardThree({super.key});
+//
+//   @override
+//   ConsumerState<CardThree> createState() => _CardThreeState();
+// }
+//
+// class _CardThreeState extends ConsumerState<CardThree> {
+//   @override
+//   Widget build(BuildContext context) {
+//     final isSmall = ResponsiveConfig.isSmallScreen(context);
+//     final isTablet = ResponsiveConfig.isTablet(context);
+//
+//     return Container(
+//       padding: EdgeInsets.symmetric(
+//         horizontal: isSmall ? 16.w : (isTablet ? 24.w : 20.w),
+//         vertical: isSmall ? 16.h : (isTablet ? 24.h : 20.h),
+//       ),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         borderRadius: BorderRadius.circular(20.r),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withValues(alpha: 0.03),
+//             blurRadius: 15,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Text(
+//             'Select Beneficiary',
+//             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+//               fontWeight: FontWeight.bold,
+//               fontSize: 15.sp,
+//               color: const Color(0xFF1E293B),
+//             ),
+//           ),
+//           SizedBox(height: 12.h),
+//
+//           ConstrainedBox(
+//             constraints: BoxConstraints(
+//               minHeight: isSmall ? 140.h : 165.h,
+//               maxHeight: isTablet ? 400.h : 260.h,
+//             ),
+//             child: BeneficiaryTabSection(
+//               favorites: const [
+//                 {"name": "Mustapha Garba", "account": "08034567890"},
+//                 {"name": "Aisha Bello", "account": "08014567890"},
+//               ],
+//               recents: const [
+//                 {"name": "Fatima Yusuf", "account": "08023456789"},
+//                 {"name": "John Musa", "account": "08034567891"},
+//               ],
+//               onSelectBeneficiary: (name, account) {
+//                 debugPrint('Selected $name - $account');
+//                 ref.read(airtimeFormProvider.notifier).setPhoneNumber(account);
+//               },
+//               onSearchTap: () => debugPrint('Search tapped'),
+//               showProgress: false,
+//               showLogo: true,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
