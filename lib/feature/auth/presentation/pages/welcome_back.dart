@@ -309,15 +309,21 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
   Widget _buildAvatar(double radius, String? imgUrl) {
     return Container(
+      width: radius * 2,
+      height: radius * 2,
       decoration: BoxDecoration(
         shape: BoxShape.circle, 
+        color: accentColor.withOpacity(0.05),
         border: Border.all(color: accentColor.withOpacity(0.1), width: 2),
       ),
-      child: CircleAvatar(
-        radius: radius, 
-        backgroundColor: accentColor.withOpacity(0.05), 
-        backgroundImage: (imgUrl != null && imgUrl.isNotEmpty) ? NetworkImage(imgUrl) : null, 
-        child: imgUrl == null || imgUrl.isEmpty ? Icon(Icons.person_outline, size: radius, color: accentColor) : null
+      child: ClipOval(
+        child: (imgUrl != null && imgUrl.isNotEmpty) 
+            ? Image.network(
+                imgUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Icon(Icons.person_outline, size: radius, color: accentColor),
+              )
+            : Icon(Icons.person_outline, size: radius, color: accentColor),
       ),
     );
   }

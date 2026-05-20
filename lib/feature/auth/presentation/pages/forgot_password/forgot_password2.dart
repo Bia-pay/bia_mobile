@@ -122,11 +122,16 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                         Row(
                           children: [
                             GestureDetector(
+                              behavior: HitTestBehavior.opaque,
                               onTap: () => context.pop(),
-                              child: Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 16.sp,
-                                color: Colors.black,
+                              child: Container(
+                                padding: EdgeInsets.all(12.w),
+                                color: Colors.transparent,
+                                child: Icon(
+                                  Icons.arrow_back_ios_new,
+                                  size: 16.sp,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                           ],

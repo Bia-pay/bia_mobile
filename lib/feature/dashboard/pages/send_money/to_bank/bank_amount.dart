@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import '../../../../../app/utils/image.dart';
-import '../../../../../app/view/widget/app_textfield.dart';
 import '../../../widgets/keypad.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import 'on_bank_complete_payment.dart';
@@ -28,7 +27,7 @@ class BankAmountPage extends ConsumerStatefulWidget {
     required this.bankCode,
     this.recipientIconPath,
     required this.bankName,
-    this.title = "Enter Amount Bank",
+    this.title = "Enter Amount",
   });
 
   @override
@@ -89,6 +88,15 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     final box = Hive.box('authBox');
     final balanceStr = box.get('balance', defaultValue: '0').toString();
     return double.tryParse(balanceStr.replaceAll(',', '')) ?? 0.0;
+  }
+
+  String _formatBalance(double balance) {
+    if (balance >= 1000000) {
+      return '₦${(balance / 1000000).toStringAsFixed(1)}M';
+    } else if (balance >= 1000) {
+      return '₦${(balance / 1000).toStringAsFixed(1)}K';
+    }
+    return '₦${balance.toStringAsFixed(2)}';
   }
 
   Future<void> _showConfirmBottomSheet() async {
@@ -158,262 +166,306 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isSmallScreen = screenHeight < 700;
-    final isLargeScreen = screenHeight > 900;
-
-    final sectionSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 60.h : 55.h);
-    final smallSpacing = isSmallScreen ? 6.h : 10.h;
+    final walletBalance = _getWalletBalance();
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
-      appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: offWhiteBackground,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          color: lightText,
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Padding(
+            final screenH = constraints.maxHeight;
+            final isSmall = screenH < 700;
+            final isTiny = screenH < 600;
+
+            return Column(
+              children: [
+                /// 🔹 Top Bar
+                Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: isSmallScreen ? 20.h : 30.h,
+                    horizontal: 16.w,
+                    vertical: isTiny ? 6.h : 12.h,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  child: Row(
                     children: [
-                      Text(
-                        'Recipient Details',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 14.sp : 16.sp,
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: EdgeInsets.all(10.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(
+                              color: lightBorderColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_ios_new,
+                            size: 16.sp,
+                            color: darkBackground,
+                          ),
                         ),
                       ),
-                      SizedBox(height: smallSpacing),
-
+                      const Spacer(),
+                      Text(
+                        widget.title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: darkBackground,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Balance pill
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: isSmallScreen ? 8.h : 12.h,
+                          horizontal: 12.w,
+                          vertical: 6.h,
                         ),
                         decoration: BoxDecoration(
-                          color: offWhite,
-                          borderRadius: BorderRadius.circular(12.r),
+                          color: primaryColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            CircleAvatar(
-                              radius: isSmallScreen ? 16.r : 20.r,
-                              backgroundColor: secondaryColor,
-                              child: widget.recipientIconPath != null
-                                  ? SvgPicture.asset(
-                                widget.recipientIconPath!,
-                                height: isSmallScreen ? 24.h : 30.h,
-                                colorFilter: ColorFilter.mode(
-                                  primaryColor,
-                                  BlendMode.srcIn,
-                                ),
-                              )
-                                  : Icon(
-                                Icons.person,
-                                size: isSmallScreen ? 24.sp : 30.sp,
+                            Icon(
+                              Icons.account_balance_wallet_outlined,
+                              size: 14.sp,
+                              color: primaryColor,
+                            ),
+                            SizedBox(width: 4.w),
+                            Text(
+                              _formatBalance(walletBalance),
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w700,
                                 color: primaryColor,
-                              ),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    widget.recipientName,
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: lightText,
-                                      fontSize: isSmallScreen ? 13.sp : 14.sp,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    widget.recipientAccount,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: lightSecondaryText,
-                                      fontSize: isSmallScreen ? 11.sp : 12.sp,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: SvgPicture.asset(
-                                editSvg,
-                                height: isSmallScreen ? 14.h : 16.h,
                               ),
                             ),
                           ],
                         ),
                       ),
-
-                      SizedBox(height: sectionSpacing),
-
-                      Text(
-                        'Enter Amount',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 14.sp : 16.sp,
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-
-                      AppTextField(
-                        controller: widget.controller,
-                        readOnly: true,
-                        borderRadius: 8.r,
-                        hintTextAlign: TextAlign.center,
-                        textAlignVertical: TextAlignVertical.center,
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontSize: isSmallScreen ? 20.sp : 24.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "₦0.00",
-                          hintStyle: theme.textTheme.titleLarge?.copyWith(
-                            color: lightSecondaryText,
-                            fontSize: isSmallScreen ? 20.sp : 24.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                            vertical: isSmallScreen ? 12.h : 16.h,
-                            horizontal: 12.w,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                            borderSide: BorderSide(
-                              color: showInsufficientFundsWarning
-                                  ? errorColor
-                                  : primaryColor,
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                            borderSide: BorderSide(
-                              color: showInsufficientFundsWarning
-                                  ? errorColor
-                                  : primaryColor,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      if (showMinWarning)
-                        Padding(
-                          padding: EdgeInsets.only(top: 8.h, left: 4.w),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                color: errorColor,
-                                size: isSmallScreen ? 14.sp : 16.sp,
-                              ),
-                              SizedBox(width: 4.w),
-                              Flexible(
-                                child: Text(
-                                  "Minimum amount you can send is ₦100",
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: errorColor,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: isSmallScreen ? 11.sp : 12.sp,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      if (showInsufficientFundsWarning)
-                        Padding(
-                          padding: EdgeInsets.only(top: 8.h, left: 4.w),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: errorColor,
-                                size: isSmallScreen ? 14.sp : 16.sp,
-                              ),
-                              SizedBox(width: 4.w),
-                              Flexible(
-                                child: Text(
-                                  "Insufficient funds. Your balance is ₦${_getWalletBalance().toStringAsFixed(2)}",
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: errorColor,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: isSmallScreen ? 11.sp : 12.sp,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      SizedBox(height: sectionSpacing),
-
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: CustomGridKeypad(
-                          onNumberPressed: addDigit,
-                          leftAction: ActionKey(
-                            child: Icon(
-                              Icons.arrow_forward_rounded,
-                              color: lightBackground,
-                              size: isSmallScreen ? 20.sp : 24.sp,
-                            ),
-                            backgroundColor: primaryColor,
-                            onTap: _showConfirmBottomSheet,
-                          ),
-                          rightAction: ActionKey(
-                            child: Icon(
-                              Icons.backspace_rounded,
-                              color: primaryColor,
-                              size: isSmallScreen ? 20.sp : 24.sp,
-                            ),
-                            backgroundColor: primaryColor.withValues(alpha: 0.1),
-                            onTap: removeDigit,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
-              ),
+
+                /// 🔹 Recipient Card
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: isTiny ? 10.h : 14.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(
+                        color: lightBorderColor.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: isTiny ? 36.r : 42.r,
+                          height: isTiny ? 36.r : 42.r,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: primaryColor.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: primaryColor.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              widget.recipientName.isNotEmpty
+                                  ? widget.recipientName[0].toUpperCase()
+                                  : 'B',
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontSize: isTiny ? 14.sp : 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.recipientName,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: darkBackground,
+                                  fontSize: isTiny ? 13.sp : 14.sp,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 2.h),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_rounded,
+                                    size: 11.sp,
+                                    color: lightSecondaryText,
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Flexible(
+                                    child: Text(
+                                      '${widget.bankName} • ${widget.recipientAccount}',
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color: lightSecondaryText,
+                                        fontSize: isTiny ? 10.sp : 11.sp,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: EdgeInsets.all(8.w),
+                            decoration: BoxDecoration(
+                              color: lightBorderColor.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Icon(
+                              Icons.swap_horiz_rounded,
+                              size: 16.sp,
+                              color: lightSecondaryText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: isTiny ? 16.h : 28.h),
+
+                /// 🔹 Amount Display
+                Column(
+                  children: [
+                    Text(
+                      amount == "0" ? "₦0" : amount,
+                      style: TextStyle(
+                        fontSize: isTiny
+                            ? 36.sp
+                            : (isSmall ? 42.sp : 52.sp),
+                        fontWeight: FontWeight.w800,
+                        color: showInsufficientFundsWarning
+                            ? errorColor
+                            : darkBackground,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    // Warnings
+                    if (showMinWarning)
+                      _buildWarningChip(
+                        "Minimum amount is ₦100",
+                        Icons.warning_amber_rounded,
+                        errorColor,
+                        isTiny,
+                      ),
+                    if (showInsufficientFundsWarning)
+                      _buildWarningChip(
+                        "Insufficient balance (₦${walletBalance.toStringAsFixed(2)})",
+                        Icons.error_outline_rounded,
+                        errorColor,
+                        isTiny,
+                      ),
+                    if (!showMinWarning && !showInsufficientFundsWarning)
+                      Text(
+                        "Enter amount to transfer",
+                        style: TextStyle(
+                          fontSize: isTiny ? 11.sp : 13.sp,
+                          color: lightSecondaryText,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+
+                const Spacer(),
+
+                /// 🔹 Keypad
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: SizedBox(
+                    height: isTiny ? 220.h : (isSmall ? 260.h : 320.h),
+                    child: CustomGridKeypad(
+                      onNumberPressed: addDigit,
+                      leftAction: ActionKey(
+                        child: Icon(
+                          Icons.arrow_forward_rounded,
+                          color: lightBackground,
+                          size: isSmall ? 20.sp : 24.sp,
+                        ),
+                        backgroundColor: primaryColor,
+                        onTap: _showConfirmBottomSheet,
+                      ),
+                      rightAction: ActionKey(
+                        child: Icon(
+                          Icons.backspace_rounded,
+                          color: primaryColor,
+                          size: isSmall ? 20.sp : 24.sp,
+                        ),
+                        backgroundColor: primaryColor.withValues(alpha: 0.1),
+                        onTap: removeDigit,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: isTiny ? 8.h : 16.h),
+              ],
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildWarningChip(
+    String text,
+    IconData icon,
+    Color color,
+    bool isTiny,
+  ) {
+    return Container(
+      margin: EdgeInsets.only(top: 4.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: isTiny ? 12.sp : 14.sp),
+          SizedBox(width: 6.w),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: isTiny ? 10.sp : 12.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

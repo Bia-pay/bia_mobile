@@ -318,6 +318,7 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
     return Row(
       children: [
         GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             if (GoRouter.of(context).canPop()) {
               context.pop();
@@ -325,10 +326,14 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
               context.goNamed(RouteList.loginScreen);
             }
           },
-          child: Icon(
-            Icons.arrow_back_ios_new,
-            size: isSmallScreen ? 16.sp : 18.sp,
-            color: darkBackground,
+          child: Container(
+            padding: EdgeInsets.all(12.w),
+            color: Colors.transparent,
+            child: Icon(
+              Icons.arrow_back_ios_new,
+              size: isSmallScreen ? 16.sp : 18.sp,
+              color: darkBackground,
+            ),
           ),
         ),
         SizedBox(width: isSmallScreen ? 32.w : 46.w),
