@@ -305,9 +305,9 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final viewInsets = MediaQuery.of(context).viewInsets;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return Scaffold(
       backgroundColor: offWhiteBackground,
       resizeToAvoidBottomInset: true,
@@ -317,6 +317,8 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
             final isSmallScreen = constraints.maxHeight < 600;
             final isLandscape = constraints.maxWidth > constraints.maxHeight;
 
+            final isSmall = constraints.maxHeight < 650;
+            final topBar = _buildTopBar(context, theme, isSmall);
             return Column(
               children: [
                 Expanded(
@@ -332,14 +334,8 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CustomHeader(
-                            title: 'Transfer to Bank',
-                            onBackPressed: () async {
-                              FocusScope.of(context).unfocus();
-                              await Future.delayed(const Duration(milliseconds: 150));
-                              if (context.mounted) context.pop();
-                            },
-                          ),
+                          topBar,
+                          SizedBox(height: isSmall ? 8.h : 16.h),
                           SizedBox(height: isSmallScreen ? 12.h : 20.h),
 
                           Container(
@@ -703,8 +699,60 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
       ),
     );
   }
-}
 
+}
+Widget _buildTopBar(BuildContext context, ThemeData theme, bool isSmall) {
+  return Padding(
+    padding: EdgeInsets.symmetric(
+      horizontal: 16.w,
+      vertical: isSmall ? 6.h : 12.h,
+    ),
+    child: Row(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: lightBorderColor.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new,
+              size: 16.sp,
+              color: darkBackground,
+            ),
+          ),
+        ),
+        SizedBox(width: 14.w),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Send Money',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: darkBackground,
+              ),
+            ),
+            Text(
+              'BIA to Bank transfer',
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: lightSecondaryText,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 class CardThreeBank extends ConsumerStatefulWidget {
   final Function(String name, String account, String bankCode) onSelectBeneficiary;
 

@@ -411,26 +411,9 @@ class BiaAiCard extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color: Colors.cyan.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4.r),
-                              border: Border.all(color: Colors.cyan.withOpacity(0.3), width: 0.5),
-                            ),
-                            child: Text(
-                              'BIA AI ASSISTANT',
-                              style: TextStyle(
-                                color: Colors.cyanAccent,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 7.5.sp,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 6.h),
+
                           Text(
-                            'Ask Bia AI Anything',
+                            'Make any Transaction with Bia AI',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               fontSize: 13.sp,
@@ -464,10 +447,10 @@ class BiaAiCard extends ConsumerWidget {
                               ),
                             ).animate(
                               onPlay: (controller) => controller.repeat(reverse: true),
-                            ).scaleXY(begin: 0.9, end: 1.1, duration: 1500.ms),
+                            ).scaleXY(begin: 1.1, end: 1.3, duration: 1500.ms),
                             Container(
-                              width: 32.r,
-                              height: 32.r,
+                              width: 42.r,
+                              height: 42.r,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: primaryColor,
@@ -475,7 +458,7 @@ class BiaAiCard extends ConsumerWidget {
                               child: Center(
                                 child: SvgPicture.asset(
                                   mic,
-                                  height: 15.h,
+                                  height: 25.h,
                                   colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                                 ),
                               ),

@@ -80,6 +80,7 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
                     padding: EdgeInsets.all(16.w),
                     child: SvgPicture.asset(
                       scanner,
+                      height: 12.h,
                       colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                     ),
                   ),

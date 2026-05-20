@@ -2,6 +2,7 @@ import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -186,71 +187,40 @@ class _AmountPageState extends ConsumerState<AmountPage> {
             final screenH = constraints.maxHeight;
             final isSmall = screenH < 700;
             final isTiny = screenH < 600;
+            final isTablet = constraints.maxWidth >= 768;
 
-            return Column(
-              children: [
-                /// 🔹 Top Bar
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: isTiny ? 6.h : 12.h,
-                  ),
-                  child: Row(
+            final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
+            final recipientCard = _buildRecipientCard(context, theme, isTiny);
+            final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
+            final keypad = _buildKeypad(isTiny, isSmall);
+
+            if (isTablet) {
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: Column(
                     children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: EdgeInsets.all(10.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: lightBorderColor.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.arrow_back_ios_new,
-                            size: 16.sp,
-                            color: darkBackground,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        widget.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: darkBackground,
-                        ),
-                      ),
-                      const Spacer(),
-                      // Balance pill
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
+                      topBar,
+                      SizedBox(height: 24.h),
+                      Expanded(
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.account_balance_wallet_outlined,
-                              size: 14.sp,
-                              color: primaryColor,
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              _formatBalance(walletBalance),
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                                color: primaryColor,
+                            Expanded(
+                              flex: 10,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  recipientCard,
+                                  SizedBox(height: 48.h),
+                                  amountDisplay,
+                                ],
                               ),
+                            ),
+                            SizedBox(width: 48.w),
+                            Expanded(
+                              flex: 9,
+                              child: keypad,
                             ),
                           ],
                         ),
@@ -258,189 +228,278 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                     ],
                   ),
                 ),
+              );
+            }
 
-                /// 🔹 Recipient Card
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: isTiny ? 10.h : 14.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
-                      border: Border.all(
-                        color: lightBorderColor.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: isTiny ? 36.r : 42.r,
-                          height: isTiny ? 36.r : 42.r,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: primaryColor.withValues(alpha: 0.1),
-                            border: Border.all(
-                              color: primaryColor.withValues(alpha: 0.2),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Center(
-                            child: widget.recipientIconPath != null
-                                ? SvgPicture.asset(
-                                    widget.recipientIconPath!,
-                                    height: isTiny ? 20.h : 24.h,
-                                    colorFilter: ColorFilter.mode(
-                                      primaryColor,
-                                      BlendMode.srcIn,
-                                    ),
-                                  )
-                                : Text(
-                                    widget.recipientName.isNotEmpty
-                                        ? widget.recipientName[0].toUpperCase()
-                                        : 'B',
-                                    style: TextStyle(
-                                      color: primaryColor,
-                                      fontSize: isTiny ? 14.sp : 16.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.recipientName,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: darkBackground,
-                                  fontSize: isTiny ? 13.sp : 14.sp,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(height: 2.h),
-                              Text(
-                                widget.recipientAccount,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: lightSecondaryText,
-                                  fontSize: isTiny ? 11.sp : 12.sp,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: EdgeInsets.all(8.w),
-                            decoration: BoxDecoration(
-                              color: lightBorderColor.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: Icon(
-                              Icons.swap_horiz_rounded,
-                              size: 16.sp,
-                              color: lightSecondaryText,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: isTiny ? 16.h : 28.h),
-
-                /// 🔹 Amount Display
-                Column(
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
                   children: [
-                    Text(
-                      amount == "0" ? "₦0" : amount,
-                      style: TextStyle(
-                        fontSize: isTiny
-                            ? 36.sp
-                            : (isSmall ? 42.sp : 52.sp),
-                        fontWeight: FontWeight.w800,
-                        color: showInsufficientFundsWarning
-                            ? errorColor
-                            : darkBackground,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    SizedBox(height: 6.h),
-                    // Warnings
-                    if (showMinWarning)
-                      _buildWarningChip(
-                        "Minimum amount is ₦50",
-                        Icons.warning_amber_rounded,
-                        errorColor,
-                        isTiny,
-                      ),
-                    if (showInsufficientFundsWarning)
-                      _buildWarningChip(
-                        "Insufficient balance (₦${walletBalance.toStringAsFixed(2)})",
-                        Icons.error_outline_rounded,
-                        errorColor,
-                        isTiny,
-                      ),
-                    if (!showMinWarning && !showInsufficientFundsWarning)
-                      Text(
-                        "Enter amount to send",
-                        style: TextStyle(
-                          fontSize: isTiny ? 11.sp : 13.sp,
-                          color: lightSecondaryText,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    topBar,
+                    recipientCard,
+                    SizedBox(height: isTiny ? 16.h : 28.h),
+                    amountDisplay,
+                    const Spacer(),
+                    Flexible(flex: 3, child: keypad),
+                    SizedBox(height: isTiny ? 8.h : 16.h),
                   ],
                 ),
-
-                const Spacer(),
-
-                /// 🔹 Keypad
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: SizedBox(
-                    height: isTiny ? 220.h : (isSmall ? 260.h : 320.h),
-                    child: CustomGridKeypad(
-                      onNumberPressed: addDigit,
-                      leftAction: ActionKey(
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          color: lightBackground,
-                          size: isSmall ? 20.sp : 24.sp,
-                        ),
-                        backgroundColor: primaryColor,
-                        onTap: _showConfirmBottomSheet,
-                      ),
-                      rightAction: ActionKey(
-                        child: Icon(
-                          Icons.backspace_rounded,
-                          color: primaryColor,
-                          size: isSmall ? 20.sp : 24.sp,
-                        ),
-                        backgroundColor: primaryColor.withValues(alpha: 0.1),
-                        onTap: removeDigit,
-                      ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: isTiny ? 8.h : 16.h),
-              ],
+              ),
             );
           },
         ),
       ),
     );
+  }
+
+  Widget _buildTopBar(BuildContext context, ThemeData theme, double walletBalance, bool isTiny) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 16.w,
+        vertical: isTiny ? 6.h : 12.h,
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: lightBorderColor.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Icon(
+                Icons.arrow_back_ios_new,
+                size: 16.sp,
+                color: darkBackground,
+              ),
+            ),
+          ),
+          const Spacer(),
+          Text(
+            widget.title,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: darkBackground,
+            ),
+          ),
+          const Spacer(),
+          // Balance pill
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 6.h,
+            ),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 14.sp,
+                  color: primaryColor,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  _formatBalance(walletBalance),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecipientCard(BuildContext context, ThemeData theme, bool isTiny) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: 14.w,
+          vertical: isTiny ? 10.h : 14.h,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: lightBorderColor.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: isTiny ? 36.r : 42.r,
+              height: isTiny ? 36.r : 42.r,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primaryColor.withValues(alpha: 0.1),
+                border: Border.all(
+                  color: primaryColor.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: widget.recipientIconPath != null
+                    ? SvgPicture.asset(
+                        widget.recipientIconPath!,
+                        height: isTiny ? 20.h : 24.h,
+                        colorFilter: ColorFilter.mode(
+                          primaryColor,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Text(
+                        widget.recipientName.isNotEmpty
+                            ? widget.recipientName[0].toUpperCase()
+                            : 'B',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: isTiny ? 14.sp : 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.recipientName,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: darkBackground,
+                      fontSize: isTiny ? 13.sp : 14.sp,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    widget.recipientAccount,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: lightSecondaryText,
+                      fontSize: isTiny ? 11.sp : 12.sp,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: lightBorderColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 16.sp,
+                  color: lightSecondaryText,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0, duration: 400.ms),
+    );
+  }
+
+  Widget _buildAmountDisplay(double walletBalance, bool isTiny, bool isSmall) {
+    return Column(
+      children: [
+        Text(
+          amount == "0" ? "₦0" : amount,
+          style: TextStyle(
+            fontSize: isTiny
+                ? 36.sp
+                : (isSmall ? 42.sp : 52.sp),
+            fontWeight: FontWeight.w800,
+            color: showInsufficientFundsWarning
+                ? errorColor
+                : darkBackground,
+            letterSpacing: -1,
+          ),
+        ),
+        SizedBox(height: 6.h),
+        // Warnings
+        if (showMinWarning)
+          _buildWarningChip(
+            "Minimum amount is ₦50",
+            Icons.warning_amber_rounded,
+            errorColor,
+            isTiny,
+          ),
+        if (showInsufficientFundsWarning)
+          _buildWarningChip(
+            "Insufficient balance (₦${walletBalance.toStringAsFixed(2)})",
+            Icons.error_outline_rounded,
+            errorColor,
+            isTiny,
+          ),
+        if (!showMinWarning && !showInsufficientFundsWarning)
+          Text(
+            "Enter amount to send",
+            style: TextStyle(
+              fontSize: isTiny ? 11.sp : 13.sp,
+              color: lightSecondaryText,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+      ],
+    ).animate().fadeIn(duration: 500.ms, delay: 200.ms).slideY(begin: 0.05, end: 0, duration: 500.ms);
+  }
+
+  Widget _buildKeypad(bool isTiny, bool isSmall) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.bottomCenter,
+      child: SizedBox(
+        width: 400.w,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: CustomGridKeypad(
+            onNumberPressed: addDigit,
+            leftAction: ActionKey(
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: lightBackground,
+                size: isSmall ? 20.sp : 24.sp,
+              ),
+              backgroundColor: primaryColor,
+              onTap: _showConfirmBottomSheet,
+            ),
+            rightAction: ActionKey(
+              child: Icon(
+                Icons.backspace_rounded,
+                color: primaryColor,
+                size: isSmall ? 20.sp : 24.sp,
+              ),
+              backgroundColor: primaryColor.withValues(alpha: 0.1),
+              onTap: removeDigit,
+            ),
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.08, end: 0, duration: 500.ms);
   }
 
   Widget _buildWarningChip(
