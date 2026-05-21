@@ -17,15 +17,19 @@ import '../interceptor/interceptor.dart';
 import '../authrepo/repo.dart';
 import '../modal/reponse/response_modal.dart';
 import '../../dashboard/model/recent_transaction.dart';
+import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../dashboard/dashboardcontroller/provider.dart';
+import '../../../app/socket/socket_provider.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<bool>>((ref) {
       final repository = ref.watch(authRepositoryProvider);
-      return AuthController(repository);
+      return AuthController(repository, ref);
     });
 
 class AuthController extends StateNotifier<AsyncValue<bool>> {
   AuthRepository authRepository;
+  Ref ref;
   bool isLoading = false;
 
   // Add this field to store the last response
@@ -34,7 +38,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   // Add this getter
   ResponseModel? get lastResponse => _lastResponse;
 
-  AuthController(this.authRepository) : super(const AsyncLoading());
+  AuthController(this.authRepository, this.ref) : super(const AsyncLoading());
 
   Future<bool> logIn(
       BuildContext context,
@@ -159,17 +163,12 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
-  Future<void> logout([BuildContext? context]) async {
+  Future<void> logout({BuildContext? context, bool isManual = true}) async {
     try {
       EasyLoading.show(status: "Logging out...");
 
       final authBox = await Hive.openBox('authBox');
       final userId = authBox.get('userId', defaultValue: '');
-      final phone = authBox.get('phone', defaultValue: '');
-      final effectiveUserId = userId.isNotEmpty ? userId : phone;
-
-      final biometricEnabled = effectiveUserId.isNotEmpty 
-          && await BiometricService().isLoginEnabled(effectiveUserId);
 
       // Clear transaction cache and beneficiaries
       if (userId.isNotEmpty) {
@@ -177,20 +176,27 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         await clearRecentBeneficiaries(userId);
       }
 
-      // Stop automatic token refresh
-     // TokenManager().stopAutoRefresh();
+      if (isManual) {
+        // Aggressively clear all SharedPreferences/Hive if manual logout
+        await authBox.clear();
+      } else {
+        // Only remove tokens for session lock, keeping profile for "Welcome Back"
+        await authBox.delete('token');
+        await authBox.delete('refreshToken');
+        await authBox.put('is_logged_in', false);
+      }
 
-      // Purge secure tokens but preserve identity for the "Welcome Back" experience
-      await authBox.delete('token');
-      await authBox.delete('refreshToken');
-      // We explicitly DO NOT clear() the box here to keep fullname/phone/picture cached.
-
+      // Invalidate all global user state providers
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(dashboardControllerProvider);
+      ref.invalidate(userIdProvider);
+      ref.invalidate(recentTransactionsProvider);
+      ref.invalidate(allTransactionsProvider);
+      ref.invalidate(socketNotifierProvider);
 
       LoadingHelper.dismiss();
 
-      // Always target WelcomeBack if we have a known user cached
-      final targetRoute = effectiveUserId.isNotEmpty ? RouteList.welcomeBackScreen : RouteList.loginScreen;
-
+      final targetRoute = RouteList.loginScreen;
 
       if (context != null && context.mounted) {
         context.go(targetRoute);

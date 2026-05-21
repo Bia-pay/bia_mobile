@@ -107,6 +107,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       await _stopHausaRecording();
     } else {
       if (await _recorder.hasPermission()) {
+        // Re-create the recorder to avoid the "Stream has already been listened to" error
+        try {
+          await _recorder.dispose();
+        } catch (_) {}
+        _recorder = AudioRecorder();
+
         final tempDir = await getTemporaryDirectory();
         final path = p.join(tempDir.path, 'hausa_speech_${DateTime.now().millisecondsSinceEpoch}.wav');
         

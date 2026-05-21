@@ -63,6 +63,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = Theme.of(context);
     final userProfile = ref.watch(userProfileProvider);
     final box = Hive.box('authBox');
+    
+    final isLoggedIn = box.get('is_logged_in', defaultValue: false) == true;
+    final userId = box.get('userId', defaultValue: '');
+
+    // Null/loading guard: Never render dashboard if session is not fully established
+    if (!isLoggedIn || userId.toString().isEmpty) {
+      return const Scaffold(
+        backgroundColor: offWhiteBackground,
+        body: Center(child: CircularProgressIndicator(color: primaryColor)),
+      );
+    }
+
     final fullname = userProfile?.fullname ?? box.get('fullname', defaultValue: 'User');
     final picture = userProfile?.picture ?? box.get('picture');
     
@@ -375,8 +387,13 @@ class BiaAiCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16.r),
         child: InkWell(
           onTap: () async {
+            final authBox = await Hive.openBox('authBox');
+            final userId = authBox.get('userId', defaultValue: '') as String;
+            final phone = authBox.get('phone', defaultValue: '') as String;
+            final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
             final box = await Hive.openBox('appPrefs');
-            final hasSelectedLang = box.get('biaAiLanguageSelected', defaultValue: false) as bool;
+            final hasSelectedLang = box.get('biaAiLanguageSelected_$effectiveUserId', defaultValue: false) as bool;
             if (!context.mounted) return;
             if (!hasSelectedLang) {
               context.pushNamed(RouteList.biaLanguageOnboarding);

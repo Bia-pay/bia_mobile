@@ -10,6 +10,7 @@ import '../../../core/services/auth_flow_service.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/biometric_migration.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
+import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/model/recent_transaction.dart'; // 🔥 ADD THIS IMPORT
 import '../data/api_constant.dart';
 import '../data/api_data.dart';
@@ -149,6 +150,10 @@ class AuthRepository {
         // 🔥 RESET ALL TRANSACTION PROVIDERS
         _ref.invalidate(allTransactionsProvider);
         _ref.invalidate(recentTransactionsProvider);
+        
+        // 🔥 RESET ALL OTHER STATE PROVIDERS
+        _ref.invalidate(dashboardControllerProvider);
+        _ref.invalidate(userProfileProvider);
 
         // 🔥 PRIME TRANSACTION CACHE (Same as Balance Card)
         final List<dynamic> recentRaw = responseBody['recentTransactions'] ?? [];
@@ -188,6 +193,7 @@ class AuthRepository {
         // await box.put("refreshToken", refreshToken);
         await box.put("userId", newUserId);
         await box.put("fullname", userJson['fullname'] ?? '');
+        await box.put("picture", userJson['picture']);
         await box.put("phone", phone);
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
@@ -196,6 +202,7 @@ class AuthRepository {
           userJson['pin'] != null &&
               userJson['pin'].toString().isNotEmpty,
         );
+        await box.put("is_logged_in", true);
 
         // Prime ApiClient: updates in-memory headers AND persists tokens to
         // encrypted SecureStorage per this specific user account.

@@ -93,7 +93,7 @@ final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  return LlmService(apiKey: "AIzaSyCStSPgmhx0JQttxyHmVOhoZoZ9OsaEgeQ");
+  return LlmService(apiKey: "AIzaSyAT_U_85y4BE7y8yacTF2fFpZNZPdDxu74");
 });
 
 
@@ -195,10 +195,23 @@ class AiChatController extends StateNotifier<AiChatState> {
 
     if (effectiveUserId.isNotEmpty) {
       await _persistence.saveUserLanguage(effectiveUserId, language);
+      
+      final box = await Hive.openBox('appPrefs');
+      await box.put('biaAiLanguageSelected_$effectiveUserId', true);
+
+      await _persistence.saveMessages(effectiveUserId, []);
     }
 
     _llmService.updateLanguage(language);
-    state = state.copyWith(language: language);
+    
+    state = state.copyWith(
+      language: language,
+      messages: [],
+      step: AiChatStep.idle,
+      clearPending: true,
+    );
+
+    await _addWelcome();
   }
 
   // Convenience getter

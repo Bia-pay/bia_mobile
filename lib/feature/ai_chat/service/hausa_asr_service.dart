@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class HausaAsrService {
   // 🟢 LOCAL FASTAPI ENDPOINT
-  final String _localUrl = 'http://10.248.222.162:8000/transcribe';
+  final String _localUrl = 'http://10.12.7.162:8000/transcribe';
 
   Future<String?> transcribe(String filePath) async {
     try {

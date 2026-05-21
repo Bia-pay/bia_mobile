@@ -293,7 +293,9 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                     Padding(
                       padding: EdgeInsets.only(bottom: 8.h),
                       child: TextButton(
-                        onPressed: () => context.go(RouteList.loginScreen), 
+                        onPressed: () {
+                          ref.read(authControllerProvider.notifier).logout(context: context, isManual: true);
+                        }, 
                         child: Text("Switch Account", style: TextStyle(color: accentColor.withOpacity(0.6), fontSize: 12.sp, fontWeight: FontWeight.w700))
                       ),
                     ),

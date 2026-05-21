@@ -63,6 +63,33 @@ class AppRouter {
 
     debugLogDiagnostics: false,
     initialLocation: '/splash',
+    redirect: (context, state) {
+      final authBox = Hive.box('authBox');
+      
+      // We check for both 'is_logged_in' flag and an active userId in the authBox.
+      // Since tokens are stored in SecureStorage securely, this flag tells us if the user has an active session.
+      final hasActiveSession = authBox.get('is_logged_in', defaultValue: false) == true && 
+                               authBox.containsKey('userId') && 
+                               authBox.get('userId').toString().isNotEmpty;
+
+      final currentPath = state.uri.path;
+      final isProtected = currentPath.startsWith('/home') ||
+                          currentPath.startsWith('/transaction') ||
+                          currentPath.startsWith('/send') ||
+                          currentPath.startsWith('/amount') ||
+                          currentPath.startsWith('/bankAmount') ||
+                          currentPath.startsWith('/airtime') ||
+                          currentPath.startsWith('/data') ||
+                          currentPath.startsWith('/cable') ||
+                          currentPath.startsWith('/electricity') ||
+                          currentPath.startsWith('/top-up') ||
+                          currentPath.startsWith('/socket-test');
+
+      if (isProtected && !hasActiveSession) {
+        return RouteList.loginScreen;
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/splash',
