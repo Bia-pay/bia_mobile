@@ -34,8 +34,11 @@ class ResponseBody {
 
   // ✅ ADD THESE
   final String? reference;
+  final String? debitReference;
+  final String? requestId;
   final int? transactionId;
   final dynamic amount;
+  final dynamic fee;
   final dynamic senderBalance;
   final String? receiverName;
 
@@ -46,8 +49,11 @@ class ResponseBody {
     this.refreshToken,
     this.token,
     this.reference,
+    this.debitReference,
+    this.requestId,
     this.transactionId,
     this.amount,
+    this.fee,
     this.senderBalance,
     this.receiverName,
     this.status,
@@ -62,9 +68,12 @@ class ResponseBody {
       refreshToken: json['refreshToken'],
       token: json['token']?.toString() ?? json['mainToken']?.toString() ?? json['purchasedToken']?.toString(),
       reference: json['reference'],
+      debitReference: json['debitReference'],
+      requestId: json['requestId'],
       status: json['status'],
       transactionId: json['transactionId'],
       amount: json['amount'],
+      fee: json['fee'],
       senderBalance: json['senderBalance'],
       receiverName: json['receiverName'],
       recentTransactions: json['recentTransactions'],
@@ -77,9 +86,12 @@ class ResponseBody {
     'accessToken': accessToken,
     'refreshToken': refreshToken,
     'reference': reference,
+    'debitReference': debitReference,
+    'requestId': requestId,
     'status': status,
     'transactionId': transactionId,
     'amount': amount,
+    'fee': fee,
     'senderBalance': senderBalance,
     'receiverName': receiverName,
     'recentTransactions': recentTransactions,

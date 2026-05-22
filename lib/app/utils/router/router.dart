@@ -43,6 +43,10 @@ import '../../../feature/dashboard/pages/vtu/utility/utility.dart';
 import '../../../feature/settings/presentation/change_password.dart';
 import '../../../feature/settings/presentation/loginSettings/enable_login_fingerpint.dart';
 import '../../../feature/settings/presentation/qr_code.dart';
+import '../../../feature/qr_payment/presentation/qr_amount_entry_screen.dart';
+import '../../../feature/qr_payment/presentation/qr_payment_review_screen.dart';
+import '../../../feature/qr_payment/presentation/qr_deduction_pin_screen.dart';
+import '../../../feature/qr_payment/presentation/qr_authorize_screen.dart';
 import '../../../feature/settings/presentation/user_settings.dart';
 import '../../../feature/settings/presentation/language_settings.dart';
 import '../../../feature/settings/presentation/enable_login_fingerprint.dart';
@@ -284,6 +288,46 @@ class AppRouter {
         path: '/qr-scanner',
         name: RouteList.qrScannerScreen,
         builder: (context, state) => const QrScannerScreen(),
+      ),
+      GoRoute(
+        path: '/qr-amount',
+        name: RouteList.qrAmountEntryScreen,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final receiverAccount = extra['account'] as String? ?? '';
+          final isCollectMode = extra['isCollectMode'] as bool? ?? false;
+          return QrAmountEntryScreen(
+            receiverAccount: receiverAccount,
+            isCollectMode: isCollectMode,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/qr-deduction',
+        name: RouteList.qrDeductionPinScreen,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final ownerAccount = extra['ownerAccount'] as String? ?? '';
+          final amount = extra['amount'] as double? ?? 0.0;
+          final narration = extra['narration'] as String? ?? '';
+          return QrDeductionPinScreen(
+            ownerAccount: ownerAccount,
+            amount: amount,
+            narration: narration,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/qr-review',
+        name: RouteList.qrPaymentReviewScreen,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return QrPaymentReviewScreen(
+            requestId: extra['requestId'],
+            receiverName: extra['receiverName'],
+            amount: (extra['amount'] as num).toDouble(),
+          );
+        },
       ),
       GoRoute(
         path: '/qr-code',

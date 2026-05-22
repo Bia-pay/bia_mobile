@@ -267,8 +267,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                     SizedBox(width: 40.w),
                     _buildBottomAction(
                       Icons.qr_code_2_rounded,
-                      "Receive",
-                      () => context.pushReplacementNamed(RouteList.qrScreen),
+                      "Scan to Receive",
+                      () => context.pushNamed(RouteList.qrScreen),
                     ),
                   ],
                 ),

@@ -93,7 +93,7 @@ final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  return LlmService(apiKey: "AIzaSyAT_U_85y4BE7y8yacTF2fFpZNZPdDxu74");
+  return LlmService(apiKey: "AIzaSyAd2Y87-SCg4UywD1Dk00YelTvoT4lTSNU");
 });
 
 

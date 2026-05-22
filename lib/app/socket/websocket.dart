@@ -11,6 +11,8 @@ import 'dart:io';
 import '../../feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../feature/dashboard/dashboardcontroller/notification_notifier.dart';
 import '../../feature/dashboard/dashboardcontroller/provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../app/utils/router/route_constant.dart';
 
 class AppSocketListener extends ConsumerStatefulWidget {
   final Widget child;
@@ -144,6 +146,8 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
 
     socket.on('transaction_update', (data) => _handleSocketEvent(context, {'event': 'transaction_update', ...data}));
     socket.on('notification', (data) => _handleSocketEvent(context, {'event': 'notification', ...data}));
+    
+    socket.on('qr_payment_request', (data) => _handleSocketEvent(context, {'event': 'qr_payment_request', ...data}));
   }
 
   Widget _buildConnectionIndicator(SocketState state) {
@@ -224,6 +228,10 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
 
       case "notification":
         _handleNotification(context, json);
+        break;
+
+      case "qr_payment_request":
+        _showQrPaymentRequestNotification(context, json);
         break;
 
       default:
@@ -323,6 +331,34 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
         content: Text("✅ $type of ₦$amount was successful!"),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showQrPaymentRequestNotification(BuildContext context, Map<String, dynamic> data) {
+    final amountStr = data['amount']?.toString() ?? data['data']?['amount']?.toString() ?? '0';
+    final amount = double.tryParse(amountStr) ?? 0.0;
+    final senderName = data['senderName'] ?? data['data']?['senderName'] ?? 'Someone';
+    final requestId = data['requestId'] ?? data['data']?['requestId'] ?? '';
+
+    if (!mounted || requestId.isEmpty) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("📲 QR Request: $senderName is requesting ₦$amountStr"),
+        backgroundColor: Colors.orange.shade700,
+        duration: const Duration(seconds: 15),
+        action: SnackBarAction(
+          label: 'Authorize',
+          textColor: Colors.white,
+          onPressed: () {
+            context.pushNamed(RouteList.qrAuthorizeScreen, extra: {
+              'requestId': requestId,
+              'amount': amount,
+              'senderName': senderName,
+            });
+          },
+        ),
       ),
     );
   }

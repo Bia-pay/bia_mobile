@@ -24,6 +24,10 @@ class RouteList {
   static const String successScreen = '/success';
   static const String scannerOnboarding = '/scanner-onboarding';
   static const String qrScannerScreen = '/qr-scanner';
+  static const String qrAmountEntryScreen = '/qr-amount';
+  static const String qrPaymentReviewScreen = '/qr-review';
+  static const String qrDeductionPinScreen = '/qr-deduction-pin';
+  static const String qrAuthorizeScreen = '/qr-authorize';
   static const String advancedScreen = '/advancedScreen';
   static const String cardTwo = '/cardTwo';
   static const String electricity = '/electricity';

@@ -275,6 +275,105 @@ class DashboardRepository {
     }
   }
 
+  // ---------------- QR PAYMENTS ----------------
+  Future<ResponseModel> initiateQrPayment({
+    required String receiverAccount,
+    required double amount,
+    String? narration,
+  }) async {
+    try {
+      final body = {
+        "receiverAccount": receiverAccount.trim(),
+        "amount": amount,
+        if (narration != null && narration.isNotEmpty) "narration": narration.trim(),
+      };
+
+      final response = await _apiClient.postData(ApiConstant.QR_INITIATE, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseSuccessful: false,
+        responseMessage: "Something went wrong. Please try again.",
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> authorizeQrPayment({
+    required String requestId,
+    required String pin,
+  }) async {
+    try {
+      final body = {
+        "requestId": requestId.trim(),
+        "pin": pin.trim(),
+      };
+
+      final response = await _apiClient.postData(ApiConstant.QR_AUTHORIZE, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseSuccessful: false,
+        responseMessage: "Something went wrong. Please try again.",
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> payQrPayment({
+    required String requestId,
+    required String pin,
+  }) async {
+    try {
+      final body = {
+        "requestId": requestId.trim(),
+        "pin": pin.trim(),
+      };
+
+      final response = await _apiClient.postData(ApiConstant.QR_PAY, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseSuccessful: false,
+        responseMessage: "Something went wrong. Please try again.",
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> deductQrPayment({
+    required String ownerAccount,
+    required double amount,
+    required String narration,
+    required String pin,
+  }) async {
+    try {
+      final body = {
+        "ownerAccount": ownerAccount.trim(),
+        "amount": amount,
+        if (narration.isNotEmpty) "narration": narration.trim(),
+        "pin": pin.trim(),
+      };
+
+      final response = await _apiClient.postData(ApiConstant.QR_DEDUCT, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseSuccessful: false,
+        responseMessage: "Something went wrong. Please try again.",
+        statusCode: 500,
+      );
+    }
+  }
+
   //  Fetch Wallet Balance
   Future<WalletResponse?> getWalletBalance() async {
     try {

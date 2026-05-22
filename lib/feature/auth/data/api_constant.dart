@@ -19,6 +19,10 @@ class ApiConstant {
   static const WALLET_BALANCE = '/api/v1/wallet/balance';
   static const VERIFY_ACCOUNT = '/api/v1/wallet/transfer/verify';
   static const GENERATE_QR_CODE = '/api/v1/user/qr-code';
+  static const QR_INITIATE = '/api/v1/wallet/qr/initiate';
+  static const QR_AUTHORIZE = '/api/v1/wallet/qr/authorize';
+  static const QR_PAY = '/api/v1/wallet/qr/pay';
+  static const QR_DEDUCT = '/api/v1/wallet/qr/deduct';
   static const RECENT_TRANSFER = '/api/v1/wallet/recent-transfers';
   static const PROFILE_UPDATE = '/api/v1/user/profile';
   static const REFRESH_TOKEN = '/api/v1/auth/refresh/token';

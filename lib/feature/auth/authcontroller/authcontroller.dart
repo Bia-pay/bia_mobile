@@ -203,7 +203,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Logged out successfully"),
-            backgroundColor: Colors.green,
+            backgroundColor: successColor,
           ),
         );
       } else {
