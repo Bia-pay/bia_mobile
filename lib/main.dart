@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:media_store_plus/media_store_plus.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'app/socket/websocket.dart';
 import 'app/utils/colors.dart';
 import 'app/utils/router/router.dart';
@@ -140,7 +141,8 @@ void setupNotificationTapHandlers() {
 // ==================== MAIN ENTRY ====================
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // 1. Critical Core Initialization (Sequential)
   await Firebase.initializeApp(

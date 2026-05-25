@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
 import '../../../feature/ai_chat/ui/ai_chat_screen.dart';
 import '../../../feature/ai_chat/ui/bia_language_onboarding.dart';
@@ -60,6 +61,23 @@ void navigateWithUnfocus(BuildContext context, String route, {Object? extra}) {
   FocusManager.instance.primaryFocus?.unfocus();
   context.goNamed(route, extra: extra);
 }
+Page<dynamic> buildPageWithFadeTransition<T>({
+  required BuildContext context,
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 250),
+  );
+}
 class AppRouter {
   static final GoRouter router = GoRouter(
     navigatorKey: navigatorKey,  // ← Allows ApiClient force-logout navigation
@@ -67,14 +85,20 @@ class AppRouter {
 
     debugLogDiagnostics: false,
     initialLocation: '/splash',
-    redirect: (context, state) {
+    redirect: (context, state) async {
+      // 🔐 Check both centralized secure storage keys and Hive/legacy fallback keys
+      const secureStorage = FlutterSecureStorage(
+        aOptions: AndroidOptions(encryptedSharedPreferences: true),
+      );
+      final secureIsLoggedIn = (await secureStorage.read(key: 'is_logged_in')) == 'true';
+      final secureUserId = await secureStorage.read(key: 'user_id');
+
       final authBox = Hive.box('authBox');
-      
-      // We check for both 'is_logged_in' flag and an active userId in the authBox.
-      // Since tokens are stored in SecureStorage securely, this flag tells us if the user has an active session.
-      final hasActiveSession = authBox.get('is_logged_in', defaultValue: false) == true && 
-                               authBox.containsKey('userId') && 
-                               authBox.get('userId').toString().isNotEmpty;
+      final legacyIsLoggedIn = authBox.get('is_logged_in', defaultValue: false) == true;
+      final legacyUserId = authBox.get('userId', defaultValue: '')?.toString() ?? '';
+
+      final hasActiveSession = (secureIsLoggedIn && secureUserId != null && secureUserId.isNotEmpty) ||
+                               (legacyIsLoggedIn && legacyUserId.isNotEmpty);
 
       final currentPath = state.uri.path;
       final isProtected = currentPath.startsWith('/home') ||
@@ -98,53 +122,88 @@ class AppRouter {
       GoRoute(
         path: '/splash',
         name: RouteList.splash,
-        builder: (context, state) => const Splash(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const Splash(),
+        ),
       ),
       GoRoute(
         path: '/onboarding',
         name: RouteList.onBoardingScreen,
-        builder: (context, state) => const OnBoardingScreen(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const OnBoardingScreen(),
+        ),
       ),
       GoRoute(
         path: '/get-started',
         name: RouteList.getStarted,
-        builder: (context, state) => const GetStarted(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const GetStarted(),
+        ),
       ),
       GoRoute(
         path: '/login',
         name: RouteList.loginScreen,
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const LoginScreen(),
+        ),
       ),
       GoRoute(
         path: '/welcome-back',
         name: RouteList.welcomeBackScreen,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final isSessionLock = extra?['isSessionLock'] as bool? ?? false;
           final forceHome = extra?['forceHome'] as bool? ?? false;
-          return WelcomeBackScreen(isSessionLock: isSessionLock, forceHome: forceHome);
+          return buildPageWithFadeTransition(
+            context: context,
+            state: state,
+            child: WelcomeBackScreen(isSessionLock: isSessionLock, forceHome: forceHome),
+          );
         },
       ),
       GoRoute(
         path: '/create-account',
         name: RouteList.createAccountScreen,
-        builder: (context, state) => const CreateAccountScreen(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const CreateAccountScreen(),
+        ),
       ),
       GoRoute(
         path: '/phone-registration',
         name: RouteList.phoneRegScreen,
-        builder: (context, state) => const PhoneRegScreen(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const PhoneRegScreen(),
+        ),
       ),
       GoRoute(
         path: '/verify-otp',
         name: RouteList.createAccountVerifyOtpScreen,
-        builder: (context, state) =>
-            CreateAccountVerifyOtpScreen(phone: state.extra as String? ?? ''),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: CreateAccountVerifyOtpScreen(phone: state.extra as String? ?? ''),
+        ),
       ),
       GoRoute(
         path: '/forgot-password',
         name: RouteList.forgotPassword,
-        builder: (context, state) => const ForgotPasswordScreen1(),
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const ForgotPasswordScreen1(),
+        ),
       ),
       GoRoute(
         path: '/forgot-password-reset',

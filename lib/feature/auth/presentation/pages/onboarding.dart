@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bia/core/services/secure_storage_service.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -129,9 +130,12 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
             buttonColor: primaryColor,
             buttonTextColor: Colors.white,
             buttonName: isLastPage ? 'Get Started' : 'Next',
-            onPressed: () {
+            onPressed: () async {
               if (isLastPage) {
-                context.go(RouteList.phoneRegScreen);
+                await ref.read(secureStorageServiceProvider).setHasSeenOnboarding(true);
+                if (context.mounted) {
+                  context.go(RouteList.phoneRegScreen);
+                }
               } else {
                 _pageController.nextPage(
                   duration: 500.ms,

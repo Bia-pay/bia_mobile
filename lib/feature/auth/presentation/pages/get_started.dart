@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bia/core/services/secure_storage_service.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -207,7 +208,12 @@ class _GetStartedState extends ConsumerState<GetStarted> {
             width: double.infinity,
             height: 65.h,
             child: CustomButton(
-              onPressed: () => context.go(RouteList.loginScreen),
+              onPressed: () async {
+                await ref.read(secureStorageServiceProvider).setHasSeenOnboarding(true);
+                if (context.mounted) {
+                  context.go(RouteList.loginScreen);
+                }
+              },
               buttonColor: primaryColor,
               buttonTextColor: Colors.white,
               buttonName: 'Log In',

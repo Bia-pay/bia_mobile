@@ -1,11 +1,11 @@
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/core/__core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:bia/core/services/secure_storage_service.dart';
 import '../../../../app/utils/router/route_constant.dart';
 
 class Splash extends ConsumerStatefulWidget {
@@ -16,6 +16,7 @@ class Splash extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<Splash> {
+  bool _isInitializing = false;
 
   @override
   void initState() {
@@ -27,40 +28,52 @@ class _SplashScreenState extends ConsumerState<Splash> {
   }
 
   Future<void> _checkAuthStatus() async {
+    if (_isInitializing) return;
+    setState(() {
+      _isInitializing = true;
+    });
+
     // 🚀 Minimum delay so the user can actually see the brand logo
     // but not so long that it feels sluggish.
     final minDelay = Future.delayed(const Duration(milliseconds: 1200));
 
     try {
-      final box = Hive.box("authBox");
-      final userId = box.get("userId");
-      final phone = box.get("phone");
-      final bool isLoggedIn = box.get("is_logged_in", defaultValue: false) == true;
-      
-      final bool hasIdentity = (userId != null && userId.toString().isNotEmpty) || 
-                               (phone != null && phone.toString().isNotEmpty);
+      final secureStorage = ref.read(secureStorageServiceProvider);
+      final hasSeenOnboarding = await secureStorage.hasSeenOnboarding();
+      final isLoggedIn = await secureStorage.isLoggedIn();
 
       // Wait for both the check and the minimum delay
       await minDelay;
 
+      // Remove the native splash screen smoothly so there is no white frame flash
+      FlutterNativeSplash.remove();
+
       if (!mounted) return;
 
-      if (hasIdentity) {
+      if (!hasSeenOnboarding) {
+        // 🆕 Totally fresh user: Send to onboarding (Get Started)
+        context.go(RouteList.getStarted);
+      } else {
         if (isLoggedIn) {
           // ✅ Known user with active session: Send to Welcome Back (PIN/Biometric lock)
           context.go(RouteList.welcomeBackScreen);
         } else {
-          // 🚪 Identity exists but session expired or logged out: Send to login screen
+          // 🚪 Identity exists but logged out: Send to login screen
           context.go(RouteList.loginScreen);
         }
-      } else {
-        // 🆕 Totally fresh user: Send to onboarding
-        context.go(RouteList.getStarted);
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('⚠️ Splash checkAuthStatus Exception: $e');
       await minDelay;
+      FlutterNativeSplash.remove();
       if (!mounted) return;
       context.go(RouteList.getStarted);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+      }
     }
   }
 
@@ -111,4 +124,3 @@ class _SplashScreenState extends ConsumerState<Splash> {
     );
   }
 }
-

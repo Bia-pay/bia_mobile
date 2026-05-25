@@ -6,6 +6,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
+import 'package:bia/core/services/secure_storage_service.dart';
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/router/route_constant.dart';
@@ -185,6 +186,10 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         await TransactionCache.clearTransactions(userId);
         await clearRecentBeneficiaries(userId);
       }
+
+      // Clear session keys in centralized secure storage (Requirement 8)
+      final secureStorage = ref.read(secureStorageServiceProvider);
+      await secureStorage.clearSession();
 
       if (isManual) {
         // Aggressively clear all SharedPreferences/Hive if manual logout

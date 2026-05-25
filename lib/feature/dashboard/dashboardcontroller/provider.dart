@@ -70,8 +70,15 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
     if (cached.isNotEmpty) {
       print('✅ Using RECENT cache with ${cached.length} items');
       state = AsyncValue.data(cached);
-      // Background refresh if stale (optional, but keep it snappy)
-      _fetchFresh(silent: true);
+      
+      // ✅ Check if cached data is still fresh/valid before fetching over the network
+      final isValid = await TransactionCache.isCacheValid(userId, suffix: 'recent');
+      if (!isValid) {
+        print('🔄 Cache expired, fetching fresh recent transactions in background.');
+        _fetchFresh(silent: true);
+      } else {
+        print('⚡ Cache is valid, skipping redundant background fetch.');
+      }
     } else {
       print('ℹ️ No recent transactions in cache, triggering initial fetch.');
       state = const AsyncValue.loading();
@@ -181,13 +188,22 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
 
     if (cached.isNotEmpty) {
       state = AsyncValue.data(cached);
+      
+      // ✅ Check cache validity to prevent redundant network fetches
+      final isValid = await TransactionCache.isCacheValid(userId, suffix: 'all');
+      if (!isValid) {
+        _currentPage = 1;
+        _hasNextPage = true;
+        _fetchFresh(silent: true, page: 1); // Background fetch
+      } else {
+        print('⚡ Cache is valid, skipping redundant background fetch for history.');
+      }
     } else {
       state = const AsyncValue.loading();
+      _currentPage = 1;
+      _hasNextPage = true;
+      await _fetchFresh(silent: false, page: 1);
     }
-
-    _currentPage = 1;
-    _hasNextPage = true;
-    _fetchFresh(silent: cached.isNotEmpty, page: 1); // Background fetch
   }
 
   Future<void> _fetchFresh({bool silent = false, int page = 1}) async {

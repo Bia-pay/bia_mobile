@@ -93,6 +93,12 @@ class ApiClient {
     await _storage.write(key: _tokenKey(userId), value: accessToken);
     await _storage.write(key: _refreshTokenKey(userId), value: refreshToken);
 
+    // Centralized session secure storage keys (Requirement 7)
+    await _storage.write(key: 'is_logged_in', value: 'true');
+    await _storage.write(key: 'access_token', value: accessToken);
+    await _storage.write(key: 'refresh_token', value: refreshToken);
+    await _storage.write(key: 'user_id', value: userId);
+
     debugPrint('🔐 ApiClient primed for user: $userId');
   }
 
@@ -115,6 +121,12 @@ class ApiClient {
         await _storage.delete(key: _tokenKey(_userId));
         await _storage.delete(key: _refreshTokenKey(_userId));
       }
+
+      // Clear centralized session secure storage keys (Requirement 8)
+      await _storage.delete(key: 'is_logged_in');
+      await _storage.delete(key: 'access_token');
+      await _storage.delete(key: 'refresh_token');
+      await _storage.delete(key: 'user_id');
 
       // Hive tokens are no longer used for "Highly Secure" mode.
       // final box = await Hive.openBox('authBox');

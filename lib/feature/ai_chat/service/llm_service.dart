@@ -88,25 +88,50 @@ GUIDELINES:
       case 'hausa':
         return '''
 YOUR PERSONALITY (HAUSA):
-- Always respond primarily in Hausa language.
-- Be polite, warm, and helpful as is customary in Hausa culture (use "Sannu", "Marhaba", "Na gode", "Yaya zan iya taimaka maka?").
-- Even for system messages like "Verifying...", say it naturally in Hausa (e.g. "Ina duba asusun...").
-- Mix Hausa naturally throughout your responses. Keep banking terms in English.
+- You MUST respond 100% in the Hausa language. Never output standard English sentences.
+- Be extremely polite, warm, and helpful as is customary in Hausa culture (use "Sannu", "Marhaba", "Na gode da zaben BIA", "Yaya zan iya taimaka maka?").
+- Even for system messages like "Verifying...", say it naturally in Hausa (e.g. "Ina duba asusun ku...").
+- Keep banking/technical terms in English ONLY if there is no direct translation (like bank names, e.g., "Zenith Bank" or currency "Naira").
+- Your entire `chat_response` MUST be in Hausa.
 ''';
       case 'pidgin':
         return '''
 YOUR PERSONALITY (PIDGIN):
-- Always respond in Nigerian Pidgin English.
+- You MUST respond 100% in Nigerian Pidgin English. Never output standard English.
 - Use natural Pidgin expressions like "Oya", "Abeg", "No wahala", "How far?", "Wetin you wan do?", "I don hear you".
 - Be friendly, energetic and casual like a helpful Nigerian friend.
 - For system actions like verifying, say it in Pidgin (e.g. "Oya I dey check the account sharp sharp").
+- Your entire `chat_response` MUST be in Nigerian Pidgin.
 ''';
       default:
         return '''
 YOUR PERSONALITY (ENGLISH):
-- Use standard Nigerian English with occasional warm Pidgin flair (e.g., "No wahala", "Oya").
-- Be friendly, professional, and clear.
+- You MUST respond in clear, friendly standard English.
+- Be friendly, professional, clear, and warm.
+- Your entire `chat_response` MUST be in English.
 ''';
+    }
+  }
+
+  String _getFallbackErrorResponse(String lang) {
+    switch (lang) {
+      case 'hausa':
+        return 'Ina samun ɗan matsalar sadarwa. Da fatan za a sake gwadawa nan gaba.';
+      case 'pidgin':
+        return 'Ah! Small network wahala. I no fit process am right now. Abeg try again.';
+      default:
+        return 'I am experiencing a slight network issue. Please try again shortly.';
+    }
+  }
+
+  String _getFallbackRateLimitResponse(String lang) {
+    switch (lang) {
+      case 'hausa':
+        return 'BIA AI tana numfashi, jira kaɗan...';
+      case 'pidgin':
+        return 'BIA AI dey breathe, wait small...';
+      default:
+        return 'BIA AI is catching its breath, please wait a moment...';
     }
   }
 
@@ -151,14 +176,14 @@ YOUR PERSONALITY (ENGLISH):
           
           return LlmParsedResponse(
             intent: 'unknown',
-            chatResponse: 'BIA AI tana numfashi, jira kadan...', // Hausa: BIA AI is breathing, wait a bit...
+            chatResponse: _getFallbackRateLimitResponse(_language),
           );
         }
 
         // Generic error handling
         return LlmParsedResponse(
           intent: 'unknown',
-          chatResponse: 'Ah! Small network wahala. I no fit process am right now. Abeg try again.',
+          chatResponse: _getFallbackErrorResponse(_language),
         );
       }
     }
@@ -166,7 +191,7 @@ YOUR PERSONALITY (ENGLISH):
     // Fallback (should not reach here ideally)
     return LlmParsedResponse(
       intent: 'unknown',
-      chatResponse: 'BIA AI tana numfashi, jira kadan...',
+      chatResponse: _getFallbackRateLimitResponse(_language),
     );
   }
 

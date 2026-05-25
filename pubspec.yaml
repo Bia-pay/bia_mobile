@@ -16,6 +16,7 @@ dependencies:
   media_store_plus: ^0.1.3
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.0.7
+  flutter_native_splash: ^2.4.4
   mobile_scanner: ^7.1.4
   go_router_builder:
   camera: ^0.11.2
@@ -120,3 +121,10 @@ flutter:
 
 dependency_overrides:
   record_linux: ^1.3.0
+
+flutter_native_splash:
+  color: "#0C284E"
+  image: assets/svg/logo.png
+  android: true
+  ios: true
+
