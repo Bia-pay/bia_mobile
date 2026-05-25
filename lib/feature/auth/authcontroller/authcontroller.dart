@@ -19,7 +19,9 @@ import '../modal/reponse/response_modal.dart';
 import '../../dashboard/model/recent_transaction.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
+import '../../dashboard/dashboardcontroller/qr_onboarding_provider.dart';
 import '../../../app/socket/socket_provider.dart';
+import '../../ai_chat/controller/ai_chat_controller.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<bool>>((ref) {
@@ -79,6 +81,14 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       LoadingHelper.dismiss();
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final appBox = await Hive.openBox('appBox');
+        final isNew = appBox.get('is_new_registration', defaultValue: false);
+        if (isNew) {
+          await appBox.put('is_new_registration', false);
+        } else {
+          await appBox.put('qr_onboarding_completed', true);
+          ref.read(qrOnboardingProvider.notifier).setOnboardingCompleted(true);
+        }
         return true;
       } else {
         ToastHelper.showToast(
@@ -193,6 +203,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       ref.invalidate(recentTransactionsProvider);
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(socketNotifierProvider);
+      ref.invalidate(aiChatControllerProvider);
 
       LoadingHelper.dismiss();
 
@@ -327,6 +338,9 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       LoadingHelper.dismiss();
 
       if (response.responseSuccessful) {
+        final appBox = await Hive.openBox('appBox');
+        await appBox.put('is_new_registration', true);
+
         ToastHelper.showToast(
           context: context,
           message: response.responseMessage,

@@ -6,10 +6,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import '../../../../../app/utils/image.dart';
 import '../../../widgets/keypad.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import 'complete_transaction.dart';
+import '../../../../../app/utils/widgets/custom_text_field.dart';
 
 class AmountPage extends ConsumerStatefulWidget {
   final TextEditingController controller;
@@ -40,6 +40,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   String amount = "0";
   bool showMinWarning = false;
   bool showInsufficientFundsWarning = false;
+  final _narrationController = TextEditingController();
 
   @override
   void initState() {
@@ -49,6 +50,15 @@ class _AmountPageState extends ConsumerState<AmountPage> {
       widget.controller.text = amount;
       _checkAmountValidation();
     }
+    if (widget.initialNarration != null) {
+      _narrationController.text = widget.initialNarration!;
+    }
+  }
+
+  @override
+  void dispose() {
+    _narrationController.dispose();
+    super.dispose();
   }
 
   void addDigit(String value) {
@@ -162,7 +172,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
           recipientName: widget.recipientName,
           recipientAccount: widget.recipientAccount,
           recipientIconPath: widget.recipientIconPath,
-          narration: widget.initialNarration,
+          narration: _narrationController.text,
           preCalculatedCharge: chargeAmount,
           preCalculatedTotal: totalAmount,
           preCalculatedFeeDescription: feeDescription,
@@ -178,9 +188,11 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final walletBalance = _getWalletBalance();
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -212,8 +224,18 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   recipientCard,
-                                  SizedBox(height: 48.h),
+                                  SizedBox(height: 32.h),
                                   amountDisplay,
+                                  SizedBox(height: 24.h),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 40.w),
+                                    child: CustomTextFormField(
+                                      controller: _narrationController,
+                                      label: 'Narration (Optional)',
+                                      hintText: 'What is this for?',
+                                      validator: (val) => null,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -234,16 +256,47 @@ class _AmountPageState extends ConsumerState<AmountPage> {
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
-                child: Column(
-                  children: [
-                    topBar,
-                    recipientCard,
-                    SizedBox(height: isTiny ? 16.h : 28.h),
-                    amountDisplay,
-                    const Spacer(),
-                    Flexible(flex: 3, child: keypad),
-                    SizedBox(height: isTiny ? 8.h : 16.h),
-                  ],
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: isTiny ? 8.h : 16.h),
+                  child: Column(
+                    children: [
+                      topBar,
+                      recipientCard,
+                      SizedBox(height: isTiny ? 12.h : 20.h),
+                      amountDisplay,
+                      SizedBox(height: isTiny ? 12.h : 20.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24.w),
+                        child: CustomTextFormField(
+                          controller: _narrationController,
+                          label: 'Narration (Optional)',
+                          hintText: 'What is this for?',
+                          validator: (val) => null,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (!keyboardOpen) ...[
+                        keypad,
+                      ] else ...[
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24.w),
+                            child: TextButton.icon(
+                              onPressed: () => FocusScope.of(context).unfocus(),
+                              icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
+                              label: const Text('Done'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: primaryColor,
+                                backgroundColor: primaryColor.withValues(alpha: 0.08),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             );

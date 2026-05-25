@@ -126,10 +126,9 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
     // 1. Save and apply language via controller
     await ref.read(aiChatControllerProvider.notifier).updateLanguage(_selected!);
     
-    // 2. Save user-scoped onboarding completed flag
     final authBox = await Hive.openBox('authBox');
-    final userId = authBox.get('userId', defaultValue: '') as String;
-    final phone = authBox.get('phone', defaultValue: '') as String;
+    final userId = authBox.get('userId')?.toString() ?? '';
+    final phone = authBox.get('phone')?.toString() ?? '';
     final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
     final box = await Hive.openBox('appPrefs');

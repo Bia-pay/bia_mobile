@@ -9,7 +9,6 @@ import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:bia/app/utils/colors.dart';
-import 'package:bia/app/utils/custom_loader.dart';
 import 'package:bia/app/utils/router/router.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -27,6 +26,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
   late MobileScannerController controller;
   bool isScanning = true;
   bool flashOn = false;
+  bool _isCollectMode = false;
 
   @override
   void initState() {
@@ -99,19 +99,10 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
     debugPrint("🔍 Verifying receiver: $account");
     final dashboardController = ref.read(dashboardControllerProvider.notifier);
     
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CustomLoader()),
-    );
-
     final response = await dashboardController.verifyAccount(
       context,
       account,
     );
-
-    Navigator.pop(context); // Dismiss loading
 
     if (response?.responseSuccessful == true) {
       final fullname = response?.responseBody?.user?.fullname ?? "Unknown";
@@ -120,15 +111,29 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
       // Navigate to Payment Confirmation / Input
       // If amount is present, go to amount page with pre-filled amount
       // Both go to amountPage as it handles the confirmation sheet trigger
-      context.pushNamed(
-        RouteList.amountPage,
-        extra: {
-          'recipientAccount': account,
-          'recipientName': fullname,
-          'amount': amount,
-          'narration': narration ?? "",
-        },
-      );
+      if (_isCollectMode) {
+        context.pushNamed(
+          RouteList.qrAmountEntryScreen,
+          extra: {
+            'account': account,
+            'isCollectMode': true,
+          },
+        ).then((_) {
+          if (mounted) setState(() => isScanning = true);
+        });
+      } else {
+        context.pushNamed(
+          RouteList.amountPage,
+          extra: {
+            'recipientAccount': account,
+            'recipientName': fullname,
+            'amount': amount,
+            'narration': narration ?? "",
+          },
+        ).then((_) {
+          if (mounted) setState(() => isScanning = true);
+        });
+      }
     } else {
       debugPrint("❌ Verification failed: ${response?.responseMessage}");
       _showError(response?.responseMessage ?? "Verification failed");
@@ -222,7 +227,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                     () => Navigator.pop(context),
                   ),
                   Text(
-                    "Scan to Pay",
+                    _isCollectMode ? "Collect from Customer" : "Scan to Pay",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18.sp,
@@ -255,7 +260,59 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                     fontSize: 14.sp,
                   ),
                 ),
-                SizedBox(height: 30.h),
+                SizedBox(height: 20.h),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(30.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          _isCollectMode = false;
+                          isScanning = true;
+                        }),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
+                          decoration: BoxDecoration(
+                            color: !_isCollectMode ? primaryColor : Colors.transparent,
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          child: Text(
+                            'Pay',
+                            style: TextStyle(
+                              color: !_isCollectMode ? Colors.white : Colors.white70,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() {
+                          _isCollectMode = true;
+                          isScanning = true;
+                        }),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
+                          decoration: BoxDecoration(
+                            color: _isCollectMode ? primaryColor : Colors.transparent,
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          child: Text(
+                            'Collect',
+                            style: TextStyle(
+                              color: _isCollectMode ? Colors.white : Colors.white70,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

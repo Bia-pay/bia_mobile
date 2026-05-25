@@ -21,6 +21,7 @@ class BankTransactionPin extends ConsumerStatefulWidget {
   final bool saveAsBeneficiary;
   final String bankCode;
   final String bankName;
+  final String? narration;
 
   const BankTransactionPin({
     super.key,
@@ -30,6 +31,7 @@ class BankTransactionPin extends ConsumerStatefulWidget {
     required this.saveAsBeneficiary,
     required this.bankCode,
     required this.bankName,
+    this.narration,
   });
 
   @override
@@ -136,7 +138,7 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
         bankCode: widget.bankCode,
         bankName: widget.bankName,
         amount: widget.amount.toStringAsFixed(2),
-        narration: 'Bank Transfer',
+        narration: widget.narration?.isNotEmpty == true ? widget.narration! : 'Bank Transfer',
         pin: transactionPin,
         saveBeneficiary: widget.saveAsBeneficiary,
       );

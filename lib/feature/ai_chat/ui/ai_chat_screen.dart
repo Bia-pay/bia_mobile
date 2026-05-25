@@ -651,7 +651,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
   Widget _buildSuggestionChips(Map<String, dynamic> payload) {
     final raw = (payload['suggestions'] as List<dynamic>?) ?? [];
-    final suggestions = raw.map((e) => e as Map<String, dynamic>).toList();
+    final suggestions = raw
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
 
     return SuggestionChipRow(
       suggestions: suggestions,

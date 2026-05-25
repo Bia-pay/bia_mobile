@@ -61,6 +61,7 @@ class BankCompleteTransactionBottomSheet extends ConsumerStatefulWidget {
   final String recipientAccount;
   final String bankName;
   final String bankCode;
+  final String? narration;
   final double? preCalculatedCharge;
   final double? preCalculatedTotal;
   final String? preCalculatedFeeDescription;
@@ -72,6 +73,7 @@ class BankCompleteTransactionBottomSheet extends ConsumerStatefulWidget {
     required this.recipientAccount,
     required this.bankCode,
     required this.bankName,
+    this.narration,
     this.preCalculatedCharge,
     this.preCalculatedTotal,
     this.preCalculatedFeeDescription,
@@ -409,6 +411,15 @@ class _BankCompleteTransactionBottomSheetState
                     ),
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
+                    if (widget.narration != null && widget.narration!.isNotEmpty) ...[
+                      _buildDetailRow(
+                        context,
+                        label: 'Narration',
+                        value: widget.narration!,
+                      ),
+                      const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                    ],
+
                     _buildDetailRow(
                       context,
                       label: 'Principal Amount',
@@ -499,6 +510,7 @@ class _BankCompleteTransactionBottomSheetState
                                 saveAsBeneficiary: _saveAsBeneficiary,
                                 bankCode: widget.bankCode,
                                 bankName: widget.bankName,
+                                narration: widget.narration,
                               ),
                             ),
                           );

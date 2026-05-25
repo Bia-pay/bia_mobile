@@ -8,6 +8,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import '../../../widgets/keypad.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import 'on_bank_complete_payment.dart';
+import '../../../../../app/utils/widgets/custom_text_field.dart';
 
 // ---------------------------------------------------------------------------
 // Responsive helper – derive all sizing from real screen dimensions so the
@@ -117,6 +118,13 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
   String amount = "0";
   bool showMinWarning = false;
   bool showInsufficientFundsWarning = false;
+  final _narrationController = TextEditingController();
+
+  @override
+  void dispose() {
+    _narrationController.dispose();
+    super.dispose();
+  }
 
   // ── Amount logic ──────────────────────────────────────────────────────────
 
@@ -213,6 +221,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
           recipientAccount: widget.recipientAccount,
           bankCode: widget.bankCode,
           bankName: widget.bankName,
+          narration: _narrationController.text,
           preCalculatedCharge: chargeAmount,
           preCalculatedTotal: totalAmount,
           preCalculatedFeeDescription: feeDescription,
@@ -233,6 +242,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -249,15 +259,47 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
   // ── Phone layout ──────────────────────────────────────────────────────────
 
   Widget _buildPhoneLayout(ThemeData theme, double walletBalance, _Dims d) {
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Column(
       children: [
         _buildTopBar(theme, walletBalance, d),
         _buildRecipientCard(theme, d),
         SizedBox(height: d.sectionGap),
         _buildAmountDisplay(walletBalance, d),
+        SizedBox(height: d.sectionGap),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: CustomTextFormField(
+            controller: _narrationController,
+            label: 'Narration (Optional)',
+            hintText: 'What is this for?',
+            validator: (val) => null,
+          ),
+        ),
         const Spacer(),
-        _buildKeypad(d),
-        SizedBox(height: d.bottomPad),
+        if (!keyboardOpen) ...[
+          _buildKeypad(d),
+          SizedBox(height: d.bottomPad),
+        ] else ...[
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: TextButton.icon(
+                onPressed: () => FocusScope.of(context).unfocus(),
+                icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
+                label: const Text('Done'),
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryColor,
+                  backgroundColor: primaryColor.withValues(alpha: 0.08),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: d.bottomPad),
+        ],
       ],
     );
   }
@@ -285,8 +327,18 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _buildRecipientCard(theme, d),
-                          SizedBox(height: d.sectionGap * 1.5),
+                          SizedBox(height: d.sectionGap * 1.2),
                           _buildAmountDisplay(walletBalance, d),
+                          SizedBox(height: d.sectionGap),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 40.w),
+                            child: CustomTextFormField(
+                              controller: _narrationController,
+                              label: 'Narration (Optional)',
+                              hintText: 'What is this for?',
+                              validator: (val) => null,
+                            ),
+                          ),
                         ],
                       ),
                     ),

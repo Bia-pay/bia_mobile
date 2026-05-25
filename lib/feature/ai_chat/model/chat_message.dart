@@ -67,7 +67,9 @@ class ChatMessage {
       timestamp: DateTime.parse(json['timestamp'] as String),
       status: MessageStatus.values.byName(json['status'] as String),
       type: MessageType.values.byName(json['type'] as String),
-      payload: json['payload'] as Map<String, dynamic>?,
+      payload: json['payload'] != null
+          ? Map<String, dynamic>.from(json['payload'] as Map)
+          : null,
     );
   }
 }

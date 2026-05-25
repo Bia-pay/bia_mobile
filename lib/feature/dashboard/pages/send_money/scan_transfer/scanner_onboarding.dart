@@ -56,7 +56,7 @@ class _ScannerOnboardingState extends ConsumerState<ScannerOnboarding> {
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(),
+            //    _buildHeader(),
                 
                 Expanded(
                   child: SingleChildScrollView(
@@ -100,37 +100,37 @@ class _ScannerOnboardingState extends ConsumerState<ScannerOnboarding> {
     ).animate().fadeIn(duration: 2.seconds);
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.close, color: lightText),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Spacer(),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Text(
-              "Unified QR Portal",
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w800,
-                color: primaryColor,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          SizedBox(width: 40.w),
-        ],
-      ),
-    );
-  }
+  // Widget _buildHeader() {
+  //   return Padding(
+  //     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+  //     child: Row(
+  //       children: [
+  //         IconButton(
+  //           icon: const Icon(Icons.close, color: lightText),
+  //           onPressed: () => Navigator.pop(context),
+  //         ),
+  //         const Spacer(),
+  //         Container(
+  //           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+  //           decoration: BoxDecoration(
+  //             color: primaryColor.withOpacity(0.1),
+  //             borderRadius: BorderRadius.circular(20.r),
+  //           ),
+  //           child: Text(
+  //             "Unified QR Portal",
+  //             style: TextStyle(
+  //               fontSize: 12.sp,
+  //               fontWeight: FontWeight.w800,
+  //               color: primaryColor,
+  //               letterSpacing: 0.5,
+  //             ),
+  //           ),
+  //         ),
+  //         SizedBox(width: 40.w),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildHeroSection() {
     return Container(

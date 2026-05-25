@@ -417,6 +417,15 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                     ),
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
+                    if (widget.narration != null && widget.narration!.isNotEmpty) ...[
+                      _buildDetailRow(
+                        context,
+                        label: 'Narration',
+                        value: widget.narration!,
+                      ),
+                      const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                    ],
+
                     _buildDetailRow(
                       context,
                       label: 'Principal Amount',
@@ -506,6 +515,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                                 amount: _principalAmount,
                                 saveAsBeneficiary: _saveAsBeneficiary,
                                 type: "internal_transfer",
+                                narration: widget.narration,
                               ),
                             ),
                           );
@@ -530,39 +540,50 @@ class _BiaToBiaCompleteTransactionBottomSheetState
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: const Color(0xFF64748B),
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w600,
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (logo != null)
-              Container(
-                width: 18.w,
-                height: 18.w,
-                margin: EdgeInsets.only(right: 6.w),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage(logo),
-                    fit: BoxFit.cover,
+        SizedBox(width: 8.w),
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (logo != null)
+                Container(
+                  width: 18.w,
+                  height: 18.w,
+                  margin: EdgeInsets.only(right: 6.w),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage(logo),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
+              Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: isHighlighted ? primaryGreenColor600 : const Color(0xFF0F172A),
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            Text(
-              value,
-              style: TextStyle(
-                color: isHighlighted ? primaryGreenColor600 : const Color(0xFF0F172A),
-                fontSize: 13.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

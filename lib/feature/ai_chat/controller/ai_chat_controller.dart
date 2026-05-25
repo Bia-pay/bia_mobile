@@ -93,7 +93,7 @@ final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  return LlmService(apiKey: "AIzaSyAd2Y87-SCg4UywD1Dk00YelTvoT4lTSNU");
+  return LlmService(apiKey: "AIzaSyA-xvCt6KcQjxp43gP60IdSBRz20vysdJo");
 });
 
 
@@ -156,8 +156,8 @@ class AiChatController extends StateNotifier<AiChatState> {
   Future<void> _applyStoredLanguage() async {
     try {
       final authBox = await Hive.openBox('authBox');
-      final userId = authBox.get('userId', defaultValue: '') as String;
-      final phone = authBox.get('phone', defaultValue: '') as String;
+      final userId = authBox.get('userId')?.toString() ?? '';
+      final phone = authBox.get('phone')?.toString() ?? '';
       final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
       if (effectiveUserId.isNotEmpty) {
@@ -189,8 +189,8 @@ class AiChatController extends StateNotifier<AiChatState> {
 
   Future<void> updateLanguage(String language) async {
     final authBox = await Hive.openBox('authBox');
-    final userId = authBox.get('userId', defaultValue: '') as String;
-    final phone = authBox.get('phone', defaultValue: '') as String;
+    final userId = authBox.get('userId')?.toString() ?? '';
+    final phone = authBox.get('phone')?.toString() ?? '';
     final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
     if (effectiveUserId.isNotEmpty) {
@@ -295,8 +295,8 @@ class AiChatController extends StateNotifier<AiChatState> {
   Future<void> _persistState() async {
     try {
       final authBox = await Hive.openBox('authBox');
-      final userId = authBox.get('userId', defaultValue: '') as String;
-      final phone = authBox.get('phone', defaultValue: '') as String;
+      final userId = authBox.get('userId')?.toString() ?? '';
+      final phone = authBox.get('phone')?.toString() ?? '';
       final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
       if (effectiveUserId.isNotEmpty) {
@@ -822,6 +822,7 @@ class AiChatController extends StateNotifier<AiChatState> {
       }
     }
     state = state.copyWith(messages: messages);
+    _persistState();
   }
 
   Future<void> selectSuggestion(
