@@ -35,6 +35,7 @@ class _SplashScreenState extends ConsumerState<Splash> {
       final box = Hive.box("authBox");
       final userId = box.get("userId");
       final phone = box.get("phone");
+      final bool isLoggedIn = box.get("is_logged_in", defaultValue: false) == true;
       
       final bool hasIdentity = (userId != null && userId.toString().isNotEmpty) || 
                                (phone != null && phone.toString().isNotEmpty);
@@ -45,8 +46,13 @@ class _SplashScreenState extends ConsumerState<Splash> {
       if (!mounted) return;
 
       if (hasIdentity) {
-        // ✅ Known user: Always send to Welcome Back to enforce local security (PIN/Biometric)
-        context.go(RouteList.welcomeBackScreen);
+        if (isLoggedIn) {
+          // ✅ Known user with active session: Send to Welcome Back (PIN/Biometric lock)
+          context.go(RouteList.welcomeBackScreen);
+        } else {
+          // 🚪 Identity exists but session expired or logged out: Send to login screen
+          context.go(RouteList.loginScreen);
+        }
       } else {
         // 🆕 Totally fresh user: Send to onboarding
         context.go(RouteList.getStarted);

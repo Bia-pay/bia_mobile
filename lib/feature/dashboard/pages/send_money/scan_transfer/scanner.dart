@@ -222,10 +222,6 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildCircularButton(
-                    Icons.close,
-                    () => Navigator.pop(context),
-                  ),
                   Text(
                     _isCollectMode ? "Collect from Customer" : "Scan to Pay",
                     style: TextStyle(
