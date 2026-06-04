@@ -89,11 +89,13 @@ class AiChatState {
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
-  return ElevenLabsService(apiKey: "sk_70f5f1f26954eb9573e4d3a2458e9f3da4c30e49cb5f6304");
+  const apiKey = String.fromEnvironment('ELEVEN_LABS_API_KEY');
+  return ElevenLabsService(apiKey: apiKey);
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  return LlmService(apiKey: "AIzaSyCdLW04yxp9t6awkU-tQenvD3OQSrH9xrE");
+  const apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  return LlmService(apiKey: apiKey);
 });
 
 
@@ -247,9 +249,14 @@ class AiChatController extends StateNotifier<AiChatState> {
       }
 
       if (audioBytes != null) {
+        debugPrint('🔊 Playing ${audioBytes.length} bytes of audio...');
         await _audioPlayer.play(BytesSource(Uint8List.fromList(audioBytes)));
+      } else {
+        debugPrint('⚠️ TTS returned null — skipping audio playback');
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('❌ _playTts error: $e');
+    }
   }
 
   Future<void> _addWelcome() async {
