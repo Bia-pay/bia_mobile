@@ -156,11 +156,13 @@ void main() async {
     Hive.openBox("authBox"),
     Hive.openBox("appBox"),
     Hive.openBox("transactionCacheBox"),
-    MediaStore.ensureInitialized(),
+    if (Platform.isAndroid) MediaStore.ensureInitialized(),
   ]);
   
   final authBox = boxes[0] as Box;
-  MediaStore.appFolder = "Bia";
+  if (Platform.isAndroid) {
+    MediaStore.appFolder = "Bia";
+  }
 
   // 3. System UI setup (Non-blocking)
   SystemChrome.setPreferredOrientations([

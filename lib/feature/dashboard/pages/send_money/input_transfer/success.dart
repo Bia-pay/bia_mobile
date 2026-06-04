@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:media_store_plus/media_store_plus.dart';
+import 'package:gal/gal.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
@@ -153,13 +154,17 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
       final pngBytes = byteData.buffer.asUint8List();
       final tempPath = await _writeTempFile(pngBytes);
-      final mediaStore = MediaStore();
 
-      await mediaStore.saveFile(
-        tempFilePath: tempPath,
-        dirType: DirType.photo,
-        dirName: DirName.pictures,
-      );
+      if (Platform.isAndroid) {
+        final mediaStore = MediaStore();
+        await mediaStore.saveFile(
+          tempFilePath: tempPath,
+          dirType: DirType.photo,
+          dirName: DirName.pictures,
+        );
+      } else {
+        await Gal.putImage(tempPath);
+      }
 
       if (mounted) {
         _showSuccess('Receipt saved to gallery');

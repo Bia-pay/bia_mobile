@@ -30,6 +30,19 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
+  # Local overrides for Firebase pods to bypass git clone network issues
+  firebase_sdk_path = '/Users/mac/StudioProjects/bia main/firebase-ios-sdk-CocoaPods-12.13.0'
+  pod 'Firebase', :path => firebase_sdk_path
+  pod 'FirebaseCore', :path => firebase_sdk_path
+  pod 'FirebaseCoreInternal', :path => firebase_sdk_path
+  pod 'FirebaseCoreExtension', :path => firebase_sdk_path
+  pod 'FirebaseInstallations', :path => firebase_sdk_path
+  pod 'FirebaseAuth', :path => firebase_sdk_path
+  pod 'FirebaseAuthInterop', :path => firebase_sdk_path
+  pod 'FirebaseAppCheckInterop', :path => firebase_sdk_path
+  pod 'FirebaseMessaging', :path => firebase_sdk_path
+  pod 'FirebaseMessagingInterop', :path => firebase_sdk_path
+
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths
