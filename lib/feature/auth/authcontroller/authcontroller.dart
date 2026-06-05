@@ -43,11 +43,22 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
   AuthController(this.authRepository, this.ref) : super(const AsyncLoading());
 
+  // Prevents duplicate simultaneous login calls (e.g. from both login.dart and welcome_back session lock)
+  bool _loginInProgress = false;
+
   Future<bool> logIn(
       BuildContext context,
       String phone,
       String password,
       ) async {
+    // Guard: If a login is already in progress (e.g. simultaneous calls from login.dart
+    // and welcome_back session lock), silently ignore the duplicate.
+    if (_loginInProgress) {
+      debugPrint('⚠️ Login already in progress — ignoring duplicate call.');
+      return false;
+    }
+    _loginInProgress = true;
+    try {
     if (phone.isEmpty || password.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -115,6 +126,9 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         position: ToastPosition.top,
       );
       return false;
+    }
+    } finally {
+      _loginInProgress = false;
     }
   }
   Future<ResponseModel?> registerStepOne(

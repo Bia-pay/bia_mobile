@@ -54,6 +54,7 @@ class _ScannerOnboardingState extends ConsumerState<ScannerOnboarding> {
           ),
 
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
             //    _buildHeader(),

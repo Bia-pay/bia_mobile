@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
-import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../core/constants.dart';
 import '../colors.dart';
@@ -118,14 +117,24 @@ class _ResponsiveHelper {
 
 /// Reusable confirmation bottom sheet with PIN input
 class ConfirmationBottomSheet {
-  static String _getServiceId(String providerName) {
-    final map = {
-      'MTN': 'mtn-data',
-      'Airtel': 'airtel-data',
-      'Glo': 'glo-data',
-      '9mobile': 'etisalat-data',
-    };
-    return map[providerName] ?? 'mtn-data';
+  static String? _detectProviderLogo(String providerName, List<BottomSheetDetailItem> details) {
+    // First check if any detail item already provides a logo
+    for (final item in details) {
+      if (item.logo != null && item.logo!.isNotEmpty) {
+        return item.logo;
+      }
+    }
+    // Fallback based on provider name match
+    final name = providerName.toLowerCase();
+    if (name.contains('mtn')) return 'assets/svg/mtn.jpg';
+    if (name.contains('airtel')) return 'assets/svg/airtel.png';
+    if (name.contains('glo')) return 'assets/svg/glo.jpg';
+    if (name.contains('9mobile') || name.contains('etisalat')) return 'assets/svg/9mobile.png';
+    if (name.contains('dstv')) return 'assets/svg/dstv.png';
+    if (name.contains('gotv')) return 'assets/svg/gotv.png';
+    if (name.contains('startimes')) return 'assets/svg/startimes.png';
+    if (name.contains('showmax')) return 'assets/svg/showmax.png';
+    return null;
   }
 
   static void show({
@@ -137,7 +146,7 @@ class ConfirmationBottomSheet {
     final currencySymbol = Constants.nairaCurrencySymbol;
     final ValueNotifier<bool> useCashback = ValueNotifier<bool>(false);
     final Color primary = config.primaryColor ?? primaryColor;
-    final Color bgColor = config.backgroundColor ?? lightBackground;
+    final Color bgColor = config.backgroundColor ?? offWhiteBackground;
 
     showModalBottomSheet(
       context: context,
@@ -146,68 +155,276 @@ class ConfirmationBottomSheet {
       isDismissible: false,
       enableDrag: false,
       builder: (BuildContext modalContext) {
-        final theme = Theme.of(context);
-
-        return WillPopScope(
-          onWillPop: () async => false,
-          child: AnimatedPadding(
-            padding: MediaQuery.of(modalContext).viewInsets,
-            duration: const Duration(milliseconds: 100),
-            child: Align(
-              alignment: Alignment.bottomCenter, // 🔥 FORCE BOTTOM ALIGNMENT
-              child: Container(
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(r.sheetRadius)),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: r.horizontalPadding,
-                  vertical: r.verticalPadding,
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
+        return PopScope(
+          canPop: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(r.sheetRadius)),
+            ),
+            padding: EdgeInsets.only(
+              left: r.horizontalPadding,
+              right: r.horizontalPadding,
+              top: r.verticalPadding,
+              bottom: 0,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
                       // Drag Handle
                       if (config.showDragHandle)
                         Container(
-                          width: isSmallScreen(modalContext) ? 32.w : 40.w,
-                          height: isSmallScreen(modalContext) ? 3.h : 4.h,
+                          width: 40.w,
+                          height: 4.h,
                           decoration: BoxDecoration(
-                            color: grey300,
+                            color: const Color(0xFFCBD5E1),
                             borderRadius: BorderRadius.circular(2.r),
                           ),
                         ),
-                      if (config.showDragHandle) SizedBox(height: r.mediumSpacing),
+                      if (config.showDragHandle) SizedBox(height: 16.h),
 
                       // Title - Centered
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          config.title,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith (
-                            fontSize: r.titleFontSize,
-                            fontWeight: FontWeight.w700,
+                      Text(
+                        config.title.startsWith('₦') || config.title.startsWith(currencySymbol)
+                            ? (config.subtitle ?? 'Confirm Payment')
+                            : config.title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        'Verify details before completing transaction',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+
+                      // Premium Large Amount Display
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: const Color(0xFFF1F5F9),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.02),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                'TOTAL TRANSACTION AMOUNT',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: const Color(0xFF94A3B8),
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '$currencySymbol${config.amount.toStringAsFixed(2)}',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28.sp,
+                                    fontWeight: FontWeight.w900,
+                                    color: primary,
+                                    letterSpacing: -0.8,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
+                      SizedBox(height: 16.h),
 
-                      if (config.subtitle != null) ...[
-                        SizedBox(height: r.smallSpacing),
-                        Text(
-                          config.subtitle!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith (
-                            fontSize: r.subtitleFontSize,
-                            color: grey600,
+                      // Visual Diagram (Sender -> Recipient)
+                      Builder(builder: (ctx) {
+                        String? getValue(String label) {
+                          try {
+                            return config.details.firstWhere(
+                              (e) => e.label.toLowerCase() == label.toLowerCase() || 
+                                     (label.toLowerCase() == "provider" && e.label.toLowerCase() == "network") ||
+                                     (label.toLowerCase() == "network" && e.label.toLowerCase() == "provider")
+                            ).value;
+                          } catch (_) {
+                            return null;
+                          }
+                        }
+                        final providerVal = getValue("Network") ?? getValue("Provider") ?? "";
+                        final recipientName = providerVal.isNotEmpty ? providerVal : (config.subtitle ?? "Utility");
+                        final logoPath = _detectProviderLogo(recipientName, config.details);
+
+                        return ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+                            decoration: BoxDecoration(
+                              color: primary.withValues(alpha: 0.04),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Sender Card
+                                Column(
+                                  children: [
+                                    Container(
+                                      width: 48.r,
+                                      height: 48.r,
+                                      decoration: BoxDecoration(
+                                        color: primary,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: primary.withValues(alpha: 0.2),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.account_balance_wallet_rounded,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    SizedBox(height: 6.h),
+                                    Text(
+                                      'My Wallet',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                // Connection
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: List.generate(4, (index) {
+                                          return Container(
+                                            margin: EdgeInsets.symmetric(horizontal: 2.w),
+                                            width: 5.w,
+                                            height: 5.w,
+                                            decoration: BoxDecoration(
+                                              color: primary.withValues(alpha: (index + 1) * 0.25),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          );
+                                        }),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: primary,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Recipient Card
+                                Column(
+                                  children: [
+                                    if (logoPath != null)
+                                      Container(
+                                        width: 48.r,
+                                        height: 48.r,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: primary.withValues(alpha: 0.2),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: ClipOval(
+                                          child: Image.asset(
+                                            logoPath,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Container(
+                                        width: 48.r,
+                                        height: 48.r,
+                                        decoration: BoxDecoration(
+                                          color: primaryGreenColor600.withValues(alpha: 0.1),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: primaryGreenColor600.withValues(alpha: 0.2),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            recipientName.isNotEmpty ? recipientName[0].toUpperCase() : 'U',
+                                            style: TextStyle(
+                                              color: primaryGreenColor600,
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    SizedBox(height: 6.h),
+                                    SizedBox(
+                                      width: 80.w,
+                                      child: Text(
+                                        recipientName.split(' ')[0],
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF0F172A),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                      SizedBox(height: r.largeSpacing),
+                        );
+                      }),
+                      SizedBox(height: 16.h),
 
-                      // Details Card - Responsive with max width
+                      // Details Card
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: r.maxContentWidth),
                         child: _buildDetailsCard(
@@ -219,63 +436,68 @@ class ConfirmationBottomSheet {
                           r: _ResponsiveHelper(modalContext),
                         ),
                       ),
-                      SizedBox(height: r.largeSpacing),
+                      SizedBox(height: 16.h),
+
+                      // Wallet Balance Mini Card
+                      if (config.showWalletBalance) ...[
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                          child: _buildWalletBalanceRow(
+                            modalContext,
+                            balance: config.walletBalance ?? _getWalletBalance().toStringAsFixed(2),
+                            currencySymbol: currencySymbol,
+                            primaryColor: primary,
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
 
                       // Continue Button - Full width responsive
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: r.maxContentWidth),
                         child: SizedBox(
                           width: double.infinity,
-                          height: r.buttonHeight,
                           child: CustomButton(
                             buttonColor: primary,
-                            buttonTextColor: lightBackground,
-                            buttonName: 'Continue',
-                            //fontSize: r.bodyFontSize,
+                            buttonTextColor: Colors.white,
+                            buttonName: 'Continue to PIN',
                             onPressed: () {
-
                               // 🔥 DISMISS KEYBOARD FIRST
                               FocusScope.of(modalContext).unfocus();
                               Navigator.pop(modalContext);
 
                               String? getValue(String label) {
                                 try {
-                                  return config.details.firstWhere((e) => e.label == label).value;
+                                  return config.details.firstWhere(
+                                    (e) => e.label.toLowerCase() == label.toLowerCase() || 
+                                           (label.toLowerCase() == "provider" && e.label.toLowerCase() == "network") ||
+                                           (label.toLowerCase() == "network" && e.label.toLowerCase() == "provider")
+                                  ).value;
                                 } catch (_) {
                                   return null;
                                 }
                               }
 
-                         // 🔥 Handle BOTH airtime/data AND cable
-                              final network =
-                                  getValue("Network") ??
-                                      getValue("Provider") ??
-                                      "";
+                              final network = getValue("Network") ?? getValue("Provider") ?? "";
                               final meterNumber = getValue("Meter Number") ?? "";
-                              final serviceId =
-                                  getValue("serviceId") ?? network.toLowerCase();
-
-                              final phone =
-                                  getValue("Phone Number") ??
-                                      getValue("Smartcard") ??
-                                      getValue("Meter Number") ??
-                                      "";
-
+                              final serviceId = getValue("serviceId") ?? network.toLowerCase();
+                              final phone = getValue("Phone Number") ?? getValue("Smartcard") ?? getValue("Meter Number") ?? "";
                               final userPhone = Hive.box('authBox').get('phone', defaultValue: '');
 
                               final variationCode = config.details
                                   .firstWhere(
                                     (e) => e.label.toLowerCase().contains("variation"),
-                                orElse: () => const BottomSheetDetailItem(label: "", value: ""),
-                              )
+                                    orElse: () => const BottomSheetDetailItem(label: "", value: ""),
+                                  )
                                   .value;
 
                               final packageName = config.details
                                   .firstWhere(
                                     (e) => e.label.toLowerCase().contains("package"),
-                                orElse: () => const BottomSheetDetailItem(label: "", value: ""),
-                              )
+                                    orElse: () => const BottomSheetDetailItem(label: "", value: ""),
+                                  )
                                   .value;
+
                               modalContext.pushNamed(
                                 RouteList.transactionPin,
                                 extra: {
@@ -295,7 +517,7 @@ class ConfirmationBottomSheet {
                                     "variationCode": variationCode,
                                     "packageName": packageName,
                                     "meterNumber": meterNumber, 
-                                    "userPhone": userPhone, // Pass user's phone
+                                    "userPhone": userPhone,
                                   },
                                 },
                               );
@@ -303,7 +525,7 @@ class ConfirmationBottomSheet {
                           ),
                         ),
                       ),
-                      SizedBox(height: r.mediumSpacing),
+                      SizedBox(height: 16.h),
 
                       // Cancel Button
                       if (config.cancelButtonText != null)
@@ -314,18 +536,18 @@ class ConfirmationBottomSheet {
                           },
                           child: Text(
                             config.cancelButtonText!,
-                            style: theme.textTheme.bodyMedium?.copyWith (
-                              color: grey,
-                              fontSize: r.bodyFontSize,
+                            style: TextStyle(
+                              color: const Color(0xFF64748B),
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
+                      SizedBox(height: 16.h + MediaQuery.of(context).padding.bottom),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
         );
       },
     );
@@ -336,73 +558,71 @@ class ConfirmationBottomSheet {
   }
 
   static Widget _buildDetailsCard(
-      BuildContext context, {
-        required BottomSheetConfig config,
-        required ValueNotifier<bool> useCashback,
-        required String currencySymbol,
-        required Color primaryColor,
-        required _ResponsiveHelper r,
-      }) {
+    BuildContext context, {
+    required BottomSheetConfig config,
+    required ValueNotifier<bool> useCashback,
+    required String currencySymbol,
+    required Color primaryColor,
+    required _ResponsiveHelper r,
+  }) {
+    // Filter out internal metadata details
+    final visibleDetails = config.details.where((e) {
+      final label = e.label.toLowerCase();
+      return label != "serviceid" && label != "variationcode";
+    }).toList();
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(r.cardPadding),
+      padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
-        color: grey50,
-        borderRadius: BorderRadius.circular(r.cardRadius),
-        border: Border.all(color: grey200),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Dynamic Detail Rows
-          for (int i = 0; i < config.details.length; i++) ...[
+          for (int i = 0; i < visibleDetails.length; i++) ...[
             _buildDetailRow(
               context,
-              label: config.details[i].label,
-              value: config.details[i].value,
-              logo: config.details[i].logo,
-              isHighlighted: config.details[i].isHighlighted,
-              r: r,
+              label: visibleDetails[i].label,
+              value: visibleDetails[i].value,
+              logo: visibleDetails[i].logo,
+              isHighlighted: visibleDetails[i].isHighlighted,
             ),
-            if (i < config.details.length - 1)
-              Divider(height: r.mediumSpacing, color: grey300),
+            if (i < visibleDetails.length - 1 || 
+                (config.showCashback && config.cashbackAmount != null))
+              const Divider(height: 20, color: Color(0xFFF1F5F9)),
           ],
 
           // Cashback Bonus
           if (config.showCashback && config.cashbackAmount != null) ...[
-            if (config.details.isNotEmpty)
-              Divider(height: r.mediumSpacing, color: grey300),
-            _buildCashbackBonusRow(context, config.cashbackAmount!, r),
+            _buildSummaryRow(
+              context,
+              'Cashback Earned',
+              config.cashbackAmount!,
+              isHighlighted: true,
+              isCashbackEarned: true,
+            ),
           ],
 
-          // Cashback Toggle
+          // Cashback Toggle (if needed)
           if (config.showCashback) ...[
+            const Divider(height: 20, color: Color(0xFFF1F5F9)),
             ValueListenableBuilder<bool>(
               valueListenable: useCashback,
               builder: (context, isUsing, child) {
                 return _buildSummaryRow(
                   context,
                   'Use Cashback (${currencySymbol}34.00)',
-                  '-${currencySymbol}34.00',
+                  '',
                   hasToggle: true,
                   isToggled: isUsing,
                   onToggle: (value) => useCashback.value = value,
                   primaryColor: primaryColor,
-                  r: r,
                 );
               },
-            ),
-          ],
-
-          // Wallet Balance
-          if (config.showWalletBalance) ...[
-            Divider(height: r.mediumSpacing, color: grey300),
-            _buildWalletBalanceRow(
-              context,
-              balance: config.walletBalance ?? _getWalletBalance().toStringAsFixed(2),
-              currencySymbol: currencySymbol,
-              primaryColor: primaryColor,
-              r: r,
             ),
           ],
         ],
@@ -421,230 +641,191 @@ class ConfirmationBottomSheet {
   }
 
   static Widget _buildDetailRow(
-      BuildContext context, {
-        required String label,
-        required String value,
-        String? logo,
-        bool isHighlighted = false,
-        required _ResponsiveHelper r,
-      }) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: r.smallSpacing / 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Flexible(
-            flex: 2,
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith (
-                color: grey600,
-                fontSize: r.bodyFontSize,
-              ),
+    BuildContext context, {
+    required String label,
+    required String value,
+    String? logo,
+    bool isHighlighted = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF64748B),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          SizedBox(width: 8.w),
-          Flexible(
-            flex: 3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (logo != null)
-                  Container(
-                    width: r.logoSize,
-                    height: r.logoSize,
-                    margin: EdgeInsets.only(right: 6.w),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                        image: AssetImage(logo),
-                        fit: BoxFit.cover,
-                      ),
+        ),
+        SizedBox(width: 8.w),
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (logo != null)
+                Container(
+                  width: 18.w,
+                  height: 18.w,
+                  margin: EdgeInsets.only(right: 6.w),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage(logo),
+                      fit: BoxFit.cover,
                     ),
-                  ),
-                Flexible(
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.right,
-                    style: theme.textTheme.bodyMedium?.copyWith (
-                      color: isHighlighted ? primaryGreenColor600 : transparentBlack87,
-                      fontSize: r.bodyFontSize,
-                      fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ],
-            ),
+              Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: isHighlighted ? primaryGreenColor600 : const Color(0xFF0F172A),
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _buildCashbackBonusRow(
-      BuildContext context,
-      String value,
-      _ResponsiveHelper r,
-      ) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: r.smallSpacing),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith (
-              color: primaryGreenColor600,
-              fontWeight: FontWeight.bold,
-              fontSize: r.bodyFontSize,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   static Widget _buildSummaryRow(
-      BuildContext context,
-      String title,
-      String value, {
-        bool bonus = false,
-        bool hasToggle = false,
-        bool isToggled = false,
-        ValueChanged<bool>? onToggle,
-        required Color primaryColor,
-        required _ResponsiveHelper r,
-      }) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: r.smallSpacing),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: grey600,
-                fontSize: r.bodyFontSize,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
+    BuildContext context,
+    String title,
+    String value, {
+    bool isHighlighted = false,
+    bool isCashbackEarned = false,
+    bool hasToggle = false,
+    bool isToggled = false,
+    ValueChanged<bool>? onToggle,
+    Color? primaryColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: isHighlighted ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+            fontSize: 13.sp,
+            fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
           ),
-          SizedBox(width: 8.w),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                style: bonus
-                    ? theme.textTheme.bodyMedium?.copyWith (
-                  color: primaryGreenColor600,
-                  fontWeight: FontWeight.bold,
-                  fontSize: r.bodyFontSize,
-                )
-                    : Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: r.bodyFontSize,
-                ),
+        ),
+        if (value.isNotEmpty)
+          Text(
+            value,
+            style: TextStyle(
+              color: isCashbackEarned 
+                  ? primaryGreenColor600 
+                  : (isHighlighted ? (primaryColor ?? const Color(0xFF0F172A)) : const Color(0xFF0F172A)),
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        else if (hasToggle)
+          GestureDetector(
+            onTap: () {
+              if (onToggle != null) {
+                onToggle(!isToggled);
+              }
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 38.w,
+              height: 22.h,
+              decoration: BoxDecoration(
+                color: isToggled ? (primaryColor ?? const Color(0xFF26B4DF)) : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(11.h),
               ),
-              SizedBox(width: 8.w),
-              if (hasToggle)
-                GestureDetector(
-                  onTap: () {
-                    if (onToggle != null) {
-                      onToggle(!isToggled);
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: r.toggleWidth,
-                    height: r.toggleHeight,
-                    decoration: BoxDecoration(
-                      color: isToggled ? primaryColor : grey300,
-                      borderRadius: BorderRadius.circular(r.toggleHeight / 2),
-                    ),
-                    child: AnimatedAlign(
-                      duration: const Duration(milliseconds: 200),
-                      alignment: isToggled
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        width: r.toggleKnobSize,
-                        height: r.toggleKnobSize,
-                        margin: EdgeInsets.symmetric(horizontal: 2.w),
-                        decoration: const BoxDecoration(
-                          color: lightBackground,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
+              child: AnimatedAlign(
+                duration: const Duration(milliseconds: 200),
+                alignment: isToggled ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: 18.w,
+                  height: 18.w,
+                  margin: EdgeInsets.symmetric(horizontal: 2.w),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
   static Widget _buildWalletBalanceRow(
-      BuildContext context, {
-        required String balance,
-        required String currencySymbol,
-        required Color primaryColor,
-        required _ResponsiveHelper r,
-      }) {
+    BuildContext context, {
+    required String balance,
+    required String currencySymbol,
+    required Color primaryColor,
+  }) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        vertical: r.mediumSpacing,
-        horizontal: r.cardPadding,
+        vertical: 12.h,
+        horizontal: 16.w,
       ),
       decoration: BoxDecoration(
-        border: Border.all(color: grey300),
-        borderRadius: BorderRadius.circular(r.buttonRadius),
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.account_balance_wallet,
-            color: primaryColor,
-            size: r.iconSize,
+          Container(
+            padding: EdgeInsets.all(8.r),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.account_balance_wallet_rounded,
+              color: primaryColor,
+              size: 20,
+            ),
           ),
-          SizedBox(width: 10.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Wallet Balance',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: grey600,
-                    fontSize: r.smallFontSize,
+                  style: TextStyle(
+                    color: const Color(0xFF64748B),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(height: 2.h),
                 Text(
                   '$currencySymbol$balance',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: r.bodyFontSize,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
               ],
             ),
           ),
           Icon(
-            Icons.check_circle,
+            Icons.check_circle_rounded,
             color: primaryColor,
-            size: r.iconSize,
+            size: 20,
           ),
         ],
       ),

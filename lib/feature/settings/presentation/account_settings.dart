@@ -295,6 +295,7 @@ class _UProfileState extends ConsumerState<UProfile> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Ultra Premium Light Gray
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
@@ -340,7 +341,7 @@ class _UProfileState extends ConsumerState<UProfile> {
                 _buildHubHeader(t.translate('prefs_support')),
                 _buildGroupedSection(othersItems),
 
-                SizedBox(height: 50.h),
+                SizedBox(height: 140.h),
               ],
             ),
           ),

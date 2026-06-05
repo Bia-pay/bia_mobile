@@ -47,9 +47,24 @@ class AuthFlowService {
       }
       debugPrint('✅ Step 1: Access token verified');
       
-      // Step 2: Always get a fresh FCM token
+      // Step 2: Try to get a fresh FCM token with iOS APNS retry logic
       debugPrint('🔥 Fetching fresh FCM token...');
-      final newFcmToken = await FirebaseMessaging.instance.getToken();
+      String? newFcmToken;
+      try {
+        newFcmToken = await FirebaseMessaging.instance.getToken();
+      } catch (fcmError) {
+        // On iOS, APNS token may not be ready immediately after app launch.
+        // This is a known timing issue — we retry once after a short delay.
+        debugPrint('⚠️ FCM token fetch failed (likely APNS not ready on iOS): $fcmError');
+        debugPrint('⏳ Retrying FCM token fetch in 3 seconds...');
+        await Future.delayed(const Duration(seconds: 3));
+        try {
+          newFcmToken = await FirebaseMessaging.instance.getToken();
+        } catch (retryError) {
+          debugPrint('⚠️ FCM token retry also failed: $retryError. Will proceed with cached token if available.');
+        }
+      }
+
       if (newFcmToken != null) {
         await authBox.put('fcmToken', newFcmToken);
         debugPrint('✅ Step 2: FCM token updated');
@@ -59,11 +74,13 @@ class AuthFlowService {
       
       final currentFcmToken = authBox.get('fcmToken');
       if (currentFcmToken == null || currentFcmToken.isEmpty) {
-        debugPrint('❌ No FCM token available, cannot register');
-        return;
+        // FCM token is unavailable (e.g. simulator or APNS not configured).
+        // We still connect the socket so the session is established —
+        // push notifications just won't be registered this session.
+        debugPrint('⚠️ No FCM token available — connecting socket without push notification registration');
       }
       
-      // Step 3: Connect socket with both tokens
+      // Step 3: Connect socket (regardless of FCM status)
       debugPrint('🔌 Step 3: Connecting socket...');
       final socketNotifier = ref.read(socketNotifierProvider.notifier);
       await socketNotifier.connect();

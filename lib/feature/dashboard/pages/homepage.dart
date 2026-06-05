@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:bia/core/__core.dart';
@@ -14,7 +13,6 @@ import 'package:bia/feature/dashboard/dashboardcontroller/provider.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/app/view/widget/dashboard_header.dart';
-import '../widgets/transaction_tile.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -26,16 +24,9 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
 
   Future<void> _handleRefresh() async {
-    final userId = ref.read(userIdProvider);
-
-    final txFuture = ref
-        .read(recentTransactionsProvider(userId).notifier)
-        .refresh();
-    final walletFuture = ref
+    await ref
         .read(dashboardControllerProvider.notifier)
         .refreshWalletBalance();
-
-    await Future.wait([txFuture, walletFuture]);
   }
 
   @override
@@ -63,7 +54,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = Theme.of(context);
     final userProfile = ref.watch(userProfileProvider);
     final box = Hive.box('authBox');
-    
+
     final isLoggedIn = box.get('is_logged_in', defaultValue: false) == true;
     final userId = box.get('userId', defaultValue: '');
 
@@ -77,13 +68,26 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final fullname = userProfile?.fullname ?? box.get('fullname', defaultValue: 'User');
     final picture = userProfile?.picture ?? box.get('picture');
-    
+
     final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
     final bool isTablet = screenWidth > 600;
+    final bool isLargeTablet = screenWidth > 900;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+    final bool isLarge = screenHeight > 900;
 
     // Responsive padding & spacings
-    final double paddingHorizontal = isTablet ? 24.w : 16.w;
-    final double elementSpacing = isTablet ? 16.h : 14.h;
+    final double paddingHorizontal = isLargeTablet ? 32.w : isTablet ? 24.w : 16.w;
+    final double elementSpacing = isTablet
+        ? 18.h
+        : isXSmall
+            ? 8.h
+            : isSmall
+                ? 10.h
+                : isLarge
+                    ? 16.h
+                    : 14.h;
 
     // Split Layout for Tablet / Large screen form factor
     Widget buildBody() {
@@ -99,7 +103,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   flex: 11,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: paddingHorizontal, vertical: 8.h),
+                    padding: EdgeInsets.only(left: paddingHorizontal, right: paddingHorizontal / 2, top: 8.h, bottom: 130.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -115,59 +119,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                 ),
-                
-                // Right Column: Recent Transactions & Activity log
+
+                // Right Column: Promo Banner
                 Expanded(
                   flex: 9,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(right: paddingHorizontal, top: 8.h, bottom: 16.h),
-                    child: Container(
-                      padding: EdgeInsets.all(18.r),
-                      decoration: BoxDecoration(
-                        color: offWhite,
-                        borderRadius: BorderRadius.circular(16.r),
-                        border: Border.all(color: lightBorderColor, width: 1),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.015),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Transaction History',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13.sp,
-                                  color: lightText,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => context.pushNamed(RouteList.transactionHistory),
-                                child: Text(
-                                  'View all',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11.sp,
-                                    color: primaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 14.h),
-                          const RecentTransactionsList(),
-                        ],
-                      ),
-                    ).animate().fadeIn(duration: 550.ms, delay: 200.ms).slideX(begin: 0.05, end: 0, duration: 550.ms),
+                    padding: EdgeInsets.only(right: paddingHorizontal, top: 8.h, bottom: 130.h),
+                    child: const PromoBannerCarousel()
+                        .animate()
+                        .fadeIn(duration: 550.ms, delay: 200.ms)
+                        .slideX(begin: 0.05, end: 0, duration: 550.ms),
                   ),
                 ),
               ],
@@ -194,34 +156,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const BiaAiCard().animate().fadeIn(duration: 450.ms, delay: 100.ms).slideY(begin: 0.08, end: 0, duration: 450.ms),
                   SizedBox(height: elementSpacing),
                   const QuickActionsGrid().animate().fadeIn(duration: 500.ms, delay: 150.ms).slideY(begin: 0.08, end: 0, duration: 500.ms),
-                  SizedBox(height: elementSpacing + 2.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Transaction History',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13.sp,
-                          color: lightText,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => context.pushNamed(RouteList.transactionHistory),
-                        child: Text(
-                          'View all',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 10.5.sp,
-                            color: primaryColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10.h),
-                  const RecentTransactionsList().animate().fadeIn(duration: 500.ms, delay: 200.ms),
-                  SizedBox(height: 24.h),
+                  SizedBox(height: elementSpacing),
+                  const PromoBannerCarousel().animate().fadeIn(duration: 550.ms, delay: 200.ms).slideY(begin: 0.06, end: 0, duration: 550.ms),
+                  SizedBox(height: isXSmall ? 110.h : isLarge ? 160.h : 140.h),
                 ],
               ),
             ),
@@ -234,6 +171,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: offWhiteBackground,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             HomeHeader(
@@ -269,8 +207,13 @@ class ActionRibbon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+    final bool isLarge = screenHeight > 900;
+    final double vPad = isXSmall ? 8.h : isSmall ? 10.h : isLarge ? 16.h : 14.h;
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+      padding: EdgeInsets.symmetric(vertical: vPad, horizontal: 8.w),
       decoration: BoxDecoration(
         color: offWhite,
         borderRadius: BorderRadius.circular(16.r),
@@ -289,7 +232,7 @@ class ActionRibbon extends StatelessWidget {
           ActionButton(
             label: 'Send TP',
             icon: SvgPicture.asset(
-              send, 
+              send,
               height: 20.h,
               colorFilter: const ColorFilter.mode(primaryColor, BlendMode.srcIn),
             ),
@@ -343,7 +286,7 @@ class ActionRibbon extends StatelessWidget {
           ActionButton(
             label: 'Withdrawal',
             icon: Image.asset(
-              atm, 
+              atm,
               height: 20.h,
               color: primaryColor,
               errorBuilder: (_, __, ___) => const Icon(
@@ -366,8 +309,13 @@ class BiaAiCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+    final bool isLarge = screenHeight > 900;
+    final double cardHeight = isXSmall ? 72.h : isSmall ? 82.h : isLarge ? 106.h : 96.h;
     return Container(
-      height: 96.h,
+      height: cardHeight,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF0C284E), Color(0xFF133A6F), Color(0xFF1E569F)],
@@ -501,151 +449,285 @@ class BiaAiCard extends ConsumerWidget {
   }
 }
 
-class RecentTransactionsList extends ConsumerWidget {
-  const RecentTransactionsList({super.key});
+// ── Promo Banner Carousel ─────────────────────────────────────────────────────
+
+class _BannerData {
+  final List<Color> gradientColors;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final String? actionLabel;
+  final String? route;
+
+  const _BannerData({
+    required this.gradientColors,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.actionLabel,
+    this.route,
+  });
+}
+
+class PromoBannerCarousel extends StatefulWidget {
+  const PromoBannerCarousel({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.watch(userIdProvider);
-    final asyncTx = ref.watch(recentTransactionsProvider(userId));
+  State<PromoBannerCarousel> createState() => _PromoBannerCarouselState();
+}
 
-    return SizedBox(
-      width: double.infinity,
-      child: asyncTx.when(
-        data: (transactions) {
-          if (transactions.isEmpty) {
-            return Container(
-              padding: EdgeInsets.symmetric(vertical: 24.h),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: 52.r,
-                      width: 52.r,
-                      decoration: BoxDecoration(
-                        color: secondaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.receipt_long_rounded,
-                        size: 24,
-                        color: primaryColor,
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      "No recent transactions",
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.bold,
-                        color: lightText,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      "Your transactions will appear here.",
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: lightSecondaryText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          return ListView.builder(
-            shrinkWrap: true,
-            itemCount: transactions.length > 2 ? 2 : transactions.length,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
+class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+  Timer? _autoScrollTimer;
+
+  static const _banners = [
+    _BannerData(
+      gradientColors: [Color(0xFF0C284E), Color(0xFF1E569F)],
+      title: 'Send Money Instantly',
+      subtitle: 'Transfer to any Bia wallet or bank account in seconds.',
+      icon: Icons.send_rounded,
+      actionLabel: 'Send Now',
+      route: RouteList.sendMoneyTransfer,
+    ),
+    _BannerData(
+      gradientColors: [Color(0xFF065F46), Color(0xFF059669)],
+      title: 'Pay Bills Effortlessly',
+      subtitle: 'Airtime, data, electricity & more — all in one place.',
+      icon: Icons.receipt_rounded,
+      actionLabel: 'Pay Bills',
+      route: RouteList.airtime,
+    ),
+    _BannerData(
+      gradientColors: [Color(0xFF4C1D95), Color(0xFF7C3AED)],
+      title: 'Bia AI Assistant',
+      subtitle: 'Make transactions with voice commands in your local dialect.',
+      icon: Icons.mic_rounded,
+      actionLabel: 'Try Bia AI',
+      route: RouteList.aiChat,
+    ),
+    _BannerData(
+      gradientColors: [Color(0xFF92400E), Color(0xFFD97706)],
+      title: 'Bia Trike — Coming Soon',
+      subtitle: 'Book affordable rides right from your wallet. Stay tuned!',
+      icon: Icons.electric_rickshaw_rounded,
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      final next = (_currentIndex + 1) % _banners.length;
+      _pageController.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+    final bool isLarge = screenHeight > 900;
+    final double bannerHeight = isXSmall ? 100.h : isSmall ? 112.h : isLarge ? 136.h : 122.h;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: bannerHeight,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _banners.length,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
             itemBuilder: (context, index) {
-              final tx = transactions[index];
-              return TransactionTile(
-                tx: tx,
-                onTap: () => context.pushNamed(
-                  RouteList.transactionDetailsScreen,
-                  extra: tx,
-                ),
+              final banner = _banners[index];
+              return _BannerCard(
+                banner: banner,
+                onTap: banner.route != null
+                    ? () => context.pushNamed(banner.route!)
+                    : null,
               );
             },
-          );
-        },
-        loading: () => const ShimmerTransactionLoader(),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.h),
-            child: Text(
-              "Could not load transactions.",
-              style: TextStyle(color: errorColor, fontSize: 11.sp),
-            ),
           ),
         ),
-      ),
+        SizedBox(height: 8.h),
+        // Page indicator dots
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_banners.length, (i) {
+            final isActive = i == _currentIndex;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              margin: EdgeInsets.symmetric(horizontal: 3.w),
+              width: isActive ? 18.w : 6.w,
+              height: 5.h,
+              decoration: BoxDecoration(
+                color: isActive ? primaryColor : lightBorderColor,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }
 
-class ShimmerTransactionLoader extends StatelessWidget {
-  const ShimmerTransactionLoader({super.key});
+class _BannerCard extends StatelessWidget {
+  final _BannerData banner;
+  final VoidCallback? onTap;
+
+  const _BannerCard({required this.banner, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[200]!,
-      highlightColor: Colors.grey[50]!,
-      child: Column(
-        children: List.generate(2, (index) => Padding(
-          padding: EdgeInsets.only(bottom: 8.h),
-          child: Row(
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 1.w),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: banner.gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: banner.gradientColors.last.withOpacity(0.28),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Stack(
             children: [
-              Container(
-                height: 38.w,
-                width: 38.w,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10.r),
+              // Decorative circles
+              Positioned(
+                right: -20.w,
+                top: -20.h,
+                child: Container(
+                  width: 90.r,
+                  height: 90.r,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.06),
+                  ),
                 ),
               ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Positioned(
+                left: -15.w,
+                bottom: -25.h,
+                child: Container(
+                  width: 70.r,
+                  height: 70.r,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.04),
+                  ),
+                ),
+              ),
+              // Content
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+                child: Row(
                   children: [
-                    Container(
-                      height: 12.h,
-                      width: 120.w,
-                      color: Colors.white,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            banner.title,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.sp,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            banner.subtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withOpacity(0.78),
+                              fontWeight: FontWeight.w400,
+                              fontSize: 9.5.sp,
+                              height: 1.4,
+                            ),
+                          ),
+                          if (banner.actionLabel != null) ...[
+                            SizedBox(height: 8.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    banner.actionLabel!,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 9.sp,
+                                    ),
+                                  ),
+                                  SizedBox(width: 3.w),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 8.sp, color: Colors.white),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                    SizedBox(height: 6.h),
+                    SizedBox(width: 12.w),
                     Container(
-                      height: 8.h,
-                      width: 60.w,
-                      color: Colors.white,
+                      width: 48.r,
+                      height: 48.r,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.12),
+                        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          banner.icon,
+                          color: Colors.white,
+                          size: 22.sp,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    height: 12.h,
-                    width: 50.w,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 6.h),
-                  Container(
-                    height: 8.h,
-                    width: 30.w,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
             ],
           ),
-        )),
+        ),
       ),
     );
   }
@@ -675,8 +757,13 @@ class BalanceCard extends ConsumerWidget {
       (m) => '${m[1]},',
     );
 
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+    final bool isLarge = screenHeight > 900;
+    final double cardHeight = isXSmall ? 96.h : isSmall ? 108.h : isLarge ? 132.h : 120.h;
     return Container(
-      height: 120.h,
+      height: cardHeight,
       decoration: BoxDecoration(
         gradient: brandGradient,
         borderRadius: BorderRadius.circular(16.r),
@@ -944,8 +1031,16 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
     final actions = getActions(context);
     final theme = Theme.of(context);
 
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+    final bool isLarge = screenHeight > 900;
+    final bool isTablet = screenWidth > 600;
+    final double vPad = isXSmall ? 6.h : isSmall ? 8.h : isLarge ? 12.h : 10.h;
+
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 10.w),
+      padding: EdgeInsets.symmetric(vertical: vPad, horizontal: 10.w),
       decoration: BoxDecoration(
         color: offWhite,
         borderRadius: BorderRadius.circular(16.r),
@@ -973,16 +1068,17 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
               ),
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: isXSmall ? 6.h : isSmall ? 8.h : 10.h),
           GridView.builder(
             shrinkWrap: true,
+            padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: showMore ? actions.length : 4,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              childAspectRatio: 0.9,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 8,
+            itemCount: showMore ? actions.length : (isTablet ? actions.length : 4),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isTablet ? 8 : 4,
+              mainAxisExtent: isTablet ? 75.h : (isXSmall ? 68.h : isSmall ? 72.h : isLarge ? 80.h : 76.h),
+              mainAxisSpacing: isXSmall ? 6 : isSmall ? 8 : 10,
+              crossAxisSpacing: isTablet ? 4 : 8,
             ),
             itemBuilder: (context, index) {
               final item = actions[index];
@@ -993,19 +1089,19 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
                 isSoon: item['isSoon'] ?? false,
                 onTap: item['isSoon'] == true
                     ? () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${item['label']} coming soon!'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${item['label']} coming soon!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
                     : item['onTap'],
               ).animate().fade(duration: 200.ms).slideY(begin: 0.05, end: 0, duration: 200.ms);
             },
           ),
           SizedBox(height: 4.h),
-          GestureDetector(
+          if (!isTablet) GestureDetector(
             onTap: () => setState(() => showMore = !showMore),
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 6.h),
@@ -1063,23 +1159,28 @@ class QuickActionButton extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              Container(
-                height: 44.r,
-                width: 44.r,
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.015),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Center(child: icon),
-              ),
+              Builder(builder: (ctx) {
+                final h = MediaQuery.of(ctx).size.height;
+                final w = MediaQuery.of(ctx).size.width;
+                final sz = w > 600 ? 40.r : h < 680 ? 38.r : h < 780 ? 42.r : h > 900 ? 48.r : 44.r;
+                return Container(
+                  height: sz,
+                  width: sz,
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.015),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(child: icon),
+                );
+              }),
               if (isSoon)
                 Positioned(
                   bottom: -2,

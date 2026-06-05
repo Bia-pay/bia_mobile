@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
 
 import '../../app/utils/image.dart';
 import '../dashboard/pages/homepage.dart';
@@ -45,69 +43,61 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
       backgroundColor: Colors.transparent,
       body: pages[_selectedIndex],
       extendBody: true,
-      bottomNavigationBar: RepaintBoundary(
-        child: SizedBox(
-          height: 120.h,
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            clipBehavior: Clip.none,
-            children: [
-              // Custom Shape with Bump
-              CustomPaint(
-                size: Size(MediaQuery.of(context).size.width, 150.h),
-                painter: BNBCustomPainter(),
+      floatingActionButton: GestureDetector(
+        onTap: () => _onItemTapped(2),
+        child: Container(
+          height: 80.h,
+          width: 80.h,
+          decoration: BoxDecoration(
+            color: primaryColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-
-              // Floating center button (Scanner)
-              Positioned(
-                bottom: 20.h,
-                child: GestureDetector(
-                  onTap: () => _onItemTapped(2),
-                  child: Container(
-                    height: 80.h,
-                    width: 80.h,
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryColor.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    padding: EdgeInsets.all(16.w),
-                    child: SvgPicture.asset(
-                      scanner,
-                      height: 12.h,
-                      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Navigation Items
-              Positioned(
-                bottom: 5.h,
-                left: 0,
-                right: 0,
-                child: SizedBox(
-                  height: 75.h,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildNavItem(Icons.home_outlined, 0),
-                     // _buildNavItem(Icons.location_on_outlined, 1),
-                      SizedBox(width: 15.w), // Spacer for center button
-                     // _buildNavItem(Icons.bar_chart_outlined, 3),
-                      _buildNavItem(Icons.grid_view_rounded, 4),
-                    ],
-                  ),
-                ),
-              )
             ],
           ),
+          padding: EdgeInsets.all(16.w),
+          child: SvgPicture.asset(
+            scanner,
+            height: 12.h,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: const _CustomFABLocation(),
+      bottomNavigationBar: SizedBox(
+        height: 120.h,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            CustomPaint(
+              size: Size(MediaQuery.of(context).size.width, 120.h),
+              painter: BNBCustomPainter(),
+            ),
+
+            // Navigation Items
+            Positioned(
+              bottom: 5.h,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                height: 75.h,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(Icons.home_outlined, 0),
+                   // _buildNavItem(Icons.location_on_outlined, 1),
+                    SizedBox(width: 15.w), // Spacer for center button
+                   // _buildNavItem(Icons.bar_chart_outlined, 3),
+                    _buildNavItem(Icons.grid_view_rounded, 4),
+                  ],
+                ),
+              ),
+            )
+          ],
         ),
       ),
     );
@@ -140,6 +130,17 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
         ],
       ),
     );
+  }
+}
+
+class _CustomFABLocation extends FloatingActionButtonLocation {
+  const _CustomFABLocation();
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final double fabX = (scaffoldGeometry.scaffoldSize.width - scaffoldGeometry.floatingActionButtonSize.width) / 2.0;
+    final double fabY = scaffoldGeometry.scaffoldSize.height - 20.h - scaffoldGeometry.floatingActionButtonSize.height;
+    return Offset(fabX, fabY);
   }
 }
 

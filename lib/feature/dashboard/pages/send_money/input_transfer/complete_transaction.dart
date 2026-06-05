@@ -160,13 +160,18 @@ class _BiaToBiaCompleteTransactionBottomSheetState
     final currencySymbol = Constants.nairaCurrencySymbol;
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       decoration: BoxDecoration(
         color: offWhiteBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(r.sheetRadius)),
       ),
-      padding: EdgeInsets.symmetric(
-        horizontal: r.horizontalPadding,
-        vertical: r.verticalPadding,
+      padding: EdgeInsets.only(
+        left: r.horizontalPadding,
+        right: r.horizontalPadding,
+        top: r.verticalPadding,
+        bottom: 0,
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -523,7 +528,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                 ),
               ),
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 12.h + MediaQuery.of(context).padding.bottom),
           ],
         ),
       ),
