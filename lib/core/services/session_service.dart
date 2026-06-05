@@ -135,11 +135,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
       }
     } else if (lifeCycleState == AppLifecycleState.resumed) {
       if (_backgroundedAt != null && currentPath != null && !_excludedRoutes.contains(currentPath)) {
-        final elapsed = DateTime.now().difference(_backgroundedAt!);
-
-        // Skip lock for very brief backgrounds (< 3s) — covers contact picker,
-        // permission dialogs, and other system overlays that briefly pause the app.
-        if (elapsed.inSeconds >= 3 && !_isLockScreenVisible) {
+        if (!_isLockScreenVisible) {
           final navContext = navigatorKey.currentContext;
           if (navContext != null) {
             _isLockScreenVisible = true;

@@ -11,7 +11,7 @@ import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/biometric_migration.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
-import '../../dashboard/model/recent_transaction.dart'; // 🔥 ADD THIS IMPORT
+import '../../dashboard/model/recent_transaction.dart';
 import '../data/api_constant.dart';
 import '../data/api_data.dart';
 import '../modal/reponse/response_modal.dart';
@@ -210,7 +210,8 @@ class AuthRepository {
 
         final authFlowService =
         _ref.read(authFlowServiceProvider);
-        await authFlowService.completeAuthFlow();
+        // Execute FCM token generation and socket connection in the background to avoid blocking transition to dashboard
+        authFlowService.completeAuthFlow();
 
         // Migrate old biometric settings to user-specific settings
         try {
@@ -410,9 +411,9 @@ class AuthRepository {
 
         _apiClient.updateHeaders(accessToken);
 
-        // Complete the auth flow (connect socket with tokens)
+        // Complete the auth flow (connect socket with tokens) in the background to avoid blocking verification/transition
         final authFlowService = _ref.read(authFlowServiceProvider);
-        await authFlowService.completeAuthFlow();
+        authFlowService.completeAuthFlow();
 
         return ResponseModel(
           responseMessage:

@@ -114,12 +114,6 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
   Future<void> _performLogin(String loginPhone, String loginPassword, {bool isBiometric = false}) async {
     if (_isAuthenticating) return;
 
-    final hasConnection = await _checkConnectivity();
-    if (!hasConnection) {
-      _showErrorModal('No Internet Connection', 'Please check your network settings and try again.', onRetry: () => _performLogin(loginPhone, loginPassword, isBiometric: isBiometric));
-      return;
-    }
-
     setState(() => _isAuthenticating = true);
     LoadingHelper.show('Logging you in...');
 
@@ -145,7 +139,22 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       LoadingHelper.dismiss();
       debugPrint('❌ Login process failed with exception: $e');
       debugPrint('Stack trace: $stackTrace');
-      _showErrorModal('Login Error', 'Something went wrong. Please try again later.');
+      
+      String title = 'Login Error';
+      String message = 'Something went wrong. Please try again later.';
+      if (e is TimeoutException || e.toString().toLowerCase().contains('timeout')) {
+        title = 'Connection Timeout';
+        message = 'Request timed out. Network too slow or disconnected.';
+      } else if (e is SocketException || e.toString().toLowerCase().contains('socket')) {
+        title = 'Network Error';
+        message = 'Connection lost during login. Please check your network.';
+      }
+      
+      _showErrorModal(
+        title, 
+        message, 
+        onRetry: () => _performLogin(loginPhone, loginPassword, isBiometric: isBiometric),
+      );
       _resetState(isBiometric);
     }
   }
