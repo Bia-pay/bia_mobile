@@ -27,6 +27,10 @@ class VerifyDepositData {
   final double amount;
   final String reference;
   final String senderName;
+  final String currency;
+  final String paidAt;
+  final String channel;
+  final String gatewayResponse;
 
   VerifyDepositData({
     required this.status,
@@ -35,6 +39,10 @@ class VerifyDepositData {
     required this.amount,
     required this.reference,
     required this.senderName,
+    required this.currency,
+    required this.paidAt,
+    required this.channel,
+    required this.gatewayResponse,
   });
 
   factory VerifyDepositData.fromJson(Map<String, dynamic> json) {
@@ -45,6 +53,10 @@ class VerifyDepositData {
       amount: double.tryParse(json["amount"].toString()) ?? 0.0,
       reference: json["reference"] ?? "",
       senderName: json["senderName"] ?? "",
+      currency: json["currency"] ?? "",
+      paidAt: json["paid_at"] ?? "",
+      channel: json["channel"] ?? "",
+      gatewayResponse: json["gateway_response"] ?? "",
     );
   }
 }

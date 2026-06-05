@@ -321,7 +321,13 @@ class AppRouter {
         path: '/success',
         name: RouteList.successScreen,
         builder: (context, state) {
-          final args = state.extra as Map<String, dynamic>? ?? {};
+          final extra = state.extra;
+          final Map<String, dynamic> args = {};
+          if (extra is Map) {
+            extra.forEach((key, value) {
+              args[key.toString()] = value;
+            });
+          }
           return SuccessScreen(
             type: args['type'] ?? '',
             amount: args['amount'] ?? '',

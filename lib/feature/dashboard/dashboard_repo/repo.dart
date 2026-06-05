@@ -544,7 +544,16 @@ class DashboardRepository {
 
   Future<DepositResponseModel> depositMoney(Map<String, dynamic> body) async {
     try {
-      final response = await _apiClient.postData(ApiConstant.DEPOSIT, body);
+      final normalizedBody = Map<String, dynamic>.from(body);
+      if (normalizedBody.containsKey('amount')) {
+        final amt = normalizedBody['amount'];
+        if (amt is num) {
+          normalizedBody['amount'] = amt.toInt().toString();
+        } else {
+          normalizedBody['amount'] = amt.toString();
+        }
+      }
+      final response = await _apiClient.postData(ApiConstant.DEPOSIT, normalizedBody);
       final jsonData = jsonDecode(response.body);
 
       return DepositResponseModel.fromJson(jsonData);

@@ -97,13 +97,18 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
 
       if (!mounted) return;
 
-      // Navigate to WebView for payment (this should be a separate route or modal)
-      // For now, using a dialog/modal approach would be better
-      // TODO: Add WebView route or use modal
-      showDialog(
+      // Navigate to WebView for payment and await the success screen argument map
+      final result = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: (_) => PaymentWebViewPage(url: url, reference: reference),
       );
+
+      if (result != null && mounted) {
+        context.pushNamed(
+          RouteList.successScreen,
+          extra: result,
+        );
+      }
     }
   }
 
@@ -300,16 +305,11 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
 
       if (res != null && res.responseSuccessful && res.data != null) {
         if (!mounted) return;
-        Navigator.pop(context);
-
-        context.pushNamed(
-          RouteList.successScreen,
-          extra: {
-            "type": "deposit",
-            "amount": res.data!.amount.toString(),
-            "reference": res.data!.reference,
-          },
-        );
+        Navigator.pop(context, {
+          "type": "deposit",
+          "amount": res.data!.amount.toString(),
+          "reference": res.data!.reference,
+        });
       } else {
         _hasVerified = false;
         _showDialog("Failed", "Payment was not completed.");

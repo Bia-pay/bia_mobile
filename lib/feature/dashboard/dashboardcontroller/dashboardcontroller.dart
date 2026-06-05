@@ -71,8 +71,9 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
 
   Future<ResponseModel?> sendMoney(BuildContext context,String account,String amount,String narration,String pin,{required bool save}) async {
+    final cleanNarration = narration.trim().isEmpty ? 'Transfer' : narration.trim();
 
-    if (account.isEmpty || amount.isEmpty || narration.isEmpty || pin.isEmpty ) {
+    if (account.isEmpty || amount.isEmpty || pin.isEmpty ) {
       // Note: 'save' is a bool, so it cannot be empty, no need to check it here.
       ToastHelper.showToast(
         context: context,
@@ -91,7 +92,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       Map<String, dynamic> body = {
         'account': account.trim(),
         'amount': num.tryParse(amount) ?? 0,
-        'narration': narration.trim(),
+        'narration': cleanNarration,
         'pin': pin.trim(),
         // ⚠️ THE FIX: Convert the boolean 'save' to a string 'true' or 'false'
         'save': save.toString(),
@@ -763,10 +764,11 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required String pin,
         required bool saveBeneficiary,
       }) async {
+    final cleanNarration = narration.trim().isEmpty ? 'Bank Transfer' : narration.trim();
+
     if (accountNumber.isEmpty ||
         bankCode.isEmpty ||
         amount.isEmpty ||
-        narration.isEmpty ||
         pin.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -786,7 +788,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         bankCode: bankCode,
         bankName: bankName, // ✅ ADD
         amount: amount,
-        narration: narration,
+        narration: cleanNarration,
         pin: pin,
         saveBeneficiary: saveBeneficiary,
       );

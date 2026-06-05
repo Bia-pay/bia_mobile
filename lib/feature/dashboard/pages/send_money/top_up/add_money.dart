@@ -458,19 +458,16 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
       if (res != null &&
           res.responseSuccessful &&
           res.data != null &&
-          res.data!.description.toLowerCase() == "successful") {
+          (res.data!.status.toLowerCase() == "success" ||
+           res.data!.status.toLowerCase() == "successful" ||
+           res.data!.description.toLowerCase() == "successful")) {
         if (!mounted) return;
 
-        Navigator.pop(context);
-
-        context.pushNamed(
-          RouteList.successScreen,
-          extra: {
-            "type": "deposit",
-            "amount": res.data!.amount.toString(),
-            "reference": res.data!.reference,
-          },
-        );
+        Navigator.pop(context, {
+          "type": "deposit",
+          "amount": res.data!.amount.toString(),
+          "reference": res.data!.reference,
+        });
       } else {
         _hasVerified = false;
         _showDialog("Failed", "Payment was not completed.");

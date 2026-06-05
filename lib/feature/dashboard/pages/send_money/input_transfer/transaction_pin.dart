@@ -150,7 +150,16 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
           pin: transactionPin
         );
       } else {
-        response = await controller.sendMoney(context, widget.recipientAccount, widget.amount.toStringAsFixed(2), widget.narration ?? 'Transfer', transactionPin, save: widget.saveAsBeneficiary);
+        response = await controller.sendMoney(
+          context,
+          widget.recipientAccount,
+          widget.amount.toStringAsFixed(2),
+          (widget.narration == null || widget.narration!.trim().isEmpty)
+              ? 'Transfer'
+              : widget.narration!,
+          transactionPin,
+          save: widget.saveAsBeneficiary,
+        );
       }
 
       EasyLoading.dismiss();

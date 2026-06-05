@@ -48,12 +48,14 @@ class _SuccessScreenState extends State<SuccessScreen> {
   late ConfettiController _confettiController;
   late String _reference;
 
+  bool get _isDeposit => widget.type?.toLowerCase() == 'deposit';
+
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 4));
     final status = widget.type?.toLowerCase() ?? 'success';
-    if (status == 'success') {
+    if (status == 'success' || status == 'deposit') {
       _confettiController.play();
     }
 
@@ -78,8 +80,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
     final status = widget.type?.toLowerCase() ?? 'success';
     switch (status) {
       case 'success':
+      case 'deposit':
         return {
-          'title': 'Transfer Successful',
+          'title': status == 'deposit' ? 'Deposit Successful' : 'Transfer Successful',
           'color': const Color(0xFF00C853),
           'showActions': true,
           'icon': Icons.check_rounded,
@@ -264,13 +267,13 @@ class _SuccessScreenState extends State<SuccessScreen> {
                       transaction: TransactionItem(
                         id: DateTime.now().millisecondsSinceEpoch % 1000000,
                         amount: double.tryParse(widget.amount?.replaceAll(',', '') ?? '0') ?? 0.0,
-                        isCredit: false,
-                        receiverName: widget.recipientName,
-                        provider: widget.channel,
+                        isCredit: _isDeposit,
+                        receiverName: _isDeposit ? "My Wallet" : widget.recipientName,
+                        provider: _isDeposit ? "Card Payment" : widget.channel,
                         reference: _reference,
                         createdAt: DateTime.now(),
                         metadata: {
-                          'recipientAccount': widget.recipientAccount,
+                          'recipientAccount': _isDeposit ? "My Wallet" : widget.recipientAccount,
                         },
                       ),
                       statusTitle: config['title'],
@@ -388,8 +391,11 @@ class _SuccessScreenState extends State<SuccessScreen> {
                                   padding: EdgeInsets.all(20.w),
                                   child: Column(
                                     children: [
-                                      _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
-                                      _buildTicketRow("Payment Channel", widget.channel ?? "Bank Transfer", isSmallHeight),
+                                      if (_isDeposit)
+                                        _buildTicketRow("Funding Destination", "My Wallet", isSmallHeight)
+                                      else
+                                        _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                      _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
                                       _buildTicketRow("Transaction Date", _formattedDate, isSmallHeight),
                                       _buildReferenceRow(_reference, isSmallHeight),
                                     ],
@@ -437,7 +443,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 ),
 
                 // Celebratory confetti overlay
-                if (widget.type == null || widget.type!.toLowerCase() == 'success')
+                if (widget.type == null || widget.type!.toLowerCase() == 'success' || widget.type!.toLowerCase() == 'deposit')
                   IgnorePointer(
                     child: Align(
                       alignment: Alignment.topCenter,
@@ -496,10 +502,14 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   Widget _buildTimelineFlow(Color themeColor) {
-    final recipientNameVal = widget.recipientName ?? "Recipient";
-    final recipientInitials = recipientNameVal.isNotEmpty
-        ? recipientNameVal.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
-        : "RE";
+    final senderName = _isDeposit ? "Bank Card" : "My Wallet";
+    final receiverNameVal = _isDeposit ? "My Wallet" : (widget.recipientName ?? "Recipient");
+
+    final recipientInitials = _isDeposit
+        ? "WLT"
+        : (receiverNameVal.isNotEmpty
+            ? receiverNameVal.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+            : "RE");
 
     return Row(
       children: [
@@ -510,7 +520,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
               radius: 20.r,
               backgroundColor: primaryColor.withOpacity(0.08),
               child: Text(
-                "BIA",
+                _isDeposit ? "CRD" : "BIA",
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 11.sp,
@@ -520,7 +530,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
             ),
             SizedBox(height: 6.h),
             Text(
-              "My Wallet",
+              senderName,
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w700,
@@ -559,7 +569,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
-                    widget.channel ?? "Transfer",
+                    _isDeposit ? "Deposit" : (widget.channel ?? "Transfer"),
                     style: TextStyle(
                       fontSize: 9.sp,
                       fontWeight: FontWeight.w800,
@@ -590,7 +600,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
             ),
             SizedBox(height: 6.h),
             Text(
-              recipientNameVal.length > 12 ? "${recipientNameVal.substring(0, 10)}..." : recipientNameVal,
+              receiverNameVal.length > 12 ? "${receiverNameVal.substring(0, 10)}..." : receiverNameVal,
               style: TextStyle(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w700,
