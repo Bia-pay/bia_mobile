@@ -242,7 +242,7 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final screenH = constraints.maxHeight;
-            final isSmall = screenH < 700;
+            final isSmall = screenH < 780;
             final isTiny = screenH < 600;
 
             final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
@@ -254,24 +254,33 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: isTiny ? 8.h : 16.h),
+                  padding: EdgeInsets.symmetric(vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
                   child: Column(
                     children: [
                       topBar,
-                      recipientCard,
-                      SizedBox(height: isTiny ? 12.h : 20.h),
-                      amountDisplay,
-                      SizedBox(height: isTiny ? 12.h : 20.h),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
-                        child: CustomTextFormField(
-                          controller: _narrationController,
-                          label: 'Narration (Optional)',
-                          hintText: 'What is this for?',
-                          validator: (val) => null,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              recipientCard,
+                              SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                              amountDisplay,
+                              SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                                child: CustomTextFormField(
+                                  controller: _narrationController,
+                                  label: 'Narration (Optional)',
+                                  hintText: 'What is this for?',
+                                  validator: (val) => null,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Spacer(),
                       if (!keyboardOpen) ...[
                         keypad,
                       ] else ...[
@@ -514,7 +523,7 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
       fit: BoxFit.scaleDown,
       alignment: Alignment.bottomCenter,
       child: SizedBox(
-        width: 400.w,
+        width: isSmall ? 320.w : 360.w,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: CustomGridKeypad(
