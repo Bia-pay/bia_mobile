@@ -173,6 +173,8 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPinMode = widget.fieldType == InputFieldType.pin;
+    final screenH = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenH < 800;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -182,51 +184,64 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
           SizedBox(height: 8.h),
         ],
         Text(_currentSubtitle, style: theme.textTheme.bodyMedium?.copyWith(color: (widget.textColor ?? grey).withOpacity(0.7))),
-        SizedBox(height: 32.h),
+        SizedBox(height: isSmallScreen ? 16.h : 32.h),
 
         isPinMode ? _buildPinDots() : _buildTextField(),
 
-        SizedBox(height: 32.h),
+        SizedBox(height: isSmallScreen ? 16.h : 32.h),
 
         if (widget.showKeypad)
           SizedBox(
             height: widget.keypadHeight ?? 350.h,
-            child: Stack(
-              children: [
-                CustomGridKeypad(
-                  onNumberPressed: _addDigit,
-                  textColor: widget.textColor ?? primaryColor,
-                  keyColor: widget.keyColor,
-                  leftAction: (_input.isEmpty && widget.onBiometricAction != null)
-                      ? ActionKey(
-                          child: Icon(
-                            widget.biometricIcon ?? Icons.fingerprint,
-                            color: Colors.white,
-                            size: 28.sp,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          width: constraints.maxWidth,
+                          child: CustomGridKeypad(
+                            onNumberPressed: _addDigit,
+                            textColor: widget.textColor ?? primaryColor,
+                            keyColor: widget.keyColor,
+                            leftAction: (_input.isEmpty && widget.onBiometricAction != null)
+                                ? ActionKey(
+                                    child: Icon(
+                                      widget.biometricIcon ?? Icons.fingerprint,
+                                      color: Colors.white,
+                                      size: 28.sp,
+                                    ),
+                                    backgroundColor: primaryColor,
+                                    onTap: widget.onBiometricAction!,
+                                  )
+                                : ActionKey(
+                                    child: Icon(Icons.check, color: Colors.white, size: 24.sp),
+                                    backgroundColor: primaryColor,
+                                    onTap: _handleInputCompletion,
+                                  ),
+                            rightAction: ActionKey(
+                              child: Icon(Icons.backspace, color:  primaryColor, size: 24.sp),
+                              backgroundColor: (widget.textColor ?? primaryColor).withOpacity(0.1),
+                              onTap: _removeDigit,
+                            ),
                           ),
-                          backgroundColor: primaryColor,
-                          onTap: widget.onBiometricAction!,
-                        )
-                      : ActionKey(
-                          child: Icon(Icons.check, color: Colors.white, size: 24.sp),
-                          backgroundColor: primaryColor,
-                          onTap: _handleInputCompletion,
                         ),
-                  rightAction: ActionKey(
-                    child: Icon(Icons.backspace, color:  primaryColor, size: 24.sp),
-                    backgroundColor: (widget.textColor ?? primaryColor).withOpacity(0.1),
-                    onTap: _removeDigit,
-                  ),
-                ),
-                if (_lockoutStatus?.isLocked ?? false)
-                  Positioned.fill(
-                    child: PinLockoutOverlay(
-                      isFrozen: _lockoutStatus!.isPermanentlyFrozen,
-                      remainingTime: _lockoutStatus!.remainingTime,
-                      onSupportTap: widget.onSupportTap,
+                      ),
                     ),
-                  ),
-              ],
+                    if (_lockoutStatus?.isLocked ?? false)
+                      Positioned.fill(
+                        child: PinLockoutOverlay(
+                          isFrozen: _lockoutStatus!.isPermanentlyFrozen,
+                          remainingTime: _lockoutStatus!.remainingTime,
+                          onSupportTap: widget.onSupportTap,
+                        ),
+                      ),
+                  ],
+                );
+              }
             ),
           ),
 

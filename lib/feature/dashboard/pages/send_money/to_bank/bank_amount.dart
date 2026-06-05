@@ -47,15 +47,15 @@ class _Dims {
   }
 
   // ── Spacing ──────────────────────────────────────────────────────────────
-  double get topBarV => isTinyPhone ? 6 : (isTablet ? 16 : 12);
+  double get topBarV => isTinyPhone ? 6 : (isSmallPhone ? 8 : (isTablet ? 16 : 12));
   double get topBarH => isTablet ? 28 : 16;
-  double get sectionGap => isTinyPhone ? 10 : (isSmallPhone ? 18 : (isTablet ? 32 : 26));
+  double get sectionGap => isTinyPhone ? 8 : (isSmallPhone ? 12 : (isTablet ? 32 : 26));
   double get cardPadH => isTablet ? 20 : 14;
   double get cardPadV => isTinyPhone ? 10 : (isTablet ? 18 : 14);
   double get cardRadius => isTablet ? 20 : 16;
   double get cardHMargin => isTablet ? 32 : 20;
   double get keypadHPad => isTablet ? 0 : 20;
-  double get bottomPad => isTinyPhone ? 8 : (isTablet ? 24 : 16);
+  double get bottomPad => isTinyPhone ? 6 : (isSmallPhone ? 8 : (isTablet ? 24 : 16));
 
   // ── Avatar ───────────────────────────────────────────────────────────────
   double get avatarSize => isTinyPhone ? 36 : (isTablet ? 52 : 44);

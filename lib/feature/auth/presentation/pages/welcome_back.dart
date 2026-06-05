@@ -226,14 +226,14 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final height = constraints.maxHeight;
-                final isSmall = height < 700;
-                final isTiny  = height < 600;
+                final isSmall = height < 780;
+                final isTiny  = height < 640;
                 
                 final double logoH = isTiny ? 20.h : (isSmall ? 25.h : 35.h);
                 final double avatarR = isTiny ? 20.r : (isSmall ? 26.r : 35.r);
-                final double keypadH = isTiny ? 220.h : (isSmall ? 250.h : 350.h);
-                final double cardPaddingV = isTiny ? 8.h : 20.h;
-                final double innerGap = isTiny ? 4.h : 16.h;
+                final double keypadH = isTiny ? 260.h : (isSmall ? 300.h : 350.h);
+                final double cardPaddingV = isTiny ? 8.h : (isSmall ? 12.h : 20.h);
+                final double innerGap = isTiny ? 4.h : (isSmall ? 8.h : 16.h);
 
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -359,3 +359,4 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     );
   }
 }
+
