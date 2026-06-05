@@ -18,10 +18,7 @@ import 'core/easy_loading_config.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/fallback_localization_delegate.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'feature/dashboard/transaction_cache.dart';
 import 'core/services/session_service.dart';
-import 'feature/settings/presentation/widgets/inactivity_warning_modal.dart';
-import 'feature/auth/interceptor/interceptor.dart';
 import 'firebase_options.dart';
 import 'dart:io';
 
@@ -275,23 +272,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final locale = ref.watch(appLocaleProvider);
-
-    // Listen for inactivity warning state to show the modal
-    ref.listen<SessionState>(sessionServiceProvider, (previous, next) {
-      if (next == SessionState.warning && previous != SessionState.warning) {
-        final navContext = navigatorKey.currentContext;
-        if (navContext != null) {
-          showModalBottomSheet(
-            context: navContext,
-            isDismissible: false,
-            enableDrag: false,
-            backgroundColor: Colors.transparent,
-            isScrollControlled: true,
-            builder: (context) => const InactivityWarningModal(),
-          );
-        }
-      }
-    });
 
     return ScreenUtilInit(
       designSize: const Size(390, 844),

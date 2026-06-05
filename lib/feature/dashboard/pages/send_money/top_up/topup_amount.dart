@@ -8,6 +8,7 @@ import '../../../../../app/utils/u_popup.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/keypad.dart';
+import 'package:bia/core/services/session_service.dart';
 
 class TopUpAmountPage extends ConsumerStatefulWidget {
   final String title;
@@ -250,6 +251,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ref.read(sessionServiceProvider.notifier).setBypassLifecycle(true);
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -275,6 +277,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
 
   @override
   void dispose() {
+    ref.read(sessionServiceProvider.notifier).setBypassLifecycle(false);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

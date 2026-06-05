@@ -339,15 +339,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ).animate().fadeIn().slideX(begin: -0.1),
 
                       SizedBox(height: 30.h),
-                      Text(
-                        'Welcome Back',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontSize: 32.sp,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          height: 1.1,
-                        ),
-                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+                      // Text(
+                      //   'Welcome Back',
+                      //   style: theme.textTheme.headlineMedium?.copyWith(
+                      //     fontSize: 32.sp,
+                      //     fontWeight: FontWeight.w900,
+                      //     color: Colors.white,
+                      //     height: 1.1,
+                      //   ),
+                      // ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
                       SizedBox(height: 10.h),
                       Text(
                         'Login to access your Bia account.',

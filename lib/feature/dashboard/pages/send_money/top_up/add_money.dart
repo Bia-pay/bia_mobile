@@ -12,6 +12,7 @@ import '../../../../../app/utils/u_popup.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../widgets/transaction.dart';
+import 'package:bia/core/services/session_service.dart';
 
 class AddMoney extends ConsumerStatefulWidget {
   const AddMoney({super.key});
@@ -423,6 +424,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
   @override
   void initState() {
     super.initState();
+    ref.read(sessionServiceProvider.notifier).setBypassLifecycle(true);
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -444,6 +446,12 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
+  }
+
+  @override
+  void dispose() {
+    ref.read(sessionServiceProvider.notifier).setBypassLifecycle(false);
+    super.dispose();
   }
 
   Future<void> _verifyPayment(String reference) async {

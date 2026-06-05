@@ -15,8 +15,8 @@ class InactivityWarningModal extends ConsumerWidget {
     final sessionState = ref.watch(sessionServiceProvider);
     final remainingSeconds = ref.read(sessionServiceProvider.notifier).remainingSeconds;
 
-    // If we've been logged out while the modal was open, close it
-    if (sessionState == SessionState.loggedOut) {
+    // If we've been logged out or locked while the modal was open, close it
+    if (sessionState == SessionState.loggedOut || sessionState == SessionState.locked) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();

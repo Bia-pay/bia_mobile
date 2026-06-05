@@ -5,9 +5,12 @@ import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart
 import 'package:flutter_native_contact_picker/model/contact.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:bia/core/services/session_service.dart';
+
 import '../colors.dart';
 
-class ContactsPickerSuffix extends StatelessWidget {
+class ContactsPickerSuffix extends ConsumerWidget {
   final Function(String phoneNumber, String? name) onContactSelected;
   final Color? iconColor;
   final double? iconSize;
@@ -20,13 +23,13 @@ class ContactsPickerSuffix extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = iconSize ?? 36.sp;
 
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: () => _pickContact(context),
+        onTap: () => _pickContact(context, ref),
         borderRadius: BorderRadius.circular(size),
         child: Container(
           width: size,
@@ -46,8 +49,9 @@ class ContactsPickerSuffix extends StatelessWidget {
     );
   }
 
-  Future<void> _pickContact(BuildContext context) async {
+  Future<void> _pickContact(BuildContext context, WidgetRef ref) async {
     try {
+      ref.read(sessionServiceProvider.notifier).setBypassLifecycle(true);
       final FlutterNativeContactPicker contactPicker = FlutterNativeContactPicker();
       final Contact? contact = await contactPicker.selectContact();
 
@@ -62,6 +66,8 @@ class ContactsPickerSuffix extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not access contacts')),
       );
+    } finally {
+      ref.read(sessionServiceProvider.notifier).setBypassLifecycle(false);
     }
   }
 

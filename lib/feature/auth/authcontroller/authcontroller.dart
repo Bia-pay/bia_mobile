@@ -178,6 +178,15 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     try {
       EasyLoading.show(status: "Logging out...");
 
+      // Hit the backend logout API if the user logs out themselves (manual)
+      if (isManual) {
+        try {
+          await authRepository.logout();
+        } catch (e) {
+          debugPrint('⚠️ Error calling authRepository.logout(): $e');
+        }
+      }
+
       final authBox = await Hive.openBox('authBox');
       final userId = authBox.get('userId', defaultValue: '');
 
