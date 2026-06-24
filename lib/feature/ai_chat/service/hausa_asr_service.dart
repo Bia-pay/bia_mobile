@@ -4,10 +4,11 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:bia/core/constants.dart';
 
 class HausaAsrService {
-  // 🟢 LOCAL FASTAPI ENDPOINT
-  final String _localUrl = 'http://192.168.1.136:8000/transcribe';
+  // 🤖 VPS FASTAPI ENDPOINT
+  final String _apiUrl = '${AppConstants.aiBaseUrl}/transcribe';
 
   Future<String?> transcribe(String filePath) async {
     try {
@@ -15,7 +16,7 @@ class HausaAsrService {
       if (!await file.exists()) return null;
 
       // 🟢 MULTIPART REQUEST FOR FASTAPI
-      final request = http.MultipartRequest('POST', Uri.parse(_localUrl));
+      final request = http.MultipartRequest('POST', Uri.parse(_apiUrl));
       
       request.files.add(
         await http.MultipartFile.fromPath(

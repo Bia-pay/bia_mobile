@@ -1,22 +1,30 @@
 class BankModel {
   final String bankCode;
   final String bankName;
+  final String? logoUrl;
+  final String? bgUrl;
 
   BankModel({
     required this.bankCode,
     required this.bankName,
+    this.logoUrl,
+    this.bgUrl,
   });
 
   factory BankModel.fromJson(Map<String, dynamic> json) {
     return BankModel(
-      bankCode: json['code']?.toString() ?? '',  // API uses 'code'
-      bankName: json['name'] ?? '',              // API uses 'name'
+      bankCode: (json['code'] ?? json['bankCode'] ?? json['bank_code'] ?? json['id'] ?? '').toString(),
+      bankName: (json['name'] ?? json['bankName'] ?? json['bank_name'] ?? '').toString(),
+      logoUrl: json['bankUrl'] ?? json['logoUrl'] ?? json['logo_url'],
+      bgUrl: json['bgUrl'] ?? json['bg_url'],
     );
   }
 
   Map<String, dynamic> toJson() => {
     'code': bankCode,
     'name': bankName,
+    'bankUrl': logoUrl,
+    'bgUrl': bgUrl,
   };
 }
 class BankAccountVerifyResponse {

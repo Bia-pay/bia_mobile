@@ -334,8 +334,9 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     BuildContext context,
     String fullname,
     String email,
-    String password,
-  ) async {
+    String password, {
+    String? referralCode,
+  }) async {
     if (email.isEmpty || fullname.isEmpty || password.isEmpty) {
       ToastHelper.showToast(
         context: context,
@@ -356,6 +357,10 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         'fullname': fullname,
         'password': password,
       };
+
+      if (referralCode != null && referralCode.isNotEmpty) {
+        body['referralCode'] = referralCode;
+      }
 
       // debugPrint(" Registering: $body");
 

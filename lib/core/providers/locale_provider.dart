@@ -63,6 +63,7 @@ class AppLocaleNotifier extends StateNotifier<Locale> {
         'login_with': 'Login with',
         'help_center': 'Help Center',
         'enable_scan_to_receive': 'Enable Scan to Receive',
+        'refer_and_earn': 'Refer & Earn',
       },
       'ha': {
         'hub_settings': 'Saitunan Hub',
@@ -87,6 +88,7 @@ class AppLocaleNotifier extends StateNotifier<Locale> {
         'login_with': 'Shiga da',
         'help_center': 'Cibiyar Taimako',
         'enable_scan_to_receive': 'Kunna Dubawa don Karba',
+        'refer_and_earn': 'Aika & Sami',
       },
       'pcm': {
         'hub_settings': 'Hub Settings',
@@ -111,6 +113,7 @@ class AppLocaleNotifier extends StateNotifier<Locale> {
         'login_with': 'Login with',
         'help_center': 'Help Center',
         'enable_scan_to_receive': 'Enable Scan to Receive',
+        'refer_and_earn': 'Refer & Earn',
       }
     };
     return localizedStrings[state.languageCode]?[key] ?? localizedStrings['en']![key]!;

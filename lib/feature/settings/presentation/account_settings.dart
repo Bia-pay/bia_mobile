@@ -48,6 +48,7 @@ class _UProfileState extends ConsumerState<UProfile> {
     return [
       {'id': 'language', 'title': t.translate('language'), 'icon': Icons.language_rounded, 'hasDropdown': false},
       {'id': 'bia_tag', 'title': 'BIA Tag', 'icon': Icons.alternate_email_rounded, 'hasDropdown': false},
+      {'id': 'referrals', 'title': t.translate('refer_and_earn'), 'icon': Icons.card_giftcard_rounded, 'hasDropdown': false},
       {'id': 'help', 'title': t.translate('help'), 'icon': Icons.help_outline_rounded, 'hasDropdown': true},
       {'id': 'generate_qr', 'title': t.translate('generate_qr'), 'icon': Icons.qr_code_2_rounded, 'hasDropdown': false},
       {'id': 'privacy', 'title': 'Privacy Policy', 'icon': Icons.shield_outlined, 'hasDropdown': false},
@@ -284,6 +285,8 @@ class _UProfileState extends ConsumerState<UProfile> {
       launchUrl(url, mode: LaunchMode.externalApplication);
     } else if (id == 'bia_tag') {
       _showEditTagDialog();
+    } else if (id == 'referrals') {
+      context.pushNamed(RouteList.referrals);
     }
   }
 

@@ -1183,14 +1183,30 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required int amount,
         required String pin,
       }) async {
+
+    // 🔍 Debug: print all fields before validation
+    debugPrint('📦 buyData called with:');
+    debugPrint('  phone: "$phone" (empty: ${phone.isEmpty})');
+    debugPrint('  serviceId: "$serviceId" (empty: ${serviceId.isEmpty})');
+    debugPrint('  variationCode: "$variationCode" (empty: ${variationCode.isEmpty})');
+    debugPrint('  amount: $amount (valid: ${amount > 0})');
+    debugPrint('  pin length: ${pin.length}');
+
     if (phone.isEmpty ||
         serviceId.isEmpty ||
         variationCode.isEmpty ||
         amount <= 0 ||
         pin.isEmpty) {
+      final missing = <String>[];
+      if (phone.isEmpty) missing.add('phone');
+      if (serviceId.isEmpty) missing.add('serviceId');
+      if (variationCode.isEmpty) missing.add('variationCode');
+      if (amount <= 0) missing.add('amount');
+      if (pin.isEmpty) missing.add('pin');
+      debugPrint('❌ buyData validation failed — missing: ${missing.join(', ')}');
       ToastHelper.showToast(
         context: context,
-        message: "All fields are required",
+        message: "Missing fields: ${missing.join(', ')}",
         icon: Icons.error,
         iconColor: errorColor,
         position: ToastPosition.top,

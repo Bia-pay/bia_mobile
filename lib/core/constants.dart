@@ -26,4 +26,6 @@ class AppConstants {
   // WebSocket feature flag - disable if backend doesn't support it
   static const bool enableWebSocket = true; // ✅ Enabled - backend supports WebSocket with header auth
 
+  // 🤖 AI Hub Base URL (ASR and TTS FastAPI service on VPS)
+  static const String aiBaseUrl = 'https://ai.bia.com.ng';
 }

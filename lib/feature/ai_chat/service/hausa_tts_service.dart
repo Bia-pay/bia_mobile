@@ -3,10 +3,11 @@ import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:bia/core/constants.dart';
 
 class HausaTtsService {
-  // 🟢 LOCAL FASTAPI ENDPOINT
-  final String _modelUrl = 'http://192.168.1.136:8000/tts';
+  // 🤖 VPS FASTAPI ENDPOINT
+  final String _modelUrl = '${AppConstants.aiBaseUrl}/tts';
 
   Future<List<int>?> generateSpeech(String text) async {
     if (text.trim().isEmpty) return null;

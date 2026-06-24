@@ -668,16 +668,37 @@ class DashboardRepository {
   Future<List<BankModel>> getBanks() async {
     try {
       final response = await _apiClient.getData(ApiConstant.GET_BANKS);
+      debugPrint("🏦 getBanks API Response [${response.statusCode}]: ${response.body}");
       final jsonResponse = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && jsonResponse['responseSuccessful'] == true) {
-        final responseBody = jsonResponse['responseBody'] ?? {};
-        final List<dynamic> banksJson = responseBody['data'] ?? [];
-
-        return banksJson.map((e) => BankModel.fromJson(e)).toList();
+      List<dynamic> banksJson = [];
+      if (jsonResponse is List) {
+        banksJson = jsonResponse;
+      } else if (jsonResponse is Map<String, dynamic>) {
+        // Support standard wrapped response
+        if (jsonResponse['responseSuccessful'] == true) {
+          final responseBody = jsonResponse['responseBody'];
+          if (responseBody is List) {
+            banksJson = responseBody;
+          } else if (responseBody is Map<String, dynamic>) {
+            banksJson = responseBody['data'] ?? responseBody['banks'] ?? [];
+          }
+        } else {
+          // If responseSuccessful is false but body contains data directly
+          final responseBody = jsonResponse['responseBody'];
+          if (responseBody is List) {
+            banksJson = responseBody;
+          } else if (responseBody is Map<String, dynamic>) {
+            banksJson = responseBody['data'] ?? [];
+          }
+        }
       }
-      return [];
-    } catch (e) {
+
+      final bankList = banksJson.map((e) => BankModel.fromJson(e as Map<String, dynamic>)).toList();
+      debugPrint("🏦 Parsed ${bankList.length} banks successfully.");
+      return bankList;
+    } catch (e, stack) {
+      debugPrint("❌ Error in getBanks: $e\n$stack");
       return [];
     }
   }
@@ -1020,16 +1041,13 @@ class DashboardRepository {
 
   Future<List<DataPlanModel>> getDataPlans(String serviceId) async {
     try {
-      final box = await _getAuthBox();
-      final token = box.get("token", defaultValue: "");
 
-      if (token.isEmpty) return [];
-
-      _apiClient.updateHeaders(token);
-
+      debugPrint("📤 GET PLANS URL: ${ApiConstant.DATA_PLANS}?serviceID=$serviceId");
       final response = await _apiClient.getData(
-          "${ApiConstant.DATA_PLANS}$serviceId"
+          "${ApiConstant.DATA_PLANS}?serviceID=$serviceId"
       );
+      debugPrint("📥 GET PLANS RESPONSE STATUS: ${response.statusCode}");
+      debugPrint("📥 GET PLANS RESPONSE BODY: ${response.body}");
 
       final jsonResponse = jsonDecode(response.body);
 
@@ -1070,6 +1088,9 @@ class DashboardRepository {
       ApiConstant.DATA_PURCHASE,
       body,
     );
+
+    debugPrint("📥 DATA PURCHASE RESPONSE STATUS: ${response.statusCode}");
+    debugPrint("📥 DATA PURCHASE RESPONSE BODY: ${response.body}");
 
     // ✅ FIX: decode response.body
     final decoded = jsonDecode(response.body);

@@ -19,6 +19,7 @@ import '../../../../core/services/biometric_service.dart';
 import '../../../../app/utils/widgets/pin_input_widget.dart';
 import '../../../../app/utils/widgets/enhanced_pin_screen.dart';
 import '../../authcontroller/authcontroller.dart';
+import '../../interceptor/interceptor.dart';
 import '../../../dashboard/dashboardcontroller/provider.dart';
 
 class WelcomeBackScreen extends ConsumerStatefulWidget {
@@ -115,25 +116,36 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     if (_isAuthenticating) return;
 
     setState(() => _isAuthenticating = true);
-    LoadingHelper.show('Logging you in...');
 
     try {
       final success = await ref.read(authControllerProvider.notifier)
           .logIn(context, loginPhone, loginPassword.trim())
           .timeout(const Duration(seconds: 30));
 
-      LoadingHelper.dismiss();
+      debugPrint('🔑 _performLogin: success=$success, mounted=$mounted');
 
-      if (success && mounted) {
+      if (success) {
         ref.read(sessionServiceProvider.notifier).clearLockState();
-        if (widget.isSessionLock && !widget.forceHome) {
-          context.pop();
-        } else {
-          context.go(RouteList.bottomNavBar);
-        }
+        // Use post-frame callback to navigate AFTER EasyLoading dismiss settles
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            if (widget.isSessionLock && !widget.forceHome) {
+              context.pop();
+            } else {
+              context.go(RouteList.bottomNavBar);
+            }
+          } else {
+            // Fallback: widget was unmounted (e.g. during overlay teardown)
+            // Use the global navigator key to still perform navigation
+            debugPrint('⚠️ WelcomeBack unmounted after login — using navigatorKey fallback');
+            navigatorKey.currentContext?.go(RouteList.bottomNavBar);
+          }
+        });
       } else {
-        _showErrorModal('Login Failed', 'Invalid credentials. Please try again.');
-        _resetState(isBiometric);
+        if (mounted) {
+          _showErrorModal('Login Failed', 'Invalid credentials. Please try again.');
+          _resetState(isBiometric);
+        }
       }
     } catch (e, stackTrace) {
       LoadingHelper.dismiss();
@@ -150,12 +162,14 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
         message = 'Connection lost during login. Please check your network.';
       }
       
-      _showErrorModal(
-        title, 
-        message, 
-        onRetry: () => _performLogin(loginPhone, loginPassword, isBiometric: isBiometric),
-      );
-      _resetState(isBiometric);
+      if (mounted) {
+        _showErrorModal(
+          title, 
+          message, 
+          onRetry: () => _performLogin(loginPhone, loginPassword, isBiometric: isBiometric),
+        );
+        _resetState(isBiometric);
+      }
     }
   }
 

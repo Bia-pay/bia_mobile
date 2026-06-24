@@ -565,9 +565,9 @@ class ConfirmationBottomSheet {
     required Color primaryColor,
     required _ResponsiveHelper r,
   }) {
-    // Filter out internal metadata details
+    // Filter out internal metadata details (not shown to user, used for navigation)
     final visibleDetails = config.details.where((e) {
-      final label = e.label.toLowerCase();
+      final label = e.label.toLowerCase().replaceAll(' ', '');
       return label != "serviceid" && label != "variationcode";
     }).toList();
 

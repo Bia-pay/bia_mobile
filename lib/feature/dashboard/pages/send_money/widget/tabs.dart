@@ -158,11 +158,13 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
                 final beneficiary = listToShow[index];
                 final name = beneficiary['name'] ?? '';
                 final account = beneficiary['account'] ?? '';
+                final logoUrl = beneficiary['logoUrl'];
 
                 return _buildBeneficiaryItem(
                   context,
                   name: name,
                   account: account,
+                  logoUrl: logoUrl,
                   isSmallScreen: isSmallScreen,
                   isVerySmallScreen: isVerySmallScreen,
                   onTap: () => widget.onSelectBeneficiary?.call(name, account),
@@ -210,6 +212,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
       BuildContext context, {
         required String name,
         required String account,
+        String? logoUrl,
         required bool isSmallScreen,
         required bool isVerySmallScreen,
         required VoidCallback onTap,
@@ -301,21 +304,41 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
                 widget.customLogo ??
                     CircleAvatar(
                       radius: avatarRadius,
-                      backgroundColor: primaryColor.withOpacity(0.1),
+                      backgroundColor: Colors.transparent,
                       child: ClipOval(
-                        child: Image.asset(
-                          'assets/svg/logo-two.png',
-                          height: isVerySmallScreen ? 18.h : (isSmallScreen ? 22.h : 26.h),
-                          width: isVerySmallScreen ? 18.w : (isSmallScreen ? 22.w : 26.w),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.account_circle,
-                              color: primaryColor,
-                              size: avatarRadius * 1.5,
-                            );
-                          },
-                        ),
+                        child: (logoUrl != null && logoUrl.isNotEmpty)
+                            ? Image.network(
+                                logoUrl,
+                                height: isVerySmallScreen ? 24.h : (isSmallScreen ? 28.h : 32.h),
+                                width: isVerySmallScreen ? 24.w : (isSmallScreen ? 28.w : 32.w),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/svg/logo-two.png',
+                                    height: isVerySmallScreen ? 18.h : (isSmallScreen ? 22.h : 26.h),
+                                    width: isVerySmallScreen ? 18.w : (isSmallScreen ? 22.w : 26.w),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      Icons.account_circle,
+                                      color: primaryColor,
+                                      size: avatarRadius * 1.5,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Image.asset(
+                                'assets/svg/logo-two.png',
+                                height: isVerySmallScreen ? 18.h : (isSmallScreen ? 22.h : 26.h),
+                                width: isVerySmallScreen ? 18.w : (isSmallScreen ? 22.w : 26.w),
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.account_circle,
+                                    color: primaryColor,
+                                    size: avatarRadius * 1.5,
+                                  );
+                                },
+                              ),
                       ),
                     ),
             ],

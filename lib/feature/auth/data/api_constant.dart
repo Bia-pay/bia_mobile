@@ -53,6 +53,8 @@ class ApiConstant {
   static const String PURCHASE_ELECTRICITY_UNIT = '/api/v1/billpayment/electricity/purchase';
   static const String GET_CHARGES = "/api/v1/payment/charges";
   static const String UPDATE_TAG = '/api/v1/user/tag';
+  static const String REFERRAL_STATS = '/api/v1/referral/stats';
+  static const String REFERRAL_HISTORY = '/api/v1/referral/history';
 
   // ------------ NOTIFICATIONS
   static const String GET_NOTIFICATIONS = '/api/v1/notification';

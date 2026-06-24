@@ -317,19 +317,16 @@ class BiaAiCard extends ConsumerWidget {
     return Container(
       height: cardHeight,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0C284E), Color(0xFF133A6F), Color(0xFF1E569F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0C284E).withOpacity(0.2),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: lightBorderColor, width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
@@ -361,7 +358,7 @@ class BiaAiCard extends ConsumerWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
-                      colors: [Colors.cyan.withOpacity(0.22), Colors.transparent],
+                      colors: [Colors.cyan.withOpacity(0.12), Colors.transparent],
                     ),
                   ),
                 ),
@@ -382,7 +379,7 @@ class BiaAiCard extends ConsumerWidget {
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               fontSize: 13.sp,
-                              color: Colors.white,
+                              color: lightText,
                             ),
                           ),
                           SizedBox(height: 2.h),
@@ -391,7 +388,7 @@ class BiaAiCard extends ConsumerWidget {
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w400,
                               fontSize: 9.sp,
-                              color: Colors.white.withOpacity(0.75),
+                              color: lightSecondaryText,
                             ),
                           ),
                         ],
@@ -407,8 +404,8 @@ class BiaAiCard extends ConsumerWidget {
                               height: 44.r,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.08),
-                                border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+                                color: primaryColor.withOpacity(0.08),
+                                border: Border.all(color: primaryColor.withOpacity(0.15), width: 1),
                               ),
                             ).animate(
                               onPlay: (controller) => controller.repeat(reverse: true),
@@ -434,7 +431,7 @@ class BiaAiCard extends ConsumerWidget {
                         Icon(
                           Icons.arrow_forward_ios_rounded,
                           size: 13.sp,
-                          color: Colors.white.withOpacity(0.8),
+                          color: lightText.withOpacity(0.6),
                         ),
                       ],
                     ),
@@ -761,7 +758,7 @@ class BalanceCard extends ConsumerWidget {
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    final double cardHeight = isXSmall ? 96.h : isSmall ? 108.h : isLarge ? 132.h : 120.h;
+    final double cardHeight = isXSmall ? 72.h : isSmall ? 81.h : isLarge ? 99.h : 90.h;
     return Container(
       height: cardHeight,
       decoration: BoxDecoration(
@@ -805,7 +802,7 @@ class BalanceCard extends ConsumerWidget {
             ),
             Padding(
               padding: EdgeInsets.symmetric(
-                vertical: 16.h,
+                vertical: isXSmall ? 8.h : isSmall ? 10.h : 12.h,
                 horizontal: 16.w,
               ),
               child: Row(

@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../app/view/widget/app_bar.dart';
 import '../../../../../app/view/widget/app_search_field.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
@@ -27,6 +26,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   BankModel? selectedBank;
   List<BankModel> banks = [];
   List<BankModel> filteredBanks = [];
+  List<BankModel> suggestedBanks = [];
   bool isLoadingBanks = true;
   String? accountError;
 
@@ -78,10 +78,24 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
     // Sort banks A-Z
     loadedBanks.sort((a, b) => a.bankName.toLowerCase().compareTo(b.bankName.toLowerCase()));
 
+    // Filter popular/suggested banks
+    final popularKeys = ['opay', 'moniepoint', 'palmpay', 'kuda', 'access', 'gtbank', 'guaranty trust', 'zenith', 'uba', 'united bank', 'first bank'];
+    final matched = <String, BankModel>{};
+    for (final key in popularKeys) {
+      for (final bank in loadedBanks) {
+        final name = bank.bankName.toLowerCase();
+        if (name.contains(key)) {
+          matched[bank.bankCode] = bank;
+          break;
+        }
+      }
+    }
+
     if (mounted) {
       setState(() {
         banks = loadedBanks;
         filteredBanks = loadedBanks;
+        suggestedBanks = matched.values.toList();
         isLoadingBanks = false;
       });
     }
@@ -238,6 +252,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                       ),
                     ),
                     SizedBox(height: 10.h),
+                    _buildSuggestedBanksGrid(context, setModalState),
                     Expanded(
                       child: isLoadingBanks
                           ? const Center(child: CustomLoader(color: primaryColor))
@@ -264,11 +279,30 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                               horizontal: 12.w,
                               vertical: 4.h,
                             ),
-                            leading: Icon(
-                              Icons.account_balance,
-                              color: isSelected ? primaryColor : grey,
-                              size: 24.sp,
-                            ),
+                            leading: bank.logoUrl != null && bank.logoUrl!.isNotEmpty
+                                ? Container(
+                                    width: 32.r,
+                                    height: 32.r,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: ClipOval(
+                                      child: Image.network(
+                                        bank.logoUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Icon(
+                                          Icons.account_balance,
+                                          color: isSelected ? primaryColor : grey,
+                                          size: 24.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.account_balance,
+                                    color: isSelected ? primaryColor : grey,
+                                    size: 24.sp,
+                                  ),
                             title: Text(
                               bank.bankName,
                               style: TextStyle(
@@ -306,7 +340,6 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final viewInsets = MediaQuery.of(context).viewInsets;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Scaffold(
       backgroundColor: offWhiteBackground,
@@ -359,7 +392,52 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                 ),
                                 SizedBox(height: isSmallScreen ? 10.h : 15.h),
 
-                                 InkWell(
+                                AppField.transparent(
+                                  hintText: 'Enter 10-digit Account Number',
+                                  width: double.infinity,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 10,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  initialValue: verifiedAccount,
+                                  withClearButton: true,
+                                  onChanged: (value) {
+                                    accountController.text = value;
+                                    setState(() {
+                                      accountError = null;
+                                    });
+
+                                    if (value.length == 10) {
+                                      if (selectedBank != null) {
+                                        _verifyAccountFromInput(value);
+                                      } else {
+                                        _showBankSelector();
+                                      }
+                                    } else {
+                                      setState(() => isVerified = false);
+                                    }
+                                  },
+                                ),
+
+                                if (accountError != null)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 6.h),
+                                    child: Text(
+                                      accountError!,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: errorColor,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12.sp,
+                                      ),
+                                    ),
+                                  ),
+
+                                _buildSuggestedBanksRow(),
+
+                                SizedBox(height: 12.h),
+
+                                InkWell(
                                   onTap: () {
                                     setState(() {
                                       isBankDropdownOpen = !isBankDropdownOpen;
@@ -383,11 +461,30 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(
-                                          Icons.account_balance,
-                                          color: primaryColor,
-                                          size: isSmallScreen ? 20.sp : 24.sp,
-                                        ),
+                                        selectedBank?.logoUrl != null && selectedBank!.logoUrl!.isNotEmpty
+                                            ? Container(
+                                                width: isSmallScreen ? 20.r : 24.r,
+                                                height: isSmallScreen ? 20.r : 24.r,
+                                                decoration: const BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: ClipOval(
+                                                  child: Image.network(
+                                                    selectedBank!.logoUrl!,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (_, __, ___) => Icon(
+                                                      Icons.account_balance,
+                                                      color: primaryColor,
+                                                      size: isSmallScreen ? 20.sp : 24.sp,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : Icon(
+                                                Icons.account_balance,
+                                                color: primaryColor,
+                                                size: isSmallScreen ? 20.sp : 24.sp,
+                                              ),
                                         SizedBox(width: 10.w),
                                         Expanded(
                                           child: Text(
@@ -470,14 +567,39 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                                   separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
                                                   itemBuilder: (context, index) {
                                                     final bank = filteredBanks[index];
+                                                    final isCurrentSelected = selectedBank?.bankCode == bank.bankCode;
                                                     return ListTile(
                                                       dense: true,
+                                                      leading: bank.logoUrl != null && bank.logoUrl!.isNotEmpty
+                                                          ? Container(
+                                                              width: 24.r,
+                                                              height: 24.r,
+                                                              decoration: const BoxDecoration(
+                                                                shape: BoxShape.circle,
+                                                              ),
+                                                              child: ClipOval(
+                                                                child: Image.network(
+                                                                  bank.logoUrl!,
+                                                                  fit: BoxFit.cover,
+                                                                  errorBuilder: (_, __, ___) => Icon(
+                                                                    Icons.account_balance,
+                                                                    color: isCurrentSelected ? primaryColor : grey,
+                                                                    size: 16.sp,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            )
+                                                          : Icon(
+                                                              Icons.account_balance,
+                                                              color: isCurrentSelected ? primaryColor : grey,
+                                                              size: 16.sp,
+                                                            ),
                                                       title: Text(
                                                         bank.bankName,
                                                         style: TextStyle(
                                                           fontSize: 13.sp,
                                                           color: darkBackground,
-                                                          fontWeight: selectedBank?.bankCode == bank.bankCode ? FontWeight.bold : FontWeight.normal,
+                                                          fontWeight: isCurrentSelected ? FontWeight.bold : FontWeight.normal,
                                                         ),
                                                       ),
                                                       onTap: () {
@@ -498,43 +620,6 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                     ),
                                   ),
                                 ],
-                                SizedBox(height: 12.h),
-
-                                AppField.transparent(
-                                  hintText: 'Enter 10-digit Account Number',
-                                  width: double.infinity,
-                                  keyboardType: TextInputType.number,
-                                  maxLength: 10,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  initialValue: verifiedAccount,
-                                  withClearButton: true,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      accountError = null;
-                                    });
-
-                                    if (value.length == 10 && selectedBank != null) {
-                                      _verifyAccountFromInput(value);
-                                    } else {
-                                      setState(() => isVerified = false);
-                                    }
-                                  },
-                                ),
-
-                                if (accountError != null)
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 6.h),
-                                    child: Text(
-                                      accountError!,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: errorColor,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12.sp,
-                                      ),
-                                    ),
-                                  ),
 
                                 SizedBox(height: isSmallScreen ? 8.h : 12.h),
 
@@ -700,6 +785,188 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
     );
   }
 
+  String _getShortBankName(String fullName) {
+    final lower = fullName.toLowerCase();
+    if (lower.contains('access')) return 'Access';
+    if (lower.contains('guaranty') || lower.contains('gtbank') || lower.contains('gtb')) return 'GTBank';
+    if (lower.contains('zenith')) return 'Zenith';
+    if (lower.contains('united bank') || lower.contains('uba')) return 'UBA';
+    if (lower.contains('first bank') || lower.contains('fbn')) return 'First Bank';
+    if (lower.contains('kuda')) return 'Kuda';
+    if (lower.contains('opay')) return 'OPay';
+    if (lower.contains('moniepoint')) return 'Moniepoint';
+    if (lower.contains('palmpay')) return 'PalmPay';
+    if (lower.contains('union')) return 'Union';
+    if (lower.contains('wema')) return 'Wema';
+    if (lower.contains('polaris')) return 'Polaris';
+    if (lower.contains('stanbic')) return 'Stanbic';
+    if (lower.contains('fidelity')) return 'Fidelity';
+    if (lower.contains('sterling')) return 'Sterling';
+    return fullName.split(' ')[0];
+  }
+
+  Widget _buildSuggestedBanksRow() {
+    if (suggestedBanks.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(top: 8.h, bottom: 6.h),
+          child: Text(
+            'Suggested Banks',
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: grey,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 40.h,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: suggestedBanks.length,
+            itemBuilder: (context, index) {
+              final bank = suggestedBanks[index];
+              final isSelected = selectedBank?.bankCode == bank.bankCode;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedBank = bank;
+                    isBankDropdownOpen = false;
+                  });
+                  if (accountController.text.length == 10) {
+                    _verifyAccountFromInput(accountController.text);
+                  }
+                },
+                child: Container(
+                  margin: EdgeInsets.only(right: 8.w),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  decoration: BoxDecoration(
+                    color: isSelected ? primaryColor.withValues(alpha: 0.1) : whiteBackground,
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(
+                      color: isSelected ? primaryColor : lightBorderColor,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (bank.logoUrl != null && bank.logoUrl!.isNotEmpty) ...[
+                        ClipOval(
+                          child: Image.network(
+                            bank.logoUrl!,
+                            width: 18.r,
+                            height: 18.r,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.account_balance,
+                              color: isSelected ? primaryColor : grey,
+                              size: 14.sp,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                      ],
+                      Text(
+                        _getShortBankName(bank.bankName),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected ? primaryColor : lightText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuggestedBanksGrid(BuildContext context, StateSetter setModalState) {
+    if (suggestedBanks.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      width: double.infinity,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Popular Banks',
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: grey,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: suggestedBanks.map((bank) {
+              final isSelected = selectedBank?.bankCode == bank.bankCode;
+              return GestureDetector(
+                onTap: () {
+                  setState(() => selectedBank = bank);
+                  setModalState(() {});
+                  Navigator.pop(context);
+                  if (accountController.text.length == 10) {
+                    _verifyAccountFromInput(accountController.text);
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: isSelected ? primaryColor.withValues(alpha: 0.1) : grey100,
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color: isSelected ? primaryColor : Colors.transparent,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (bank.logoUrl != null && bank.logoUrl!.isNotEmpty) ...[
+                        ClipOval(
+                          child: Image.network(
+                            bank.logoUrl!,
+                            width: 16.r,
+                            height: 16.r,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.account_balance,
+                              color: isSelected ? primaryColor : grey,
+                              size: 12.sp,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                      ],
+                      Text(
+                        _getShortBankName(bank.bankName),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected ? primaryColor : darkBackground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 8.h),
+          const Divider(color: lightBorderColor),
+        ],
+      ),
+    );
+  }
+
 }
 Widget _buildTopBar(BuildContext context, ThemeData theme, bool isSmall) {
   return Padding(
@@ -768,6 +1035,7 @@ class CardThreeBank extends ConsumerStatefulWidget {
 class _CardThreeBankState extends ConsumerState<CardThreeBank> {
   List<Map<String, dynamic>> recentTransfers = [];
   List<Map<String, dynamic>> bankBeneficiaries = [];
+  List<BankModel> banks = [];
   bool isLoading = true;
 
   @override
@@ -782,11 +1050,13 @@ class _CardThreeBankState extends ConsumerState<CardThreeBank> {
     final dashboardCtrl = ref.read(dashboardControllerProvider.notifier);
     final recents = await dashboardCtrl.getRecentBankTransfers(context);
     final beneficiaries = await dashboardCtrl.getBankBeneficiaries(context);
+    final banksList = await dashboardCtrl.getBanks(context);
 
     if (mounted) {
       setState(() {
         recentTransfers = recents;
         bankBeneficiaries = beneficiaries;
+        banks = banksList;
         isLoading = false;
       });
     }
@@ -837,19 +1107,35 @@ class _CardThreeBankState extends ConsumerState<CardThreeBank> {
           child: BeneficiaryTabSection(
             favorites: bankBeneficiaries
                 .map<Map<String, String>>(
-                  (e) => {
-                "name": e['name']?.toString() ?? '',
-                "account": e['account']?.toString() ?? '',
-              },
-            )
+                  (e) {
+                    final bCode = e['bankCode']?.toString() ?? '';
+                    final matchingBank = banks.firstWhere(
+                      (b) => b.bankCode == bCode,
+                      orElse: () => BankModel(bankCode: '', bankName: ''),
+                    );
+                    return {
+                      "name": e['name']?.toString() ?? '',
+                      "account": e['account']?.toString() ?? '',
+                      "logoUrl": matchingBank.logoUrl ?? '',
+                    };
+                  },
+                )
                 .toList(),
             recents: recentTransfers
                 .map<Map<String, String>>(
-                  (e) => {
-                "name": e['name']?.toString() ?? '',
-                "account": e['account']?.toString() ?? '',
-              },
-            )
+                  (e) {
+                    final bCode = e['bankCode']?.toString() ?? '';
+                    final matchingBank = banks.firstWhere(
+                      (b) => b.bankCode == bCode,
+                      orElse: () => BankModel(bankCode: '', bankName: ''),
+                    );
+                    return {
+                      "name": e['name']?.toString() ?? '',
+                      "account": e['account']?.toString() ?? '',
+                      "logoUrl": matchingBank.logoUrl ?? '',
+                    };
+                  },
+                )
                 .toList(),
             showProgress: true,
             showLogo: true,

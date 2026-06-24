@@ -54,6 +54,7 @@ import '../../../feature/settings/presentation/enable_login_fingerprint.dart';
 import '../../socket/socket_test_page.dart';
 import 'keyboard_observer.dart';
 import '../../../feature/settings/presentation/auto_logout_settings.dart';
+import '../../../feature/referral/presentation/referral_screen.dart';
 
 export '../../../feature/settings/presentation/change_password.dart'
     show NewPaymentPin;
@@ -508,6 +509,11 @@ class AppRouter {
         path: RouteList.autoLogoutSettings,
         name: RouteList.autoLogoutSettings,
         builder: (context, state) => const AutoLogoutSettingsScreen(),
+      ),
+      GoRoute(
+        path: RouteList.referrals,
+        name: RouteList.referrals,
+        builder: (context, state) => const ReferralScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

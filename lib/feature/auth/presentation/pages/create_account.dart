@@ -31,11 +31,13 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController referralCodeController = TextEditingController();
 
   final FocusNode nameFocus = FocusNode();
   final FocusNode emailFocus = FocusNode();
   final FocusNode passwordFocus = FocusNode();
   final FocusNode confirmPasswordFocus = FocusNode();
+  final FocusNode referralCodeFocus = FocusNode();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -57,6 +59,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     emailController.addListener(_refresh);
     passwordController.addListener(_refresh);
     confirmPasswordController.addListener(_refresh);
+    referralCodeController.addListener(_refresh);
   }
 
   @override
@@ -65,10 +68,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    referralCodeController.dispose();
     nameFocus.dispose();
     emailFocus.dispose();
     passwordFocus.dispose();
     confirmPasswordFocus.dispose();
+    referralCodeFocus.dispose();
     super.dispose();
   }
 
@@ -98,6 +103,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         nameController.text.trim(),
         emailController.text.trim(),
         password,
+        referralCode: referralCodeController.text.trim().isNotEmpty
+            ? referralCodeController.text.trim()
+            : null,
       );
 
       setState(() => _isLoading = false);
@@ -351,8 +359,8 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           label: 'Confirm Pin',
           controller: confirmPasswordController,
           focusNode: confirmPasswordFocus,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _register(),
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => FocusScope.of(context).requestFocus(referralCodeFocus),
           hintText: '******',
           obscureText: _obscureConfirmPassword,
           keyboardType: TextInputType.number,
@@ -377,6 +385,19 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
             onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
           ),
         ).animate().fadeIn(delay: 650.ms),
+
+        SizedBox(height: 20.h),
+
+        CustomTextFormField(
+          label: 'Referral Code (Optional)',
+          controller: referralCodeController,
+          focusNode: referralCodeFocus,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _register(),
+          hintText: 'Enter referral code',
+          icons: Icons.card_giftcard_rounded,
+          validator: (v) => null,
+        ).animate().fadeIn(delay: 700.ms),
       ],
     );
   }
