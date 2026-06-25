@@ -542,7 +542,8 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    final double bannerHeight = isXSmall ? 100.h : isSmall ? 112.h : isLarge ? 136.h : 122.h;
+    // Reduced by exactly 1/4 (25%)
+    final double bannerHeight = isXSmall ? 75.h : isSmall ? 84.h : isLarge ? 102.h : 91.5.h;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -597,6 +598,17 @@ class _BannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final bool isSmall = screenHeight < 780;
+
+    final double verticalPadding = isXSmall ? 4.h : isSmall ? 6.h : 8.h;
+    final double titleSize = isXSmall ? 11.5.sp : isSmall ? 12.sp : 13.sp;
+    final double subtitleSize = isXSmall ? 8.5.sp : isSmall ? 9.sp : 9.5.sp;
+    final double spacing = isXSmall ? 3.h : isSmall ? 4.h : 5.h;
+    final double iconContainerSize = isXSmall ? 36.r : isSmall ? 42.r : 48.r;
+    final double iconSize = isXSmall ? 16.sp : isSmall ? 19.sp : 22.sp;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -647,7 +659,7 @@ class _BannerCard extends StatelessWidget {
               ),
               // Content
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: verticalPadding),
                 child: Row(
                   children: [
                     Expanded(
@@ -657,26 +669,33 @@ class _BannerCard extends StatelessWidget {
                         children: [
                           Text(
                             banner.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
-                              fontSize: 13.sp,
+                              fontSize: titleSize,
                             ),
                           ),
-                          SizedBox(height: 4.h),
+                          SizedBox(height: 2.h),
                           Text(
                             banner.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.white.withOpacity(0.78),
                               fontWeight: FontWeight.w400,
-                              fontSize: 9.5.sp,
-                              height: 1.4,
+                              fontSize: subtitleSize,
+                              height: 1.35,
                             ),
                           ),
                           if (banner.actionLabel != null) ...[
-                            SizedBox(height: 8.h),
+                            SizedBox(height: spacing),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isXSmall ? 8.w : 10.w,
+                                vertical: isXSmall ? 2.h : 4.h,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.18),
                                 borderRadius: BorderRadius.circular(20.r),
@@ -690,11 +709,11 @@ class _BannerCard extends StatelessWidget {
                                     style: theme.textTheme.labelSmall?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
-                                      fontSize: 9.sp,
+                                      fontSize: isXSmall ? 8.sp : 9.sp,
                                     ),
                                   ),
                                   SizedBox(width: 3.w),
-                                  Icon(Icons.arrow_forward_ios_rounded, size: 8.sp, color: Colors.white),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: isXSmall ? 7.sp : 8.sp, color: Colors.white),
                                 ],
                               ),
                             ),
@@ -704,8 +723,8 @@ class _BannerCard extends StatelessWidget {
                     ),
                     SizedBox(width: 12.w),
                     Container(
-                      width: 48.r,
-                      height: 48.r,
+                      width: iconContainerSize,
+                      height: iconContainerSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.12),
@@ -715,7 +734,7 @@ class _BannerCard extends StatelessWidget {
                         child: Icon(
                           banner.icon,
                           color: Colors.white,
-                          size: 22.sp,
+                          size: iconSize,
                         ),
                       ),
                     ),

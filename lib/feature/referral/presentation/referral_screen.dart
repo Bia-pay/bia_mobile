@@ -9,6 +9,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
+import '../../../core/easy_loading_config.dart';
 import '../controller/referral_controller.dart';
 import '../model/referral_models.dart';
 
@@ -32,6 +33,8 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
     ToastHelper.showToast(
       context: context,
       message: 'Referral code copied!',
+      icon: Icons.check_circle_rounded,
+      iconColor: successColor,
     );
   }
 
@@ -158,7 +161,11 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                 loading: () => const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 40.0),
-                    child: CircularProgressIndicator(color: primaryColor),
+                    child: PulsingLogoIndicator(
+                      logoPath: 'assets/svg/logo.png',
+                      size: 36,
+                      pulseColor: primaryColor,
+                    ),
                   ),
                 ),
                 error: (err, stack) => _buildErrorState(err.toString()),
@@ -196,12 +203,7 @@ class _ReferralScreenState extends ConsumerState<ReferralScreen> {
                     },
                   );
                 },
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40.0),
-                    child: CircularProgressIndicator(color: primaryColor),
-                  ),
-                ),
+                loading: () => const SizedBox.shrink(),
                 error: (err, stack) => _buildErrorState(err.toString()),
               ),
 

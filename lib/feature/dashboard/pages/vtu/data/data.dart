@@ -97,7 +97,7 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
       final sId = serviceId ?? _selectedProvider['serviceId'] ?? 'mtn-data';
       final result = await ref
           .read(dashboardControllerProvider.notifier)
-          .fetchDataPlans(context, sId);
+          .fetchDataPlans(context, sId, showLoading: false);
 
       if (!mounted) return;
 

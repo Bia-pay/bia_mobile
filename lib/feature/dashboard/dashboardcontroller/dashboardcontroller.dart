@@ -1153,17 +1153,17 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   }
 
   Future<List<DataPlanModel>> fetchDataPlans(
-      BuildContext context, String serviceId) async {
+      BuildContext context, String serviceId, {bool showLoading = true}) async {
     try {
-      LoadingHelper.show('');
+      if (showLoading) LoadingHelper.show('');
 
       final plans = await dashboardRepository.getDataPlans(serviceId);
 
-      LoadingHelper.dismiss();
+      if (showLoading) LoadingHelper.dismiss();
 
       return plans;
     } catch (e) {
-      LoadingHelper.dismiss();
+      if (showLoading) LoadingHelper.dismiss();
 
       ToastHelper.showToast(
         context: context,
