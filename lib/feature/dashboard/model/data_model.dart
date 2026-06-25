@@ -12,21 +12,21 @@ class DataPlanModel {
   });
 
   factory DataPlanModel.fromJson(Map<String, dynamic> json) {
-    double parsedAmount = 0.0;
-    final amtVal = json['variation_amount'] ?? json['amount'];
-    if (amtVal != null) {
-      if (amtVal is num) {
-        parsedAmount = amtVal.toDouble();
-      } else if (amtVal is String) {
-        parsedAmount = double.tryParse(amtVal.replaceAll(',', '').trim()) ?? 0.0;
-      }
+    final rawAmount = json['variation_amount'] ?? json['amount'] ?? 0;
+    int amountVal = 0;
+    if (rawAmount is int) {
+      amountVal = rawAmount;
+    } else if (rawAmount is double) {
+      amountVal = rawAmount.toInt();
+    } else if (rawAmount is String) {
+      amountVal = double.tryParse(rawAmount.replaceAll(',', '').replaceAll('₦', '').replaceAll('N', '').trim())?.toInt() ?? 0;
     }
 
     return DataPlanModel(
       name: json['name'] ?? '',
-      amount: parsedAmount.toInt(),
+      amount: amountVal,
       serviceId: json['serviceID'] ?? '',
-      variationCode: json['variation_code'],
+      variationCode: json['variation_code'], // Map from API response
     );
   }
 }

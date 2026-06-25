@@ -211,6 +211,7 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
           ),
           // Hidden from UI, used by bottom sheet for PIN screen navigation
           BottomSheetDetailItem(label: 'Variation Code', value: variationCode),
+          BottomSheetDetailItem(label: 'serviceId', value: serviceId),
         ],
       ),
       onConfirm: (pin) async {
@@ -271,8 +272,13 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
 
 
   int _extractPriceFromName(String name) {
-    final m = RegExp(r'[₦N]\s*([\d,]+)').firstMatch(name);
-    if (m != null) return int.tryParse(m.group(1)!.replaceAll(',', '')) ?? 0;
+    final m = RegExp(r'(?:[₦N]\s*([\d,]+)|([\d,]+)\s*(?:Naira|N))', caseSensitive: false).firstMatch(name);
+    if (m != null) {
+      final val = m.group(1) ?? m.group(2);
+      if (val != null) {
+        return int.tryParse(val.replaceAll(',', '')) ?? 0;
+      }
+    }
     return 0;
   }
 
