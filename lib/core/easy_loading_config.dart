@@ -119,11 +119,10 @@ class _PulsingLogoIndicatorState extends State<PulsingLogoIndicator>
   }
 }
 
-/// EasyLoading Configuration Class
 class EasyLoadingConfig {
   static void initialize({
     required String logoPath,
-    double logoSize = 30,
+    double logoSize = 50.0,
     Color? pulseColor,
     Color maskColor = Colors.black,
     double maskOpacity = 0.7,
@@ -134,8 +133,8 @@ class EasyLoadingConfig {
       ..displayDuration = const Duration(milliseconds: 2000)
       ..indicatorType = EasyLoadingIndicatorType.circle
       ..loadingStyle = EasyLoadingStyle.custom
-      ..indicatorSize = logoSize.w
-      ..radius = 20.r
+      ..indicatorSize = logoSize
+      ..radius = 20.0
       ..progressColor = pulseColor ?? Colors.blue
       ..backgroundColor = Colors.transparent
       ..indicatorColor = Colors.transparent

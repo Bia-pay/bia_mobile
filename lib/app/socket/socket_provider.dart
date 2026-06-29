@@ -9,6 +9,13 @@ import '../../core/constants.dart';
 import '../../feature/dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../feature/dashboard/dashboardcontroller/notification_notifier.dart';
 import '../../feature/dashboard/dashboardcontroller/provider.dart';
+import '../../feature/dashboard/model/services_status_model.dart';
+import '../../feature/support/controller/support_controller.dart';
+import '../../feature/auth/interceptor/interceptor.dart';
+import '../utils/colors.dart';
+import '../utils/widgets/toast_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 
 // Socket connection state
 enum SocketState { idle, connecting, connected, disconnected, error }
@@ -254,6 +261,100 @@ class SocketNotifier extends StateNotifier<SocketState> {
       print('====== NOTIFICATION ======');
       print('🔔 Data: $data');
       print('==========================');
+    });
+
+    // Support notifications
+    _socket!.on('user_support_notification', (data) {
+      print('====== USER SUPPORT NOTIFICATION ======');
+      print('🔔 Data: $data');
+      print('=======================================');
+      try {
+        _ref.read(supportTicketsProvider.notifier).fetchTickets();
+      } catch (_) {}
+
+      final int ticketId = data is Map ? (data['ticketId'] as num?)?.toInt() ?? 0 : 0;
+      final activeTicketId = _ref.read(activeTicketIdProvider);
+
+      if (activeTicketId == ticketId) {
+        // User is currently looking at this ticket's chat screen!
+        // We do NOT want to show the sliding toast alert.
+        // BUT we DO want to ensure the message gets appended to the active chat thread.
+        try {
+          if (data is Map && data.containsKey('message') && data['message'] is Map) {
+            final messageMap = Map<String, dynamic>.from(data['message'] as Map);
+            _ref.read(ticketDetailsProvider(ticketId).notifier).handleIncomingMessage(messageMap);
+          }
+        } catch (e) {
+          print('❌ Error updating active ticket details from notification: $e');
+        }
+        return;
+      }
+
+      final msg = data != null && data['message'] != null
+          ? data['message']['message'] ?? 'New reply to your ticket'
+          : 'New reply to your ticket';
+
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        ToastHelper.showToast(
+          context: context,
+          message: "Support: $msg",
+          icon: Icons.support_agent_rounded,
+          iconColor: primaryColor,
+          position: ToastPosition.top,
+        );
+      }
+    });
+
+    // Real-time support messages inside active ticket chat room
+    _socket!.on('new_support_message', (data) {
+      print('====== NEW SUPPORT MESSAGE ======');
+      print('💬 Data: $data');
+      print('=================================');
+      try {
+        if (data is Map) {
+          final Map<String, dynamic> messageMap = (data.containsKey('message') && data['message'] is Map)
+              ? Map<String, dynamic>.from(data['message'] as Map)
+              : Map<String, dynamic>.from(data);
+          
+          final ticketId = (messageMap['ticketId'] as num?)?.toInt();
+          final activeTicketId = _ref.read(activeTicketIdProvider);
+          if (ticketId != null && activeTicketId == ticketId) {
+            _ref.read(ticketDetailsProvider(ticketId).notifier).handleIncomingMessage(messageMap);
+          }
+        }
+      } catch (e) {
+        print('❌ Error handling new_support_message socket event: $e');
+      }
+    });
+
+    // Real-time support ticket resolution event
+    _socket!.on('ticket_resolved', (data) {
+      print('====== TICKET RESOLVED ======');
+      print('✅ Data: $data');
+      print('=============================');
+      try {
+        final ticketId = data is Map ? (data['id'] as num?)?.toInt() : null;
+        final activeTicketId = _ref.read(activeTicketIdProvider);
+        if (ticketId != null && activeTicketId == ticketId) {
+          _ref.read(ticketDetailsProvider(ticketId).notifier).handleTicketResolved(data);
+        }
+      } catch (e) {
+        print('❌ Error handling ticket_resolved socket event: $e');
+      }
+    });
+
+    // Service status updates
+    _socket!.on('service_status_changed', (data) {
+      print('📡 Socket.IO service_status_changed event received: $data');
+      try {
+        if (data != null) {
+          final updatedStatus = ServicesStatus.fromJson(Map<String, dynamic>.from(data as Map));
+          _ref.read(servicesStatusProvider.notifier).updateStatus(updatedStatus);
+        }
+      } catch (e) {
+        print('❌ Error parsing service_status_changed socket data: $e');
+      }
     });
 
     // Catch-all for any other events

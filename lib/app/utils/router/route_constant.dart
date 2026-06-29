@@ -80,4 +80,6 @@ class RouteList {
   static const String autoLogoutSettings = '/auto-logout-settings';
   static const String sendByTag = '/send-by-tag';
   static const String referrals = '/referrals';
+  static const String supportTickets = '/support-tickets';
+  static const String ticketDetails = 'ticket-details';
 }

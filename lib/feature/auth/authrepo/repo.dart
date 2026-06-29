@@ -106,8 +106,12 @@ class AuthRepository {
     print('📡 Attempting login...');
 
     try {
-      final ipAddress = await DeviceHelper.getIpAddress();
-      final deviceName = await DeviceHelper.getDeviceName();
+      final results = await Future.wait([
+        DeviceHelper.getIpAddress(),
+        DeviceHelper.getDeviceName(),
+      ]);
+      final ipAddress = results[0];
+      final deviceName = results[1];
 
       body['ipAddress'] = ipAddress;
       body['device'] = deviceName;
@@ -138,14 +142,25 @@ class AuthRepository {
         final phone = userJson['phone']?.toString() ?? '';
         final effectiveId = newUserId.isNotEmpty ? newUserId : phone;
 
-        // 🔥 CRITICAL: Prepare cache for new user BEFORE anything else
-        await TransactionCache.prepareForNewUser(effectiveId);
+        // 🔥 CRITICAL: Prepare cache and prime transactions in parallel
+        final List<dynamic> recentRaw = responseBody['recentTransactions'] ?? [];
+        await Future.wait([
+          TransactionCache.prepareForNewUser(effectiveId),
+          if (recentRaw.isNotEmpty) ...[
+            Future(() async {
+              try {
+                final List<TransactionItem> transactions = recentRaw
+                    .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
+                    .toList();
+                await TransactionCache.saveTransactions(effectiveId, transactions, suffix: 'recent');
+                debugPrint('💾 Primed recent transactions cache: ${transactions.length} items');
+              } catch (_) {}
+            }),
+          ]
+        ]);
 
         // 🔥 UPDATE RIVERPOD STATE
         _ref.read(userIdProvider.notifier).state = effectiveId;
-
-        // 🔥 CLEAR ALL OLD CACHE (EXTRA SAFETY)
-        await TransactionCache.clearAllTransactions();
 
         // 🔥 RESET ALL TRANSACTION PROVIDERS
         _ref.invalidate(allTransactionsProvider);
@@ -155,42 +170,30 @@ class AuthRepository {
         _ref.invalidate(dashboardControllerProvider);
         _ref.invalidate(userProfileProvider);
 
-        // 🔥 PRIME TRANSACTION CACHE (Same as Balance Card)
-        final List<dynamic> recentRaw = responseBody['recentTransactions'] ?? [];
-        if (recentRaw.isNotEmpty) {
-          final List<TransactionItem> transactions = recentRaw
-              .map((e) => TransactionItem.fromJson(Map<String, dynamic>.from(e)))
-              .toList();
-          
-          await TransactionCache.saveTransactions(effectiveId, transactions, suffix: 'recent');
-          debugPrint('💾 Primed recent transactions cache: ${transactions.length} items');
-        }
+        // Save password for biometric login in background (non-blocking)
+        if (!fromBiometric && body.containsKey('password') && effectiveId.isNotEmpty) {
+          final biometricService = BiometricService();
+          final password = body['password'];
 
-        // Save password for biometric login (user-specific)
-        if (!fromBiometric && body.containsKey('password')) {
-          if (effectiveId.isNotEmpty) {
-            final biometricService = BiometricService();
-            final password = body['password'];
-
-            // Always re-save credentials on login (they are cleared on logout)
-            await biometricService.saveLoginCredentials(effectiveId, phone, password);
-            debugPrint('🔐 Login credentials saved for: $effectiveId');
-
-            // Only set the preference key on first-ever login — never auto-enable
-            final hasEverBeenSet = await biometricService.hasLoginPreferenceBeenSet(effectiveId);
-            if (!hasEverBeenSet) {
-              // Write false explicitly so the key exists but biometric is OFF by default
-              await biometricService.setLoginEnabled(effectiveId, false);
-              await biometricService.markInitialPromptShown(effectiveId);
-            } else {
-              await biometricService.isLoginEnabled(effectiveId);
+          Future(() async {
+            try {
+              // Always re-save credentials on login
+              await biometricService.saveLoginCredentials(effectiveId, phone, password);
+              final hasEverBeenSet = await biometricService.hasLoginPreferenceBeenSet(effectiveId);
+              if (!hasEverBeenSet) {
+                await biometricService.setLoginEnabled(effectiveId, false);
+                await biometricService.markInitialPromptShown(effectiveId);
+              } else {
+                await biometricService.isLoginEnabled(effectiveId);
+              }
+              debugPrint('🔐 Background biometric setup complete');
+            } catch (e) {
+              debugPrint('⚠️ Background biometric setup error: $e');
             }
-          }
+          });
         }
 
         // Tokens are now stored exclusively in SecureStorage via ApiClient for security.
-        // await box.put("token", accessToken);
-        // await box.put("refreshToken", refreshToken);
         await box.put("userId", newUserId);
         await box.put("fullname", userJson['fullname'] ?? '');
         await box.put("picture", userJson['picture']);
@@ -204,21 +207,19 @@ class AuthRepository {
         );
         await box.put("is_logged_in", true);
 
-        // Prime ApiClient: updates in-memory headers AND persists tokens to
-        // encrypted SecureStorage per this specific user account.
+        // Prime ApiClient: updates in-memory headers AND persists tokens in parallel
         await _apiClient.initForUser(effectiveId, accessToken, refreshToken);
 
-        final authFlowService =
-        _ref.read(authFlowServiceProvider);
-        // Execute FCM token generation and socket connection in the background to avoid blocking transition to dashboard
+        final authFlowService = _ref.read(authFlowServiceProvider);
+        // Execute FCM token generation and socket connection in the background
         authFlowService.completeAuthFlow();
 
-        // Migrate old biometric settings to user-specific settings
-        try {
-          await BiometricMigration.migrateToUserSpecificSettings();
-        } catch (e) {
-          debugPrint('⚠️ Biometric migration skipped');
-        }
+        // Migrate old biometric settings to user-specific settings in background
+        Future(() async {
+          try {
+            await BiometricMigration.migrateToUserSpecificSettings();
+          } catch (_) {}
+        });
 
         return ResponseModel(
           responseMessage:
@@ -406,8 +407,15 @@ class AuthRepository {
         await box.put("balance", walletJson['balance']);
 
         // Generate and save FCM token after successful registration
-        final fcmToken = await FirebaseMessaging.instance.getToken();
-        await box.put('fcmToken', fcmToken);
+        try {
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await box.put('fcmToken', fcmToken);
+            debugPrint("🔥 Registration FCM Token stored: $fcmToken");
+          }
+        } catch (e) {
+          debugPrint("⚠️ FCM token retrieval failed during registration: $e");
+        }
 
         _apiClient.updateHeaders(accessToken);
 

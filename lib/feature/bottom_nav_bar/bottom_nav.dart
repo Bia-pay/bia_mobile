@@ -4,11 +4,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:go_router/go_router.dart';
+import 'package:hive/hive.dart';
+import '../../app/utils/router/route_constant.dart';
 import '../../app/utils/image.dart';
 import '../dashboard/pages/homepage.dart';
 import '../dashboard/pages/send_money/scan_transfer/scanner.dart';
 import '../dashboard/pages/send_money/scan_transfer/scanner_onboarding.dart';
 import '../dashboard/dashboardcontroller/qr_onboarding_provider.dart';
+import '../dashboard/dashboardcontroller/provider.dart';
 import '../settings/presentation/account_settings.dart';
 
 class BottomNavBar extends ConsumerStatefulWidget {
@@ -20,6 +24,24 @@ class BottomNavBar extends ConsumerStatefulWidget {
 
 class _BottomNavBarState extends ConsumerState<BottomNavBar> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPinStatus();
+    });
+  }
+
+  void _checkPinStatus() {
+    final box = Hive.box('authBox');
+    final hasPin = box.get('has_pin', defaultValue: false);
+    if (hasPin != true) {
+      if (mounted) {
+        context.go(RouteList.setTransactionPin);
+      }
+    }
+  }
 
   List<Widget> _getPages(bool qrCompleted) => [
     const HomePage(),
@@ -37,6 +59,8 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
   @override
   Widget build(BuildContext context) {
     final qrCompleted = ref.watch(qrOnboardingProvider);
+    final servicesStatus = ref.watch(servicesStatusProvider);
+    final isQrEnabled = servicesStatus.qr;
     final pages = _getPages(qrCompleted);
     
     return Scaffold(
@@ -44,26 +68,41 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
       body: pages[_selectedIndex],
       extendBody: true,
       floatingActionButton: GestureDetector(
-        onTap: () => _onItemTapped(2),
-        child: Container(
-          height: 80.h,
-          width: 80.h,
-          decoration: BoxDecoration(
-            color: primaryColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+        onTap: () {
+          if (!isQrEnabled) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('QR Code payments are temporarily disabled for maintenance.'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.orange.shade800,
               ),
-            ],
-          ),
-          padding: EdgeInsets.all(16.w),
-          child: SvgPicture.asset(
-            scanner,
-            height: 12.h,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            );
+          } else {
+            _onItemTapped(2);
+          }
+        },
+        child: Opacity(
+          opacity: isQrEnabled ? 1.0 : 0.4,
+          child: Container(
+            height: 80.h,
+            width: 80.h,
+            decoration: BoxDecoration(
+              color: isQrEnabled ? primaryColor : Colors.grey,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: (isQrEnabled ? primaryColor : Colors.grey).withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.all(16.w),
+            child: SvgPicture.asset(
+              scanner,
+              height: 12.h,
+              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
           ),
         ),
       ),

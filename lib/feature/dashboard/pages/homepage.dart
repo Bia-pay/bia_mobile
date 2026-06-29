@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -108,6 +109,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const BalanceCard().animate().fadeIn(duration: 350.ms).slideY(begin: 0.08, end: 0, duration: 350.ms),
+                        SizedBox(height: 6.h),
+                        const VirtualAccountCard().animate().fadeIn(duration: 370.ms, delay: 30.ms).slideY(begin: 0.06, end: 0, duration: 370.ms),
                         SizedBox(height: elementSpacing),
                         const ActionRibbon().animate().fadeIn(duration: 400.ms, delay: 50.ms).slideY(begin: 0.08, end: 0, duration: 400.ms),
                         SizedBox(height: elementSpacing),
@@ -150,6 +153,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 children: [
                   SizedBox(height: 10.h),
                   const BalanceCard().animate().fadeIn(duration: 350.ms).slideY(begin: 0.08, end: 0, duration: 350.ms),
+                  SizedBox(height: 6.h),
+                  const VirtualAccountCard().animate().fadeIn(duration: 370.ms, delay: 30.ms).slideY(begin: 0.06, end: 0, duration: 370.ms),
                   SizedBox(height: elementSpacing),
                   const ActionRibbon().animate().fadeIn(duration: 400.ms, delay: 50.ms).slideY(begin: 0.08, end: 0, duration: 400.ms),
                   SizedBox(height: elementSpacing),
@@ -313,7 +318,7 @@ class BiaAiCard extends ConsumerWidget {
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    final double cardHeight = isXSmall ? 72.h : isSmall ? 82.h : isLarge ? 106.h : 96.h;
+    final double cardHeight = isXSmall ? 56.h : isSmall ? 64.h : isLarge ? 80.h : 72.h;
     return Container(
       height: cardHeight,
       decoration: BoxDecoration(
@@ -884,41 +889,63 @@ class BalanceCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => context.pushNamed(RouteList.topUp),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 8.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.add_rounded,
-                            color: Colors.white,
-                            size: 14.sp,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'Add money',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11.5.sp,
+                  SizedBox(width: 10.w),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top Right: Add Money Icon
+                      GestureDetector(
+                        onTap: () => context.pushNamed(RouteList.topUp),
+                        child: Container(
+                          padding: EdgeInsets.all(5.r),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.25),
+                              width: 1,
                             ),
                           ),
-                        ],
+                          child: Icon(
+                            Icons.add_rounded,
+                            color: Colors.white,
+                            size: isXSmall ? 14.sp : 16.sp,
+                          ),
+                        ),
                       ),
-                    ),
+                      // Bottom Right: Transaction History Link
+                      GestureDetector(
+                        onTap: () => context.pushNamed(RouteList.transactionHistory),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.10),
+                            borderRadius: BorderRadius.circular(6.r),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.history_rounded,
+                                color: Colors.white.withOpacity(0.95),
+                                size: isXSmall ? 10.sp : 12.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                'History',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: Colors.white.withOpacity(0.95),
+                                  fontSize: isXSmall ? 8.5.sp : 9.5.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -929,6 +956,7 @@ class BalanceCard extends ConsumerWidget {
     );
   }
 }
+
 
 class ActionButton extends StatelessWidget {
   final String label;
@@ -981,63 +1009,63 @@ class ActionButton extends StatelessWidget {
   }
 }
 
-class QuickActionsGrid extends StatefulWidget {
+class QuickActionsGrid extends ConsumerStatefulWidget {
   const QuickActionsGrid({super.key});
 
   @override
-  State<QuickActionsGrid> createState() => _QuickActionsGridState();
+  ConsumerState<QuickActionsGrid> createState() => _QuickActionsGridState();
 }
 
-class _QuickActionsGridState extends State<QuickActionsGrid> {
+class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
   bool showMore = false;
 
   static List<Map<String, dynamic>> getActions(BuildContext context) => [
     {
       'label': 'Airtime',
-      'icon': Icon(Icons.phone_iphone_rounded, color: const Color(0xFF0EA5E9), size: 20.sp),
-      'color': const Color(0xFFE0F2FE),
+      'icon': Icon(Icons.phone_iphone_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'onTap': () => context.pushNamed(RouteList.airtime),
     },
     {
       'label': 'Data',
-      'icon': Icon(Icons.wifi_rounded, color: const Color(0xFF8B5CF6), size: 20.sp),
-      'color': const Color(0xFFF5F3FF),
+      'icon': Icon(Icons.wifi_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'onTap': () => context.pushNamed(RouteList.data),
     },
     {
       'label': 'Cable TV',
-      'icon': Icon(Icons.live_tv_rounded, color: const Color(0xFFF59E0B), size: 20.sp),
-      'color': const Color(0xFFFEF3C7),
+      'icon': Icon(Icons.live_tv_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'onTap': () => context.pushNamed(RouteList.cable),
     },
     {
       'label': 'Electricity',
-      'icon': Icon(Icons.bolt_rounded, color: const Color(0xFF10B981), size: 20.sp),
-      'color': const Color(0xFFD1FAE5),
+      'icon': Icon(Icons.bolt_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'onTap': () => context.pushNamed(RouteList.electricity),
     },
     {
       'label': 'Internet',
-      'icon': Icon(Icons.router_rounded, color: const Color(0xFF64748B), size: 20.sp),
-      'color': const Color(0xFFF1F5F9),
+      'icon': Icon(Icons.router_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'isSoon': true,
     },
     {
       'label': 'Water Bill',
-      'icon': Icon(Icons.water_drop_rounded, color: const Color(0xFF06B6D4), size: 20.sp),
-      'color': const Color(0xFFECFEFF),
+      'icon': Icon(Icons.water_drop_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'isSoon': true,
     },
     {
       'label': 'Insurance',
-      'icon': Icon(Icons.health_and_safety_rounded, color: const Color(0xFFEF4444), size: 20.sp),
-      'color': const Color(0xFFFEF2F2),
+      'icon': Icon(Icons.health_and_safety_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'isSoon': true,
     },
     {
       'label': 'Education',
-      'icon': Icon(Icons.school_rounded, color: const Color(0xFFEC4899), size: 20.sp),
-      'color': const Color(0xFFFDF2F8),
+      'icon': Icon(Icons.school_rounded, color: primaryColor, size: 20.sp),
+      'color': secondaryColor,
       'isSoon': true,
     },
   ];
@@ -1045,6 +1073,7 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
   @override
   Widget build(BuildContext context) {
     final actions = getActions(context);
+    final servicesStatus = ref.watch(servicesStatusProvider);
     final theme = Theme.of(context);
 
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -1098,22 +1127,44 @@ class _QuickActionsGridState extends State<QuickActionsGrid> {
             ),
             itemBuilder: (context, index) {
               final item = actions[index];
+              final label = item['label'] as String;
+
+              bool isDisabled = false;
+              if (label == 'Airtime') {
+                isDisabled = !servicesStatus.airtime;
+              } else if (label == 'Data') {
+                isDisabled = !servicesStatus.data;
+              } else if (label == 'Cable TV' || label == 'Electricity') {
+                isDisabled = !servicesStatus.utility;
+              }
+
               return QuickActionButton(
-                label: item['label'],
+                label: label,
                 icon: item['icon'],
                 backgroundColor: item['color'],
                 isSoon: item['isSoon'] ?? false,
+                isDisabled: isDisabled,
                 onTap: item['isSoon'] == true
                     ? () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${item['label']} coming soon!'),
+                      content: Text('$label coming soon!'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
                 }
-                    : item['onTap'],
-              ).animate().fade(duration: 200.ms).slideY(begin: 0.05, end: 0, duration: 200.ms);
+                    : (isDisabled
+                        ? () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('$label service is temporarily disabled for maintenance.'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.orange.shade800,
+                              ),
+                            );
+                          }
+                        : item['onTap']),
+              );
             },
           ),
           SizedBox(height: 4.h),
@@ -1153,6 +1204,7 @@ class QuickActionButton extends StatelessWidget {
   final Widget icon;
   final Color backgroundColor;
   final bool isSoon;
+  final bool isDisabled;
   final VoidCallback? onTap;
 
   const QuickActionButton({
@@ -1161,30 +1213,36 @@ class QuickActionButton extends StatelessWidget {
     required this.icon,
     required this.backgroundColor,
     this.isSoon = false,
+    this.isDisabled = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final double opacity = (isSoon || isDisabled) ? 0.4 : 1.0;
+
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Builder(builder: (ctx) {
-                final h = MediaQuery.of(ctx).size.height;
-                final w = MediaQuery.of(ctx).size.width;
-                final sz = w > 600 ? 40.r : h < 680 ? 38.r : h < 780 ? 42.r : h > 900 ? 48.r : 44.r;
+      child: Opacity(
+        opacity: opacity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Builder(builder: (ctx) {
+                  final h = MediaQuery.of(ctx).size.height;
+                  final w = MediaQuery.of(ctx).size.width;
+                  final sz = w > 600 ? 40.r : h < 680 ? 38.r : h < 780 ? 42.r : h > 900 ? 48.r : 44.r;
+                
                 return Container(
                   height: sz,
                   width: sz,
                   decoration: BoxDecoration(
                     color: backgroundColor,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(14.r),
                     border: Border.all(color: Colors.white, width: 1.5),
                     boxShadow: [
                       BoxShadow(
@@ -1197,7 +1255,7 @@ class QuickActionButton extends StatelessWidget {
                   child: Center(child: icon),
                 );
               }),
-              if (isSoon)
+              if (isSoon || isDisabled)
                 Positioned(
                   bottom: -2,
                   right: -2,
@@ -1205,13 +1263,13 @@ class QuickActionButton extends StatelessWidget {
                     height: 12.r,
                     width: 12.r,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF64748B),
+                      color: isDisabled ? Colors.orange.shade800 : const Color(0xFF64748B),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1),
                     ),
                     child: Center(
                       child: Icon(
-                        Icons.lock_rounded,
+                        isDisabled ? Icons.construction_rounded : Icons.lock_rounded,
                         size: 7.r,
                         color: Colors.white,
                       ),
@@ -1227,13 +1285,231 @@ class QuickActionButton extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: lightSecondaryText,
+              color: (isSoon || isDisabled) ? lightSecondaryText.withOpacity(0.4) : lightSecondaryText,
               fontWeight: FontWeight.w700,
               fontSize: 10.sp,
             ),
           ),
         ],
       ),
+     ),
     );
   }
 }
+
+// ── Virtual Account Card (slim banner) ───────────────────────────────────────
+
+class VirtualAccountCard extends ConsumerStatefulWidget {
+  const VirtualAccountCard({super.key});
+
+  @override
+  ConsumerState<VirtualAccountCard> createState() => _VirtualAccountCardState();
+}
+
+class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
+  bool _copied = false;
+
+  Future<void> _copyAccountNumber(String number) async {
+    await Clipboard.setData(ClipboardData(text: number));
+    if (!mounted) return;
+    setState(() => _copied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accountAsync = ref.watch(virtualAccountProvider);
+
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final bool isXSmall = screenHeight < 680;
+    final double cardHeight = isXSmall ? 40.h : 44.h;
+
+    final account = accountAsync.value;
+
+    if (account == null) {
+      return _ShimmerBanner(height: cardHeight);
+    }
+
+    return Container(
+      height: cardHeight,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(
+          color: primaryColor.withOpacity(0.18),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.012),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        child: Row(
+          children: [
+            // Bank logo indicator
+            Icon(
+              Icons.account_balance_rounded,
+              color: primaryColor,
+              size: isXSmall ? 13.sp : 14.sp,
+            ),
+            SizedBox(width: 8.w),
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Row 1: Provider + Account Name
+                  Row(
+                    children: [
+                      Text(
+                        account.provider,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: isXSmall ? 8.sp : 9.sp,
+                          fontWeight: FontWeight.w800,
+                          color: primaryColor,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          '  •  ${account.virtualAccountName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: isXSmall ? 8.sp : 9.sp,
+                            fontWeight: FontWeight.w600,
+                            color: lightSecondaryText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 1.h),
+                  // Row 2: Account Number
+                  Text(
+                    account.virtualAccountNo,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: isXSmall ? 10.sp : 11.sp,
+                      fontWeight: FontWeight.w800,
+                      color: accentColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8.w),
+            // Copy button icon
+            GestureDetector(
+              onTap: () => _copyAccountNumber(account.virtualAccountNo),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Icon(
+                  _copied ? Icons.check_circle_rounded : Icons.copy_rounded,
+                  key: ValueKey<bool>(_copied),
+                  size: isXSmall ? 12.sp : 13.sp,
+                  color: _copied ? successColor : primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// Slim shimmer placeholder shown while virtual account loads or is generated
+class _ShimmerBanner extends StatefulWidget {
+  final double height;
+
+  const _ShimmerBanner({required this.height});
+
+  @override
+  State<_ShimmerBanner> createState() => _ShimmerBannerState();
+}
+
+class _ShimmerBannerState extends State<_ShimmerBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (_, __) {
+        return Container(
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(_animation.value),
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: lightBorderColor, width: 1),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: Row(
+              children: [
+                Container(
+                  width: 15.w,
+                  height: 12.h,
+                  decoration: BoxDecoration(
+                    color: lightBorderColor.withOpacity(_animation.value),
+                    borderRadius: BorderRadius.circular(3.r),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  width: 60.w,
+                  height: 10.h,
+                  decoration: BoxDecoration(
+                    color: lightBorderColor.withOpacity(_animation.value),
+                    borderRadius: BorderRadius.circular(3.r),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  width: 100.w,
+                  height: 12.h,
+                  decoration: BoxDecoration(
+                    color: lightBorderColor.withOpacity(_animation.value),
+                    borderRadius: BorderRadius.circular(3.r),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+

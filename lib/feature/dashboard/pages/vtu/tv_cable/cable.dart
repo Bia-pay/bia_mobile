@@ -14,6 +14,7 @@ import '../../../../../app/view/widget/quick_access_app_bar.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboard_repo/repo.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 import 'cable_plan_config.dart';
 
 class CableTv extends ConsumerStatefulWidget {
@@ -271,90 +272,93 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      resizeToAvoidBottomInset: true,
-      appBar: CustomAppBar(
-        title: 'TV Cable',
-        onBackPressed: () async {
-          FocusScope.of(context).unfocus();
-          await Future.delayed(const Duration(milliseconds: 150));
-          if (!context.mounted) return;
-          if (context.canPop()) {
-            context.pop();
-          }
-        },
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 18.w),
-            child: SvgPicture.asset(bell),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: _providers.isEmpty && _isLoading
-            ? Center(
-                child: PulsingLogoIndicator(
-                  logoPath: 'assets/svg/logo-b.png',
-                  size: 50,
-                  pulseColor: primaryColor,
-                ),
-              )
-            : _providers.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.tv_off, size: 48.w, color: grey),
-                        SizedBox(height: 16.h),
-                        Text(
-                          'No cable providers available',
-                          style: TextStyle(color: grey, fontSize: 16.sp),
-                        ),
-                      ],
-                    ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      final isDesktop = width >= 1100;
-                      final isTablet = width >= 600 && width < 1100;
-                      final double horizontalPadding = isDesktop ? 48.w : (isTablet ? 24.w : 16.w);
-
-                      return SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: horizontalPadding,
-                            vertical: 24.h,
-                          ),
-                          child: isDesktop
-                              ? Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      flex: 5,
-                                      child: _buildFormCard(width),
-                                    ),
-                                    SizedBox(width: 32.w),
-                                    Expanded(
-                                      flex: 7,
-                                      child: _buildPackagesSection(width),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildFormCard(width),
-                                    SizedBox(height: 24.h),
-                                    _buildPackagesSection(width),
-                                  ],
-                                ),
-                        ),
-                      );
-                    },
+    return ServiceGuard(
+      service: ServiceType.utility,
+      child: Scaffold(
+          backgroundColor: Colors.grey[50],
+        resizeToAvoidBottomInset: true,
+        appBar: CustomAppBar(
+          title: 'TV Cable',
+          onBackPressed: () async {
+            FocusScope.of(context).unfocus();
+            await Future.delayed(const Duration(milliseconds: 150));
+            if (!context.mounted) return;
+            if (context.canPop()) {
+              context.pop();
+            }
+          },
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 18.w),
+              child: SvgPicture.asset(bell),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: _providers.isEmpty && _isLoading
+              ? Center(
+                  child: PulsingLogoIndicator(
+                    logoPath: 'assets/svg/logo-b.png',
+                    size: 50,
+                    pulseColor: primaryColor,
                   ),
+                )
+              : _providers.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.tv_off, size: 48.w, color: grey),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'No cable providers available',
+                            style: TextStyle(color: grey, fontSize: 16.sp),
+                          ),
+                        ],
+                      ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final isDesktop = width >= 1100;
+                        final isTablet = width >= 600 && width < 1100;
+                        final double horizontalPadding = isDesktop ? 48.w : (isTablet ? 24.w : 16.w);
+  
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: horizontalPadding,
+                              vertical: 24.h,
+                            ),
+                            child: isDesktop
+                                ? Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        flex: 5,
+                                        child: _buildFormCard(width),
+                                      ),
+                                      SizedBox(width: 32.w),
+                                      Expanded(
+                                        flex: 7,
+                                        child: _buildPackagesSection(width),
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildFormCard(width),
+                                      SizedBox(height: 24.h),
+                                      _buildPackagesSection(width),
+                                    ],
+                                  ),
+                          ),
+                        );
+                      },
+                    ),
+        ),
       ),
     );
   }

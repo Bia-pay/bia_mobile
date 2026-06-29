@@ -17,6 +17,7 @@ import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 
 // ─── PROVIDERS ───────────────────────────────────────────────────────────────
 
@@ -299,387 +300,390 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
     final balance = _getWalletBalance();
     final providerColor = _selectedProvider['color'] as Color;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── Gradient Header ──
-          SliverAppBar(
-            expandedHeight: 180.h,
-            pinned: true,
-            backgroundColor: primaryColor,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-              onPressed: () {
-                FocusScope.of(context).unfocus();
-                if (context.canPop()) context.pop();
-              },
-            ),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: 18.w),
-                child: SvgPicture.asset(bell, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
+    return ServiceGuard(
+      service: ServiceType.data,
+      child: Scaffold(
+          backgroundColor: const Color(0xFFF7F8FA),
+          body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // ── Gradient Header ──
+            SliverAppBar(
+              expandedHeight: 180.h,
+              pinned: true,
+              backgroundColor: primaryColor,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  if (context.canPop()) context.pop();
+                },
               ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF0C284E),
-                      primaryColor,
-                      primaryColor.withValues(alpha: 0.85),
-                    ],
-                  ),
+              actions: [
+                Padding(
+                  padding: EdgeInsets.only(right: 18.w),
+                  child: SvgPicture.asset(bell, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(24.w, 56.h, 24.w, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(8.r),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10.r),
-                              ),
-                              child: const Icon(Icons.wifi_rounded, color: Colors.white, size: 20),
-                            ),
-                            SizedBox(width: 10.w),
-                            Text(
-                              'Buy Data',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 14.h),
-                        // Wallet Balance chip
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20.r),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF0C284E),
+                        primaryColor,
+                        primaryColor.withValues(alpha: 0.85),
+                      ],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(24.w, 56.h, 24.w, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Icon(Icons.account_balance_wallet_rounded, color: Colors.white.withValues(alpha: 0.8), size: 14.sp),
-                              SizedBox(width: 6.w),
+                              Container(
+                                padding: EdgeInsets.all(8.r),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
+                                child: const Icon(Icons.wifi_rounded, color: Colors.white, size: 20),
+                              ),
+                              SizedBox(width: 10.w),
                               Text(
-                                'Balance: ₦${balance.toStringAsFixed(2)}',
+                                'Buy Data',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 14.h),
+                          // Wallet Balance chip
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.account_balance_wallet_rounded, color: Colors.white.withValues(alpha: 0.8), size: 14.sp),
+                                SizedBox(width: 6.w),
+                                Text(
+                                  'Balance: ₦${balance.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-
-          // ── Body ──
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // ── Network Provider ──────────────────────────────────────────
-                _SectionCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _SectionLabel(icon: Icons.cell_tower_rounded, label: 'Select Network'),
-                      SizedBox(height: 14.h),
-                      Row(
-                        children: _kProviders.map((p) {
-                          final isSelected = _selectedProvider['name'] == p['name'];
-                          final pColor = p['color'] as Color;
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                if (_selectedProvider['name'] == p['name']) return;
-                                setState(() {
-                                  _selectedProvider = p;
-                                  _selectedPlan = null;
-                                  _selectedAmount = 0;
-                                });
-                                _loadPlans(p['serviceId']);
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: EdgeInsets.symmetric(horizontal: 4.w),
-                                padding: EdgeInsets.symmetric(vertical: 10.h),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? pColor.withValues(alpha: 0.12) : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12.r),
-                                  border: Border.all(
-                                    color: isSelected ? pColor : const Color(0xFFE8ECF0),
-                                    width: isSelected ? 2 : 1,
+  
+            // ── Body ──
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // ── Network Provider ──────────────────────────────────────────
+                  _SectionCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SectionLabel(icon: Icons.cell_tower_rounded, label: 'Select Network'),
+                        SizedBox(height: 14.h),
+                        Row(
+                          children: _kProviders.map((p) {
+                            final isSelected = _selectedProvider['name'] == p['name'];
+                            final pColor = p['color'] as Color;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  if (_selectedProvider['name'] == p['name']) return;
+                                  setState(() {
+                                    _selectedProvider = p;
+                                    _selectedPlan = null;
+                                    _selectedAmount = 0;
+                                  });
+                                  _loadPlans(p['serviceId']);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+                                  padding: EdgeInsets.symmetric(vertical: 10.h),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? pColor.withValues(alpha: 0.12) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                    border: Border.all(
+                                      color: isSelected ? pColor : const Color(0xFFE8ECF0),
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 38.r,
+                                        height: 38.r,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          image: DecorationImage(
+                                            image: AssetImage(p['logo']),
+                                            fit: BoxFit.cover,
+                                          ),
+                                          boxShadow: isSelected ? [
+                                            BoxShadow(color: pColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3)),
+                                          ] : [],
+                                        ),
+                                      ),
+                                      SizedBox(height: 5.h),
+                                      Text(
+                                        p['name'],
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          color: isSelected ? pColor : const Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 38.r,
-                                      height: 38.r,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                          image: AssetImage(p['logo']),
-                                          fit: BoxFit.cover,
-                                        ),
-                                        boxShadow: isSelected ? [
-                                          BoxShadow(color: pColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3)),
-                                        ] : [],
-                                      ),
-                                    ),
-                                    SizedBox(height: 5.h),
-                                    Text(
-                                      p['name'],
-                                      style: TextStyle(
-                                        fontSize: 10.sp,
-                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                        color: isSelected ? pColor : const Color(0xFF94A3B8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 12.h),
-
-                // ── Phone Number ──────────────────────────────────────────────
-                _SectionCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _SectionLabel(icon: Icons.phone_rounded, label: 'Phone Number'),
-                      SizedBox(height: 12.h),
-                      CustomTextFieldWithContacts(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        hint: 'Enter 11-digit phone number',
-                        maxLength: 11,
-                        onChanged: (value) {
-                          _detectNetwork(value);
-                          setState(() => _phoneNumber = value);
-                        },
-                        onContactSelected: (phone, name) {
-                          _phoneController.text = phone;
-                          _detectNetwork(phone);
-                          setState(() => _phoneNumber = phone);
-                        },
-                      ),
-                      // Auto-detect indicator
-                      if (_phoneNumber.length >= 4) ...[
-                        SizedBox(height: 8.h),
-                        Row(
-                          children: [
-                            Container(
-                              width: 18.r,
-                              height: 18.r,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage(_selectedProvider['logo']),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 6.w),
-                            Text(
-                              '${_selectedProvider['name']} detected',
-                              style: TextStyle(
-                                color: primaryColor,
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(width: 4.w),
-                            Icon(Icons.check_circle_rounded, color: primaryColor, size: 13.sp),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                SizedBox(height: 12.h),
-
-                // ── Plan Selector ─────────────────────────────────────────────
-                _SectionCard(
-                  padding: EdgeInsets.all(0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
-                        child: _SectionLabel(icon: Icons.data_usage_rounded, label: 'Choose a Plan'),
-                      ),
-                      SizedBox(height: 4.h),
-
-                      // Tab bar
-                      TabBar(
-                        controller: _tabController,
-                        isScrollable: true,
-                        labelColor: primaryColor,
-                        unselectedLabelColor: const Color(0xFF94A3B8),
-                        indicatorColor: primaryColor,
-                        indicatorWeight: 2.5,
-                        labelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
-                        unselectedLabelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500),
-                        tabAlignment: TabAlignment.start,
-                        padding: EdgeInsets.symmetric(horizontal: 8.w),
-                        tabs: _tabs.map((e) => Tab(text: e)).toList(),
-                      ),
-
-                      // Plan grid
-                      SizedBox(
-                        height: 240.h,
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: _tabs.map((tabName) {
-                            if (tabName == 'SME' && _loadingPlans) {
-                              return Center(
-                                child: PulsingLogoIndicator(
-                                  logoPath: 'assets/svg/logo.png',
-                                  size: 36,
-                                  pulseColor: primaryColor,
-                                ),
-                              );
-                            }
-                            final plans = tabName == 'SME' ? _smePlans : <Map<String, dynamic>>[];
-                            if (plans.isEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.hourglass_empty_rounded, size: 36, color: grey300),
-                                    SizedBox(height: 8.h),
-                                    Text(
-                                      tabName == 'SME' ? 'No plans available' : '$tabName plans coming soon',
-                                      style: TextStyle(color: grey, fontSize: 13.sp, fontWeight: FontWeight.w500),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            return GridView.builder(
-                              padding: EdgeInsets.all(10.r),
-                              physics: const BouncingScrollPhysics(),
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 8.r,
-                                mainAxisSpacing: 8.r,
-                                childAspectRatio: 0.78,
-                              ),
-                              itemCount: plans.length,
-                              itemBuilder: (ctx, i) {
-                                final plan = plans[i];
-                                final isSelected = _selectedPlan != null &&
-                                    _selectedPlan!['variation_code'] == plan['variation_code'];
-                                return _PlanCard(
-                                  plan: plan,
-                                  isSelected: isSelected,
-                                  providerColor: providerColor,
-                                  onTap: () => _selectPlan(plan),
-                                );
-                              },
                             );
                           }).toList(),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-
-                // ── Selected Plan Summary ─────────────────────────────────────
-                if (_selectedPlan != null) ...[
                   SizedBox(height: 12.h),
-                  _SelectedPlanSummary(
-                    plan: _selectedPlan!,
-                    providerColor: providerColor,
-                    providerName: _selectedProvider['name'],
-                    insufficient: _insufficientFunds,
-                    balance: _getWalletBalance(),
+  
+                  // ── Phone Number ──────────────────────────────────────────────
+                  _SectionCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SectionLabel(icon: Icons.phone_rounded, label: 'Phone Number'),
+                        SizedBox(height: 12.h),
+                        CustomTextFieldWithContacts(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          hint: 'Enter 11-digit phone number',
+                          maxLength: 11,
+                          onChanged: (value) {
+                            _detectNetwork(value);
+                            setState(() => _phoneNumber = value);
+                          },
+                          onContactSelected: (phone, name) {
+                            _phoneController.text = phone;
+                            _detectNetwork(phone);
+                            setState(() => _phoneNumber = phone);
+                          },
+                        ),
+                        // Auto-detect indicator
+                        if (_phoneNumber.length >= 4) ...[
+                          SizedBox(height: 8.h),
+                          Row(
+                            children: [
+                              Container(
+                                width: 18.r,
+                                height: 18.r,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: DecorationImage(
+                                    image: AssetImage(_selectedProvider['logo']),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                '${_selectedProvider['name']} detected',
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 4.w),
+                              Icon(Icons.check_circle_rounded, color: primaryColor, size: 13.sp),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+  
+                  // ── Plan Selector ─────────────────────────────────────────────
+                  _SectionCard(
+                    padding: EdgeInsets.all(0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+                          child: _SectionLabel(icon: Icons.data_usage_rounded, label: 'Choose a Plan'),
+                        ),
+                        SizedBox(height: 4.h),
+  
+                        // Tab bar
+                        TabBar(
+                          controller: _tabController,
+                          isScrollable: true,
+                          labelColor: primaryColor,
+                          unselectedLabelColor: const Color(0xFF94A3B8),
+                          indicatorColor: primaryColor,
+                          indicatorWeight: 2.5,
+                          labelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                          unselectedLabelStyle: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500),
+                          tabAlignment: TabAlignment.start,
+                          padding: EdgeInsets.symmetric(horizontal: 8.w),
+                          tabs: _tabs.map((e) => Tab(text: e)).toList(),
+                        ),
+  
+                        // Plan grid
+                        SizedBox(
+                          height: 240.h,
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: _tabs.map((tabName) {
+                              if (tabName == 'SME' && _loadingPlans) {
+                                return Center(
+                                  child: PulsingLogoIndicator(
+                                    logoPath: 'assets/svg/logo.png',
+                                    size: 36,
+                                    pulseColor: primaryColor,
+                                  ),
+                                );
+                              }
+                              final plans = tabName == 'SME' ? _smePlans : <Map<String, dynamic>>[];
+                              if (plans.isEmpty) {
+                                return Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.hourglass_empty_rounded, size: 36, color: grey300),
+                                      SizedBox(height: 8.h),
+                                      Text(
+                                        tabName == 'SME' ? 'No plans available' : '$tabName plans coming soon',
+                                        style: TextStyle(color: grey, fontSize: 13.sp, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                              return GridView.builder(
+                                padding: EdgeInsets.all(10.r),
+                                physics: const BouncingScrollPhysics(),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 8.r,
+                                  mainAxisSpacing: 8.r,
+                                  childAspectRatio: 0.78,
+                                ),
+                                itemCount: plans.length,
+                                itemBuilder: (ctx, i) {
+                                  final plan = plans[i];
+                                  final isSelected = _selectedPlan != null &&
+                                      _selectedPlan!['variation_code'] == plan['variation_code'];
+                                  return _PlanCard(
+                                    plan: plan,
+                                    isSelected: isSelected,
+                                    providerColor: providerColor,
+                                    onTap: () => _selectPlan(plan),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+  
+                  // ── Selected Plan Summary ─────────────────────────────────────
+                  if (_selectedPlan != null) ...[
+                    SizedBox(height: 12.h),
+                    _SelectedPlanSummary(
+                      plan: _selectedPlan!,
+                      providerColor: providerColor,
+                      providerName: _selectedProvider['name'],
+                      insufficient: _insufficientFunds,
+                      balance: _getWalletBalance(),
+                    ),
+                  ],
+                ]),
+              ),
+            ),
+          ],
+        ),
+  
+        // ── Floating PAY Button ───────────────────────────────────────────────
+        bottomNavigationBar: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: _isFormValid || _selectedPlan != null ? 88.h : 0,
+          child: OverflowBox(
+            maxHeight: 88.h,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   ),
                 ],
-              ]),
-            ),
-          ),
-        ],
-      ),
-
-      // ── Floating PAY Button ───────────────────────────────────────────────
-      bottomNavigationBar: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        height: _isFormValid || _selectedPlan != null ? 88.h : 0,
-        child: OverflowBox(
-          maxHeight: 88.h,
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 20,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _isFormValid ? 1.0 : 0.45,
-                child: ElevatedButton(
-                  onPressed: _isFormValid ? _handlePurchase : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: grey300,
-                    elevation: _isFormValid ? 4 : 0,
-                    shadowColor: primaryColor.withValues(alpha: 0.4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
-                    padding: EdgeInsets.symmetric(vertical: 14.h),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.flash_on_rounded, size: 18),
-                      SizedBox(width: 6.w),
-                      Text(
-                        _selectedPlan != null
-                            ? 'Pay ₦$_selectedAmount'
-                            : 'Select a Plan to Continue',
-                        style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800, letterSpacing: -0.3),
-                      ),
-                    ],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _isFormValid ? 1.0 : 0.45,
+                  child: ElevatedButton(
+                    onPressed: _isFormValid ? _handlePurchase : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: grey300,
+                      elevation: _isFormValid ? 4 : 0,
+                      shadowColor: primaryColor.withValues(alpha: 0.4),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.flash_on_rounded, size: 18),
+                        SizedBox(width: 6.w),
+                        Text(
+                          _selectedPlan != null
+                              ? 'Pay ₦$_selectedAmount'
+                              : 'Select a Plan to Continue',
+                          style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -26,6 +26,7 @@
     <application
         android:label="Bia"
         android:name="${applicationName}"
+        android:theme="@style/LaunchTheme"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher">
         <activity

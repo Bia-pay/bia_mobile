@@ -203,8 +203,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
     final frameSize = screenWidth * 0.65; // Dynamic frame size
     
     return Scaffold(
-      backgroundColor: darkBackground,
-      body: Stack(
+        backgroundColor: darkBackground,
+        body: Stack(
         children: [
           // 1. Scanner view
           MobileScanner(

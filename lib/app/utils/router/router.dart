@@ -55,6 +55,8 @@ import '../../socket/socket_test_page.dart';
 import 'keyboard_observer.dart';
 import '../../../feature/settings/presentation/auto_logout_settings.dart';
 import '../../../feature/referral/presentation/referral_screen.dart';
+import '../../../feature/support/presentation/support_tickets_page.dart';
+import '../../../feature/support/presentation/ticket_details_page.dart';
 
 export '../../../feature/settings/presentation/change_password.dart'
     show NewPaymentPin;
@@ -86,20 +88,13 @@ class AppRouter {
 
     debugLogDiagnostics: false,
     initialLocation: '/splash',
-    redirect: (context, state) async {
-      // 🔐 Check both centralized secure storage keys and Hive/legacy fallback keys
-      const secureStorage = FlutterSecureStorage(
-        aOptions: AndroidOptions(encryptedSharedPreferences: true),
-      );
-      final secureIsLoggedIn = (await secureStorage.read(key: 'is_logged_in')) == 'true';
-      final secureUserId = await secureStorage.read(key: 'user_id');
-
+    redirect: (context, state) {
+      // Use synchronous Hive check for instant route guard validation (non-blocking)
       final authBox = Hive.box('authBox');
-      final legacyIsLoggedIn = authBox.get('is_logged_in', defaultValue: false) == true;
-      final legacyUserId = authBox.get('userId', defaultValue: '')?.toString() ?? '';
+      final isLoggedIn = authBox.get('is_logged_in', defaultValue: false) == true;
+      final userId = authBox.get('userId', defaultValue: '')?.toString() ?? '';
 
-      final hasActiveSession = (secureIsLoggedIn && secureUserId != null && secureUserId.isNotEmpty) ||
-                               (legacyIsLoggedIn && legacyUserId.isNotEmpty);
+      final hasActiveSession = isLoggedIn && userId.isNotEmpty;
 
       final currentPath = state.uri.path;
       final isProtected = currentPath.startsWith('/home') ||
@@ -514,6 +509,20 @@ class AppRouter {
         path: RouteList.referrals,
         name: RouteList.referrals,
         builder: (context, state) => const ReferralScreen(),
+      ),
+      GoRoute(
+        path: RouteList.supportTickets,
+        name: RouteList.supportTickets,
+        builder: (context, state) => const SupportTicketsPage(),
+      ),
+      GoRoute(
+        path: '/support-tickets/:id',
+        name: RouteList.ticketDetails,
+        builder: (context, state) {
+          final idStr = state.pathParameters['id'] ?? '0';
+          final id = int.tryParse(idStr) ?? 0;
+          return TicketDetailsPage(ticketId: id);
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

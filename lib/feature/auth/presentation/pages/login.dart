@@ -145,6 +145,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _isLoginInProgress = true;
     });
 
+    LoadingHelper.show('Logging in...');
+
     final rawPhone = phoneController.text.trim();
     final normalizedPhone = rawPhone.startsWith('0') ? rawPhone.substring(1) : rawPhone;
     final fullPhoneNumber = '$_countryDialCode$normalizedPhone';

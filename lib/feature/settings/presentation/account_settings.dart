@@ -590,6 +590,8 @@ class _UProfileState extends ConsumerState<UProfile> {
                                     _handleForgotPin();
                                   } else if (subTitle == t.translate('auto_logout_settings')) {
                                     context.pushNamed(RouteList.autoLogoutSettings);
+                                  } else if (subTitle == t.translate('help_center')) {
+                                    context.pushNamed(RouteList.supportTickets);
                                   }
                                   // Add other sub-item routes here as needed
                                 },

@@ -22,6 +22,7 @@ import '../../../dashboardcontroller/provider.dart';
 import '../../../model/recent_transaction.dart';
 import '../../../widgets/transaction.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 
 class Electricity extends StatefulWidget {
   const Electricity({super.key});
@@ -35,174 +36,177 @@ class _ElectricityState extends State<Electricity> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: offWhiteBackground,
-      resizeToAvoidBottomInset: true,
-      appBar: CustomAppBar(
-        title: 'Electricity',
-        onBackPressed: () async {
-          FocusScope.of(context).unfocus();
-          await Future.delayed(const Duration(milliseconds: 150));
-          if (!context.mounted) return;
-          if (context.canPop()) {
-            context.pop();
-          }
-        },
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 18.w),
-            child: SvgPicture.asset(bell),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isTablet = constraints.maxWidth >= 600;
-            final isDesktop = constraints.maxWidth >= 1200;
-            final horizontalPadding = isDesktop
-                ? 120.w
-                : (isTablet ? 30.w : 8.w);
-            final maxContentWidth = isDesktop ? 800.w : double.infinity;
-
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxContentWidth),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: horizontalPadding,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CardTwo(
-                          onChanged: (provider) {
-                            setState(() {
-                              _selectedProvider = provider;
-                            });
-                          },
-                        ),
-                       // SizedBox(height: isTablet ? 14.h : 10.h),
-                        CardOne(selectedProvider: _selectedProvider),
-                        SizedBox(height: isTablet ? 24.h : 20.h),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            vertical: isTablet ? 24.h : 17.h,
-                            horizontal: isTablet ? 20.w : 10.w,
+    return ServiceGuard(
+      service: ServiceType.utility,
+      child: Scaffold(
+          backgroundColor: offWhiteBackground,
+        resizeToAvoidBottomInset: true,
+        appBar: CustomAppBar(
+          title: 'Electricity',
+          onBackPressed: () async {
+            FocusScope.of(context).unfocus();
+            await Future.delayed(const Duration(milliseconds: 150));
+            if (!context.mounted) return;
+            if (context.canPop()) {
+              context.pop();
+            }
+          },
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 18.w),
+              child: SvgPicture.asset(bell),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isTablet = constraints.maxWidth >= 600;
+              final isDesktop = constraints.maxWidth >= 1200;
+              final horizontalPadding = isDesktop
+                  ? 120.w
+                  : (isTablet ? 30.w : 8.w);
+              final maxContentWidth = isDesktop ? 800.w : double.infinity;
+  
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: horizontalPadding,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CardTwo(
+                            onChanged: (provider) {
+                              setState(() {
+                                _selectedProvider = provider;
+                              });
+                            },
                           ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(isTablet ? 20.r : 15.r),
+                         // SizedBox(height: isTablet ? 14.h : 10.h),
+                          CardOne(selectedProvider: _selectedProvider),
+                          SizedBox(height: isTablet ? 24.h : 20.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              vertical: isTablet ? 24.h : 17.h,
+                              horizontal: isTablet ? 20.w : 10.w,
                             ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Electricity Service',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: isTablet ? 18.sp : 16.sp,
-                                    ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(isTablet ? 20.r : 15.r),
                               ),
-                              SizedBox(height: isTablet ? 16.h : 10.h),
-                              ...dataPlans
-                                  .map(
-                                    (tx) => Container(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: isTablet ? 12.h : 8.h,
-                                        horizontal: isTablet ? 24.w : 18.w,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Electricity Service',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: isTablet ? 18.sp : 16.sp,
                                       ),
-                                      margin: EdgeInsets.symmetric(
-                                        vertical: isTablet ? 8.h : 6.h,
-                                        horizontal: isTablet ? 10.w : 7.w,
-                                      ),
-                                      height: isTablet ? 85.h : 70.h,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          isTablet ? 12.r : 8.r,
+                                ),
+                                SizedBox(height: isTablet ? 16.h : 10.h),
+                                ...dataPlans
+                                    .map(
+                                      (tx) => Container(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: isTablet ? 12.h : 8.h,
+                                          horizontal: isTablet ? 24.w : 18.w,
+                                        ),
+                                        margin: EdgeInsets.symmetric(
+                                          vertical: isTablet ? 8.h : 6.h,
+                                          horizontal: isTablet ? 10.w : 7.w,
+                                        ),
+                                        height: isTablet ? 85.h : 70.h,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            isTablet ? 12.r : 8.r,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              height: isTablet ? 45.h : 35.h,
+                                              width: isTablet ? 45.w : 35.w,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(100),
+                                                border: Border.all(),
+                                              ),
+                                              child: Image.asset(
+                                                'assets/svg/bank.png',
+                                                height: isTablet ? 28.h : 20.h,
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: isTablet ? 20.w : 15.w,
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    tx.name,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodyMedium
+                                                        ?.copyWith(
+                                                          fontSize: isTablet
+                                                              ? 17.sp
+                                                              : 15.sp,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                  ),
+                                                  Text(
+                                                    tx.dateTime,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          fontSize: isTablet
+                                                              ? 13.sp
+                                                              : 11.sp,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Icon(
+                                              Icons.arrow_forward_ios_outlined,
+                                              size: isTablet ? 16.sp : 12.sp,
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          Container(
-                                            height: isTablet ? 45.h : 35.h,
-                                            width: isTablet ? 45.w : 35.w,
-                                            alignment: Alignment.center,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(100),
-                                              border: Border.all(),
-                                            ),
-                                            child: Image.asset(
-                                              'assets/svg/bank.png',
-                                              height: isTablet ? 28.h : 20.h,
-                                            ),
-                                          ),
-                                          SizedBox(
-                                            width: isTablet ? 20.w : 15.w,
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  tx.name,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium
-                                                      ?.copyWith(
-                                                        fontSize: isTablet
-                                                            ? 17.sp
-                                                            : 15.sp,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                ),
-                                                Text(
-                                                  tx.dateTime,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                        fontSize: isTablet
-                                                            ? 13.sp
-                                                            : 11.sp,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Icon(
-                                            Icons.arrow_forward_ios_outlined,
-                                            size: isTablet ? 16.sp : 12.sp,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ],
+                                    )
+                                    .toList(),
+                              ],
+                            ),
                           ),
-                        ),
-                        SizedBox(height: isTablet ? 32.h : 25.h),
-                      ],
+                          SizedBox(height: isTablet ? 32.h : 25.h),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

@@ -137,54 +137,61 @@ void setupNotificationTapHandlers() {
 
 // ==================== MAIN ENTRY ====================
 
+/// Fires immediately so the splash screen appears in <200ms.
+/// All heavy initialisation (Hive, Firebase, FCM) is deferred to the background.
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // 1. Critical Core Initialization (Sequential)
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  await Hive.initFlutter();
-  
-  // 2. Parallelize Box Openings for speed
-  final boxes = await Future.wait([
-    Hive.openBox("authBox"),
-    Hive.openBox("appBox"),
-    Hive.openBox("transactionCacheBox"),
-    if (Platform.isAndroid) MediaStore.ensureInitialized(),
-  ]);
-  
-  final authBox = boxes[0] as Box;
-  if (Platform.isAndroid) {
-    MediaStore.appFolder = "Bia";
-  }
-
-  // 3. System UI setup (Non-blocking)
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
-
-  // 4. Run App immediately to dismiss native splash faster
+  // ✅ Step 1 — Run the app IMMEDIATELY so the native splash turns into Flutter
+  //    rendering without any blocking I/O in front of it.
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 
-  // 5. Defer Non-Critical Initialization (Async/Non-blocking)
-  _initSecondaryServices(authBox);
+  // ✅ Step 2 — Everything else happens in the background while the splash
+  //    screen is already visible to the user.
+  _initAllServicesInBackground();
 }
 
-/// Handles secondary initialization tasks in the background to avoid blocking the main UI thread on boot.
+/// Runs all heavy initialisation off the critical path.
+Future<void> _initAllServicesInBackground() async {
+  try {
+    // Hive init + box openings are fast (~100-300 ms) but used to block runApp.
+    await Hive.initFlutter();
+
+    final results = await Future.wait([
+      Hive.openBox("authBox"),
+      Hive.openBox("appBox"),
+      Hive.openBox("transactionCacheBox"),
+      if (Platform.isAndroid) MediaStore.ensureInitialized(),
+    ]);
+
+    final authBox = results[0] as Box;
+    if (Platform.isAndroid) {
+      MediaStore.appFolder = "Bia";
+    }
+
+    // Firebase is the heaviest init — run it only after Hive boxes are ready.
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // All secondary services (FCM, notifications) need Firebase to be ready.
+    await _initSecondaryServices(authBox);
+  } catch (e) {
+    debugPrint("⚠️ Background initialization error: $e");
+  }
+}
+
+/// FCM token, notification channels, and permission requests.
 Future<void> _initSecondaryServices(Box authBox) async {
   try {
-    // Register background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    
-    // Notifications
+
     await initLocalNotifications();
     listenForForegroundMessages();
     setupNotificationTapHandlers();
-    
-    // Permissions & Tokens
+
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
@@ -226,7 +233,6 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
 
     // Initialize the session service
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeEasyLoadingOnce();
       final String currentLocation = AppRouter.router.routerDelegate.currentConfiguration.uri.path;
       ref.read(sessionServiceProvider.notifier).init(currentLocation);
     });
@@ -277,6 +283,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       designSize: const Size(390, 844),
       minTextAdapt: true,
       builder: (context, child) {
+        _initializeEasyLoadingOnce();
 
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -342,7 +349,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       _isEasyLoadingInitialized = true;
       EasyLoadingConfig.initialize(
         logoPath: appLogoPng,
-        logoSize: 40.h,
+        logoSize: 50.0,
         pulseColor: primaryColor,
         maskOpacity: 0.7,
         dismissOnTap: false,

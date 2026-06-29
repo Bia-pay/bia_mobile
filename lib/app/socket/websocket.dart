@@ -24,19 +24,22 @@ class AppSocketListener extends ConsumerStatefulWidget {
 
 class _AppSocketListenerState extends ConsumerState<AppSocketListener> with WidgetsBindingObserver {
 
+  bool _isFcmListening = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _listenForFcmTokenRefresh(); // 👈 ADD THIS
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Defer socket connection by 1s so Hive boxes finish opening in background
       Future.delayed(const Duration(seconds: 1), () {
-        _checkAndConnect();
+        if (mounted) _checkAndConnect();
       });
-    });
 
+      // Retry FCM setup until Firebase is ready (runs in background, no blocking)
+      _setupFcmWhenReady();
+    });
   }
 
   @override
@@ -45,26 +48,61 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
     super.dispose();
   }
 
+  /// Polls until Firebase is initialized, then registers the FCM token refresh listener.
+  /// This is safe to call before Firebase.initializeApp() completes.
+  Future<void> _setupFcmWhenReady() async {
+    if (_isFcmListening) return;
+    // Wait until Firebase is initialized (checks every 500ms, max 30 retries = 15s)
+    for (int i = 0; i < 30; i++) {
+      if (!mounted) return;
+      try {
+        // This throws if Firebase isn't initialized yet
+        FirebaseMessaging.instance; // probes the instance
+        _listenForFcmTokenRefresh();
+        return;
+      } catch (_) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+    }
+    debugPrint('⚠️ Firebase not ready after 15s — FCM token refresh skipped.');
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    final authBox = await Hive.openBox('authBox');
-    final userId = authBox.get('userId', defaultValue: '');
-    String? token = authBox.get('token');
-    
-    if ((token == null || token.isEmpty) && userId.isNotEmpty) {
-      const storage = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
-      token = await storage.read(key: 'access_token_$userId');
+    // Guard: Hive may not be initialized yet on very early lifecycle events.
+    // Use SecureStorage (always available) as primary token source.
+    String token = '';
+    String userId = '';
+
+    try {
+      if (Hive.isBoxOpen('authBox')) {
+        final authBox = Hive.box('authBox');
+        userId = authBox.get('userId', defaultValue: '');
+        token = authBox.get('token', defaultValue: '');
+      }
+    } catch (_) {}
+
+    // Fall back to FlutterSecureStorage if Hive token is missing
+    if (token.isEmpty && userId.isNotEmpty) {
+      const storage = FlutterSecureStorage(
+          aOptions: AndroidOptions(encryptedSharedPreferences: true));
+      token = await storage.read(key: 'access_token_$userId') ?? '';
     }
 
-    if (token == null || token.isEmpty) return;
+    if (token.isEmpty) return;
+    if (!mounted) return; // widget may have been disposed during the await
 
     if (state == AppLifecycleState.resumed) {
       ref.read(socketNotifierProvider.notifier).connect();
+      ref.read(servicesStatusProvider.notifier).loadStatus();
     } else if (state == AppLifecycleState.paused) {
       ref.read(socketNotifierProvider.notifier).disconnect();
     }
   }
   void _listenForFcmTokenRefresh() {
+    if (_isFcmListening) return;
+    _isFcmListening = true;
+    debugPrint('🔥 Registering FCM token refresh listener.');
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       print("🔄 FCM Token refreshed: $newToken");
 

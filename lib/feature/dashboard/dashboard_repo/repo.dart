@@ -18,6 +18,8 @@ import '../model/recent_transaction.dart';
 import '../model/recent_transfer.dart';
 import '../model/verify_transactions.dart';
 import '../model/notification_model.dart';
+import '../model/virtual_account_model.dart';
+import '../model/services_status_model.dart';
 
 final dashboardRepositoryProvider = Provider((ref) {
   final apiClient = ref.read(apiClientProvider);
@@ -1367,13 +1369,94 @@ class DashboardRepository {
   //
   //       final List list = body['variations'] ?? [];
   //
-  //       return list.map((e) => DataPlanModel.fromJson(e)).toList();
-  //     }
-  //
-  //     return [];
-  //   } catch (e) {
-  //     debugPrint("🔥 Data plans error: $e");
-  //     return [];
-  //   }
-  // }
+  //       return list.map((e) => DataPlanModel.fromJson(e)).toList();\n  //     }\n  //\n  //     return [];\n  //   } catch (e) {\n  //     debugPrint("🔥 Data plans error: $e");\n  //     return [];\n  //   }\n  // }
+
+  // ──────────────────────────────────────────────────────────────
+  // VIRTUAL ACCOUNT
+  // ──────────────────────────────────────────────────────────────
+
+  /// GET /api/v1/payment/virtual-account
+  /// Returns the existing virtual account or null if the user has none.
+  Future<VirtualAccountModel?> getVirtualAccount() async {
+    try {
+      final response = await _apiClient.getData(ApiConstant.VIRTUAL_ACCOUNT);
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (jsonResponse['responseSuccessful'] == true) {
+        final body = jsonResponse['responseBody'];
+        if (body == null) return null;
+        final account = VirtualAccountModel.fromJson(
+          Map<String, dynamic>.from(body as Map),
+        );
+
+        // ── Cache it locally ──────────────────────────────────────
+        final box = await _getAuthBox();
+        await box.put('virtual_account', account.toJson());
+        debugPrint('💾 Virtual account cached: ${account.virtualAccountNo}');
+
+        return account;
+      }
+
+      debugPrint('⚠️ getVirtualAccount: responseSuccessful=false — no account yet');
+      return null;
+    } catch (e) {
+      debugPrint('❌ getVirtualAccount error: $e');
+      return null;
+    }
+  }
+
+  /// POST /api/v1/payment/virtual-account
+  /// Generates a new virtual account for the user.
+  Future<VirtualAccountModel?> generateVirtualAccount() async {
+    try {
+      final response = await _apiClient.postData(ApiConstant.VIRTUAL_ACCOUNT, {});
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (jsonResponse['responseSuccessful'] == true) {
+        final body = jsonResponse['responseBody'];
+        if (body == null) return null;
+        final account = VirtualAccountModel.fromJson(
+          Map<String, dynamic>.from(body as Map),
+        );
+
+        // ── Cache it locally ──────────────────────────────────────
+        final box = await _getAuthBox();
+        await box.put('virtual_account', account.toJson());
+        debugPrint('✅ Virtual account generated: ${account.virtualAccountNo}');
+
+        return account;
+      }
+
+      debugPrint('❌ generateVirtualAccount failed: ${jsonResponse['responseMessage']}');
+      return null;
+    } catch (e) {
+      debugPrint('❌ generateVirtualAccount error: $e');
+      return null;
+    }
+  }
+
+  /// GET /api/v1/user/services/status
+  /// Fetches whether services are enabled or disabled.
+  Future<ServicesStatus> getServicesStatus() async {
+    try {
+      final response = await _apiClient.getData(ApiConstant.SERVICES_STATUS);
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (jsonResponse['responseSuccessful'] == true && jsonResponse['responseBody'] != null) {
+        final body = jsonResponse['responseBody'];
+        return ServicesStatus.fromJson(
+          Map<String, dynamic>.from(body as Map),
+        );
+      }
+      debugPrint('⚠️ getServicesStatus unsuccessful response, using default active');
+    } catch (e) {
+      debugPrint('❌ getServicesStatus error: $e');
+    }
+    return const ServicesStatus(
+      airtime: true,
+      data: true,
+      utility: true,
+      qr: true,
+    );
+  }
 }

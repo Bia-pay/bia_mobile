@@ -4,6 +4,8 @@ import '../../../core/local/transaction_cache.dart';
 import '../dashboard_repo/repo.dart';
 import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
+import '../model/virtual_account_model.dart';
+import '../model/services_status_model.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 
 final userIdProvider = StateProvider<String>((ref) {
@@ -291,4 +293,121 @@ final verifyMeterProvider = FutureProvider.family<
     meterNumber: params['meter']!,
     type: params['type']!,
   );
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// VIRTUAL ACCOUNT PROVIDER
+// ──────────────────────────────────────────────────────────────────────────────
+
+class VirtualAccountNotifier extends StateNotifier<AsyncValue<VirtualAccountModel?>> {
+  final DashboardRepository _repo;
+  bool _isFetching = false;
+
+  VirtualAccountNotifier(this._repo) : super(const AsyncValue.data(null)) {
+    _init();
+  }
+
+  void _init() {
+    // ── 1. Show cached data instantly (zero loading) ──────────────────────────
+    try {
+      final box = Hive.box('authBox');
+      final savedJson = box.get('virtual_account');
+      if (savedJson != null) {
+        final account = VirtualAccountModel.fromJson(
+          Map<String, dynamic>.from(savedJson as Map),
+        );
+        state = AsyncValue.data(account);
+        print('⚡ Virtual account loaded from cache: ${account.virtualAccountNo}');
+
+        // ── 2. Silently refresh in background ────────────────────────────────
+        Future.delayed(Duration.zero, _fetchOrGenerate);
+        return;
+      }
+    } catch (e) {
+      print('⚠️ Could not read virtual account cache: $e');
+    }
+
+    // ── 3. No cache — fetch/generate immediately ──────────────────────────────
+    _fetchOrGenerate();
+  }
+
+  Future<void> _fetchOrGenerate() async {
+    if (_isFetching) return;
+    _isFetching = true;
+
+    try {
+      // Try fetching existing account first
+      final existing = await _repo.getVirtualAccount();
+
+      if (existing != null) {
+        if (mounted) state = AsyncValue.data(existing);
+        print('✅ Virtual account fetched from API: ${existing.virtualAccountNo}');
+        return;
+      }
+
+      // No account found — auto-generate one
+      print('⚙️ No virtual account found, generating one…');
+      final generated = await _repo.generateVirtualAccount();
+
+      if (mounted) state = AsyncValue.data(generated);
+      if (generated != null) {
+        print('🎉 Virtual account generated: ${generated.virtualAccountNo}');
+      }
+    } catch (e, st) {
+      print('❌ VirtualAccountNotifier error: $e');
+      // Keep existing cached data if any, don't override with error
+      if (state.value == null && mounted) {
+        state = AsyncValue.error(e, st);
+      }
+    } finally {
+      _isFetching = false;
+    }
+  }
+
+  /// Manual refresh (e.g. from pull-to-refresh)
+  Future<void> refresh() async {
+    _isFetching = false;
+    await _fetchOrGenerate();
+  }
+}
+
+final virtualAccountProvider =
+    StateNotifierProvider<VirtualAccountNotifier, AsyncValue<VirtualAccountModel?>>(
+  (ref) {
+    final repo = ref.watch(dashboardRepositoryProvider);
+    return VirtualAccountNotifier(repo);
+  },
+);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SERVICES STATUS PROVIDER
+// ──────────────────────────────────────────────────────────────────────────────
+
+class ServicesStatusNotifier extends StateNotifier<ServicesStatus> {
+  final DashboardRepository _repo;
+
+  ServicesStatusNotifier(this._repo)
+      : super(const ServicesStatus(
+          airtime: true,
+          data: true,
+          utility: true,
+          qr: true,
+        )) {
+    loadStatus();
+  }
+
+  Future<void> loadStatus() async {
+    final status = await _repo.getServicesStatus();
+    state = status;
+  }
+
+  void updateStatus(ServicesStatus status) {
+    state = status;
+  }
+}
+
+final servicesStatusProvider =
+    StateNotifierProvider<ServicesStatusNotifier, ServicesStatus>((ref) {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  return ServicesStatusNotifier(repo);
 });

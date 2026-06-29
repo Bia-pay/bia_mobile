@@ -15,6 +15,7 @@ import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
 import '../../../../../app/view/widget/custom_textfiels_with_contact.dart';
 import '../../../../../app/view/widget/quick_access_app_bar.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 
 // ==================== RESPONSIVE HELPERS ====================
 
@@ -138,35 +139,38 @@ class _AirtimeState extends ConsumerState<Airtime> {
     final isTablet = ResponsiveConfig.isTablet(context);
     final padding = ResponsiveConfig.getPadding(context);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: CustomAppBar(
-        title: 'Airtime',
-        onBackPressed: () async {
-          FocusScope.of(context).unfocus();
-          await Future.delayed(const Duration(milliseconds: 150));
-          if (!context.mounted) return;
-          if (context.canPop()) {
-            context.pop();
-          }
-        },
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: padding),
-            child: SvgPicture.asset(
-              bell,
-              width: isTablet ? 28.w : 24.w,
-              height: isTablet ? 28.h : 24.h,
+    return ServiceGuard(
+      service: ServiceType.airtime,
+      child: Scaffold(
+          backgroundColor: const Color(0xFFF8FAFC),
+        appBar: CustomAppBar(
+          title: 'Airtime',
+          onBackPressed: () async {
+            FocusScope.of(context).unfocus();
+            await Future.delayed(const Duration(milliseconds: 150));
+            if (!context.mounted) return;
+            if (context.canPop()) {
+              context.pop();
+            }
+          },
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: padding),
+              child: SvgPicture.asset(
+                bell,
+                width: isTablet ? 28.w : 24.w,
+                height: isTablet ? 28.h : 24.h,
+              ),
             ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.all(padding),
-            child: isTablet ? _buildTabletLayout() : _buildPhoneLayout(),
+          ],
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: isTablet ? _buildTabletLayout() : _buildPhoneLayout(),
+            ),
           ),
         ),
       ),

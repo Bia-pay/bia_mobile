@@ -116,12 +116,14 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     if (_isAuthenticating) return;
 
     setState(() => _isAuthenticating = true);
+    LoadingHelper.show('Logging in...');
 
     try {
       final success = await ref.read(authControllerProvider.notifier)
           .logIn(context, loginPhone, loginPassword.trim())
           .timeout(const Duration(seconds: 30));
 
+      LoadingHelper.dismiss();
       debugPrint('🔑 _performLogin: success=$success, mounted=$mounted');
 
       if (success) {
@@ -129,7 +131,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
         // Use post-frame callback to navigate AFTER EasyLoading dismiss settles
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            if (widget.isSessionLock && !widget.forceHome) {
+            if (widget.isSessionLock && !widget.forceHome && context.canPop()) {
               context.pop();
             } else {
               context.go(RouteList.bottomNavBar);

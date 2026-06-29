@@ -67,6 +67,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
 
     final box = await Hive.openBox('settingsBox');
     final isEnabled = box.get('auto_logout_enabled', defaultValue: true);
+    final durationMinutes = box.get('auto_logout_duration', defaultValue: 5) as int;
 
     _inactivityTimer?.cancel();
 
@@ -77,8 +78,8 @@ class SessionNotifier extends StateNotifier<SessionState> {
 
     state = SessionState.active;
 
-    // Lock after 5 minutes of inactivity
-    _inactivityTimer = Timer(const Duration(minutes: 5), lockSession);
+    // Lock after preferred duration of inactivity
+    _inactivityTimer = Timer(Duration(minutes: durationMinutes), lockSession);
   }
 
   void lockSession() {

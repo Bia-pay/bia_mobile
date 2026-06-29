@@ -79,7 +79,6 @@ class ApiClient {
     }
   }
 
-  // ── Called after a successful login to prime the client ──────────────────
   Future<void> initForUser(
     String userId,
     String accessToken,
@@ -89,15 +88,15 @@ class ApiClient {
     token = accessToken;
     _mainHeaders['Authorization'] = 'Bearer $token';
 
-    // Store tokens securely per user
-    await _storage.write(key: _tokenKey(userId), value: accessToken);
-    await _storage.write(key: _refreshTokenKey(userId), value: refreshToken);
-
-    // Centralized session secure storage keys (Requirement 7)
-    await _storage.write(key: 'is_logged_in', value: 'true');
-    await _storage.write(key: 'access_token', value: accessToken);
-    await _storage.write(key: 'refresh_token', value: refreshToken);
-    await _storage.write(key: 'user_id', value: userId);
+    // Store tokens securely per user and set session keys in parallel
+    await Future.wait([
+      _storage.write(key: _tokenKey(userId), value: accessToken),
+      _storage.write(key: _refreshTokenKey(userId), value: refreshToken),
+      _storage.write(key: 'is_logged_in', value: 'true'),
+      _storage.write(key: 'access_token', value: accessToken),
+      _storage.write(key: 'refresh_token', value: refreshToken),
+      _storage.write(key: 'user_id', value: userId),
+    ]);
 
     debugPrint('🔐 ApiClient primed for user: $userId');
   }
@@ -241,9 +240,13 @@ class ApiClient {
 
   // ── Central authorized request wrapper ────────────────────────────────────
   Future<http.Response> _authorizedRequest(
+    String url,
     Future<http.Response> Function() apiCall,
   ) async {
-    await _waitForInit();
+    final isPublic = url.contains('/auth/') || url.contains('/services/status');
+    if (!isPublic) {
+      await _waitForInit();
+    }
     http.Response response = await apiCall();
 
     if (response.statusCode == 401) {
@@ -271,7 +274,7 @@ class ApiClient {
   // ── POST ──────────────────────────────────────────────────────────────────
   Future<http.Response> postData(
       String url, Map<String, dynamic> body) async {
-    return _authorizedRequest(() async {
+    return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
       debugPrint('📤 POST $fullUrl');
       final response = await http.post(
@@ -287,7 +290,7 @@ class ApiClient {
   // ── PATCH ─────────────────────────────────────────────────────────────────
   Future<http.Response> patchData(
       String url, Map<String, dynamic> body) async {
-    return _authorizedRequest(() async {
+    return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
       debugPrint('📤 PATCH $fullUrl');
       final response = await http.patch(
@@ -303,7 +306,7 @@ class ApiClient {
   // ── PUT ───────────────────────────────────────────────────────────────────
   Future<http.Response> putData(
       String url, Map<String, dynamic> body) async {
-    return _authorizedRequest(() async {
+    return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
       debugPrint('📤 PUT $fullUrl');
       final response = await http.put(
@@ -318,7 +321,7 @@ class ApiClient {
 
   // ── GET ───────────────────────────────────────────────────────────────────
   Future<http.Response> getData(String url) async {
-    return _authorizedRequest(() async {
+    return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
       debugPrint('📥 GET $fullUrl');
       final response = await http.get(
@@ -332,7 +335,7 @@ class ApiClient {
 
   // ── DELETE ────────────────────────────────────────────────────────────────
   Future<http.Response> deleteData(String url) async {
-    return _authorizedRequest(() async {
+    return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
       debugPrint('🗑️ DELETE $fullUrl');
       final response = await http.delete(

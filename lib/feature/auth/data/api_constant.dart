@@ -55,10 +55,18 @@ class ApiConstant {
   static const String UPDATE_TAG = '/api/v1/user/tag';
   static const String REFERRAL_STATS = '/api/v1/referral/stats';
   static const String REFERRAL_HISTORY = '/api/v1/referral/history';
+  static const String VIRTUAL_ACCOUNT = '/api/v1/payment/virtual-account';
+  static const String SERVICES_STATUS = '/api/v1/user/services/status';
 
   // ------------ NOTIFICATIONS
   static const String GET_NOTIFICATIONS = '/api/v1/notification';
   static const String UNREAD_NOTIFICATION_COUNT = '/api/v1/notification/unread-count';
   static const String MARK_ALL_NOTIFICATIONS_READ = '/api/v1/notification/read-all';
   static String MARK_NOTIFICATION_READ(String id) => '/api/v1/notification/$id/read';
+
+  // ------------ SUPPORT TICKETS
+  static const String SUPPORT_TICKETS = '/api/v1/support';
+  static String SUPPORT_TICKET_DETAILS(int id) => '/api/v1/support/$id';
+  static String SEND_SUPPORT_MESSAGE(int id) => '/api/v1/support/$id/message';
 }
+

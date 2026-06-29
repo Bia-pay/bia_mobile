@@ -18,8 +18,27 @@ class DeviceHelper {
   }
 
   static Future<String> getIpAddress() async {
-    final info = NetworkInfo();
-    final ip = await info.getWifiIP();
-    return ip ?? "0.0.0.0";
+    try {
+      final info = NetworkInfo();
+      final ip = await info.getWifiIP().timeout(const Duration(milliseconds: 300));
+      if (ip != null) return ip;
+    } catch (_) {}
+
+    try {
+      final interfaces = await NetworkInterface.list(
+        includeLoopback: false,
+        type: InternetAddressType.IPv4,
+      ).timeout(const Duration(milliseconds: 300));
+      
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (!addr.isLoopback) {
+            return addr.address;
+          }
+        }
+      }
+    } catch (_) {}
+
+    return "0.0.0.0";
   }
 }

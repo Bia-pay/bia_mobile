@@ -245,13 +245,15 @@ class PaymentWebViewPage extends ConsumerStatefulWidget {
 class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
     with WidgetsBindingObserver {
   late final WebViewController _controller;
+  late final SessionNotifier _sessionNotifier;
   bool _hasVerified = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    ref.read(sessionServiceProvider.notifier).setBypassLifecycle(true);
+    _sessionNotifier = ref.read(sessionServiceProvider.notifier);
+    _sessionNotifier.setBypassLifecycle(true);
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -277,7 +279,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
 
   @override
   void dispose() {
-    ref.read(sessionServiceProvider.notifier).setBypassLifecycle(false);
+    _sessionNotifier.setBypassLifecycle(false);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
