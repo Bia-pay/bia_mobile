@@ -311,17 +311,23 @@ class VirtualAccountNotifier extends StateNotifier<AsyncValue<VirtualAccountMode
     // ── 1. Show cached data instantly (zero loading) ──────────────────────────
     try {
       final box = Hive.box('authBox');
-      final savedJson = box.get('virtual_account');
-      if (savedJson != null) {
-        final account = VirtualAccountModel.fromJson(
-          Map<String, dynamic>.from(savedJson as Map),
-        );
-        state = AsyncValue.data(account);
-        print('⚡ Virtual account loaded from cache: ${account.virtualAccountNo}');
+      final userId = box.get('userId', defaultValue: '') as String;
+      final phone = box.get('phone', defaultValue: '') as String;
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
 
-        // ── 2. Silently refresh in background ────────────────────────────────
-        Future.delayed(Duration.zero, _fetchOrGenerate);
-        return;
+      if (effectiveUserId.isNotEmpty) {
+        final savedJson = box.get('virtual_account_$effectiveUserId');
+        if (savedJson != null) {
+          final account = VirtualAccountModel.fromJson(
+            Map<String, dynamic>.from(savedJson as Map),
+          );
+          state = AsyncValue.data(account);
+          print('⚡ Virtual account loaded from cache for $effectiveUserId: ${account.virtualAccountNo}');
+
+          // ── 2. Silently refresh in background ────────────────────────────────
+          Future.delayed(Duration.zero, _fetchOrGenerate);
+          return;
+        }
       }
     } catch (e) {
       print('⚠️ Could not read virtual account cache: $e');
@@ -374,6 +380,7 @@ class VirtualAccountNotifier extends StateNotifier<AsyncValue<VirtualAccountMode
 final virtualAccountProvider =
     StateNotifierProvider<VirtualAccountNotifier, AsyncValue<VirtualAccountModel?>>(
   (ref) {
+    ref.watch(userIdProvider);
     final repo = ref.watch(dashboardRepositoryProvider);
     return VirtualAccountNotifier(repo);
   },

@@ -545,8 +545,8 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    // Reduced by exactly 1/4 (25%)
-    final double bannerHeight = isXSmall ? 75.h : isSmall ? 84.h : isLarge ? 102.h : 91.5.h;
+    // Reduced by half
+    final double bannerHeight = isXSmall ? 37.5.h : isSmall ? 42.h : isLarge ? 51.h : 45.75.h;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

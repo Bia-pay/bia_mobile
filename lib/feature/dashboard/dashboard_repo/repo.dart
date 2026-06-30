@@ -1389,10 +1389,15 @@ class DashboardRepository {
           Map<String, dynamic>.from(body as Map),
         );
 
-        // ── Cache it locally ──────────────────────────────────────
+        // ── Cache it locally per-user ──────────────────────────────
         final box = await _getAuthBox();
-        await box.put('virtual_account', account.toJson());
-        debugPrint('💾 Virtual account cached: ${account.virtualAccountNo}');
+        final userId = box.get('userId', defaultValue: '') as String;
+        final phone = box.get('phone', defaultValue: '') as String;
+        final effectiveUserId = userId.isNotEmpty ? userId : phone;
+        if (effectiveUserId.isNotEmpty) {
+          await box.put('virtual_account_$effectiveUserId', account.toJson());
+          debugPrint('💾 Virtual account cached for $effectiveUserId: ${account.virtualAccountNo}');
+        }
 
         return account;
       }
@@ -1419,10 +1424,15 @@ class DashboardRepository {
           Map<String, dynamic>.from(body as Map),
         );
 
-        // ── Cache it locally ──────────────────────────────────────
+        // ── Cache it locally per-user ──────────────────────────────
         final box = await _getAuthBox();
-        await box.put('virtual_account', account.toJson());
-        debugPrint('✅ Virtual account generated: ${account.virtualAccountNo}');
+        final userId = box.get('userId', defaultValue: '') as String;
+        final phone = box.get('phone', defaultValue: '') as String;
+        final effectiveUserId = userId.isNotEmpty ? userId : phone;
+        if (effectiveUserId.isNotEmpty) {
+          await box.put('virtual_account_$effectiveUserId', account.toJson());
+          debugPrint('✅ Virtual account generated for $effectiveUserId: ${account.virtualAccountNo}');
+        }
 
         return account;
       }
