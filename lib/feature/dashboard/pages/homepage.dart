@@ -336,20 +336,20 @@ class BiaAiCard extends ConsumerWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
         child: InkWell(
-          onTap: () async {
-            final authBox = await Hive.openBox('authBox');
-            final userId = authBox.get('userId', defaultValue: '') as String;
-            final phone = authBox.get('phone', defaultValue: '') as String;
-            final effectiveUserId = userId.isNotEmpty ? userId : phone;
-
-            final box = await Hive.openBox('appPrefs');
-            final hasSelectedLang = box.get('biaAiLanguageSelected_$effectiveUserId', defaultValue: false) as bool;
-            if (!context.mounted) return;
-            if (!hasSelectedLang) {
-              context.pushNamed(RouteList.biaLanguageOnboarding);
-            } else {
-              context.pushNamed(RouteList.aiChat);
-            }
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, color: Colors.amberAccent, size: 20.sp),
+                    SizedBox(width: 8.w),
+                    const Text('Bia AI Assistant is coming soon! Stay tuned.'),
+                  ],
+                ),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: primaryColor,
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(16.r),
           child: Stack(
@@ -380,7 +380,7 @@ class BiaAiCard extends ConsumerWidget {
                         children: [
 
                           Text(
-                            'Make any Transaction with Bia AI',
+                            'Bia AI Assistant (Coming Soon)',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               fontSize: 13.sp,
@@ -389,7 +389,7 @@ class BiaAiCard extends ConsumerWidget {
                           ),
                           SizedBox(height: 2.h),
                           Text(
-                            'Tap to start voice or text assistant in local dialect',
+                            'Voice & text transactions in local dialect. Stay tuned!',
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w400,
                               fontSize: 9.sp,
@@ -502,11 +502,9 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
     ),
     _BannerData(
       gradientColors: [Color(0xFF4C1D95), Color(0xFF7C3AED)],
-      title: 'Bia AI Assistant',
+      title: 'Bia AI Assistant — Coming Soon',
       subtitle: 'Make transactions with voice commands in your local dialect.',
       icon: Icons.mic_rounded,
-      actionLabel: 'Try Bia AI',
-      route: RouteList.aiChat,
     ),
     _BannerData(
       gradientColors: [Color(0xFF92400E), Color(0xFFD97706)],

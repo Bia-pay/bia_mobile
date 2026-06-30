@@ -4,9 +4,13 @@
         android:name="android.permission.INTERNET"/>
     <uses-permission
         android:name="android.permission.POST_NOTIFICATIONS"/>
-    <!-- Android 13+ -->
+    <!-- Enforce removal of photo & video media permissions to comply with Play Store policies -->
     <uses-permission
-        android:name="android.permission.READ_MEDIA_IMAGES"/>
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:node="remove"/>
     <uses-permission
         android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission
