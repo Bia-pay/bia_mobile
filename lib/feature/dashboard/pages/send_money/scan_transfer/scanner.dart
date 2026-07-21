@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +7,6 @@ import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:bia/app/utils/colors.dart';
-import 'package:bia/app/utils/router/router.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -22,7 +19,8 @@ class QrScannerScreen extends ConsumerStatefulWidget {
   ConsumerState<QrScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTickerProviderStateMixin {
+class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
+    with SingleTickerProviderStateMixin {
   late MobileScannerController controller;
   bool isScanning = true;
   bool flashOn = false;
@@ -47,92 +45,164 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
 
   void _onDetect(BarcodeCapture capture) {
     if (!isScanning) return;
-    
+
     final List<Barcode> barcodes = capture.barcodes;
     if (barcodes.isNotEmpty) {
-      final String? code = barcodes.first.displayValue;
-      if (code != null) {
+      final String? code = barcodes.first.rawValue ?? barcodes.first.displayValue;
+      if (code != null && code.isNotEmpty) {
         _handleQrResult(code);
       }
     }
   }
 
-  Future<void> _handleQrResult(String result) async {
+  Future<void> _handleQrResult(String rawResult) async {
     setState(() => isScanning = false);
+    final String result = rawResult.trim();
     debugPrint("📥 Scanned Result: $result");
-    
+
+    String? account;
+    double? amount;
+    String? narration;
+
     try {
-      // 1. Handle single quotes (common in some QR generators)
-      String jsonStr = result;
-      if (result.contains("'") && !result.contains('"')) {
-        jsonStr = result.replaceAll("'", '"');
+      // 1. Try parsing as JSON first
+      dynamic decoded;
+      try {
+        String jsonStr = result;
+        if (result.contains("'") && !result.contains('"')) {
+          jsonStr = result.replaceAll("'", '"');
+        }
+        decoded = jsonDecode(jsonStr);
+      } catch (_) {
+        decoded = null;
       }
-      
-      final Map<String, dynamic> data = jsonDecode(jsonStr);
-      
-      // 2. Validate Type
-      if (data['type'] != 'bia_wallet') {
-        debugPrint("⚠️ QR Type mismatch: expected bia_wallet, got ${data['type']}");
-        _showError("Invalid Bia QR Code");
+
+      if (decoded is Map<String, dynamic>) {
+        // Check if it is a Split Payment QR
+        if (decoded.containsKey('splitId') && decoded.containsKey('token')) {
+          final splitId = decoded['splitId'].toString();
+          final token = decoded['token'].toString();
+          if (mounted) {
+            context
+                .pushNamed(
+                  RouteList.splitScanView,
+                  extra: {'splitId': splitId, 'token': token},
+                )
+                .then((_) {
+                  if (mounted) setState(() => isScanning = true);
+                });
+          }
+          return;
+        }
+
+        account = decoded['account']?.toString() ??
+            decoded['phone']?.toString() ??
+            decoded['receiverAccount']?.toString() ??
+            decoded['user']?.toString();
+
+        if (decoded['amount'] != null) {
+          amount = (decoded['amount'] as num?)?.toDouble();
+        }
+        narration = decoded['narration']?.toString();
+      }
+
+      // 2. If not JSON or account not found, try parsing as URI/URL
+      if (account == null || account.isEmpty) {
+        final uri = Uri.tryParse(result);
+        if (uri != null) {
+          if (uri.queryParameters.containsKey('splitId') &&
+              uri.queryParameters.containsKey('token')) {
+            final splitId = uri.queryParameters['splitId']!;
+            final token = uri.queryParameters['token']!;
+            if (mounted) {
+              context
+                  .pushNamed(
+                    RouteList.splitScanView,
+                    extra: {'splitId': splitId, 'token': token},
+                  )
+                  .then((_) {
+                    if (mounted) setState(() => isScanning = true);
+                  });
+            }
+            return;
+          }
+
+          account = uri.queryParameters['account'] ??
+              uri.queryParameters['phone'] ??
+              uri.queryParameters['receiverAccount'] ??
+              uri.queryParameters['user'];
+
+          if (uri.queryParameters['amount'] != null) {
+            amount = double.tryParse(uri.queryParameters['amount']!);
+          }
+          if (uri.queryParameters['narration'] != null) {
+            narration = uri.queryParameters['narration'];
+          }
+        }
+      }
+
+      // 3. Fallback: If result is a raw account/phone number string or tag
+      if (account == null || account.isEmpty) {
+        final cleaned = result.replaceAll(RegExp(r'[^a-zA-Z0-9@]'), '');
+        if (cleaned.isNotEmpty && !result.contains('{') && !result.contains('}')) {
+          account = cleaned;
+        }
+      }
+
+      if (account == null || account.isEmpty) {
+        _showError("Invalid QR Code format");
         return;
       }
 
-      final String account = data['account'] ?? "";
-      final double? amount = (data['amount'] as num?)?.toDouble();
-      final String? narration = data['narration'];
-
-      if (account.isEmpty) {
-        _showError("Invalid Account in QR");
-        return;
-      }
-
-      // 3. Verify Receiver
+      // 4. Verify Receiver
       _verifyAndProceed(account, amount, narration);
-
     } catch (e) {
       debugPrint("❌ QR Parsing Error: $e");
       _showError("Invalid QR Code format");
     }
   }
 
-  Future<void> _verifyAndProceed(String account, double? amount, String? narration) async {
+  Future<void> _verifyAndProceed(
+    String account,
+    double? amount,
+    String? narration,
+  ) async {
     debugPrint("🔍 Verifying receiver: $account");
     final dashboardController = ref.read(dashboardControllerProvider.notifier);
-    
-    final response = await dashboardController.verifyAccount(
-      context,
-      account,
-    );
+
+    final response = await dashboardController.verifyAccount(context, account);
+    if (!mounted) return;
 
     if (response?.responseSuccessful == true) {
       final fullname = response?.responseBody?.user?.fullname ?? "Unknown";
       debugPrint("✅ Receiver verified: $fullname");
-      
+
       // Navigate to Payment Confirmation / Input
       // If amount is present, go to amount page with pre-filled amount
       // Both go to amountPage as it handles the confirmation sheet trigger
       if (_isCollectMode) {
-        context.pushNamed(
-          RouteList.qrAmountEntryScreen,
-          extra: {
-            'account': account,
-            'isCollectMode': true,
-          },
-        ).then((_) {
-          if (mounted) setState(() => isScanning = true);
-        });
+        context
+            .pushNamed(
+              RouteList.qrAmountEntryScreen,
+              extra: {'account': account, 'isCollectMode': true},
+            )
+            .then((_) {
+              if (mounted) setState(() => isScanning = true);
+            });
       } else {
-        context.pushNamed(
-          RouteList.amountPage,
-          extra: {
-            'recipientAccount': account,
-            'recipientName': fullname,
-            'amount': amount,
-            'narration': narration ?? "",
-          },
-        ).then((_) {
-          if (mounted) setState(() => isScanning = true);
-        });
+        context
+            .pushNamed(
+              RouteList.amountPage,
+              extra: {
+                'recipientAccount': account,
+                'recipientName': fullname,
+                'amount': amount,
+                'narration': narration ?? "",
+              },
+            )
+            .then((_) {
+              if (mounted) setState(() => isScanning = true);
+            });
       }
     } else {
       debugPrint("❌ Verification failed: ${response?.responseMessage}");
@@ -158,15 +228,15 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
   Future<void> _pickFromGallery() async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    
+
     if (image != null) {
       debugPrint("🖼️ Selected gallery image: ${image.path}");
-      
+
       try {
         // Pre-process: Compress and resize to ensure detection works better
         final tempDir = await getTemporaryDirectory();
         final targetPath = "${tempDir.path}/temp_qr_scan.jpg";
-        
+
         final compressedFile = await FlutterImageCompress.compressAndGetFile(
           image.path,
           targetPath,
@@ -179,7 +249,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
         debugPrint("🧪 Analyzing optimized image: $pathToAnalyze");
 
         final capture = await controller.analyzeImage(pathToAnalyze);
-        
+
         if (capture == null || capture.barcodes.isEmpty) {
           debugPrint("❌ No QR found in optimized image");
           _showError("No QR Code found in image");
@@ -201,16 +271,13 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final frameSize = screenWidth * 0.65; // Dynamic frame size
-    
+
     return Scaffold(
-        backgroundColor: darkBackground,
-        body: Stack(
+      backgroundColor: darkBackground,
+      body: Stack(
         children: [
           // 1. Scanner view
-          MobileScanner(
-            controller: controller,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: controller, onDetect: _onDetect),
 
           // 2. Immersive Overlay
           _buildOverlay(frameSize),
@@ -271,15 +338,22 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                           isScanning = true;
                         }),
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 30.w,
+                            vertical: 12.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: !_isCollectMode ? primaryColor : Colors.transparent,
+                            color: !_isCollectMode
+                                ? primaryColor
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(30.r),
                           ),
                           child: Text(
                             'Pay',
                             style: TextStyle(
-                              color: !_isCollectMode ? Colors.white : Colors.white70,
+                              color: !_isCollectMode
+                                  ? Colors.white
+                                  : Colors.white70,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -291,15 +365,22 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                           isScanning = true;
                         }),
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 30.w,
+                            vertical: 12.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: _isCollectMode ? primaryColor : Colors.transparent,
+                            color: _isCollectMode
+                                ? primaryColor
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(30.r),
                           ),
                           child: Text(
                             'Collect',
                             style: TextStyle(
-                              color: _isCollectMode ? Colors.white : Colors.white70,
+                              color: _isCollectMode
+                                  ? Colors.white
+                                  : Colors.white70,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -317,21 +398,32 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                       "Gallery",
                       _pickFromGallery,
                     ),
-                    SizedBox(width: 40.w),
+                    SizedBox(width: 30.w),
                     _buildBottomAction(
                       Icons.qr_code_2_rounded,
-                      "Scan to Receive",
+                      "Receive",
                       () => context.pushNamed(RouteList.qrScreen),
+                    ),
+                    SizedBox(width: 30.w),
+                    _buildBottomAction(
+                      Icons.splitscreen_rounded,
+                      "Split Bill",
+                      () => context.pushNamed(RouteList.splitCreatorSetup),
                     ),
                   ],
                 ),
-                
+
                 // Privacy Toggle (if needed)
-                if (Hive.box('authBox').get('qr_payments_enabled', defaultValue: false))
+                if (Hive.box(
+                  'authBox',
+                ).get('qr_payments_enabled', defaultValue: false))
                   Padding(
                     padding: EdgeInsets.only(top: 20.h),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20.r),
@@ -339,11 +431,18 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.security, color: successColor, size: 16.sp),
+                          Icon(
+                            Icons.security,
+                            color: successColor,
+                            size: 16.sp,
+                          ),
                           SizedBox(width: 8.w),
                           Text(
                             "Secure QR Payment Active",
-                            style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                            ),
                           ),
                         ],
                       ),
@@ -396,7 +495,10 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
             height: frameSize,
             width: frameSize,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1,
+              ),
               borderRadius: BorderRadius.circular(40.r),
             ),
             child: Stack(
@@ -415,8 +517,6 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
   }
 
   List<Widget> _buildCorners() {
-    const double length = 40;
-    const double width = 4;
     return [
       // Top Left
       Positioned(top: 0, left: 0, child: _corner(top: true, left: true)),
@@ -435,10 +535,18 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> with SingleTi
       height: 40.r,
       decoration: BoxDecoration(
         border: Border(
-          top: top ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
-          bottom: !top ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
-          left: left ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
-          right: !left ? BorderSide(color: Colors.white, width: 4.w) : BorderSide.none,
+          top: top
+              ? BorderSide(color: Colors.white, width: 4.w)
+              : BorderSide.none,
+          bottom: !top
+              ? BorderSide(color: Colors.white, width: 4.w)
+              : BorderSide.none,
+          left: left
+              ? BorderSide(color: Colors.white, width: 4.w)
+              : BorderSide.none,
+          right: !left
+              ? BorderSide(color: Colors.white, width: 4.w)
+              : BorderSide.none,
         ),
         borderRadius: BorderRadius.only(
           topLeft: top && left ? Radius.circular(20.r) : Radius.zero,
@@ -500,7 +608,8 @@ class _ScanningLine extends StatefulWidget {
   State<_ScanningLine> createState() => __ScanningLineState();
 }
 
-class __ScanningLineState extends State<_ScanningLine> with SingleTickerProviderStateMixin {
+class __ScanningLineState extends State<_ScanningLine>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

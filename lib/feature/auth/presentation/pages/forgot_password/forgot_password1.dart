@@ -133,183 +133,221 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: offWhiteBackground,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenWidth = constraints.maxWidth;
-            final screenHeight = constraints.maxHeight;
-            final isSmallScreen = screenHeight < 700;
-            final isLargeScreen = screenHeight > 900;
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Ambient blur gradient top right to bottom left
+          Positioned(
+            top: -100.h,
+            right: -100.w,
+            width: 300.w,
+            height: 300.h,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primaryColor.withOpacity(0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -150.h,
+            left: -150.w,
+            width: 350.w,
+            height: 350.h,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: secondaryColor.withOpacity(0.4),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = constraints.maxWidth;
+                final screenHeight = constraints.maxHeight;
+                final isSmallScreen = screenHeight < 700;
 
-            final keypadHeight = isSmallScreen
-                ? screenHeight * 0.42
-                : (isLargeScreen ? screenHeight * 0.5 : screenHeight * 0.45);
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    _getHorizontalPadding(screenWidth),
-                    isSmallScreen ? 12.h : 20.h,
-                    _getHorizontalPadding(screenWidth),
-                    0,
-                  ),
-                  child: _buildCustomHeader(isSmallScreen),
-                ),
-
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: _getHorizontalPadding(screenWidth),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        _getHorizontalPadding(screenWidth),
+                        isSmallScreen ? 12.h : 20.h,
+                        _getHorizontalPadding(screenWidth),
+                        0,
+                      ),
+                      child: _buildCustomHeader(isSmallScreen),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        /// 🔹 Lock Icon & Header Text
-                        Column(
+
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _getHorizontalPadding(screenWidth),
+                        ),
+                        child: Column(
                           children: [
-                            Container(
-                              padding: EdgeInsets.all(16.w),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.08),
-                                shape: BoxShape.circle,
+                            Expanded(
+                              child: SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                child: Column(
+                                  children: [
+                                    SizedBox(height: isSmallScreen ? 8.h : 16.h),
+
+                                    /// 🔹 Lock Icon & Header Text
+                                    Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Container(
+                                          width: isSmallScreen ? 70.r : 80.r,
+                                          height: isSmallScreen ? 70.r : 80.r,
+                                          decoration: BoxDecoration(
+                                            color: primaryColor.withOpacity(0.04),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        Container(
+                                          width: isSmallScreen ? 50.r : 60.r,
+                                          height: isSmallScreen ? 50.r : 60.r,
+                                          decoration: BoxDecoration(
+                                            color: primaryColor.withOpacity(0.1),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.lock_reset_rounded,
+                                            size: isSmallScreen ? 28.sp : 32.sp,
+                                            color: primaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: isSmallScreen ? 8.h : 12.h),
+                                    Text(
+                                      "Reset Your Password",
+                                      style: Theme.of(context).textTheme.titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isSmallScreen ? 20.sp : 24.sp,
+                                            color: darkBackground,
+                                          ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Text(
+                                      "Enter your registered mobile number below.\nWe'll send you an OTP to verify your identity.",
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.bodySmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: isSmallScreen ? 11.sp : 13.sp,
+                                            color: lightSecondaryText,
+                                            height: 1.4,
+                                          ),
+                                    ),
+                                    SizedBox(height: isSmallScreen ? 16.h : 24.h),
+
+                                    /// 🔹 Glass Card
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isSmallScreen ? 16.w : 20.w,
+                                        vertical: isSmallScreen ? 16.h : 24.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(28.r),
+                                        border: Border.all(
+                                          color: lightBorderColor,
+                                          width: 1.5,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: accentColor.withOpacity(0.05),
+                                            blurRadius: 24,
+                                            offset: const Offset(0, 10),
+                                          ),
+                                        ],
+                                      ),
+                                      child: PhoneInputWidget(
+                                        controller: _phoneController,
+                                        label: 'Mobile Number',
+                                        hintText: '800 000 0000',
+                                        keyboardType: TextInputType.none,
+                                        backgroundColor: offWhiteBackground,
+                                        borderColor: Colors.transparent,
+                                        validator: (value) {
+                                          if (value.isEmpty)
+                                            return 'Phone number is required';
+                                          final text = value.trim();
+                                          if (text.length == 11 &&
+                                              !text.startsWith('0')) {
+                                            return '11-digit number must start with 0';
+                                          }
+                                          if (text.length != 10 &&
+                                              text.length != 11) {
+                                            return 'Phone number must be 10 or 11 digits';
+                                          }
+                                          return null;
+                                        },
+                                        onCountryChanged: (CountryCode? newValue) {
+                                          setState(() {
+                                            _selectedCountry = newValue!;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(height: isSmallScreen ? 12.h : 24.h),
+                                  ],
+                                ),
                               ),
-                              child: Icon(
-                                Icons.lock_reset_rounded,
-                                size: 40.sp,
-                                color: primaryColor,
+                            ),
+
+                            /// 🔹 Keypad
+                            Center(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: 360.w),
+                                child: CustomGridKeypad(
+                                  onNumberPressed: addDigit,
+                                  leftAction: ActionKey(
+                                    child: Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: _isPhoneNumberComplete
+                                          ? lightBackground
+                                          : lightBackground.withValues(alpha: 0.5),
+                                      size: isSmallScreen ? 20.sp : 24.sp,
+                                    ),
+                                    backgroundColor: _isPhoneNumberComplete
+                                        ? primaryColor
+                                        : primaryColor.withValues(alpha: 0.3),
+                                    onTap: _isPhoneNumberComplete
+                                        ? () => _sendForgotPasswordCode()
+                                        : () {},
+                                  ),
+                                  rightAction: ActionKey(
+                                    child: Icon(
+                                      Icons.backspace_rounded,
+                                      color: primaryColor,
+                                      size: isSmallScreen ? 20.sp : 24.sp,
+                                    ),
+                                    backgroundColor: primaryColor.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    onTap: removeDigit,
+                                  ),
+                                ),
                               ),
                             ),
-                            SizedBox(height: 16.h),
-                            Text(
-                              "Reset Your Password",
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: darkBackground,
-                                  ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              "Enter your registered mobile number below.\nWe'll send you an OTP to verify your identity.",
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: isSmallScreen ? 11.sp : 13.sp,
-                                    color: lightSecondaryText,
-                                    height: 1.4,
-                                  ),
-                            ),
+                            SizedBox(height: isSmallScreen ? 8.h : 16.h),
                           ],
                         ),
-                        SizedBox(height: 24.h),
-
-                        /// 🔹 Glass Card
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(24.r),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                            child: Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isSmallScreen ? 12.w : 16.w,
-                                vertical: isSmallScreen ? 16.h : 30.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24.r),
-                                border: Border.all(
-                                  color: lightBorderColor.withOpacity(0.5),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 30,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  PhoneInputWidget(
-                                    controller: _phoneController,
-                                    label: 'Mobile Number',
-                                    hintText: '800 000 0000',
-                                    keyboardType: TextInputType.none,
-                                    backgroundColor: offWhite,
-                                    borderColor: Colors.transparent,
-                                    validator: (value) {
-                                      if (value.isEmpty)
-                                        return 'Phone number is required';
-                                      final text = value.trim();
-                                      if (text.length == 11 &&
-                                          !text.startsWith('0')) {
-                                        return '11-digit number must start with 0';
-                                      }
-                                      if (text.length != 10 &&
-                                          text.length != 11) {
-                                        return 'Phone number must be 10 or 11 digits';
-                                      }
-                                      return null;
-                                    },
-                                    onCountryChanged: (CountryCode? newValue) {
-                                      setState(() {
-                                        _selectedCountry = newValue!;
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        /// 🔹 Keypad
-                        SizedBox(
-                          height: keypadHeight,
-                          child: CustomGridKeypad(
-                            onNumberPressed: addDigit,
-                            leftAction: ActionKey(
-                              child: Icon(
-                                Icons.arrow_forward_rounded,
-                                color: _isPhoneNumberComplete
-                                    ? lightBackground
-                                    : lightBackground.withValues(alpha: 0.5),
-                                size: isSmallScreen ? 20.sp : 24.sp,
-                              ),
-                              backgroundColor: _isPhoneNumberComplete
-                                  ? primaryColor
-                                  : primaryColor.withValues(alpha: 0.3),
-                              onTap: _isPhoneNumberComplete
-                                  ? () => _sendForgotPasswordCode()
-                                  : () {},
-                            ),
-                            rightAction: ActionKey(
-                              child: Icon(
-                                Icons.backspace_rounded,
-                                color: primaryColor,
-                                size: isSmallScreen ? 20.sp : 24.sp,
-                              ),
-                              backgroundColor: primaryColor.withValues(
-                                alpha: 0.1,
-                              ),
-                              onTap: removeDigit,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,11 +365,23 @@ class _ForgotPasswordScreen1State extends ConsumerState<ForgotPasswordScreen1> {
             }
           },
           child: Container(
-            padding: EdgeInsets.all(12.w),
-            color: Colors.transparent,
+            width: 40.r,
+            height: 40.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: lightBorderColor, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Icon(
               Icons.arrow_back_ios_new,
-              size: isSmallScreen ? 16.sp : 18.sp,
+              size: 16.sp,
               color: darkBackground,
             ),
           ),

@@ -57,6 +57,10 @@ import '../../../feature/settings/presentation/auto_logout_settings.dart';
 import '../../../feature/referral/presentation/referral_screen.dart';
 import '../../../feature/support/presentation/support_tickets_page.dart';
 import '../../../feature/support/presentation/ticket_details_page.dart';
+import '../../../feature/split_payment/presentation/split_creator_setup_screen.dart';
+import '../../../feature/split_payment/presentation/split_participant_scan_screen.dart';
+import '../../../feature/split_payment/presentation/split_creator_dashboard_screen.dart';
+
 
 export '../../../feature/settings/presentation/change_password.dart'
     show NewPaymentPin;
@@ -90,6 +94,9 @@ class AppRouter {
     initialLocation: '/splash',
     redirect: (context, state) {
       // Use synchronous Hive check for instant route guard validation (non-blocking)
+      if (!Hive.isBoxOpen('authBox')) {
+        return null; // Let the app load splash screen while box opens in background
+      }
       final authBox = Hive.box('authBox');
       final isLoggedIn = authBox.get('is_logged_in', defaultValue: false) == true;
       final userId = authBox.get('userId', defaultValue: '')?.toString() ?? '';
@@ -522,6 +529,29 @@ class AppRouter {
           final idStr = state.pathParameters['id'] ?? '0';
           final id = int.tryParse(idStr) ?? 0;
           return TicketDetailsPage(ticketId: id);
+        },
+      ),
+      GoRoute(
+        path: RouteList.splitCreatorSetup,
+        name: RouteList.splitCreatorSetup,
+        builder: (context, state) => const SplitCreatorSetupScreen(),
+      ),
+      GoRoute(
+        path: RouteList.splitScanView,
+        name: RouteList.splitScanView,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final splitId = extra['splitId'] as String;
+          final token = extra['token'] as String;
+          return SplitParticipantScanScreen(splitId: splitId, token: token);
+        },
+      ),
+      GoRoute(
+        path: '/split-creator-dashboard/:splitId',
+        name: RouteList.splitCreatorDashboard,
+        builder: (context, state) {
+          final splitId = state.pathParameters['splitId'] ?? '';
+          return SplitCreatorDashboardScreen(splitId: splitId);
         },
       ),
     ],

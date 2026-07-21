@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -82,6 +83,15 @@ class BiometricService {
       default:
         return 'Biometric';
     }
+  }
+
+  /// Get appropriate icon for available biometric (Face ID vs Fingerprint)
+  Future<IconData> getBiometricIcon() async {
+    final type = await getBiometricType();
+    if (type == BiometricType.face) {
+      return Icons.face_rounded;
+    }
+    return Icons.fingerprint_rounded;
   }
 
   // ==================== LOGIN BIOMETRIC ====================

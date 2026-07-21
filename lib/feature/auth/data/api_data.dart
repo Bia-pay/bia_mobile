@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
+import 'package:crypto/crypto.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../app/socket/socket_provider.dart';
 import '../interceptor/interceptor.dart';
 import 'api_constant.dart';
@@ -36,11 +39,17 @@ class ApiClient {
 
   Future<void>? _initFuture;
 
+  // ── Server clock sync fields ─────────────────────────────────────────────
+  int _clockOffset = 0;
+  Future<void>? _timeSyncFuture;
+
   ApiClient({required this.apiHelper, required this.ref}) {
     // Initial sync load from Hive (legacy fallback)
-    final box = Hive.box('authBox');
-    token = box.get('token', defaultValue: '') ?? '';
-    _userId = box.get('userId', defaultValue: '') ?? '';
+    if (Hive.isBoxOpen('authBox')) {
+      final box = Hive.box('authBox');
+      token = box.get('token', defaultValue: '') ?? '';
+      _userId = box.get('userId', defaultValue: '') ?? '';
+    }
 
     _mainHeaders = {
       'Content-type': 'application/json',
@@ -58,13 +67,15 @@ class ApiClient {
         final box = await Hive.openBox('authBox');
         _userId = box.get('userId', defaultValue: '') ?? '';
       }
-      
+
       if (_userId.isNotEmpty) {
         final secureToken = await _storage.read(key: _tokenKey(_userId));
         if (secureToken != null && secureToken.isNotEmpty) {
           token = secureToken;
           _mainHeaders['Authorization'] = 'Bearer $token';
-          debugPrint('🔐 Tokens loaded securely from storage for user: $_userId');
+          debugPrint(
+            '🔐 Tokens loaded securely from storage for user: $_userId',
+          );
         }
       }
     } catch (e) {
@@ -156,6 +167,7 @@ class ApiClient {
     debugPrint('🔄 Starting token refresh...');
 
     try {
+      await _ensureTimeSynced();
       // Read refresh token from SecureStorage (preferring user-scoped key)
       String refreshToken = '';
       if (_userId.isNotEmpty) {
@@ -177,13 +189,28 @@ class ApiClient {
         return false;
       }
 
-      final fullRefreshUrl =
-          Uri.parse('${ApiConstant.BASE_URL}${ApiConstant.REFRESH_TOKEN}');
+      final fullRefreshUrl = Uri.parse(
+        '${ApiConstant.BASE_URL}${ApiConstant.REFRESH_TOKEN}',
+      );
+
+      final payloadJson = jsonEncode({'refreshToken': refreshToken});
+      final String timestamp = _getAdjustedTimestamp();
+      final String dataToSign = "$timestamp.$payloadJson";
+      final List<int> key = utf8.encode(
+        'bia_hmac_secret_key_2026_07_10_console',
+      );
+      final List<int> bytes = utf8.encode(dataToSign);
+      final Hmac hmacSha256 = Hmac(sha256, key);
+      final Digest digest = hmacSha256.convert(bytes);
 
       final response = await http.post(
         fullRefreshUrl,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-timestamp': timestamp,
+          'x-signature': digest.toString(),
+        },
+        body: payloadJson,
       );
 
       if (response.statusCode == 200) {
@@ -206,24 +233,28 @@ class ApiClient {
         // await box.put('refreshToken', newRefreshToken);
 
         if (_userId.isNotEmpty) {
+          await _storage.write(key: _tokenKey(_userId), value: newAccessToken);
           await _storage.write(
-              key: _tokenKey(_userId), value: newAccessToken);
-          await _storage.write(
-              key: _refreshTokenKey(_userId), value: newRefreshToken);
+            key: _refreshTokenKey(_userId),
+            value: newRefreshToken,
+          );
         }
 
         updateHeaders(newAccessToken);
-        
+
         // 🔥 Trigger socket reconnection to sync new token with FCM on backend
         ref.read(socketNotifierProvider.notifier).reconnect();
 
-        debugPrint('✅ Token refreshed successfully and socket resynced for user: $_userId');
+        debugPrint(
+          '✅ Token refreshed successfully and socket resynced for user: $_userId',
+        );
         _refreshCompleter!.complete(true);
         _refreshCompleter = null;
         return true;
       } else {
         debugPrint(
-            '❌ Refresh request failed (${response.statusCode}) — forcing logout');
+          '❌ Refresh request failed (${response.statusCode}) — forcing logout',
+        );
         _refreshCompleter!.complete(false);
         _refreshCompleter = null;
         await _forceLogout();
@@ -238,11 +269,63 @@ class ApiClient {
     }
   }
 
+  // ── Server Time Sync Helpers ────────────────────────────────────────────────
+  String _getAdjustedTimestamp() {
+    final int localMillis = DateTime.now().millisecondsSinceEpoch;
+    return (localMillis + _clockOffset).toString();
+  }
+
+  Future<void> _ensureTimeSynced() async {
+    _timeSyncFuture ??= _syncTime();
+    await _timeSyncFuture;
+  }
+
+  Future<void> _syncTime() async {
+    try {
+      debugPrint('⏰ Syncing time with server...');
+      final response = await http.head(Uri.parse(ApiConstant.BASE_URL)).timeout(
+        const Duration(seconds: 5),
+      );
+      final dateHeader = response.headers['date'];
+      if (dateHeader != null) {
+        final serverTime = HttpDate.parse(dateHeader);
+        final clientTime = DateTime.now().toUtc();
+        _clockOffset = serverTime.millisecondsSinceEpoch - clientTime.millisecondsSinceEpoch;
+        debugPrint(
+          '⏰ Time synced. Offset: $_clockOffset ms (Server: $serverTime, Client: $clientTime)',
+        );
+      } else {
+        debugPrint('⚠️ Date header missing in time sync response');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to sync time with server: $e');
+    }
+  }
+
+  // ── HMAC Signature Helper ──────────────────────────────────────────────────
+  Map<String, String> _getRequestHeaders(String payloadJson) {
+    final headers = Map<String, String>.from(_mainHeaders);
+    final String sharedSecret = 'bia_hmac_secret_key_2026_07_10_console';
+
+    final String timestamp = _getAdjustedTimestamp();
+    final String dataToSign = "$timestamp.$payloadJson";
+
+    final List<int> key = utf8.encode(sharedSecret);
+    final List<int> bytes = utf8.encode(dataToSign);
+    final Hmac hmacSha256 = Hmac(sha256, key);
+    final Digest digest = hmacSha256.convert(bytes);
+
+    headers['x-timestamp'] = timestamp;
+    headers['x-signature'] = digest.toString();
+    return headers;
+  }
+
   // ── Central authorized request wrapper ────────────────────────────────────
   Future<http.Response> _authorizedRequest(
     String url,
     Future<http.Response> Function() apiCall,
   ) async {
+    await _ensureTimeSynced();
     final isPublic = url.contains('/auth/') || url.contains('/services/status');
     if (!isPublic) {
       await _waitForInit();
@@ -250,71 +333,83 @@ class ApiClient {
     http.Response response = await apiCall();
 
     if (response.statusCode == 401) {
-      // 💡 Optimization: If the 401 is actually a wrong PIN error, don't refresh.
-      // This prevents the app from logging the user out when they just entered
-      // a wrong PIN (as the server might invalidate refresh tokens on PIN failure).
       final body = response.body.toLowerCase();
-      if (body.contains('pin') || body.contains('incorrect') || body.contains('invalid')) {
-        debugPrint('⚠️ 401 received but appears to be a PIN error — skipping refresh.');
+      // Check for timestamp/expired error first to self-heal clock drift
+      if (body.contains('timestamp') || body.contains('expired')) {
+        AppLogger.debug('⏰ Timestamp/HMAC error detected. Re-syncing time and retrying...');
+        _timeSyncFuture = null; // force re-sync
+        await _ensureTimeSynced();
+        // Retry the call
+        response = await apiCall();
         return response;
       }
 
-      debugPrint('⚠️ 401 received — attempting token refresh...');
+      // 💡 Optimization: If the 401 is actually a wrong PIN error, don't refresh.
+      if (body.contains('pin') ||
+          body.contains('incorrect') ||
+          body.contains('invalid')) {
+        AppLogger.debug('⚠️ 401 received but appears to be a PIN error — skipping refresh.');
+        return response;
+      }
+
+      AppLogger.debug('⚠️ 401 received — attempting token refresh...');
       final refreshed = await _refreshToken();
       if (refreshed) {
-        debugPrint('🔁 Retrying request after successful token refresh...');
+        AppLogger.debug('🔁 Retrying request after successful token refresh...');
         response = await apiCall();
       }
-      // If refresh failed, _forceLogout() was already called inside _refreshToken()
     }
 
     return response;
   }
 
   // ── POST ──────────────────────────────────────────────────────────────────
-  Future<http.Response> postData(
-      String url, Map<String, dynamic> body) async {
+  Future<http.Response> postData(String url, Map<String, dynamic> body) async {
+    final cleanedBody = _sanitizeBody(body);
     return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
-      debugPrint('📤 POST $fullUrl');
+      AppLogger.debug('📤 POST $fullUrl');
+      final payloadJson = jsonEncode(cleanedBody);
       final response = await http.post(
         fullUrl,
-        headers: _mainHeaders,
-        body: jsonEncode(body),
+        headers: _getRequestHeaders(payloadJson),
+        body: payloadJson,
       );
-      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
+      AppLogger.debug('📥 RESPONSE [${response.statusCode}] $url');
       return apiHelper.handleResponse(response);
     });
   }
 
   // ── PATCH ─────────────────────────────────────────────────────────────────
-  Future<http.Response> patchData(
-      String url, Map<String, dynamic> body) async {
+  Future<http.Response> patchData(String url, Map<String, dynamic> body) async {
+    final cleanedBody = _sanitizeBody(body);
     return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
-      debugPrint('📤 PATCH $fullUrl');
+      AppLogger.debug('📤 PATCH $fullUrl');
+      final payloadJson = jsonEncode(cleanedBody);
       final response = await http.patch(
         fullUrl,
-        headers: _mainHeaders,
-        body: jsonEncode(body),
+        headers: _getRequestHeaders(payloadJson),
+        body: payloadJson,
       );
-      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
+      AppLogger.debug('📥 RESPONSE [${response.statusCode}] $url');
       return apiHelper.handleResponse(response);
     });
   }
 
   // ── PUT ───────────────────────────────────────────────────────────────────
-  Future<http.Response> putData(
-      String url, Map<String, dynamic> body) async {
+  Future<http.Response> putData(String url, Map<String, dynamic> body) async {
+    final cleanedBody = _sanitizeBody(body);
     return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
-      debugPrint('📤 PUT $fullUrl');
+      AppLogger.debug('📤 PUT $fullUrl');
+      final payloadJson = jsonEncode(cleanedBody);
       final response = await http.put(
         fullUrl,
-        headers: _mainHeaders,
-        body: jsonEncode(body),
+        headers: _getRequestHeaders(payloadJson),
+        body: payloadJson,
       );
-      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
+      AppLogger.debug('📥 RESPONSE [${response.statusCode}] $url');
       return apiHelper.handleResponse(response);
     });
   }
@@ -323,12 +418,12 @@ class ApiClient {
   Future<http.Response> getData(String url) async {
     return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
-      debugPrint('📥 GET $fullUrl');
+      AppLogger.debug('📥 GET $fullUrl');
       final response = await http.get(
         fullUrl,
-        headers: _mainHeaders,
+        headers: _getRequestHeaders('{}'),
       );
-      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
+      AppLogger.debug('📥 RESPONSE [${response.statusCode}] $url');
       return apiHelper.handleResponse(response);
     });
   }
@@ -337,27 +432,38 @@ class ApiClient {
   Future<http.Response> deleteData(String url) async {
     return _authorizedRequest(url, () async {
       final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
-      debugPrint('🗑️ DELETE $fullUrl');
+      AppLogger.debug('🗑️ DELETE $fullUrl');
       final response = await http.delete(
         fullUrl,
-        headers: _mainHeaders,
+        headers: _getRequestHeaders('{}'),
       );
-      debugPrint('📥 RESPONSE [${response.statusCode}]: ${response.body}');
+      AppLogger.debug('📥 RESPONSE [${response.statusCode}] $url');
       return apiHelper.handleResponse(response);
     });
   }
 
   // ── POST PHOTO / Multipart ────────────────────────────────────────────────
-  Future<http.StreamedResponse> postPhoto(
-      String url, String imagePath) async {
+  Future<http.StreamedResponse> postPhoto(String url, String imagePath) async {
+    await _ensureTimeSynced();
+    final String timestamp = _getAdjustedTimestamp();
+    final String dataToSign = "$timestamp.{}";
+    final List<int> key = utf8.encode('bia_hmac_secret_key_2026_07_10_console');
+    final List<int> bytes = utf8.encode(dataToSign);
+    final Hmac hmacSha256 = Hmac(sha256, key);
+    final Digest digest = hmacSha256.convert(bytes);
+
     var headers = {
       'Content-Type': 'multipart/form-data',
       'Accept': 'text/plain',
       'Authorization': 'Bearer $token',
+      'x-timestamp': timestamp,
+      'x-signature': digest.toString(),
     };
 
-    final request =
-        http.MultipartRequest('POST', Uri.parse(ApiConstant.BASE_URL + url));
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(ApiConstant.BASE_URL + url),
+    );
     request.fields.addAll({'URL': url});
     request.files.add(await http.MultipartFile.fromPath('image', imagePath));
     request.headers.addAll(headers);
@@ -368,6 +474,14 @@ class ApiClient {
       final refreshed = await _refreshToken();
       if (refreshed) {
         request.headers['Authorization'] = 'Bearer $token';
+        // Regenerate signature if token refreshed
+        final String newTimestamp = _getAdjustedTimestamp();
+        final String newDataToSign = "$newTimestamp.{}";
+        final List<int> newBytes = utf8.encode(newDataToSign);
+        final Digest newDigest = Hmac(sha256, key).convert(newBytes);
+        request.headers['x-timestamp'] = newTimestamp;
+        request.headers['x-signature'] = newDigest.toString();
+
         response = await request.send();
       }
     }
@@ -383,15 +497,24 @@ class ApiClient {
     required String fileField,
     required String filePath,
   }) async {
+    await _ensureTimeSynced();
     final fullUrl = Uri.parse(ApiConstant.BASE_URL + url);
 
     final request = http.MultipartRequest(method, fullUrl);
     request.headers['Authorization'] = 'Bearer $token';
     request.headers['Accept'] = 'application/json';
+
+    final String timestamp = _getAdjustedTimestamp();
+    final String dataToSign = "$timestamp.{}";
+    final List<int> key = utf8.encode('bia_hmac_secret_key_2026_07_10_console');
+    final List<int> bytes = utf8.encode(dataToSign);
+    final Hmac hmacSha256 = Hmac(sha256, key);
+    final Digest digest = hmacSha256.convert(bytes);
+    request.headers['x-timestamp'] = timestamp;
+    request.headers['x-signature'] = digest.toString();
+
     request.fields.addAll(fields);
-    request.files.add(
-      await http.MultipartFile.fromPath(fileField, filePath),
-    );
+    request.files.add(await http.MultipartFile.fromPath(fileField, filePath));
 
     debugPrint('📤 MULTIPART $method $fullUrl');
 
@@ -401,6 +524,14 @@ class ApiClient {
       final refreshed = await _refreshToken();
       if (refreshed) {
         request.headers['Authorization'] = 'Bearer $token';
+        // Regenerate signature if token refreshed
+        final String newTimestamp = _getAdjustedTimestamp();
+        final String newDataToSign = "$newTimestamp.{}";
+        final List<int> newBytes = utf8.encode(newDataToSign);
+        final Digest newDigest = Hmac(sha256, key).convert(newBytes);
+        request.headers['x-timestamp'] = newTimestamp;
+        request.headers['x-signature'] = newDigest.toString();
+
         streamedResponse = await request.send();
       }
     }
@@ -408,5 +539,39 @@ class ApiClient {
     final response = await http.Response.fromStream(streamedResponse);
     debugPrint('🟢 STATUS: ${response.statusCode}');
     return response;
+  }
+
+  // ── Recursive Payload Sanitizer ────────────────────────────────────────────
+  Map<String, dynamic> _sanitizeBody(Map<String, dynamic> body) {
+    final Map<String, dynamic> cleaned = {};
+    body.forEach((key, value) {
+      if (value != null) {
+        cleaned[key] = _sanitizeValue(value);
+      }
+    });
+    return cleaned;
+  }
+
+  dynamic _sanitizeValue(dynamic value) {
+    if (value is Map) {
+      final Map<dynamic, dynamic> cleanedMap = {};
+      value.forEach((k, v) {
+        if (v != null) {
+          cleanedMap[k] = _sanitizeValue(v);
+        }
+      });
+      return cleanedMap;
+    } else if (value is List) {
+      return value
+          .where((item) => item != null)
+          .map((item) => _sanitizeValue(item))
+          .toList();
+    } else if (value is double) {
+      if (value % 1 == 0) {
+        return value.toInt();
+      }
+      return value;
+    }
+    return value;
   }
 }

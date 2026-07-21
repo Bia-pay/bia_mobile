@@ -546,7 +546,6 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       });      LoadingHelper.dismiss();
 
       if (response.responseSuccessful && response.data != null) {
-        print(response.data);
         return response;
       } else {
         ToastHelper.showToast(
@@ -577,10 +576,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     // final result = await repo.verifyPayment(reference);
 
     if (result != null && result.responseSuccessful) {
-      print("💰 Payment Verified Successfully!");
       return result;
     } else {
-      print("❌ Payment Verification Failed");
       return null;
     }
   }
@@ -799,8 +796,6 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
           response.responseBody != null) {
 
         final paymentRef = response.responseBody!.txnRef;
-
-        print("🧾 Payment Reference: $paymentRef");
 
         await verifyBankTransfer(context, paymentRef);
       }

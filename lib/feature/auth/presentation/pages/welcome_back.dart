@@ -41,6 +41,8 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
   bool _biometricEnabled = false;
   bool _isAuthenticating = false;
   bool _showPasswordField = false;
+  bool _allowPop = false;
+  IconData _biometricIcon = Icons.fingerprint_rounded;
 
   String? phone;
   String? fullname;
@@ -95,6 +97,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     final biometricEnabled = await biometricService.isLoginEnabled(effectiveUserId);
     final savedPwd        = await biometricService.getLoginPassword(effectiveUserId);
     final canCheck        = await biometricService.canCheckBiometrics();
+    final icon            = await biometricService.getBiometricIcon();
 
     setState(() {
       phone        = loadedPhone;
@@ -104,6 +107,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
       _hasBiometric    = canCheck;
       _biometricEnabled = canCheck && biometricEnabled && savedPwd != null;
       _showPasswordField = !_biometricEnabled;
+      _biometricIcon   = icon;
       _isLoading = false;
     });
 
@@ -128,6 +132,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
 
       if (success) {
         ref.read(sessionServiceProvider.notifier).clearLockState();
+        setState(() => _allowPop = true);
         // Use post-frame callback to navigate AFTER EasyLoading dismiss settles
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -213,123 +218,127 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     final effectivePictureUrl = userProfile?.picture ?? pictureUrl;
     final effectiveFullname = userProfile?.fullname ?? fullname ?? "User";
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          // Subtle accent wash at the top
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 300.h,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    accentColor.withOpacity(0.08),
-                    Colors.white,
-                  ],
+    return PopScope(
+      canPop: !widget.isSessionLock || _allowPop,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: false,
+        body: Stack(
+          children: [
+            // Subtle accent wash at the top
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 300.h,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      accentColor.withOpacity(0.08),
+                      Colors.white,
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final height = constraints.maxHeight;
-                final isSmall = height < 780;
-                final isTiny  = height < 640;
-                
-                final double logoH = isTiny ? 20.h : (isSmall ? 25.h : 35.h);
-                final double avatarR = isTiny ? 20.r : (isSmall ? 26.r : 35.r);
-                final double keypadH = isTiny ? 260.h : (isSmall ? 300.h : 350.h);
-                final double cardPaddingV = isTiny ? 8.h : (isSmall ? 12.h : 20.h);
-                final double innerGap = isTiny ? 4.h : (isSmall ? 8.h : 16.h);
-
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Top Logo section
-                    Padding(
-                      padding: EdgeInsets.only(top: isTiny ? 8.h : 20.h),
-                      child: Image.asset(appLogoFull, height: logoH,),
-                    ),
-                    
-                    // Middle Card section - using Flexible to prevent overflow
-                    Flexible(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: cardPaddingV),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(28.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withOpacity(0.06),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                            border: Border.all(color: accentColor.withOpacity(0.08), width: 1),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildAvatar(avatarR, effectivePictureUrl),
-                              SizedBox(height: innerGap),
-                              Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
-                              Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
-                              SizedBox(height: innerGap / 2),
-                              
-                              if (_showPasswordField || !_biometricEnabled)
-                                PinInputWidget(
-                                  title: "",
-                                  subtitle: _showPasswordField ? "Enter 6-digit Password" : "Protecting your account",
-                                  fieldType: InputFieldType.pin,
-                                  inputLength: 6,
-                                  showKeypad: _showPasswordField || !_biometricEnabled,
-                                  textColor: accentColor,
-                                  dotColor: accentColor,
-                                  keyColor: grey100,
-                                  keypadHeight: keypadH,
-                                  onPinComplete: (val) => _performLogin(phone!, val),
-                                  onBiometricAction: _biometricEnabled ? _authenticate : null,
-                                  onForgotPin: () => context.go(RouteList.forgotPassword),
+            
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final height = constraints.maxHeight;
+                  final isSmall = height < 780;
+                  final isTiny  = height < 640;
+                  
+                  final double logoH = isTiny ? 20.h : (isSmall ? 25.h : 35.h);
+                  final double avatarR = isTiny ? 20.r : (isSmall ? 26.r : 35.r);
+                  final double keypadH = isTiny ? 260.h : (isSmall ? 300.h : 350.h);
+                  final double cardPaddingV = isTiny ? 8.h : (isSmall ? 12.h : 20.h);
+                  final double innerGap = isTiny ? 4.h : (isSmall ? 8.h : 16.h);
+  
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top Logo section
+                      Padding(
+                        padding: EdgeInsets.only(top: isTiny ? 8.h : 20.h),
+                        child: Image.asset(appLogoFull, height: logoH,),
+                      ),
+                      
+                      // Middle Card section - using Flexible to prevent overflow
+                      Flexible(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: cardPaddingV),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentColor.withOpacity(0.06),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
                                 ),
-                              
-                              if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
-                                SizedBox(height: innerGap * 1.5),
-                                _buildBiometricPrompt(),
                               ],
-                            ],
+                              border: Border.all(color: accentColor.withOpacity(0.08), width: 1),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildAvatar(avatarR, effectivePictureUrl),
+                                SizedBox(height: innerGap),
+                                Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
+                                Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
+                                SizedBox(height: innerGap / 2),
+                                
+                                if (_showPasswordField || !_biometricEnabled)
+                                  PinInputWidget(
+                                    title: "",
+                                    subtitle: _showPasswordField ? "Enter 6-digit Password" : "Protecting your account",
+                                    fieldType: InputFieldType.pin,
+                                    inputLength: 6,
+                                    showKeypad: _showPasswordField || !_biometricEnabled,
+                                    textColor: accentColor,
+                                    dotColor: accentColor,
+                                    keyColor: grey100,
+                                    keypadHeight: keypadH,
+                                    onPinComplete: (val) => _performLogin(phone!, val),
+                                    onBiometricAction: _biometricEnabled ? _authenticate : null,
+                                    biometricIcon: _biometricIcon,
+                                    onForgotPin: () => context.go(RouteList.forgotPassword),
+                                  ),
+                                
+                                if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
+                                  SizedBox(height: innerGap * 1.5),
+                                  _buildBiometricPrompt(),
+                                ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    
-                    // Bottom section
-                    Padding(
-                      padding: EdgeInsets.only(bottom: 8.h),
-                      child: TextButton(
-                        onPressed: () {
-                          ref.read(authControllerProvider.notifier).logout(context: context, isManual: true);
-                        }, 
-                        child: Text("Switch Account", style: TextStyle(color: accentColor.withOpacity(0.6), fontSize: 12.sp, fontWeight: FontWeight.w700))
+                      
+                      // Bottom section
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 8.h),
+                        child: TextButton(
+                          onPressed: () {
+                            ref.read(authControllerProvider.notifier).logout(context: context, isManual: true);
+                          }, 
+                          child: Text("Switch Account", style: TextStyle(color: accentColor.withOpacity(0.6), fontSize: 12.sp, fontWeight: FontWeight.w700))
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -363,7 +372,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
           child: Container(
             padding: EdgeInsets.all(16.r),
             decoration: BoxDecoration(shape: BoxShape.circle, color: primaryColor, border: Border.all(color: accentColor.withOpacity(0.1))),
-            child: Icon(Icons.fingerprint_rounded, size: 36.sp, color: lightBackground),
+            child: Icon(_biometricIcon, size: 36.sp, color: lightBackground),
           ),
         ),
         SizedBox(height: 8.h),

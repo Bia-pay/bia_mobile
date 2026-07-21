@@ -31,36 +31,77 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     if (_isProcessing) return;
 
     final List<Barcode> barcodes = capture.barcodes;
-    if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-      final code = barcodes.first.rawValue!;
-      _processQrData(code);
+    if (barcodes.isNotEmpty) {
+      final code = barcodes.first.rawValue ?? barcodes.first.displayValue;
+      if (code != null && code.isNotEmpty) {
+        _processQrData(code);
+      }
     }
   }
 
-  void _processQrData(String data) {
+  void _processQrData(String rawData) {
     setState(() => _isProcessing = true);
     _scannerController.stop();
 
-    String receiverAccount = data.trim();
+    final data = rawData.trim();
+    String? receiverAccount;
 
     try {
       final json = jsonDecode(data);
-      if (json is Map && json.containsKey('account')) {
-        receiverAccount = json['account'].toString();
-      } else if (json is Map && json.containsKey('phone')) {
-        receiverAccount = json['phone'].toString();
+      if (json is Map) {
+        if (json.containsKey('splitId') && json.containsKey('token')) {
+          final splitId = json['splitId'].toString();
+          final token = json['token'].toString();
+
+          context.pushNamed(RouteList.splitScanView, extra: {
+            'splitId': splitId,
+            'token': token,
+          }).then((_) {
+            if (mounted) {
+              setState(() => _isProcessing = false);
+              _scannerController.start();
+            }
+          });
+          return;
+        }
+
+        receiverAccount = json['account']?.toString() ??
+            json['phone']?.toString() ??
+            json['receiverAccount']?.toString() ??
+            json['user']?.toString();
       }
     } catch (_) {
-      // If not JSON, assume raw account string
+      // If not JSON
     }
 
-    if (receiverAccount.isEmpty) {
+    if (receiverAccount == null || receiverAccount.isEmpty) {
+      final uri = Uri.tryParse(data);
+      if (uri != null) {
+        receiverAccount = uri.queryParameters['account'] ??
+            uri.queryParameters['phone'] ??
+            uri.queryParameters['receiverAccount'] ??
+            uri.queryParameters['user'];
+      }
+    }
+
+    if (receiverAccount == null || receiverAccount.isEmpty) {
+      final cleaned = data.replaceAll(RegExp(r'[^a-zA-Z0-9@]'), '');
+      if (cleaned.isNotEmpty && !data.contains('{') && !data.contains('}')) {
+        receiverAccount = cleaned;
+      }
+    }
+
+    if (receiverAccount == null || receiverAccount.isEmpty) {
       ToastHelper.showToast(
         context: context,
         message: 'Invalid QR Code',
       );
-      Future.delayed(const Duration(seconds: 2), () => _isProcessing = false);
-      _scannerController.start();
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() => _isProcessing = false);
+          _scannerController.start();
+        }
+      });
       return;
     }
 

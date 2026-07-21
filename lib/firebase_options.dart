@@ -60,7 +60,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCnHcbc2rDXq_-dusYtTJxyho7qfg_tp5E',
-    appId: '1:411607502572:ios:c0b3691862d662a518dfc9',
+    appId: '1:411607502572:ios:8e2a9528e80f1ac218dfc9',
     messagingSenderId: '411607502572',
     projectId: 'biapay-13ef3',
     storageBucket: 'biapay-13ef3.firebasestorage.app',

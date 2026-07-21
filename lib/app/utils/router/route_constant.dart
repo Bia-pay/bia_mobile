@@ -82,4 +82,9 @@ class RouteList {
   static const String referrals = '/referrals';
   static const String supportTickets = '/support-tickets';
   static const String ticketDetails = 'ticket-details';
+
+  // ------------ SPLIT PAYMENTS
+  static const String splitCreatorSetup = '/split-creator-setup';
+  static const String splitScanView = '/split-scan-view';
+  static const String splitCreatorDashboard = '/split-creator-dashboard';
 }

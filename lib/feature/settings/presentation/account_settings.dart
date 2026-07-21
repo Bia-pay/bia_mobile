@@ -33,12 +33,13 @@ class _UProfileState extends ConsumerState<UProfile> {
   UserResponse? _user;
   bool _isLoadingProfile = true;
   String _biometricTypeName = 'Biometric';
+  IconData _biometricIcon = Icons.fingerprint_rounded;
 
   List<Map<String, dynamic>> get securityItems {
     final t = ref.watch(appLocaleProvider.notifier);
     return [
       {'id': 'pin', 'title': t.translate('pin_settings'), 'icon': Icons.lock_outline_rounded, 'hasDropdown': true},
-      {'id': 'login', 'title': t.translate('login_settings'), 'icon': Icons.fingerprint_rounded, 'hasDropdown': true},
+      {'id': 'login', 'title': t.translate('login_settings'), 'icon': _biometricIcon, 'hasDropdown': true},
       {'id': 'payment', 'title': t.translate('payment_settings'), 'icon': Icons.payment_rounded, 'hasDropdown': true},
     ];
   }
@@ -63,11 +64,11 @@ class _UProfileState extends ConsumerState<UProfile> {
         {'title': t.translate('set_pin'), 'icon': Icons.lock_rounded},
         {'title': t.translate('change_payment_pin'), 'icon': Icons.lock_reset_rounded},
         {'title': t.translate('forget_payment_pin'), 'icon': Icons.lock_open_rounded},
-        {'title': '${t.translate('pay_with')} $_biometricTypeName', 'icon': Icons.fingerprint_rounded},
+        {'title': '${t.translate('pay_with')} $_biometricTypeName', 'icon': _biometricIcon},
       ],
       'login': [
         {'title': t.translate('auto_logout_settings'), 'icon': Icons.timer_outlined},
-        {'title': '${t.translate('login_with')} $_biometricTypeName', 'icon': Icons.fingerprint_rounded},
+        {'title': '${t.translate('login_with')} $_biometricTypeName', 'icon': _biometricIcon},
       ],
       'help': [
         {'title': t.translate('help_center'), 'icon': Icons.support_agent_rounded},
@@ -89,7 +90,11 @@ class _UProfileState extends ConsumerState<UProfile> {
   Future<void> _loadBiometricTypeName() async {
     final biometricService = BiometricService();
     final typeName = await biometricService.getBiometricTypeName();
-    setState(() => _biometricTypeName = typeName);
+    final icon = await biometricService.getBiometricIcon();
+    setState(() {
+      _biometricTypeName = typeName;
+      _biometricIcon = icon;
+    });
   }
 
   Future<void> _loadUserProfile() async {

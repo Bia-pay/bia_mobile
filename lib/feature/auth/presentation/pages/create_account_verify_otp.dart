@@ -247,8 +247,10 @@ class _CreateAccountVerifyOtpScreenState extends ConsumerState<CreateAccountVeri
                                     fontWeight: FontWeight.w800,
                                   ),
                                   recognizer: TapGestureRecognizer()
-                                    ..onTap = _canResend ? () {
+                                    ..onTap = _canResend ? () async {
                                       _startTimer();
+                                      final authController = ref.read(authControllerProvider.notifier);
+                                      await authController.resendOtp(context, widget.phone);
                                     } : null,
                                 ),
                               ],

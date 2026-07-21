@@ -18,6 +18,7 @@ class EnableLoginFingerprint extends ConsumerStatefulWidget {
 class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint> {
   bool _isLoading = false;
   String _biometricTypeName = 'Biometric';
+  IconData _biometricIcon = Icons.fingerprint_rounded;
 
   @override
   void initState() {
@@ -28,8 +29,10 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
   Future<void> _loadBiometricTypeName() async {
     final biometricService = BiometricService();
     final typeName = await biometricService.getBiometricTypeName();
+    final icon = await biometricService.getBiometricIcon();
     setState(() {
       _biometricTypeName = typeName;
+      _biometricIcon = icon;
     });
   }
 
@@ -140,7 +143,7 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
                 ),
               ),
               child: Icon(
-                Icons.fingerprint,
+                _biometricIcon,
                 size: 80.sp,
                 color: primaryColor,
               ),
@@ -224,7 +227,7 @@ class _EnableLoginFingerprintState extends ConsumerState<EnableLoginFingerprint>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.fingerprint,
+                            _biometricIcon,
                             color: Colors.white,
                             size: 24.sp,
                           ),

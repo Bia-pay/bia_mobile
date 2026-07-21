@@ -465,6 +465,63 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
+  // ---------------- RESEND OTP ----------------
+  Future<ResponseModel?> resendOtp(
+    BuildContext context,
+    String phone,
+  ) async {
+    if (phone.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Phone number is required.",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+
+      Map<String, dynamic> body = {'phone': phone};
+
+      final ResponseModel response = await authRepository.resendOtp(body);
+
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.check_circle,
+          iconColor: Colors.green,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.info,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: 'Error: $e',
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
   // ---------------- RESET PASSWORD ---------------
   Future<ResponseModel?> resetPassword(
     BuildContext context,

@@ -103,8 +103,6 @@ class AuthRepository {
       Map<String, dynamic> body, {
         bool fromBiometric = false,
       }) async {
-    print('📡 Attempting login...');
-
     try {
       final results = await Future.wait([
         DeviceHelper.getIpAddress(),
@@ -494,26 +492,30 @@ class AuthRepository {
   }
 // ---------------- FORGOT PASSWORD ----------------
   Future<ResponseModel> forgotPassword(Map<String, dynamic> body) async {
-
     try {
       http.Response response = await _apiClient.postData(
         ApiConstant.FORGET_PASSWORD,
         body,
       );
 
-      final jsonResponse = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint("✅ Success response: $jsonResponse");
-
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+        debugPrint("✅ Success response (empty body or status success)");
         return ResponseModel(
-          responseMessage:
-          jsonResponse['responseMessage'] ?? 'OTP sent successfully',
-          responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
+          responseMessage: 'OTP sent successfully',
+          responseSuccessful: true,
           statusCode: response.statusCode,
         );
       }
 
+      if (response.body.trim().isEmpty) {
+        return ResponseModel(
+          responseMessage: "Failed to send OTP",
+          responseSuccessful: false,
+          statusCode: response.statusCode,
+        );
+      }
+
+      final jsonResponse = jsonDecode(response.body);
       debugPrint("❌ Error response: $jsonResponse");
       return ResponseModel(
         responseMessage:
@@ -523,6 +525,49 @@ class AuthRepository {
       );
     } catch (e) {
       debugPrint('🔥 Exception during forgot password: $e');
+      return ResponseModel(
+        responseMessage: 'Something went wrong. Please try again.',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  // ---------------- RESEND OTP ----------------
+  Future<ResponseModel> resendOtp(Map<String, dynamic> body) async {
+    try {
+      http.Response response = await _apiClient.postData(
+        ApiConstant.RESEND_OTP,
+        body,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+        debugPrint("✅ Success response (empty body or status success)");
+        return ResponseModel(
+          responseMessage: 'OTP sent successfully',
+          responseSuccessful: true,
+          statusCode: response.statusCode,
+        );
+      }
+
+      if (response.body.trim().isEmpty) {
+        return ResponseModel(
+          responseMessage: "Failed to send OTP",
+          responseSuccessful: false,
+          statusCode: response.statusCode,
+        );
+      }
+
+      final jsonResponse = jsonDecode(response.body);
+      debugPrint("❌ Error response: $jsonResponse");
+      return ResponseModel(
+        responseMessage:
+        jsonResponse["responseMessage"] ?? "Failed to send OTP",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      debugPrint('🔥 Exception during resend OTP: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Please try again.',
         responseSuccessful: false,
@@ -541,19 +586,24 @@ class AuthRepository {
         body,
       );
 
-      final jsonResponse = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint("✅ Success response: $jsonResponse");
-
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 204) {
+        debugPrint("✅ Success response (empty body or status success)");
         return ResponseModel(
-          responseMessage:
-          jsonResponse['responseMessage'] ?? 'Password reset successfully',
-          responseSuccessful: jsonResponse['responseSuccessful'] ?? true,
+          responseMessage: 'Password reset successfully',
+          responseSuccessful: true,
           statusCode: response.statusCode,
         );
       }
 
+      if (response.body.trim().isEmpty) {
+        return ResponseModel(
+          responseMessage: "Failed to reset password",
+          responseSuccessful: false,
+          statusCode: response.statusCode,
+        );
+      }
+
+      final jsonResponse = jsonDecode(response.body);
       debugPrint("❌ Error response: $jsonResponse");
       return ResponseModel(
         responseMessage:

@@ -43,6 +43,8 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
   bool _hasBiometric = false;
   bool _biometricEnabled = false;
   bool _isAuthenticating = false;
+  bool _isProcessing = false;
+  IconData _biometricIcon = Icons.fingerprint_rounded;
 
   @override
   void initState() {
@@ -63,11 +65,13 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
       final isAvailable = await biometricService.canCheckBiometrics();
       final isEnabled = await biometricService.isPaymentEnabled(effectiveUserId);
       final savedPin = await biometricService.getTransactionPin(effectiveUserId);
+      final icon = await biometricService.getBiometricIcon();
 
       if (mounted) {
         setState(() {
           _hasBiometric = isAvailable;
           _biometricEnabled = isEnabled && savedPin != null;
+          _biometricIcon = icon;
         });
       }
 
@@ -80,7 +84,7 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
   }
 
   Future<void> _authenticateWithBiometric() async {
-    if (_isAuthenticating || !_hasBiometric || !_biometricEnabled) return;
+    if (_isAuthenticating || !_hasBiometric || !_biometricEnabled || _isProcessing) return;
     setState(() => _isAuthenticating = true);
     try {
       final authBox = await Hive.openBox('authBox');
@@ -108,7 +112,7 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
   }
 
   void addDigit(String value) {
-    if (pin.length >= 4) return;
+    if (pin.length >= 4 || _isProcessing) return;
     setState(() {
       pin += value;
     });
@@ -119,14 +123,18 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
   }
 
   void removeDigit() {
-    if (pin.isEmpty) return;
+    if (pin.isEmpty || _isProcessing) return;
     setState(() {
       pin = pin.substring(0, pin.length - 1);
     });
   }
 
   Future<void> _processTransfer(String transactionPin) async {
-    if (transactionPin.length < 4) return;
+    if (transactionPin.length < 4 || _isProcessing) return;
+    
+    setState(() {
+      _isProcessing = true;
+    });
     
     final controller = ref.read(dashboardControllerProvider.notifier);
     EasyLoading.show(status: 'Processing...');
@@ -149,10 +157,16 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
         final msg = (response.responseMessage ?? "Transaction failed").toString().toLowerCase();
         if (msg.contains('pin') || msg.contains('incorrect') || msg.contains('invalid')) {
           await SecurityService.registerFailure();
-          setState(() => pin = "");
+          setState(() {
+            pin = "";
+            _isProcessing = false;
+          });
           _showError('Incorrect PIN', 'Please try again.');
           return;
         }
+        setState(() {
+          _isProcessing = false;
+        });
         _showError('Failed', response.responseMessage ?? "Transaction failed");
         return;
       }
@@ -174,6 +188,11 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
       });
     } catch (e) {
       EasyLoading.dismiss();
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
       _showError('Error', e.toString());
     }
   }
@@ -312,7 +331,7 @@ class _BankTransactionPinState extends ConsumerState<BankTransactionPin> {
                           leftAction: (pin.isEmpty && _hasBiometric && _biometricEnabled)
                               ? ActionKey(
                                   child: Icon(
-                                    Icons.fingerprint,
+                                    _biometricIcon,
                                     color: Colors.white,
                                     size: isSmallScreen ? 24.sp : 28.sp,
                                   ),

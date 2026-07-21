@@ -2,9 +2,6 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart';
 import '../../auth/data/api_constant.dart';
 import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
@@ -614,33 +611,20 @@ class DashboardRepository {
 
   Future<ResponseModel> uploadProfileImage(String imagePath) async {
     try {
-      final uri = Uri.parse(
-        '${ApiConstant.BASE_URL}${ApiConstant.UPDATE_AVATAR}',
+      final response = await _apiClient.multipartRequest(
+        url: ApiConstant.UPDATE_AVATAR,
+        method: 'PATCH',
+        fields: {},
+        fileField: 'image',
+        filePath: imagePath,
       );
-
-      final mimeType = lookupMimeType(imagePath) ?? 'image/jpeg';
-
-      final request = http.MultipartRequest('PATCH', uri);
-      // Use the token from ApiClient securely
-      request.headers['Authorization'] = 'Bearer ${_apiClient.token}';
-
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'image',
-          imagePath,
-          contentType: MediaType.parse(mimeType),
-        ),
-      );
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
 
       final json = jsonDecode(response.body);
 
       return ResponseModel(
         responseMessage:
         json['responseMessage'] ?? json['error'] ?? 'Upload failed',
-        responseSuccessful: json['responseSuccessful'] ?? false,
+        responseSuccessful: response.statusCode == 200 || response.statusCode == 201,
         statusCode: response.statusCode,
       );
     } catch (e) {
@@ -1321,23 +1305,18 @@ class DashboardRepository {
         "pin": pin,
       };
 
-      print("📤 ELECTRICITY REQUEST PAYLOAD: $body");
-
       final response = await _apiClient.postData(
         ApiConstant.PURCHASE_ELECTRICITY_UNIT,
         body,
       );
 
       final jsonResponse = jsonDecode(response.body);
-      
-      print("📥 ELECTRICITY API RESPONSE: $jsonResponse");
 
       return ResponseModel.fromJson(
         jsonResponse,
         response.statusCode,
       );
     } catch (e) {
-      print("❌ ELECTRICITY PURCHASE EXCEPTION: $e");
       return ResponseModel(
         responseMessage: "Purchase failed: $e",
         responseSuccessful: false,

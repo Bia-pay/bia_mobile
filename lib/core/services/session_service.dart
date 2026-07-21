@@ -84,6 +84,10 @@ class SessionNotifier extends StateNotifier<SessionState> {
 
   void lockSession() {
     _inactivityTimer?.cancel();
+    if (_isLockScreenVisible || state == SessionState.locked) {
+      debugPrint("🔐 lockSession: Session is already locked or lock screen is visible. Skipping push.");
+      return;
+    }
     state = SessionState.locked;
     _isLockScreenVisible = true;
     _backgroundedAt = null;
@@ -109,6 +113,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
   void clearLockState() {
     _isLockScreenVisible = false;
     _backgroundedAt = null;
+    state = SessionState.active;
   }
 
   bool _bypassLifecycle = false;

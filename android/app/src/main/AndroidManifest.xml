@@ -31,6 +31,8 @@
         android:label="Bia"
         android:name="${applicationName}"
         android:theme="@style/LaunchTheme"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -112,7 +112,7 @@ class _ForgotPasswordScreen2State extends ConsumerState<ForgotPasswordScreen2> {
                     screenWidth * 0.07,
                     isKeyboardOpen ? 20.h : 40.h,
                     screenWidth * 0.07,
-                    bottomInset + 30.h,
+                    30.h,
                   ),
                   child: AutofillGroup(
                     child: Column(

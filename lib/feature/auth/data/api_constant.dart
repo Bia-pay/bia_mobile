@@ -68,5 +68,13 @@ class ApiConstant {
   static const String SUPPORT_TICKETS = '/api/v1/support';
   static String SUPPORT_TICKET_DETAILS(int id) => '/api/v1/support/$id';
   static String SEND_SUPPORT_MESSAGE(int id) => '/api/v1/support/$id/message';
+
+  // ------------ SPLIT PAYMENTS
+  static const String CREATE_SPLIT = '/api/v1/split/create';
+  static const String SCAN_SPLIT = '/api/v1/split/scan';
+  static const String PAY_SPLIT = '/api/v1/split/pay';
+  static String GET_SPLIT_DETAILS(String splitId) => '/api/v1/split/$splitId';
+  static String REMIND_SPLIT(String splitId) => '/api/v1/split/$splitId/remind';
+  static String CANCEL_SPLIT(String splitId) => '/api/v1/split/$splitId/cancel';
 }
 

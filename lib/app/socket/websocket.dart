@@ -13,6 +13,7 @@ import '../../feature/dashboard/dashboardcontroller/notification_notifier.dart';
 import '../../feature/dashboard/dashboardcontroller/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/utils/router/route_constant.dart';
+import '../../core/utils/app_logger.dart';
 
 class AppSocketListener extends ConsumerStatefulWidget {
   final Widget child;
@@ -102,9 +103,9 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
   void _listenForFcmTokenRefresh() {
     if (_isFcmListening) return;
     _isFcmListening = true;
-    debugPrint('🔥 Registering FCM token refresh listener.');
+    AppLogger.debug('🔥 Registering FCM token refresh listener.');
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      print("🔄 FCM Token refreshed: $newToken");
+      AppLogger.debug("🔄 FCM Token refreshed");
 
       final box = await Hive.openBox('authBox');
       await box.put('fcmToken', newToken);
@@ -117,16 +118,16 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
           'fcmToken': newToken,
           'platform': Platform.isAndroid ? 'android' : 'ios',
         });
-        print("📤 Sent refreshed FCM token to backend via socket");
+        AppLogger.debug("📤 Sent refreshed FCM token to backend via socket");
       } else {
-        print("⚠️ Socket not connected, will send later");
+        AppLogger.debug("⚠️ Socket not connected, will send later");
       }
     });
   }
   void _checkAndConnect() async {
     // Check if WebSocket is enabled
     if (!AppConstants.enableWebSocket) {
-      print('⚠️ Socket.IO is disabled in app constants');
+      AppLogger.debug('⚠️ Socket.IO is disabled in app constants');
       return;
     }
 
@@ -144,14 +145,14 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
       if (token != null && token.isNotEmpty) {
         final socketNotifier = ref.read(socketNotifierProvider.notifier);
         if (!socketNotifier.isConnected) {
-          print('🔌 User is logged in (id: $userId), connecting Socket.IO...');
+          AppLogger.debug('🔌 Connecting Socket.IO...');
           socketNotifier.connect();
         }
       } else {
-        print('⚠️ User not logged in, skipping Socket.IO connection');
+        AppLogger.debug('⚠️ User not logged in, skipping Socket.IO connection');
       }
     } catch (e) {
-      print('❌ Error checking auth status: $e');
+      AppLogger.debug('❌ Error checking auth status: $e');
     }
   }
 
@@ -236,7 +237,7 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
   void _handleSocketEvent(BuildContext context, Map<String, dynamic> json) {
     final event = json["event"] ?? json["type"] ?? json["action"];
 
-    print("🎯 Handling Socket.IO event: $event");
+    AppLogger.debug("🎯 Handling Socket.IO event: $event");
 
     switch (event) {
       case "deposit_success":
@@ -273,8 +274,7 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
         break;
 
       default:
-        print("ℹ️ Unhandled Socket.IO event: $event");
-        print("📄 Full message: $json");
+        AppLogger.debug("ℹ️ Unhandled Socket.IO event: $event");
     }
   }
 
@@ -322,13 +322,12 @@ class _AppSocketListenerState extends ConsumerState<AppSocketListener> with Widg
   }
 
   void _handleBalanceUpdate(Map<String, dynamic> data) {
-    final balance = data['balance'] ?? data['data']?['balance'];
-    print("💰 Balance updated: $balance");
+    AppLogger.debug("💰 Balance update received");
     // Trigger balance refresh in dashboard if needed
   }
 
   void _handleTransactionUpdate(Map<String, dynamic> data) {
-    print("💳 Transaction update: $data");
+    AppLogger.debug("💳 Transaction update received");
     // Handle transaction updates - refresh transaction list, etc.
   }
 

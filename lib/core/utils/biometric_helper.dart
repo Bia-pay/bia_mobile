@@ -305,6 +305,14 @@ class BiometricHelper {
     }
     return 'None';
   }
+
+  /// Get appropriate icon for available biometric (Face ID vs Fingerprint)
+  static IconData getBiometricIcon(List<BiometricType> types) {
+    if (types.contains(BiometricType.face)) {
+      return Icons.face_rounded;
+    }
+    return Icons.fingerprint_rounded;
+  }
 }
 
 /// Model for biometric availability information

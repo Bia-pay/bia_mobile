@@ -7,8 +7,6 @@ import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/services/biometric_service.dart';
-import '../../../dashboard/dashboardcontroller/dashboardcontroller.dart';
-import '../../../dashboard/dashboardcontroller/provider.dart';
 import '../../../../app/utils/custom_loader.dart';
 
 class EnableTransactionPinFingerprint extends ConsumerStatefulWidget {
@@ -21,6 +19,7 @@ class EnableTransactionPinFingerprint extends ConsumerStatefulWidget {
 class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransactionPinFingerprint> {
   bool _isLoading = false;
   String _biometricTypeName = 'Biometric';
+  IconData _biometricIcon = Icons.fingerprint_rounded;
 
   @override
   void initState() {
@@ -31,8 +30,10 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
   Future<void> _loadBiometricTypeName() async {
     final biometricService = BiometricService();
     final typeName = await biometricService.getBiometricTypeName();
+    final icon = await biometricService.getBiometricIcon();
     setState(() {
       _biometricTypeName = typeName;
+      _biometricIcon = icon;
     });
   }
 
@@ -155,7 +156,7 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
                   ],
                 ),
               ),
-              child: Icon(Icons.fingerprint, color: Colors.white, size: 80.sp),
+              child: Icon(_biometricIcon, color: Colors.white, size: 80.sp),
             ),
             
             SizedBox(height: 40.h),
@@ -235,7 +236,7 @@ class _EnableTransactionPinFingerprintState extends ConsumerState<EnableTransact
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.fingerprint,
+                            _biometricIcon,
                             color: Colors.white,
                             size: 24.sp,
                           ),

@@ -5,12 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:hive/hive.dart';
 
 import '../../../../../app/utils/colors.dart';
-import '../../../../../app/utils/custom_button.dart';
 import '../../../../../app/utils/u_popup.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../dashboardcontroller/provider.dart';
 import '../../../widgets/transaction.dart';
 import 'package:bia/core/services/session_service.dart';
 
@@ -22,6 +23,137 @@ class AddMoney extends ConsumerStatefulWidget {
 }
 
 class _AddMoneyState extends ConsumerState<AddMoney> {
+  void _showFAQBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(28.r),
+              topRight: Radius.circular(28.r),
+            ),
+          ),
+          padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 30.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Frequently Asked Questions',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: EdgeInsets.all(4.r),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 18.sp,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              Flexible(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      _buildFAQItem(
+                        title: 'How do I fund my wallet via Bank Transfer?',
+                        content:
+                            'Copy your Bank Transfer Funding account details (the green card) and make a transfer from any banking app. The funds will reflect in your BIA wallet instantly.',
+                      ),
+                      _buildFAQItem(
+                        title: 'Why is Card/Account top-up disabled?',
+                        content:
+                            'We are currently upgrading our payment gateway interfaces to support more local cards. Card/Account deposits will be enabled shortly.',
+                      ),
+                      _buildFAQItem(
+                        title: 'Are there any fees for funding my account?',
+                        content:
+                            'BIA does not charge any deposit fees for bank transfers or standard wallet deposits. However, your sending bank may apply standard network charges.',
+                      ),
+                      _buildFAQItem(
+                        title: 'What is a Virtual Funding Account (VC)?',
+                        content:
+                            'A Virtual Account is a dedicated bank account number mapped directly to your BIA wallet. Any transfer sent to this account is instantly credited to your balance.',
+                      ),
+                      _buildFAQItem(
+                        title:
+                            'What should I do if my transfer hasn\'t reflected?',
+                        content:
+                            'Bank transfers are usually instant. If you experience delays, please wait 10-15 minutes. If it still hasn\'t reflected, please contact our support with the transaction receipt.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFAQItem({required String title, required String content}) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: EdgeInsets.only(bottom: 12.h),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1E293B),
+          ),
+        ),
+        iconColor: primaryColor,
+        collapsedIconColor: Colors.grey,
+        children: [
+          Text(
+            content,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.grey.shade600,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,9 +177,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
           Padding(
             padding: EdgeInsets.only(right: 16.w),
             child: TextButton(
-              onPressed: () {
-                // Handle FAQ
-              },
+              onPressed: () => _showFAQBottomSheet(context),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: Size.zero,
@@ -109,7 +239,9 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                     }
 
                     bool isComingSoon =
-                        tx.name.contains("Cash") || tx.name.contains("USSD");
+                        tx.name.contains("Cash") ||
+                        tx.name.contains("USSD") ||
+                        tx.name.contains("Card/Account");
 
                     return Padding(
                       padding: EdgeInsets.only(bottom: 12.h),
@@ -238,167 +370,448 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
 class ModernBankDetailsCard extends ConsumerWidget {
   const ModernBankDetailsCard({super.key});
 
+  String _cleanPhone(String phone) {
+    String cleaned = phone.trim().replaceAll('+', '');
+    if (cleaned.startsWith('234')) {
+      cleaned = cleaned.substring(3);
+    }
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    return cleaned;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryColor, primaryColor.withOpacity(0.75)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24.r),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+    final userProfile = ref.watch(userProfileProvider);
+    final accountAsync = ref.watch(virtualAccountProvider);
+    final box = Hive.box('authBox');
+
+    final String rawPhone =
+        userProfile?.phone ?? box.get('phone', defaultValue: '').toString();
+    final String biaPhone = _cleanPhone(rawPhone);
+    final String biaTag =
+        userProfile?.tag ?? box.get('tag', defaultValue: '').toString();
+    final String biaName =
+        userProfile?.fullname ??
+        box.get('fullname', defaultValue: 'Bia User').toString();
+
+    final vc = accountAsync.value;
+
+    return Column(
+      children: [
+        // 💳 Card 1: BIA WALLET CARD
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6.r),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.wallet_rounded,
+                          color: primaryColor,
+                          size: 14.sp,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'BIA WALLET',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (biaTag.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: '@$biaTag'));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Tag @$biaTag copied!'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(
+                            color: primaryColor.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '@$biaTag',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.copy_rounded,
+                              color: Colors.white.withOpacity(0.8),
+                              size: 10.sp,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: 20.h),
               Text(
                 'Account Number',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 14.sp,
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
-                    width: 1,
+              SizedBox(height: 4.h),
+              Row(
+                children: [
+                  Text(
+                    biaPhone.isEmpty ? 'No Account' : biaPhone,
+                    style: TextStyle(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (biaPhone.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: biaPhone));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Bia Account Number copied!'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.copy_rounded,
+                          color: Colors.white,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                biaName,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.white.withOpacity(0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // 💳 Card 2: VIRTUAL BANK DEPOSIT CARD
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0F766E), Color(0xFF115E59)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: Colors.teal.withOpacity(0.25), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6.r),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.account_balance_rounded,
+                          color: Colors.white,
+                          size: 14.sp,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        'BANK TRANSFER DEPOSIT',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (vc != null)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        vc.provider,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                'Funding Account Number',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              if (accountAsync.isLoading)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+              else if (vc == null)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6.h),
+                  child: Text(
+                    'No virtual bank account available',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.white.withOpacity(0.6),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Text(
+                      vc.virtualAccountNo,
+                      style: TextStyle(
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(
+                          ClipboardData(text: vc.virtualAccountNo),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '${vc.provider} account number copied!',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.copy_rounded,
+                          color: Colors.white,
+                          size: 16.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              SizedBox(height: 12.h),
+              Text(
+                vc?.virtualAccountName ?? biaName,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.white.withOpacity(0.8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: 24.h),
+
+        // Action Buttons Row
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  final details = vc != null
+                      ? 'My Bia Account details:\n- Bia Account / Phone: $biaPhone\n- Bia Tag: @$biaTag\n- VC Bank: ${vc.provider}\n- VC Account No: ${vc.virtualAccountNo}\n- VC Account Name: ${vc.virtualAccountName}'
+                      : 'My Bia Account details:\n- Bia Account / Phone: $biaPhone\n- Bia Tag: @$biaTag';
+                  Share.share(details);
+                },
+                icon: Icon(
+                  Icons.share_rounded,
+                  size: 16.sp,
+                  color: primaryColor,
+                ),
+                label: Text(
+                  'Share Details',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                child: Text(
-                  'Bia',
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    side: BorderSide(
+                      color: primaryColor.withOpacity(0.15),
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  UPopup.show(
+                    context,
+                    type: UPopupType.info,
+                    title: "Coming Soon",
+                    message:
+                        "Card funding is currently unavailable and will be active shortly!",
+                    confirmLabel: "OK",
+                  );
+                },
+                icon: Icon(
+                  Icons.lock_clock_rounded,
+                  size: 16.sp,
+                  color: Colors.white70,
+                ),
+                label: Text(
+                  'Coming Soon',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.white70,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              Text(
-                '8037386998',
-                style: TextStyle(
-                  fontSize: 32.sp,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 2,
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () {
-                  Clipboard.setData(const ClipboardData(text: '8037386998'));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Account number copied!'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: primaryColor,
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.copy_rounded,
-                    color: Colors.white,
-                    size: 20.sp,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade700,
+                  elevation: 0,
+                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: 24.h),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Share.share(
-                      'My  Account Number is 8037386998 - Bia',
-                    );
-                  },
-                  icon: Icon(
-                    Icons.share_rounded,
-                    size: 18.sp,
-                    color: primaryColor,
-                  ),
-                  label: Text(
-                    'Share Details',
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(vertical: 14.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    context.pushNamed(RouteList.depositScreen);
-                  },
-                  icon: Icon(
-                    Icons.add_rounded,
-                    size: 20.sp,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    'Fund with Card',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.15),
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(vertical: 14.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                      side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -467,8 +880,8 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
           res.responseSuccessful &&
           res.data != null &&
           (res.data!.status.toLowerCase() == "success" ||
-           res.data!.status.toLowerCase() == "successful" ||
-           res.data!.description.toLowerCase() == "successful")) {
+              res.data!.status.toLowerCase() == "successful" ||
+              res.data!.description.toLowerCase() == "successful")) {
         if (!mounted) return;
 
         Navigator.pop(context, {

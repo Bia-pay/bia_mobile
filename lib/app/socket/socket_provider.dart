@@ -16,6 +16,7 @@ import '../utils/colors.dart';
 import '../utils/widgets/toast_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
+import '../../core/utils/app_logger.dart';
 
 // Socket connection state
 enum SocketState { idle, connecting, connected, disconnected, error }
@@ -42,13 +43,13 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Don't connect if already connecting or connected
     if (state == SocketState.connecting || (state == SocketState.connected && _socket?.connected == true)) {
-      print('⚠️ Socket already ${state.name}');
+      AppLogger.debug('⚠️ Socket already ${state.name}');
       return;
     }
 
     try {
       state = SocketState.connecting;
-      print('🔌 Attempting Socket.IO connection...');
+      AppLogger.debug('🔌 Attempting Socket.IO connection...');
 
       // Get user info from Hive
       final authBox = await Hive.openBox('authBox');
@@ -60,19 +61,18 @@ class SocketNotifier extends StateNotifier<SocketState> {
       
       // Fallback to SecureStorage (New flow)
       if (_token == null || _token!.isEmpty) {
-        print('🔍 Hive token empty, checking SecureStorage for userId: $userId');
         const storage = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
         _token = await storage.read(key: 'access_token_$userId');
       }
 
       if (_token == null || _token!.isEmpty) {
-        print('⚠️ No access token found in Hive or SecureStorage. Socket.IO cannot connect');
+        AppLogger.debug('⚠️ No access token found. Socket.IO cannot connect');
         state = SocketState.idle;
         return;
       }
 
       if (this.fcmToken == null || this.fcmToken!.isEmpty) {
-        print('⚠️ No FCM token found. Socket.IO will connect but registration might fail');
+        AppLogger.debug('⚠️ No FCM token found. Socket.IO will connect but registration might fail');
       }
 
       // Build Socket.IO URL - Use wsUrl if available, else baseUrl
@@ -83,11 +83,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
         socketUrl = socketUrl.substring(0, socketUrl.length - 1);
       }
 
-      print('🔌 Connecting to: $socketUrl');
-      if (_token != null && _token!.length > 10) {
-        print('🔑 Token found (starts with: ${_token!.substring(0, 10)}...)');
-      }
-      print('🔥 FCM TOKEN: $fcmToken');
+      AppLogger.debug('🔌 Connecting to Socket server...');
 
       // Disconnect existing socket if any
       await _disconnect();
@@ -122,8 +118,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
       _socket!.connect();
 
     } catch (e, stackTrace) {
-      print('❌ Socket.IO connection failed: $e');
-      print('Stack trace: $stackTrace');
+      AppLogger.debug('❌ Socket.IO connection failed: $e');
       state = SocketState.error;
       _handleDisconnection();
     }
@@ -134,9 +129,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Connection successful
     _socket!.onConnect((data) {
-      print('✅ Socket.IO connected successfully');
-      print('📡 Socket ID: ${_socket?.id}');
-      print('🔗 Connect response data: $data');
+      AppLogger.debug('✅ Socket.IO connected successfully');
       state = SocketState.connected;
       _reconnectAttempts = 0;
 
@@ -151,16 +144,14 @@ class SocketNotifier extends StateNotifier<SocketState> {
         'userId': userId,
         'platform': Platform.isAndroid ? 'android' : 'ios',
       };
-      print('📤 Emitting registerFcmToken with payload: $payload');
       _socket!.emitWithAck('registerFcmToken', payload, ack: (ackData) {
-        print('🎉 registerFcmToken ACK received from server: $ackData');
+        AppLogger.debug('🎉 registerFcmToken ACK received from server');
       });
     });
 
     // Connection error
     _socket!.onConnectError((error) {
-      print('❌ Socket.IO connection error: $error');
-      print('🔍 Error type: ${error.runtimeType}');
+      AppLogger.debug('❌ Socket.IO connection error');
       state = SocketState.error;
       _handleDisconnection();
     });
