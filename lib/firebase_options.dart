@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '411607502572',
     projectId: 'biapay-13ef3',
     storageBucket: 'biapay-13ef3.firebasestorage.app',
-    iosBundleId: 'com.biapay.app',
+    iosBundleId: 'com.bianig.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '411607502572',
     projectId: 'biapay-13ef3',
     storageBucket: 'biapay-13ef3.firebasestorage.app',
-    iosBundleId: 'com.biapay.app',
+    iosBundleId: 'com.bianig.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
