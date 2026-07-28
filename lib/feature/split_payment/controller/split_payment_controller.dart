@@ -5,6 +5,7 @@ import '../../../app/socket/socket_provider.dart';
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 import '../../../core/easy_loading_config.dart';
+import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../model/split_models.dart';
 import '../repository/split_payment_repository.dart';
 
@@ -107,8 +108,9 @@ final splitCreatorProvider =
 // ── PARTICIPANT SCAN NOTIFIER ────────────────────────────────────────────────
 class ScanSplitNotifier extends StateNotifier<AsyncValue<ScanSplitResponse?>> {
   final SplitPaymentRepository _repo;
+  final Ref _ref;
 
-  ScanSplitNotifier(this._repo) : super(const AsyncValue.data(null));
+  ScanSplitNotifier(this._repo, this._ref) : super(const AsyncValue.data(null));
 
   Future<ScanSplitResponse?> loadScanDetails({
     required BuildContext context,
@@ -155,6 +157,7 @@ class ScanSplitNotifier extends StateNotifier<AsyncValue<ScanSplitResponse?>> {
       LoadingHelper.dismiss();
 
       if (response != null) {
+        _ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
         if (context.mounted) {
           ToastHelper.showToast(
             context: context,
@@ -199,7 +202,7 @@ final scanSplitProvider =
       ref,
     ) {
       final repo = ref.watch(splitPaymentRepositoryProvider);
-      return ScanSplitNotifier(repo);
+      return ScanSplitNotifier(repo, ref);
     });
 
 // ── CREATOR DETAILS & DASHBOARD NOTIFIER ──────────────────────────────────────

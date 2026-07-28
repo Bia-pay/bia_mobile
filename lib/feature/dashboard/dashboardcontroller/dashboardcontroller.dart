@@ -105,6 +105,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
       LoadingHelper.dismiss();
 
+      if (response.responseSuccessful) {
+        await loadWalletBalance();
+      }
+
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
@@ -576,6 +580,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
     // final result = await repo.verifyPayment(reference);
 
     if (result != null && result.responseSuccessful) {
+      await loadWalletBalance();
       return result;
     } else {
       return null;
@@ -870,6 +875,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
       LoadingHelper.dismiss();
 
+      if (response.responseSuccessful) {
+        await loadWalletBalance();
+      }
+
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
@@ -1127,6 +1136,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
       LoadingHelper.dismiss();
 
+      if (response.responseSuccessful) {
+        await loadWalletBalance();
+      }
+
       debugPrint("📡 Airtime Controller Response: ${response.responseMessage}");
 
       return response;
@@ -1222,6 +1235,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       );
 
       LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        await loadWalletBalance();
+      }
 
       debugPrint("📡 Data Controller Response: ${response.responseMessage}");
 
@@ -1368,6 +1385,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
       LoadingHelper.dismiss();
 
+      if (response.responseSuccessful) {
+        await loadWalletBalance();
+      }
+
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,
@@ -1394,7 +1415,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required String pin,
       }) async {
     final repo = dashboardRepository;
-    return await repo.purchaseElectricity(
+    final response = await repo.purchaseElectricity(
       serviceId: serviceId,
       meterNumber: meterNumber,
       variationCode: variationCode,
@@ -1402,6 +1423,10 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       phone: phone,
       pin: pin,
     );
+    if (response.responseSuccessful) {
+      await loadWalletBalance();
+    }
+    return response;
   }
 
 // Future<List<DataPlanModel>> fetchDataPlans(

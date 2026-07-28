@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 import '../../dashboard/dashboard_repo/repo.dart';
+import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 
 final qrPaymentControllerProvider = StateNotifierProvider.autoDispose<QrPaymentController, AsyncValue<void>>((ref) {
   final repo = ref.watch(dashboardRepositoryProvider);
-  return QrPaymentController(repo);
+  return QrPaymentController(repo, ref);
 });
 
 class QrPaymentController extends StateNotifier<AsyncValue<void>> {
   final DashboardRepository repository;
+  final Ref ref;
 
-  QrPaymentController(this.repository) : super(const AsyncData(null));
+  QrPaymentController(this.repository, this.ref) : super(const AsyncData(null));
 
   Future<ResponseModel?> initiateQrPayment({
     required BuildContext context,
@@ -85,6 +87,7 @@ class QrPaymentController extends StateNotifier<AsyncValue<void>> {
       );
       return null;
     }
+    ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
     return response;
   }
 
@@ -112,6 +115,7 @@ class QrPaymentController extends StateNotifier<AsyncValue<void>> {
       );
       return null;
     }
+    ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
     return response;
   }
 }
