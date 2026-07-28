@@ -853,9 +853,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
             }
             return NavigationDecision.navigate;
           },
-          onPageFinished: (url) {
-            print("🌐 Page finished loading: $url");
-          },
+          onPageFinished: (url) {},
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
@@ -899,13 +897,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage> {
     }
   }
 
-  Future<bool> _onWillPop() async {
-    if (await _controller.canGoBack()) {
-      _controller.goBack();
-      return false;
-    }
-    return true;
-  }
+
 
   void _showDialog(String title, String message) {
     if (!mounted) return;

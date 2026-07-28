@@ -338,6 +338,10 @@ class AppRouter {
             recipientAccount: args['recipientAccount'] ?? '',
             reference: args['reference'] ?? '',
             channel: args['channel'] ?? '',
+            token: args['token'],
+            meterName: args['meterName'],
+            address: args['address'],
+            serviceType: args['serviceType'],
           );
         },
       ),

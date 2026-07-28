@@ -11,12 +11,15 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:hive/hive.dart';
+
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/custom_text_field.dart';
 import '../../../app/utils/widgets/premium_card.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
+import '../../dashboard/dashboardcontroller/provider.dart';
 import '../controller/split_payment_controller.dart';
 import '../model/split_models.dart';
 
@@ -43,6 +46,98 @@ class _SplitCreatorSetupScreenState
   final List<Map<String, dynamic>> _addedParticipants = [];
   bool _isSearching = false;
   CreateSplitResponse? _generatedResponse;
+
+  Future<void> _saveCreatedSplitToCache(CreateSplitResponse response) async {
+    try {
+      final userProfile = ref.read(userProfileProvider);
+      final userId = userProfile?.id?.toString() ?? 'anonymous';
+      final box = Hive.box('appBox');
+      final key = 'created_splits_$userId';
+      
+      final List<dynamic> rawList = box.get(key, defaultValue: []);
+      final List<Map<String, dynamic>> splits = List<Map<String, dynamic>>.from(
+        rawList.map((e) => Map<String, dynamic>.from(e as Map)),
+      );
+
+      final title = _titleController.text.trim().isEmpty 
+          ? "Split Bill" 
+          : _titleController.text.trim();
+
+      // Check if it already exists to avoid duplicates
+      if (!splits.any((element) => element['splitId'] == response.splitId)) {
+        splits.insert(0, {
+          'splitId': response.splitId,
+          'title': title,
+          'totalAmount': response.totalAmount,
+          'createdAt': DateTime.now().toIso8601String(),
+        });
+
+        if (splits.length > 50) {
+          splits.removeRange(50, splits.length);
+        }
+
+        await box.put(key, splits);
+      }
+    } catch (e) {
+      debugPrint("❌ Failed to save split to local cache: $e");
+    }
+  }
+
+  List<Map<String, dynamic>> _getCreatedSplits() {
+    try {
+      final userProfile = ref.read(userProfileProvider);
+      final userId = userProfile?.id?.toString() ?? 'anonymous';
+      final box = Hive.box('appBox');
+      final key = 'created_splits_$userId';
+      final List<dynamic> rawList = box.get(key, defaultValue: []);
+      return List<Map<String, dynamic>>.from(
+        rawList.map((e) => Map<String, dynamic>.from(e as Map)),
+      );
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> _confirmDeleteSplit(String splitId, String title) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Remove from History"),
+        content: Text("Are you sure you want to remove '$title' from your tracking list? This does not cancel the bill, but you will not be able to track it here unless you scan it or get the link."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: errorColor),
+            child: const Text("Remove"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final userProfile = ref.read(userProfileProvider);
+        final userId = userProfile?.id?.toString() ?? 'anonymous';
+        final box = Hive.box('appBox');
+        final key = 'created_splits_$userId';
+        
+        final List<dynamic> rawList = box.get(key, defaultValue: []);
+        final List<Map<String, dynamic>> splits = List<Map<String, dynamic>>.from(
+          rawList.map((e) => Map<String, dynamic>.from(e as Map)),
+        );
+
+        splits.removeWhere((element) => element['splitId'] == splitId);
+        await box.put(key, splits);
+        setState(() {}); // refresh UI
+      } catch (e) {
+        debugPrint("❌ Failed to delete split: $e");
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -223,6 +318,7 @@ class _SplitCreatorSetupScreenState
         );
 
     if (response != null && mounted) {
+      await _saveCreatedSplitToCache(response);
       setState(() {
         _generatedResponse = response;
       });
@@ -280,37 +376,222 @@ class _SplitCreatorSetupScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: offWhiteBackground,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: darkBackground),
-          onPressed: () => context.pop(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: offWhiteBackground,
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: darkBackground),
+            onPressed: () => context.pop(),
+          ),
+          title: Text(
+            _generatedResponse == null ? "Split Bill" : "Create Split Bill",
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: darkBackground,
+            ),
+          ),
+          bottom: _generatedResponse == null
+              ? TabBar(
+                  labelColor: primaryColor,
+                  unselectedLabelColor: lightSecondaryText,
+                  indicatorColor: primaryColor,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13.sp,
+                  ),
+                  tabs: const [
+                    Tab(text: "Create New"),
+                    Tab(text: "Track History"),
+                  ],
+                )
+              : null,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
         ),
-        title: Text(
-          "Create Split Bill",
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: darkBackground,
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: _generatedResponse == null
+                  ? TabBarView(
+                      children: [
+                        _buildSetupForm(theme),
+                        _buildTrackHistoryView(theme),
+                      ],
+                    )
+                  : _buildQrPresenter(theme),
+            ),
           ),
         ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: _generatedResponse == null
-                    ? _buildSetupForm(theme)
-                    : _buildQrPresenter(theme),
+    );
+  }
+
+  Widget _buildTrackHistoryView(ThemeData theme) {
+    final history = _getCreatedSplits();
+
+    if (history.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.r),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20.r),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.splitscreen_rounded,
+                  color: primaryColor,
+                  size: 48.sp,
+                ),
               ),
-            );
-          },
+              SizedBox(height: 16.h),
+              Text(
+                "No Split Bills Found",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: darkBackground,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "Any split bills you create will appear here so you can easily track collections and payments.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: lightSecondaryText,
+                  fontSize: 13.sp,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      );
+    }
+
+    return ListView.separated(
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+      itemCount: history.length,
+      separatorBuilder: (context, index) => SizedBox(height: 12.h),
+      itemBuilder: (context, index) {
+        final item = history[index];
+        final splitId = item['splitId'] ?? '';
+        final title = item['title'] ?? 'Split Bill';
+        final amount = item['totalAmount'] ?? 0.0;
+        final dateStr = item['createdAt'] ?? '';
+        
+        String formattedDate = '';
+        if (dateStr.isNotEmpty) {
+          try {
+            final dt = DateTime.parse(dateStr).toLocal();
+            formattedDate = "${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+          } catch (_) {
+            formattedDate = dateStr;
+          }
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: lightBorderColor.withValues(alpha: 0.5),
+            ),
+          ),
+          child: ListTile(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+            leading: Container(
+              width: 42.r,
+              height: 42.r,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primaryColor.withValues(alpha: 0.1),
+              ),
+              child: const Icon(
+                Icons.call_split_rounded,
+                color: primaryColor,
+              ),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14.sp,
+                color: darkBackground,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 4.h),
+                Text(
+                  "ID: $splitId",
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: lightSecondaryText,
+                  ),
+                ),
+                if (formattedDate.isNotEmpty) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: lightSecondaryText.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "₦${amount.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.sp,
+                        color: darkBackground,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      "Track Details",
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 8.w),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: errorColor, size: 20),
+                  onPressed: () => _confirmDeleteSplit(splitId, title),
+                ),
+              ],
+            ),
+            onTap: () {
+              context.pushNamed(
+                RouteList.splitCreatorDashboard,
+                pathParameters: {'splitId': splitId},
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

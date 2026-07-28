@@ -198,6 +198,21 @@ Future<void> _initSecondaryServices(Box authBox) async {
       sound: true,
     );
 
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // APNS token check on iOS to avoid apns-token-not-set exception
+    if (Platform.isIOS) {
+      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      if (apnsToken == null) {
+        debugPrint("⚠️ APNS token not ready yet on iOS. Skipping immediate FCM token fetch.");
+        return;
+      }
+    }
+
     final fcmToken = await FirebaseMessaging.instance.getToken();
     if (fcmToken != null) {
       await authBox.put('fcmToken', fcmToken);

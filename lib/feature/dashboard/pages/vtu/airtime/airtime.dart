@@ -240,6 +240,16 @@ class _CardTwoState extends ConsumerState<CardTwo> {
   @override
   void initState() {
     super.initState();
+    final authBox = Hive.box('authBox');
+    var userPhone = (authBox.get('phone', defaultValue: '') as String).replaceAll(RegExp(r'\D'), '');
+    if (userPhone.startsWith('234') && userPhone.length > 3) {
+      userPhone = '0${userPhone.substring(3)}';
+    }
+    _phoneController.text = userPhone;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _detectNetwork(userPhone);
+      ref.read(airtimeFormProvider.notifier).setPhoneNumber(userPhone);
+    });
   }
 
   @override

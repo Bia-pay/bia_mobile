@@ -93,9 +93,6 @@ class _TopUpAmountPageState extends ConsumerState<TopUpAmountPage> {
       final url = response.data!.authorizationUrl;
       final reference = response.data!.reference;
 
-      print('Send Money PayStack URL: $url');
-      print('Send Money PayStack REFERENCE: $reference');
-
       if (!mounted) return;
 
       // Navigate to WebView for payment and await the success screen argument map
@@ -269,9 +266,7 @@ class _PaymentWebViewPageState extends ConsumerState<PaymentWebViewPage>
             }
             return NavigationDecision.navigate;
           },
-          onPageFinished: (url) {
-            print("🌐 Page finished loading: $url");
-          },
+          onPageFinished: (url) {},
         ),
       )
       ..loadRequest(Uri.parse(widget.url));

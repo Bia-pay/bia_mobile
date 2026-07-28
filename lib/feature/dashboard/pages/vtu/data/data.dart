@@ -75,8 +75,17 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    // Trigger provider init
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPlans());
+    final authBox = Hive.box('authBox');
+    var userPhone = (authBox.get('phone', defaultValue: '') as String).replaceAll(RegExp(r'\D'), '');
+    if (userPhone.startsWith('234') && userPhone.length > 3) {
+      userPhone = '0${userPhone.substring(3)}';
+    }
+    _phoneController.text = userPhone;
+    _phoneNumber = userPhone;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _detectNetwork(userPhone);
+      _loadPlans();
+    });
   }
 
   @override

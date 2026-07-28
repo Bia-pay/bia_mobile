@@ -41,35 +41,45 @@ class SocketNotifier extends StateNotifier<SocketState> {
     // Cancel any pending reconnect
     _reconnectTimer?.cancel();
 
-    // Don't connect if already connecting or connected
-    if (state == SocketState.connecting || (state == SocketState.connected && _socket?.connected == true)) {
-      AppLogger.debug('⚠️ Socket already ${state.name}');
-      return;
-    }
-
     try {
-      state = SocketState.connecting;
-      AppLogger.debug('🔌 Attempting Socket.IO connection...');
-
-      // Get user info from Hive
+      // Get user info from Hive and check the fresh token
       final authBox = await Hive.openBox('authBox');
       final userId = authBox.get('userId', defaultValue: '');
-      this.fcmToken = authBox.get('fcmToken');
       
       // Try Hive first (legacy)
-      _token = authBox.get('token');
+      String? freshToken = authBox.get('token');
       
       // Fallback to SecureStorage (New flow)
-      if (_token == null || _token!.isEmpty) {
+      if (freshToken == null || freshToken.isEmpty) {
         const storage = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
-        _token = await storage.read(key: 'access_token_$userId');
+        freshToken = await storage.read(key: 'access_token_$userId');
       }
 
-      if (_token == null || _token!.isEmpty) {
+      if (freshToken == null || freshToken.isEmpty) {
         AppLogger.debug('⚠️ No access token found. Socket.IO cannot connect');
         state = SocketState.idle;
         return;
       }
+
+      // If the token has changed, we must disconnect the old socket and establish a new one
+      final bool tokenChanged = _token != freshToken;
+
+      if (!tokenChanged && (state == SocketState.connecting || (state == SocketState.connected && _socket?.connected == true))) {
+        AppLogger.debug('⚠️ Socket already ${state.name} with same token');
+        return;
+      }
+
+      // If token changed and we are already active, disconnect first to reconnect with new credentials
+      if (tokenChanged && _socket != null) {
+        AppLogger.debug('🔄 Access token changed. Forcing Socket.IO disconnect & reconnect...');
+        await _disconnect();
+      }
+
+      _token = freshToken;
+      this.fcmToken = authBox.get('fcmToken');
+
+      state = SocketState.connecting;
+      AppLogger.debug('🔌 Attempting Socket.IO connection...');
 
       if (this.fcmToken == null || this.fcmToken!.isEmpty) {
         AppLogger.debug('⚠️ No FCM token found. Socket.IO will connect but registration might fail');
@@ -117,7 +127,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
       // Connect the socket
       _socket!.connect();
 
-    } catch (e, stackTrace) {
+    } catch (e) {
       AppLogger.debug('❌ Socket.IO connection failed: $e');
       state = SocketState.error;
       _handleDisconnection();
@@ -158,37 +168,37 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Raw connect response (catches all data on first connect)
     _socket!.on('connect', (data) {
-      print('📨 Raw connect event data: $data');
+      AppLogger.debug('📨 Raw connect event received');
     });
 
     // Ping / pong for latency debugging
-    _socket!.on('ping', (_) => print('🏓 Ping sent to server'));
-    _socket!.on('pong', (latency) => print('🏓 Pong received, latency: ${latency}ms'));
+    _socket!.on('ping', (_) => AppLogger.debug('🏓 Ping sent to server'));
+    _socket!.on('pong', (latency) => AppLogger.debug('🏓 Pong received, latency: ${latency}ms'));
 
     // Disconnection
     _socket!.onDisconnect((reason) {
-      print('🔌 Socket.IO disconnected: $reason');
+      AppLogger.debug('🔌 Socket.IO disconnected: $reason');
       state = SocketState.disconnected;
 
       // Handle different disconnect reasons
       switch (reason) {
         case 'io client disconnect':
-          print('📱 Manual disconnect - not reconnecting');
+          AppLogger.debug('📱 Manual disconnect - not reconnecting');
           break;
         case 'transport close':
-          print('🚫 Transport closed - will attempt reconnection');
+          AppLogger.debug('🚫 Transport closed - will attempt reconnection');
           _handleDisconnection();
           break;
         case 'transport error':
-          print('❌ Transport error - will attempt reconnection');
+          AppLogger.debug('❌ Transport error - will attempt reconnection');
           _handleDisconnection();
           break;
         case 'ping timeout':
-          print('⏰ Ping timeout - will attempt reconnection');
+          AppLogger.debug('⏰ Ping timeout - will attempt reconnection');
           _handleDisconnection();
           break;
         default:
-          print('🔄 Unexpected disconnect ($reason) - will attempt reconnection');
+          AppLogger.debug('🔄 Unexpected disconnect ($reason) - will attempt reconnection');
           _handleDisconnection();
           break;
       }
@@ -196,44 +206,35 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Authentication response
     _socket!.on('authenticated', (data) {
-      print('====== SOCKET AUTHENTICATED ======');
-      print('🔐 Auth data: $data');
-      print('==================================');
+      AppLogger.debug('====== SOCKET AUTHENTICATED ======');
     });
 
     // Authentication error
     _socket!.on('auth_error', (error) {
-      print('====== SOCKET AUTH ERROR ======');
-      print('❌ Auth error: $error');
-      print('===============================');
+      AppLogger.error('SOCKET AUTH ERROR: $error');
       state = SocketState.error;
     });
 
     // Generic message handler
     _socket!.on('message', (data) {
-      print('📥 Socket.IO message: $data');
-      print('   Type: ${data.runtimeType}');
+      AppLogger.debug('📥 Socket.IO message received');
     });
 
     // Transaction updates
     _socket!.on('transaction_update', (data) {
-      print('====== TRANSACTION UPDATE ======');
-      print('💰 Data: $data');
-      print('================================');
+      AppLogger.debug('====== TRANSACTION UPDATE RECEIVED ======');
       _refetchAllData();
     });
 
     // Transaction success (specific event requested by user)
     _socket!.on('transaction_success', (data) {
-      print('🎯 Transaction success event received, refetching all data...');
+      AppLogger.debug('🎯 Transaction success event received, refetching all data...');
       _refetchAllData();
     });
 
     // Balance updates
     _socket!.on('balance_update', (data) {
-      print('====== BALANCE UPDATE ======');
-      print('💳 Data: $data');
-      print('============================');
+      AppLogger.debug('====== BALANCE UPDATE RECEIVED ======');
       _ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
     });
 
@@ -241,7 +242,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
     final userId = _ref.read(userIdProvider);
     if (userId.isNotEmpty) {
       _socket!.on('wallet:update:$userId', (data) {
-        print('💳 Wallet update received for user $userId: $data');
+        AppLogger.debug('💳 Wallet update received for user $userId');
         _ref.read(dashboardControllerProvider.notifier).loadWalletBalance();
         _refetchAllData(); // Refresh history too as balance changed
       });
@@ -249,16 +250,12 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Notification updates
     _socket!.on('notification', (data) {
-      print('====== NOTIFICATION ======');
-      print('🔔 Data: $data');
-      print('==========================');
+      AppLogger.debug('====== NOTIFICATION RECEIVED ======');
     });
 
     // Support notifications
     _socket!.on('user_support_notification', (data) {
-      print('====== USER SUPPORT NOTIFICATION ======');
-      print('🔔 Data: $data');
-      print('=======================================');
+      AppLogger.debug('====== USER SUPPORT NOTIFICATION ======');
       try {
         _ref.read(supportTicketsProvider.notifier).fetchTickets();
       } catch (_) {}
@@ -275,8 +272,8 @@ class SocketNotifier extends StateNotifier<SocketState> {
             final messageMap = Map<String, dynamic>.from(data['message'] as Map);
             _ref.read(ticketDetailsProvider(ticketId).notifier).handleIncomingMessage(messageMap);
           }
-        } catch (e) {
-          print('❌ Error updating active ticket details from notification: $e');
+        } catch (e, stackTrace) {
+          AppLogger.error('Error updating active ticket details from notification', e, stackTrace);
         }
         return;
       }
@@ -299,9 +296,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
 
     // Real-time support messages inside active ticket chat room
     _socket!.on('new_support_message', (data) {
-      print('====== NEW SUPPORT MESSAGE ======');
-      print('💬 Data: $data');
-      print('=================================');
+      AppLogger.debug('====== NEW SUPPORT MESSAGE ======');
       try {
         if (data is Map) {
           final Map<String, dynamic> messageMap = (data.containsKey('message') && data['message'] is Map)
@@ -314,65 +309,63 @@ class SocketNotifier extends StateNotifier<SocketState> {
             _ref.read(ticketDetailsProvider(ticketId).notifier).handleIncomingMessage(messageMap);
           }
         }
-      } catch (e) {
-        print('❌ Error handling new_support_message socket event: $e');
+      } catch (e, stackTrace) {
+        AppLogger.error('Error handling new_support_message socket event', e, stackTrace);
       }
     });
 
     // Real-time support ticket resolution event
     _socket!.on('ticket_resolved', (data) {
-      print('====== TICKET RESOLVED ======');
-      print('✅ Data: $data');
-      print('=============================');
+      AppLogger.debug('====== TICKET RESOLVED ======');
       try {
         final ticketId = data is Map ? (data['id'] as num?)?.toInt() : null;
         final activeTicketId = _ref.read(activeTicketIdProvider);
         if (ticketId != null && activeTicketId == ticketId) {
           _ref.read(ticketDetailsProvider(ticketId).notifier).handleTicketResolved(data);
         }
-      } catch (e) {
-        print('❌ Error handling ticket_resolved socket event: $e');
+      } catch (e, stackTrace) {
+        AppLogger.error('Error handling ticket_resolved socket event', e, stackTrace);
       }
     });
 
     // Service status updates
     _socket!.on('service_status_changed', (data) {
-      print('📡 Socket.IO service_status_changed event received: $data');
+      AppLogger.debug('📡 Socket.IO service_status_changed event received');
       try {
         if (data != null) {
           final updatedStatus = ServicesStatus.fromJson(Map<String, dynamic>.from(data as Map));
           _ref.read(servicesStatusProvider.notifier).updateStatus(updatedStatus);
         }
-      } catch (e) {
-        print('❌ Error parsing service_status_changed socket data: $e');
+      } catch (e, stackTrace) {
+        AppLogger.error('Error parsing service_status_changed socket data', e, stackTrace);
       }
     });
 
     // Catch-all for any other events
     _socket!.onAny((event, data) {
-      print('📡 [ANY EVENT] Event: "$event" | Data: $data');
+      AppLogger.debug('📡 [ANY EVENT] Event: "$event"');
     });
 
     // Reconnection attempt
     _socket!.onReconnectAttempt((attemptNumber) {
-      print('🔄 Socket.IO reconnection attempt: $attemptNumber');
+      AppLogger.debug('🔄 Socket.IO reconnection attempt: $attemptNumber');
     });
 
     // Reconnection successful
     _socket!.onReconnect((attemptNumber) {
-      print('✅ Socket.IO reconnected after $attemptNumber attempts');
+      AppLogger.debug('✅ Socket.IO reconnected after $attemptNumber attempts');
       state = SocketState.connected;
       _reconnectAttempts = 0;
     });
 
     // Reconnection error
     _socket!.onReconnectError((error) {
-      print('❌ Socket.IO reconnection error: $error');
+      AppLogger.error('Socket.IO reconnection error', error);
     });
 
     // Reconnection failed
     _socket!.onReconnectFailed((_) {
-      print('❌ Socket.IO reconnection failed');
+      AppLogger.error('Socket.IO reconnection failed');
       state = SocketState.error;
     });
   }
@@ -381,8 +374,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
     if (!_shouldReconnect) return;
 
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      print('❌ Max reconnection attempts reached. Stopping reconnection.');
-      print('💡 Tip: Check if backend Socket.IO server is running');
+      AppLogger.error('Max reconnection attempts reached. Stopping reconnection.');
       state = SocketState.error;
       return;
     }
@@ -392,12 +384,12 @@ class SocketNotifier extends StateNotifier<SocketState> {
     // Exponential backoff: 5s, 10s, 15s, 20s, 25s
     final delay = Duration(seconds: 5 * _reconnectAttempts);
 
-    print('🔄 Scheduling reconnection attempt $_reconnectAttempts/$_maxReconnectAttempts in ${delay.inSeconds}s...');
+    AppLogger.debug('🔄 Scheduling reconnection attempt $_reconnectAttempts/$_maxReconnectAttempts in ${delay.inSeconds}s...');
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () {
       if (_shouldReconnect && state != SocketState.connected) {
-        print('🔄 Reconnecting... (attempt $_reconnectAttempts/$_maxReconnectAttempts)');
+        AppLogger.debug('🔄 Reconnecting... (attempt $_reconnectAttempts/$_maxReconnectAttempts)');
         connect();
       }
     });
@@ -408,13 +400,13 @@ class SocketNotifier extends StateNotifier<SocketState> {
       _socket?.disconnect();
       _socket?.dispose();
       _socket = null;
-    } catch (e) {
-      print('⚠️ Error disconnecting socket: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error disconnecting socket', e, stackTrace);
     }
   }
 
   void disconnect() {
-    print('🔌 Manually disconnecting Socket.IO');
+    AppLogger.debug('Manually disconnecting Socket.IO');
     _shouldReconnect = false;
     _reconnectTimer?.cancel();
     _disconnect();
@@ -422,7 +414,7 @@ class SocketNotifier extends StateNotifier<SocketState> {
   }
 
   void reconnect() {
-    print('🔄 Manual reconnection requested');
+    AppLogger.debug('🔄 Manual reconnection requested');
     _reconnectAttempts = 0;
     _shouldReconnect = true;
     connect();
@@ -432,9 +424,9 @@ class SocketNotifier extends StateNotifier<SocketState> {
   void emit(String event, dynamic data) {
     if (_socket?.connected == true) {
       _socket!.emit(event, data);
-      print('📤 Sent $event: $data');
+      AppLogger.debug('📤 Sent event: $event');
     } else {
-      print('⚠️ Cannot send $event - socket not connected');
+      AppLogger.debug('⚠️ Cannot send $event - socket not connected');
     }
   }
 
@@ -467,9 +459,9 @@ class SocketNotifier extends StateNotifier<SocketState> {
         // 3. Refetch Notifications
         _ref.read(notificationNotifierProvider.notifier).refresh();
         
-        print('✅ All data refetched successfully via Socket event (debounced)');
-      } catch (e) {
-        print('❌ Error refetching data: $e');
+        AppLogger.debug('All data refetched successfully via Socket event (debounced)');
+      } catch (e, stackTrace) {
+        AppLogger.error('Error refetching data', e, stackTrace);
       }
     });
   }

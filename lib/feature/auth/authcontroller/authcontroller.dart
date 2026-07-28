@@ -8,21 +8,20 @@ import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
 import 'package:hive/hive.dart';
 import 'package:bia/core/services/secure_storage_service.dart';
 import '../../../app/utils/colors.dart';
-import '../../../app/utils/custom_loader.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
 import '../../../core/easy_loading_config.dart';
 import '../../../core/local/transaction_cache.dart';
-import '../../../core/services/biometric_service.dart';
 import '../interceptor/interceptor.dart';
 import '../authrepo/repo.dart';
 import '../modal/reponse/response_modal.dart';
-import '../../dashboard/model/recent_transaction.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/dashboardcontroller/provider.dart';
 import '../../dashboard/dashboardcontroller/qr_onboarding_provider.dart';
 import '../../../app/socket/socket_provider.dart';
 import '../../ai_chat/controller/ai_chat_controller.dart';
+
+import '../../../core/utils/app_logger.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<bool>>((ref) {
@@ -77,15 +76,7 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
 
       final response = await authRepository.logIn(body);
 
-      // Print login response for debugging
-      debugPrint('====== LOGIN RESPONSE ======');
-      debugPrint('Status Code: ${response.statusCode}');
-      debugPrint('Message: ${response.responseMessage}');
-      debugPrint('Successful: ${response.responseSuccessful}');
-      if (response.responseBody != null) {
-        debugPrint('Body: ${response.responseBody?.toJson()}');
-      }
-      debugPrint('============================');
+      AppLogger.debug('Login response status: ${response.statusCode}');
 
       // Store the response
       _lastResponse = response;

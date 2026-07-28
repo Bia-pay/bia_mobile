@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../auth/data/api_constant.dart';
 import '../../auth/data/api_data.dart';
 import '../../auth/modal/reponse/response_modal.dart';
@@ -376,7 +377,7 @@ class DashboardRepository {
   //  Fetch Wallet Balance
   Future<WalletResponse?> getWalletBalance() async {
     try {
-      debugPrint('🔑 Access Token: ${_apiClient.token}');
+      AppLogger.debug('Fetching wallet balance...');
       final response = await _apiClient.getData(ApiConstant.WALLET_BALANCE);
 
       if (response.statusCode == 200) {
@@ -396,8 +397,8 @@ class DashboardRepository {
       }
 
       return null;
-    } catch (e) {
-      print('Error fetching wallet balance: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error fetching wallet balance', e, stackTrace);
       return null;
     }
   }
@@ -406,7 +407,7 @@ class DashboardRepository {
   Future<TransactionResponse> getRecentTransactions() async {
     try {
       final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=1&limit=2");
-      debugPrint('RAW RECENT TRANSACTIONS RESPONSE: ${response.body}');
+      AppLogger.debug('Raw recent transactions fetched successfully');
       final jsonResponse = jsonDecode(response.body);
 
       final dynamic body = jsonResponse['responseBody'];
@@ -422,19 +423,15 @@ class DashboardRepository {
           .map<TransactionItem>((e) => TransactionItem.fromJson(e))
           .toList();
 
-      for (var tx in parsedTransactions) {
-        debugPrint('🆔 Recent Transaction: ${jsonEncode(tx.toJson())}');
-      }
-
-      debugPrint('✅ Recent transactions fetched: ${parsedTransactions.length} items');
+      AppLogger.debug('✅ Recent transactions fetched: ${parsedTransactions.length} items');
 
       return TransactionResponse(
         responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
         responseMessage: jsonResponse['responseMessage'] ?? '',
         transactions: parsedTransactions,
       );
-    } catch (e) {
-      debugPrint('❌ Error in getRecentTransactions: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in getRecentTransactions', e, stackTrace);
       return TransactionResponse(
         responseSuccessful: false,
         responseMessage: "Error: $e",
@@ -446,7 +443,7 @@ class DashboardRepository {
   Future<TransactionResponse> getTransactions({int page = 1, int limit = 20}) async {
     try {
       final response = await _apiClient.getData("${ApiConstant.TRANSACTION}?page=$page&limit=$limit");
-      debugPrint('RAW ALL TRANSACTIONS RESPONSE: ${response.body}');
+      AppLogger.debug('Raw all transactions fetched successfully');
       final jsonResponse = jsonDecode(response.body);
 
       final dynamic body = jsonResponse['responseBody'];
@@ -462,19 +459,15 @@ class DashboardRepository {
           .map<TransactionItem>((e) => TransactionItem.fromJson(e))
           .toList();
 
-      for (var tx in parsedTransactions) {
-        debugPrint('🆔 Transaction Item: ${jsonEncode(tx.toJson())}');
-      }
-
-      debugPrint('✅ All transactions fetched: ${parsedTransactions.length} items (Page: $page)');
+      AppLogger.debug('✅ All transactions fetched: ${parsedTransactions.length} items (Page: $page)');
 
       return TransactionResponse(
         responseSuccessful: jsonResponse['responseSuccessful'] ?? false,
         responseMessage: jsonResponse['responseMessage'] ?? '',
         transactions: parsedTransactions,
       );
-    } catch (e) {
-      debugPrint('❌ Error in getTransactions: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in getTransactions', e, stackTrace);
       return TransactionResponse(
         responseSuccessful: false,
         responseMessage: "Error: $e",
@@ -654,7 +647,7 @@ class DashboardRepository {
   Future<List<BankModel>> getBanks() async {
     try {
       final response = await _apiClient.getData(ApiConstant.GET_BANKS);
-      debugPrint("🏦 getBanks API Response [${response.statusCode}]: ${response.body}");
+      AppLogger.debug("🏦 getBanks API Response status [${response.statusCode}]");
       final jsonResponse = jsonDecode(response.body);
 
       List<dynamic> banksJson = [];
@@ -681,10 +674,10 @@ class DashboardRepository {
       }
 
       final bankList = banksJson.map((e) => BankModel.fromJson(e as Map<String, dynamic>)).toList();
-      debugPrint("🏦 Parsed ${bankList.length} banks successfully.");
+      AppLogger.debug("🏦 Parsed ${bankList.length} banks successfully.");
       return bankList;
     } catch (e, stack) {
-      debugPrint("❌ Error in getBanks: $e\n$stack");
+      AppLogger.error("Error in getBanks", e, stack);
       return [];
     }
   }

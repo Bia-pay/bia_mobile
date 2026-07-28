@@ -50,7 +50,8 @@ class SplitPaymentRepository {
         return ScanSplitResponse.fromJson(jsonResponse['responseBody']);
       }
       return null;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('❌ scanSplit exception: $e\n$st');
       return null;
     }
   }
@@ -70,7 +71,8 @@ class SplitPaymentRepository {
         return PaySplitResponse.fromJson(jsonResponse['responseBody']);
       }
       return null;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('❌ paySplit exception: $e\n$st');
       return null;
     }
   }
@@ -89,7 +91,8 @@ class SplitPaymentRepository {
         return SplitDetailsResponse.fromJson(jsonResponse['responseBody']);
       }
       return null;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('❌ getSplitDetails exception: $e\n$st');
       return null;
     }
   }

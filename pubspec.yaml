@@ -74,6 +74,8 @@ dependencies:
   confetti: ^0.8.0
   url_launcher: ^6.3.2
   firebase_auth: ^6.5.1
+  upgrader: ^10.3.0
+  in_app_update: ^4.2.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

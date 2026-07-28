@@ -19,7 +19,6 @@ import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboard_repo/repo.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../dashboardcontroller/provider.dart';
-import '../../../model/recent_transaction.dart';
 import '../../../widgets/transaction.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:bia/feature/dashboard/widgets/service_guard.dart';
@@ -777,33 +776,23 @@ class _CardOneState extends State<CardOne> {
 
                                 if (!context.mounted) return;
 
-                                if (response != null && response.responseSuccessful) {
-                                  // Construct a TransactionItem to pass to the details screen
-                                  final transaction = TransactionItem(
-                                    id: response.responseBody?.transactionId ?? 0,
-                                    amount: amount.toDouble(),
-                                    isCredit: false,
-                                    serviceType: 'ELECTRICITY_BILL',
-                                    provider: widget.selectedProvider?['name'],
-                                    status: 'SUCCESSFUL',
-                                    reference: response.responseBody?.reference,
-                                    createdAt: DateTime.now(),
-                                    metadata: {
-                                      'info': {
-                                        'meterNumber': meter,
-                                        'Customer_Name': _customerName,
-                                        'address': _address,
-                                        'token': response.responseBody?.token, // Recharge token
-                                        'provider': widget.selectedProvider?['name'],
-                                      }
-                                    },
-                                  );
-
-                                  context.push(
-                                    RouteList.transactionDetailsScreen,
-                                    extra: transaction,
-                                  );
-                                } else {
+                                  if (response != null && response.responseSuccessful) {
+                                    context.goNamed(
+                                      RouteList.successScreen,
+                                      extra: {
+                                        "type": "success",
+                                        "amount": amount.toString(),
+                                        "recipientName": widget.selectedProvider?['name'] ?? '',
+                                        "recipientAccount": meter,
+                                        "reference": response.responseBody?.reference ?? '',
+                                        "channel": "Electricity",
+                                        "token": response.responseBody?.token ?? '',
+                                        "meterName": _customerName ?? '',
+                                        "address": _address ?? '',
+                                        "serviceType": "ELECTRICITY_BILL",
+                                      },
+                                    );
+                                  } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(response?.responseMessage ?? "Transaction failed"),

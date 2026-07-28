@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/local/transaction_cache.dart';
 import '../dashboard_repo/repo.dart';
 import '../model/deposit.dart';
@@ -59,7 +60,7 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
     if (_initialized) return;
     _initialized = true;
 
-    print('🔄 Initializing transactions for user: $userId');
+    AppLogger.debug('🔄 Initializing transactions for user: $userId');
 
     if (userId.isEmpty) {
       state = const AsyncValue.data([]);
@@ -70,19 +71,19 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
     final cached = await TransactionCache.getTransactions(userId, suffix: 'recent');
 
     if (cached.isNotEmpty) {
-      print('✅ Using RECENT cache with ${cached.length} items');
+      AppLogger.debug('✅ Using RECENT cache with ${cached.length} items');
       state = AsyncValue.data(cached);
       
       // ✅ Check if cached data is still fresh/valid before fetching over the network
       final isValid = await TransactionCache.isCacheValid(userId, suffix: 'recent');
       if (!isValid) {
-        print('🔄 Cache expired, fetching fresh recent transactions in background.');
+        AppLogger.debug('🔄 Cache expired, fetching fresh recent transactions in background.');
         _fetchFresh(silent: true);
       } else {
-        print('⚡ Cache is valid, skipping redundant background fetch.');
+        AppLogger.debug('⚡ Cache is valid, skipping redundant background fetch.');
       }
     } else {
-      print('ℹ️ No recent transactions in cache, triggering initial fetch.');
+      AppLogger.debug('ℹ️ No recent transactions in cache, triggering initial fetch.');
       state = const AsyncValue.loading();
       await _fetchFresh(silent: false);
     }
@@ -122,8 +123,8 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
         // Save to RECENT bucket
         await TransactionCache.saveTransactions(userId, limited, suffix: 'recent');
       }
-    } catch (e) {
-      print('❌ Error fetching recent transactions: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error fetching recent transactions', e, stackTrace);
     } finally {
       if (mounted) _isFetching = false;
     }
@@ -131,13 +132,13 @@ class RecentTransactionsNotifier extends StateNotifier<AsyncValue<List<Transacti
 
   /// Manual refresh (pull-to-refresh)
   Future<void> refresh() async {
-    print('🔄 Manual refresh triggered');
+    AppLogger.debug('🔄 Manual refresh triggered');
     await _fetchFresh(silent: false);
   }
 
   /// Force refresh (clears cache and fetches)
   Future<void> forceRefresh() async {
-    print('🔄 Force refresh triggered');
+    AppLogger.debug('🔄 Force refresh triggered');
     await TransactionCache.clearTransactions(userId, suffix: 'recent');
     state = const AsyncValue.loading();
     await _fetchFresh(silent: false);
@@ -198,7 +199,7 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
         _hasNextPage = true;
         _fetchFresh(silent: true, page: 1); // Background fetch
       } else {
-        print('⚡ Cache is valid, skipping redundant background fetch for history.');
+        AppLogger.debug('⚡ Cache is valid, skipping redundant background fetch for history.');
       }
     } else {
       state = const AsyncValue.loading();
@@ -259,7 +260,7 @@ class AllTransactionsNotifier extends StateNotifier<AsyncValue<List<TransactionI
   }
 
   Future<void> refresh() async {
-    print('🔄 Manual refresh all transactions');
+    AppLogger.debug('🔄 Manual refresh all transactions');
     _currentPage = 1;
     _hasNextPage = true;
     await _fetchFresh(silent: false, page: 1);
@@ -322,15 +323,15 @@ class VirtualAccountNotifier extends StateNotifier<AsyncValue<VirtualAccountMode
             Map<String, dynamic>.from(savedJson as Map),
           );
           state = AsyncValue.data(account);
-          print('⚡ Virtual account loaded from cache for $effectiveUserId: ${account.virtualAccountNo}');
+          AppLogger.debug('⚡ Virtual account loaded from cache for $effectiveUserId: ${account.virtualAccountNo}');
 
           // ── 2. Silently refresh in background ────────────────────────────────
           Future.delayed(Duration.zero, _fetchOrGenerate);
           return;
         }
       }
-    } catch (e) {
-      print('⚠️ Could not read virtual account cache: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Could not read virtual account cache', e, stackTrace);
     }
 
     // ── 3. No cache — fetch/generate immediately ──────────────────────────────
@@ -347,20 +348,20 @@ class VirtualAccountNotifier extends StateNotifier<AsyncValue<VirtualAccountMode
 
       if (existing != null) {
         if (mounted) state = AsyncValue.data(existing);
-        print('✅ Virtual account fetched from API: ${existing.virtualAccountNo}');
+        AppLogger.debug('✅ Virtual account fetched from API: ${existing.virtualAccountNo}');
         return;
       }
 
       // No account found — auto-generate one
-      print('⚙️ No virtual account found, generating one…');
+      AppLogger.debug('⚙️ No virtual account found, generating one…');
       final generated = await _repo.generateVirtualAccount();
 
       if (mounted) state = AsyncValue.data(generated);
       if (generated != null) {
-        print('🎉 Virtual account generated: ${generated.virtualAccountNo}');
+        AppLogger.debug('🎉 Virtual account generated: ${generated.virtualAccountNo}');
       }
     } catch (e, st) {
-      print('❌ VirtualAccountNotifier error: $e');
+      AppLogger.error('VirtualAccountNotifier error', e, st);
       // Keep existing cached data if any, don't override with error
       if (state.value == null && mounted) {
         state = AsyncValue.error(e, st);

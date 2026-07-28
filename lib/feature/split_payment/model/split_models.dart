@@ -47,7 +47,7 @@ class CreateSplitResponse {
     return CreateSplitResponse(
       splitId: json['splitId'] ?? '',
       token: json['token'] ?? '',
-      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
+      totalAmount: double.tryParse(json['totalAmount']?.toString() ?? '') ?? 0.0,
       expiresAt: json['expiresAt'],
       qrPayload: json['qrPayload'],
     );
@@ -79,8 +79,8 @@ class ScanSplitResponse {
       title: json['title'],
       description: json['description'],
       creatorName: json['creatorName'] ?? 'Bia User',
-      assignedAmount: (json['assignedAmount'] as num?)?.toDouble() ?? 0.0,
-      amountPaid: (json['amountPaid'] as num?)?.toDouble() ?? 0.0,
+      assignedAmount: double.tryParse(json['assignedAmount']?.toString() ?? '') ?? 0.0,
+      amountPaid: double.tryParse(json['amountPaid']?.toString() ?? '') ?? 0.0,
       paymentStatus: json['paymentStatus'] ?? 'PENDING',
     );
   }
@@ -102,8 +102,8 @@ class PaySplitResponse {
   factory PaySplitResponse.fromJson(Map<String, dynamic> json) {
     return PaySplitResponse(
       transactionReference: json['transactionReference'] ?? '',
-      amountPaid: (json['amountPaid'] as num?)?.toDouble() ?? 0.0,
-      remainingBalance: (json['remainingBalance'] as num?)?.toDouble() ?? 0.0,
+      amountPaid: double.tryParse(json['amountPaid']?.toString() ?? '') ?? 0.0,
+      remainingBalance: double.tryParse(json['remainingBalance']?.toString() ?? '') ?? 0.0,
       status: json['status'] ?? 'PENDING',
     );
   }
@@ -156,8 +156,8 @@ class SplitParticipant {
       fullname: json['fullname'] ?? '',
       tag: json['tag'] ?? '',
       phone: json['phone'] ?? '',
-      amountAssigned: (json['amountAssigned'] as num?)?.toDouble() ?? 0.0,
-      amountPaid: (json['amountPaid'] as num?)?.toDouble() ?? 0.0,
+      amountAssigned: double.tryParse(json['amountAssigned']?.toString() ?? '') ?? 0.0,
+      amountPaid: double.tryParse(json['amountPaid']?.toString() ?? '') ?? 0.0,
       paymentStatus: json['paymentStatus'] ?? 'PENDING',
       paidAt: json['paidAt'],
     );
@@ -204,14 +204,14 @@ class SplitDetailsResponse {
       title: json['title'],
       description: json['description'],
       creator: SplitCreatorInfo.fromJson(json['creator'] ?? {}),
-      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
-      collectedAmount: (json['collectedAmount'] as num?)?.toDouble() ?? 0.0,
-      remainingAmount: (json['remainingAmount'] as num?)?.toDouble() ?? 0.0,
+      totalAmount: double.tryParse(json['totalAmount']?.toString() ?? '') ?? 0.0,
+      collectedAmount: double.tryParse(json['collectedAmount']?.toString() ?? '') ?? 0.0,
+      remainingAmount: double.tryParse(json['remainingAmount']?.toString() ?? '') ?? 0.0,
       status: json['status'] ?? 'PENDING',
       createdAt: json['createdAt'] ?? '',
       expiresAt: json['expiresAt'],
       completionPercentage:
-          (json['completionPercentage'] as num?)?.toDouble() ?? 0.0,
+          double.tryParse(json['completionPercentage']?.toString() ?? '') ?? 0.0,
       participants: participantList,
     );
   }

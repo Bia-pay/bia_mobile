@@ -26,6 +26,10 @@ class SuccessScreen extends StatefulWidget {
   final String? reference;
   final String? channel;
   final String? type; // "success" | "failed" | "pending"
+  final String? token;
+  final String? meterName;
+  final String? address;
+  final String? serviceType;
 
   const SuccessScreen({
     super.key,
@@ -35,6 +39,10 @@ class SuccessScreen extends StatefulWidget {
     this.reference,
     this.channel,
     this.type,
+    this.token,
+    this.meterName,
+    this.address,
+    this.serviceType,
   });
 
   @override
@@ -271,9 +279,18 @@ class _SuccessScreenState extends State<SuccessScreen> {
                         receiverName: _isDeposit ? "My Wallet" : widget.recipientName,
                         provider: _isDeposit ? "Card Payment" : widget.channel,
                         reference: _reference,
+                        serviceType: widget.serviceType,
                         createdAt: DateTime.now(),
                         metadata: {
                           'recipientAccount': _isDeposit ? "My Wallet" : widget.recipientAccount,
+                          if (widget.serviceType?.toUpperCase() == 'ELECTRICITY_BILL' || widget.serviceType?.toUpperCase() == 'ELECTRICITY')
+                            'info': {
+                              'meterNumber': widget.recipientAccount,
+                              'Customer_Name': widget.meterName,
+                              'address': widget.address,
+                              'token': widget.token,
+                              'provider': widget.recipientName ?? widget.channel,
+                            }
                         },
                       ),
                       statusTitle: config['title'],
@@ -393,9 +410,19 @@ class _SuccessScreenState extends State<SuccessScreen> {
                                     children: [
                                       if (_isDeposit)
                                         _buildTicketRow("Funding Destination", "My Wallet", isSmallHeight)
-                                      else
+                                      else if (widget.serviceType?.toUpperCase() == 'ELECTRICITY_BILL' || widget.serviceType?.toUpperCase() == 'ELECTRICITY') ...[
+                                        _buildTicketRow("Meter Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                        if (widget.meterName != null && widget.meterName!.isNotEmpty)
+                                          _buildTicketRow("Meter Name", widget.meterName!, isSmallHeight),
+                                        if (widget.address != null && widget.address!.isNotEmpty)
+                                          _buildTicketRow("Address", widget.address!, isSmallHeight),
+                                        if (widget.token != null && widget.token!.isNotEmpty)
+                                          _buildTokenRow(widget.token!, isSmallHeight),
+                                        _buildTicketRow("Payment Channel", widget.channel ?? "Electricity", isSmallHeight),
+                                      ] else ...[
                                         _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
-                                      _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
+                                        _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
+                                      ],
                                       _buildTicketRow("Transaction Date", _formattedDate, isSmallHeight),
                                       _buildReferenceRow(_reference, isSmallHeight),
                                     ],
@@ -693,6 +720,67 @@ class _SuccessScreenState extends State<SuccessScreen> {
                       Icons.copy_rounded,
                       size: 12.sp,
                       color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTokenRow(String token, bool isSmallHeight) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 9.h : 12.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Token",
+            style: TextStyle(
+              color: const Color(0xFF94A3B8),
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          Expanded(
+            flex: 4,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    token,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: token));
+                    _showSuccess('Token copied to clipboard');
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(4.r),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Icon(
+                      Icons.copy_rounded,
+                      size: 12.sp,
+                      color: primaryColor,
                     ),
                   ),
                 ),

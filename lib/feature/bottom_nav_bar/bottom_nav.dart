@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_update/in_app_update.dart';
+import 'package:upgrader/upgrader.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
@@ -30,7 +33,26 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkPinStatus();
+      if (Platform.isAndroid) {
+        _checkForAndroidUpdate();
+      }
     });
+  }
+
+  Future<void> _checkForAndroidUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        if (info.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+        } else if (info.flexibleUpdateAllowed) {
+          await InAppUpdate.startFlexibleUpdate();
+          await InAppUpdate.completeFlexibleUpdate();
+        }
+      }
+    } catch (e) {
+      debugPrint("Android in-app update check failed: $e");
+    }
   }
 
   void _checkPinStatus() {
@@ -63,7 +85,7 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
     final isQrEnabled = servicesStatus.qr;
     final pages = _getPages(qrCompleted);
     
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: Colors.transparent,
       body: pages[_selectedIndex],
       extendBody: true,
@@ -116,7 +138,7 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
               size: Size(MediaQuery.of(context).size.width, 120.h),
               painter: BNBCustomPainter(),
             ),
-
+ 
             // Navigation Items
             Positioned(
               bottom: 5.h,
@@ -140,6 +162,16 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
         ),
       ),
     );
+
+    if (Platform.isIOS) {
+      return UpgradeAlert(
+        dialogStyle: UpgradeDialogStyle.cupertino,
+        showIgnore: false,
+        showLater: true,
+        child: scaffold,
+      );
+    }
+    return scaffold;
   }
 
   Widget _buildNavItem(IconData icon, int index) {

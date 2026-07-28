@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -51,17 +52,21 @@ class AuthFlowService {
       debugPrint('🔥 Fetching fresh FCM token...');
       String? newFcmToken;
       try {
-        newFcmToken = await FirebaseMessaging.instance.getToken();
+        if (Platform.isIOS && await FirebaseMessaging.instance.getAPNSToken() == null) {
+          debugPrint('⚠️ APNS token is null on iOS. Skipping immediate FCM token fetch.');
+        } else {
+          newFcmToken = await FirebaseMessaging.instance.getToken();
+        }
       } catch (fcmError) {
-        // On iOS, APNS token may not be ready immediately after app launch.
-        // This is a known timing issue — we retry once after a short delay.
-        debugPrint('⚠️ FCM token fetch failed (likely APNS not ready on iOS): $fcmError');
+        debugPrint('⚠️ FCM token fetch failed: $fcmError');
         debugPrint('⏳ Retrying FCM token fetch in 3 seconds...');
         await Future.delayed(const Duration(seconds: 3));
         try {
-          newFcmToken = await FirebaseMessaging.instance.getToken();
+          if (!(Platform.isIOS && await FirebaseMessaging.instance.getAPNSToken() == null)) {
+            newFcmToken = await FirebaseMessaging.instance.getToken();
+          }
         } catch (retryError) {
-          debugPrint('⚠️ FCM token retry also failed: $retryError. Will proceed with cached token if available.');
+          debugPrint('⚠️ FCM token retry failed: $retryError');
         }
       }
 
