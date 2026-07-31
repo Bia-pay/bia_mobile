@@ -259,6 +259,45 @@ class ConfirmationBottomSheet {
                                   ),
                                 ),
                               ),
+                              if (config.showCashback &&
+                                  config.cashbackAmount != null &&
+                                  config.cashbackAmount!.isNotEmpty) ...[
+                                SizedBox(height: 8.h),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w,
+                                    vertical: 4.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981)
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    border: Border.all(
+                                      color: const Color(0xFF10B981)
+                                          .withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.card_giftcard_rounded,
+                                        color: const Color(0xFF10B981),
+                                        size: 13.sp,
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Text(
+                                        'Earn ${config.cashbackAmount}',
+                                        style: TextStyle(
+                                          color: const Color(0xFF10B981),
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -604,25 +643,6 @@ class ConfirmationBottomSheet {
               config.cashbackAmount!,
               isHighlighted: true,
               isCashbackEarned: true,
-            ),
-          ],
-
-          // Cashback Toggle (if needed)
-          if (config.showCashback) ...[
-            const Divider(height: 20, color: Color(0xFFF1F5F9)),
-            ValueListenableBuilder<bool>(
-              valueListenable: useCashback,
-              builder: (context, isUsing, child) {
-                return _buildSummaryRow(
-                  context,
-                  'Use Cashback (${currencySymbol}34.00)',
-                  '',
-                  hasToggle: true,
-                  isToggled: isUsing,
-                  onToggle: (value) => useCashback.value = value,
-                  primaryColor: primaryColor,
-                );
-              },
             ),
           ],
         ],

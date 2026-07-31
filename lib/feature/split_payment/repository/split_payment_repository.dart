@@ -122,4 +122,48 @@ class SplitPaymentRepository {
       return false;
     }
   }
+
+  Future<UserSplitPaymentsResponse?> getUserSplitPayments({
+    String? type,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      String path = '${ApiConstant.GET_PENDING_SPLITS}?page=$page&limit=$limit';
+      if (type != null && type.isNotEmpty) {
+        path += '&type=$type';
+      }
+      final response = await _apiClient.getData(path);
+      final jsonResponse = jsonDecode(response.body);
+      debugPrint('=== GET PENDING SPLITS RESPONSE ===');
+      debugPrint(jsonEncode(jsonResponse));
+
+      if (jsonResponse['responseSuccessful'] == true &&
+          jsonResponse['responseBody'] != null) {
+        return UserSplitPaymentsResponse.fromJson(jsonResponse['responseBody']);
+      }
+      return null;
+    } catch (e, st) {
+      debugPrint('❌ getUserSplitPayments exception: $e\n$st');
+      return null;
+    }
+  }
+
+  Future<SplitDashboardStats?> getSplitStats() async {
+    try {
+      final response = await _apiClient.getData(ApiConstant.GET_SPLIT_STATS);
+      final jsonResponse = jsonDecode(response.body);
+      debugPrint('=== GET SPLIT STATS RESPONSE ===');
+      debugPrint(jsonEncode(jsonResponse));
+
+      if (jsonResponse['responseSuccessful'] == true &&
+          jsonResponse['responseBody'] != null) {
+        return SplitDashboardStats.fromJson(jsonResponse['responseBody']);
+      }
+      return null;
+    } catch (e, st) {
+      debugPrint('❌ getSplitStats exception: $e\n$st');
+      return null;
+    }
+  }
 }

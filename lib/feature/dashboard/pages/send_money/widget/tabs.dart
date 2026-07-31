@@ -1,9 +1,13 @@
-import 'package:bia/core/easy_loading_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../app/utils/colors.dart';
 
+/// Shared beneficiary selector used across the app.
+///
+/// - When [favorites] is empty the "Favourites" tab is hidden entirely and
+///   the widget shows only the Recent list (used by VTU pages).
+/// - When [favorites] is non-empty both tabs are shown (used by Send Money).
 class BeneficiaryTabSection extends ConsumerStatefulWidget {
   final List<Map<String, String>> favorites;
   final List<Map<String, String>> recents;
@@ -31,29 +35,10 @@ class BeneficiaryTabSection extends ConsumerStatefulWidget {
       _BeneficiaryTabSectionState();
 }
 
-class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
-    with SingleTickerProviderStateMixin {
-  String selectedTab = "Recent";
-  late TabController _tabController;
+class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
+  String selectedTab = 'Recent';
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        setState(() {
-          selectedTab = _tabController.index == 0 ? "Recent" : "Favorites";
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  bool get _hasFavorites => widget.favorites.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -63,163 +48,184 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
     final isVerySmallScreen = mediaQuery.size.width < 320;
 
     final listToShow =
-    selectedTab == "Favorites" ? widget.favorites : widget.recents;
+        (selectedTab == 'Favorites' && _hasFavorites) ? widget.favorites : widget.recents;
 
-    // 🔥 FIX: Wrap everything in a scrollable view to handle small constraints
     return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(), // Parent handles scrolling
+      physics: const NeverScrollableScrollPhysics(),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // 🔥 Use min instead of max
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// 🔹 TABS with better responsiveness
-          Container(
-            width: double.infinity,
+          /// ── Header row ─────────────────────────────────────────────────
+          Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: isVerySmallScreen ? 8.w : 12.w,
-              vertical: isSmallScreen ? 8.h : 12.h,
+              vertical: isSmallScreen ? 6.h : 8.h,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Tab buttons with flexible sizing
-                Flexible(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const NeverScrollableScrollPhysics(),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildTab(context, "Recent", isVerySmallScreen),
-                        SizedBox(width: isVerySmallScreen ? 6.w : 12.w),
-                        _buildTab(context, "Favorites", isVerySmallScreen),
-                      ],
-                    ),
-                  ),
+                // Tab buttons — show Favourites tab only when data exists
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTab(context, 'Recent', isVerySmallScreen),
+                    if (_hasFavorites) ...[
+                      SizedBox(width: isVerySmallScreen ? 6.w : 10.w),
+                      _buildTab(context, 'Favorites', isVerySmallScreen),
+                    ],
+                  ],
                 ),
-                // Search icon with proper touch target
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: widget.onSearchTap,
-                    borderRadius: BorderRadius.circular(20.r),
-                    child: Padding(
-                      padding: EdgeInsets.all(8.w),
-                      child: Icon(
-                        Icons.search,
-                        color: primaryColor,
-                        size: isVerySmallScreen ? 20.sp : 24.sp,
+                // Search icon
+                if (widget.onSearchTap != null)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onSearchTap,
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: Padding(
+                        padding: EdgeInsets.all(6.w),
+                        child: Icon(
+                          Icons.search,
+                          color: primaryColor,
+                          size: isVerySmallScreen ? 18.sp : 20.sp,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
 
-          SizedBox(height: isSmallScreen ? 6.h : 10.h),
+          SizedBox(height: isSmallScreen ? 4.h : 6.h),
 
-          /// 🔥 LIST - Use constrained height instead of Expanded
+          /// ── List ────────────────────────────────────────────────────────
           ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: 200.h, // 🔥 Fixed max height for list
+              maxHeight: 220.h,
               minHeight: 50.h,
             ),
             child: listToShow.isEmpty
                 ? Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.w),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 32.sp,
-                      color: lightSecondaryText.withOpacity(0.5),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      "No beneficiaries",
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: lightSecondaryText,
-                        fontSize: isSmallScreen ? 12.sp : 14.sp,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20.h),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 32.sp,
+                            color: lightSecondaryText.withValues(alpha: 0.5),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            selectedTab == 'Favorites'
+                                ? 'No saved beneficiaries'
+                                : 'No recent transactions',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: lightSecondaryText,
+                              fontSize: isSmallScreen ? 12.sp : 13.sp,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
-              ),
-            )
+                  )
                 : ListView.separated(
-              physics: const BouncingScrollPhysics(),
-              shrinkWrap: true, // 🔥 Important: shrink to fit content
-              itemCount: listToShow.length,
-              separatorBuilder: (_, __) => SizedBox(height: isSmallScreen ? 6.h : 10.h),
-              itemBuilder: (context, index) {
-                final beneficiary = listToShow[index];
-                final name = beneficiary['name'] ?? '';
-                final account = beneficiary['account'] ?? '';
-                final logoUrl = beneficiary['logoUrl'];
+                    physics: const BouncingScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: listToShow.length,
+                    separatorBuilder: (_, __) =>
+                        SizedBox(height: isSmallScreen ? 6.h : 8.h),
+                    itemBuilder: (context, index) {
+                      final item = listToShow[index];
+                      final name = item['name'] ?? '';
+                      final account = item['account'] ?? '';
+                      final logoUrl = item['logoUrl'];
 
-                return _buildBeneficiaryItem(
-                  context,
-                  name: name,
-                  account: account,
-                  logoUrl: logoUrl,
-                  isSmallScreen: isSmallScreen,
-                  isVerySmallScreen: isVerySmallScreen,
-                  onTap: () => widget.onSelectBeneficiary?.call(name, account),
-                );
-              },
-            ),
+                      return _BeneficiaryItem(
+                        name: name,
+                        account: account,
+                        logoUrl: logoUrl,
+                        showAvatar: showProgress,
+                        showLogo: widget.showLogo,
+                        customLogo: widget.customLogo,
+                        isSmallScreen: isSmallScreen,
+                        isVerySmallScreen: isVerySmallScreen,
+                        onTap: () =>
+                            widget.onSelectBeneficiary?.call(name, account),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTab(BuildContext context, String label, bool isVerySmallScreen) {
+  bool get showProgress => widget.showProgress;
+
+  Widget _buildTab(
+      BuildContext context, String label, bool isVerySmallScreen) {
     final isSelected = selectedTab == label;
     final theme = Theme.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => selectedTab = label),
-        borderRadius: BorderRadius.circular(20.r),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isVerySmallScreen ? 12.w : 16.w,
-            vertical: isVerySmallScreen ? 6.h : 10.h,
-          ),
-          decoration: BoxDecoration(
-            color: isSelected ? primaryColor.withOpacity(0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: isVerySmallScreen ? 12.sp : 14.sp,
-              color: isSelected ? primaryColor : lightSecondaryText,
-            ),
+    return GestureDetector(
+      onTap: () => setState(() => selectedTab = label),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(
+          horizontal: isVerySmallScreen ? 12.w : 16.w,
+          vertical: isVerySmallScreen ? 5.h : 7.h,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: isVerySmallScreen ? 12.sp : 14.sp,
+            color: isSelected ? primaryColor : lightSecondaryText,
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildBeneficiaryItem(
-      BuildContext context, {
-        required String name,
-        required String account,
-        String? logoUrl,
-        required bool isSmallScreen,
-        required bool isVerySmallScreen,
-        required VoidCallback onTap,
-      }) {
+// ── Private item widget ──────────────────────────────────────────────────────
+
+class _BeneficiaryItem extends StatelessWidget {
+  final String name;
+  final String account;
+  final String? logoUrl;
+  final bool showAvatar;
+  final bool showLogo;
+  final Widget? customLogo;
+  final bool isSmallScreen;
+  final bool isVerySmallScreen;
+  final VoidCallback onTap;
+
+  const _BeneficiaryItem({
+    required this.name,
+    required this.account,
+    this.logoUrl,
+    required this.showAvatar,
+    required this.showLogo,
+    this.customLogo,
+    required this.isSmallScreen,
+    required this.isVerySmallScreen,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progressSize = isVerySmallScreen ? 32.w : (isSmallScreen ? 36.w : 44.w);
-    final avatarRadius = isVerySmallScreen ? 14.r : (isSmallScreen ? 16.r : 20.r);
+    final avatarSize =
+        isVerySmallScreen ? 34.w : (isSmallScreen ? 38.w : 42.w);
+    final avatarRadius = avatarSize / 2;
 
     return Material(
       color: Colors.transparent,
@@ -228,7 +234,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
         borderRadius: BorderRadius.circular(12.r),
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical: isSmallScreen ? 8.h : 12.h,
+            vertical: isSmallScreen ? 8.h : 10.h,
             horizontal: isVerySmallScreen ? 8.w : 12.w,
           ),
           decoration: BoxDecoration(
@@ -236,108 +242,93 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              /// LEFT SIDE - Flexible to prevent overflow
-              Expanded(
-                child: Row(
-                  children: [
-                    if (widget.showProgress)
-                    Container(
-                      height: 40.w,
-                      width: 40.w,
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          name.isNotEmpty ? name[0].toUpperCase() : '',
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16.sp,
-                          ),
-                        ),
+              /// Avatar with initials
+              if (showAvatar) ...[
+                Container(
+                  height: avatarSize,
+                  width: avatarSize,
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: isVerySmallScreen ? 13.sp : 15.sp,
                       ),
                     ),
-                    if (widget.showProgress)
-                      SizedBox(width: isVerySmallScreen ? 8.w : 12.w),
+                  ),
+                ),
+                SizedBox(width: isVerySmallScreen ? 8.w : 10.w),
+              ],
 
-                    /// TEXT - Expanded to take available space
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: lightText,
-                              fontSize: isVerySmallScreen ? 12.sp : (isSmallScreen ? 13.sp : 14.sp),
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 1.h : 2.h),
-                          Text(
-                            account,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: lightSecondaryText,
-                              fontSize: isVerySmallScreen ? 10.sp : 12.sp,
-                            ),
-                          ),
-                        ],
+              /// Name + account
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: lightText,
+                        fontSize: isVerySmallScreen
+                            ? 12.sp
+                            : (isSmallScreen ? 13.sp : 14.sp),
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      account,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: lightSecondaryText,
+                        fontSize: isVerySmallScreen ? 10.sp : 12.sp,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              SizedBox(width: 8.w),
+              SizedBox(width: 4.w),
 
-              /// RIGHT SIDE - Logo/Avatar
-              if (widget.showLogo)
-                widget.customLogo ??
+              /// Logo / icon on the right
+              if (showLogo)
+                customLogo ??
                     CircleAvatar(
                       radius: avatarRadius,
                       backgroundColor: Colors.transparent,
                       child: ClipOval(
-                        child: (logoUrl != null && logoUrl.isNotEmpty)
+                        child: (logoUrl != null && logoUrl!.isNotEmpty)
                             ? Image.network(
-                                logoUrl,
-                                height: isVerySmallScreen ? 24.h : (isSmallScreen ? 28.h : 32.h),
-                                width: isVerySmallScreen ? 24.w : (isSmallScreen ? 28.w : 32.w),
+                                logoUrl!,
+                                height: avatarSize * 0.7,
+                                width: avatarSize * 0.7,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Image.asset(
-                                    'assets/svg/logo-two.png',
-                                    height: isVerySmallScreen ? 18.h : (isSmallScreen ? 22.h : 26.h),
-                                    width: isVerySmallScreen ? 18.w : (isSmallScreen ? 22.w : 26.w),
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => Icon(
-                                      Icons.account_circle,
-                                      color: primaryColor,
-                                      size: avatarRadius * 1.5,
-                                    ),
-                                  );
-                                },
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.account_circle,
+                                  color: primaryColor,
+                                  size: avatarRadius,
+                                ),
                               )
                             : Image.asset(
                                 'assets/svg/logo-two.png',
-                                height: isVerySmallScreen ? 18.h : (isSmallScreen ? 22.h : 26.h),
-                                width: isVerySmallScreen ? 18.w : (isSmallScreen ? 22.w : 26.w),
+                                height: avatarSize * 0.6,
+                                width: avatarSize * 0.6,
                                 fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.account_circle,
-                                    color: primaryColor,
-                                    size: avatarRadius * 1.5,
-                                  );
-                                },
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.account_circle,
+                                  color: primaryColor,
+                                  size: avatarRadius,
+                                ),
                               ),
                       ),
                     ),
@@ -349,7 +340,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection>
   }
 }
 
-/// 🔹 PROGRESS INDICATOR - Responsive
+/// 🔹 PROGRESS INDICATOR - kept for any other call-sites that use it
 class CircularPercentageIndicator extends StatelessWidget {
   final double percentage;
   final double size;
@@ -375,20 +366,18 @@ class CircularPercentageIndicator extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background circle
           CircularProgressIndicator(
             value: 1,
             strokeWidth: strokeWidth.toDouble(),
-            valueColor: AlwaysStoppedAnimation<Color>(kGray.withOpacity(0.2)),
+            valueColor:
+                AlwaysStoppedAnimation<Color>(kGray.withValues(alpha: 0.2)),
           ),
-          // Progress circle
           CircularProgressIndicator(
             value: progress,
             strokeWidth: strokeWidth.toDouble(),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             backgroundColor: Colors.transparent,
           ),
-          // Percentage text
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Padding(

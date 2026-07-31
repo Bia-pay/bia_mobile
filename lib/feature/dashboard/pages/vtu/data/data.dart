@@ -17,6 +17,8 @@ import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../dashboardcontroller/provider.dart';
+import '../../send_money/widget/tabs.dart';
 import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 
 // ─── PROVIDERS ───────────────────────────────────────────────────────────────
@@ -66,6 +68,8 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
 
   // Controllers
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  bool _saveAsBeneficiary = false;
 
   // Amount (auto-filled from selected plan)
   int _selectedAmount = 0;
@@ -92,6 +96,7 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
   void dispose() {
     _tabController.dispose();
     _phoneController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -197,14 +202,24 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
             ? _selectedPlan!['variation_code']
             : '$serviceId-$_selectedAmount';
 
+    // Resolve cashback dynamically (await future to ensure completed fetch)
+    final cashbackRule = await ref
+        .read(billCashbackProvider('DATA').future)
+        .catchError((_) => null);
+    final cashbackLabel = cashbackRule?.displayLabel(
+        transactionAmount: _selectedAmount.toDouble());
+    final hasCashback = cashbackLabel != null && cashbackLabel.isNotEmpty;
+
+    if (!mounted) return;
+
     ConfirmationBottomSheet.show(
       context: context,
       config: BottomSheetConfig(
         title: '₦$_selectedAmount.00',
         subtitle: 'Confirm Data Purchase',
-        showCashback: true,
+        showCashback: hasCashback,
         amount: _selectedAmount.toDouble(),
-        cashbackAmount: '+₦1 Cashback',
+        cashbackAmount: hasCashback ? cashbackLabel : null,
         details: [
           BottomSheetDetailItem(
             label: 'Network',
@@ -241,6 +256,8 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
               variationCode: variationCode,
               amount:        _selectedAmount,
               pin:           pin,
+              saveBeneficiary: _saveAsBeneficiary,
+              beneficiaryName: _nameController.text.trim(),
             );
 
         EasyLoading.dismiss();
@@ -248,6 +265,11 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
         if (response == null) { _toast('No response from server. Try again.'); return; }
 
         if (!context.mounted) return;
+
+        final isSuccess = response.responseSuccessful == true || response.responseMessage?.toLowerCase().contains('pending') == true;
+        if (isSuccess) {
+          ref.invalidate(billBeneficiariesProvider('DATA'));
+        }
 
         final extra = {
           'amount':          _selectedAmount.toString(),
@@ -537,6 +559,68 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
                             ],
                           ),
                         ],
+                        SizedBox(height: 12.h),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 24.w,
+                              height: 24.h,
+                              child: Checkbox(
+                                value: _saveAsBeneficiary,
+                                onChanged: (v) {
+                                  setState(() {
+                                    _saveAsBeneficiary = v ?? false;
+                                  });
+                                },
+                                activeColor: primaryColor,
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              'Save as beneficiary',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 13.sp,
+                                color: const Color(0xFF475569),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_saveAsBeneficiary) ...[
+                          SizedBox(height: 10.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14.r),
+                              border: Border.all(
+                                color: _nameController.text.isNotEmpty ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: TextFormField(
+                              controller: _nameController,
+                              style: TextStyle(
+                                color: const Color(0xFF1E293B),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Enter beneficiary name (e.g. My Line)',
+                                hintStyle: TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                border: InputBorder.none,
+                                counterText: "",
+                              ),
+                              onChanged: (value) {
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -640,6 +724,14 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
                       balance: _getWalletBalance(),
                     ),
                   ],
+                  SizedBox(height: 12.h),
+                  _DataBeneficiarySection(
+                    onSelect: (name, account) {
+                      _phoneController.text = account;
+                      _detectNetwork(account);
+                      setState(() => _phoneNumber = account);
+                    },
+                  ),
                 ]),
               ),
             ),
@@ -924,6 +1016,52 @@ class _SelectedPlanSummary extends StatelessWidget {
               fontWeight: FontWeight.w900,
               fontSize: 15.sp,
               color: insufficient ? errorColor : providerColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataBeneficiarySection extends ConsumerWidget {
+  final void Function(String name, String account) onSelect;
+
+  const _DataBeneficiarySection({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final beneficiariesAsync = ref.watch(billBeneficiariesProvider('DATA'));
+
+    return _SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(icon: Icons.people_outline_rounded, label: 'Select Beneficiary'),
+          SizedBox(height: 12.h),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: 260.h,
+              minHeight: 140.h,
+            ),
+            child: beneficiariesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error loading: $err')),
+              data: (data) {
+                final recents = data?.recent.map((e) => {
+                  "name": e.destination,
+                  "account": e.destination,
+                }).toList() ?? [];
+
+                return BeneficiaryTabSection(
+                  favorites: const [],
+                  recents: recents,
+                  onSelectBeneficiary: onSelect,
+                  onSearchTap: () => debugPrint('Search tapped'),
+                  showProgress: false,
+                  showLogo: true,
+                );
+              },
             ),
           ),
         ],

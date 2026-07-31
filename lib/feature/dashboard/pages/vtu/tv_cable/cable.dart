@@ -14,6 +14,8 @@ import '../../../../../app/view/widget/quick_access_app_bar.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboard_repo/repo.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../dashboardcontroller/provider.dart';
+import '../../send_money/widget/tabs.dart';
 import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 import 'cable_plan_config.dart';
 
@@ -36,6 +38,8 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
   
   final TextEditingController _smartcardController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  bool _saveAsBeneficiary = false;
   String _searchQuery = '';
   Timer? _debounce;
   TabController? _tabController;
@@ -54,6 +58,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
   void dispose() {
     _smartcardController.dispose();
     _searchController.dispose();
+    _nameController.dispose();
     _debounce?.cancel();
     _tabController?.dispose();
     super.dispose();
@@ -576,6 +581,75 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                 ],
               ),
             ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              SizedBox(
+                width: 24.w,
+                height: 24.h,
+                child: Checkbox(
+                  value: _saveAsBeneficiary,
+                  onChanged: (v) {
+                    setState(() {
+                      _saveAsBeneficiary = v ?? false;
+                    });
+                  },
+                  activeColor: primaryColor,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'Save as beneficiary',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14.sp,
+                  color: const Color(0xFF475569),
+                ),
+              ),
+            ],
+          ),
+          if (_saveAsBeneficiary) ...[
+            SizedBox(height: 10.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: _nameController.text.isNotEmpty ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+                  width: 1.5,
+                ),
+              ),
+              child: TextFormField(
+                controller: _nameController,
+                style: TextStyle(
+                  color: const Color(0xFF1E293B),
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'Enter beneficiary name (e.g. My Cable)',
+                  hintStyle: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  border: InputBorder.none,
+                  counterText: "",
+                ),
+                onChanged: (value) {
+                  setState(() {});
+                },
+              ),
+            ),
+          ],
+          SizedBox(height: 20.h),
+          _CableBeneficiarySection(
+            onSelect: (name, account) {
+              _smartcardController.text = account;
+              _onSmartcardChanged(account);
+            },
+          ),
         ],
       ),
     );
@@ -851,14 +925,27 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                                 ),
                               ),
                               SizedBox(height: 4.h),
-                              Text(
-                                '₦20 Cashback',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: greenAccent,
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              Builder(builder: (context) {
+                                final planPrice = double.tryParse(
+                                        plan['variation_amount']?.toString() ?? '') ??
+                                    0.0;
+                                final cashbackRule = ref
+                                    .watch(billCashbackProvider('CABLE_TV'))
+                                    .valueOrNull;
+                                final label = cashbackRule?.displayLabel(
+                                    transactionAmount: planPrice);
+                                if (label == null || label.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Text(
+                                  label,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: greenAccent,
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                );
+                              }),
                               SizedBox(height: 4.h),
                               Text(
                                 CablePlanConfig.getPlanDescription(variationCode),
@@ -885,7 +972,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
               width: double.infinity,
               height: 52.h,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_smartcardNumber.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -912,12 +999,25 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                   );
                   final packageName = selectedPlan['name'] ?? _selectedVariationCode;
 
+                  // Resolve cashback dynamically (await future to ensure completed fetch)
+                  final cashbackRule = await ref
+                      .read(billCashbackProvider('CABLE_TV').future)
+                      .catchError((_) => null);
+                  final cashbackLabel = cashbackRule?.displayLabel(
+                      transactionAmount: _selectedAmount!.toDouble());
+                  final hasCashback =
+                      cashbackLabel != null && cashbackLabel.isNotEmpty;
+
+                  if (!mounted) return;
+
                   ConfirmationBottomSheet.show(
                     context: context,
                     config: BottomSheetConfig(
                       title: "Confirm Cable Purchase",
                       subtitle: "Cable Subscription",
                       amount: _selectedAmount!.toDouble(),
+                      showCashback: hasCashback,
+                      cashbackAmount: hasCashback ? cashbackLabel : null,
                       details: [
                         BottomSheetDetailItem(
                           label: "Provider",
@@ -962,12 +1062,18 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                         amount: _selectedAmount!,
                         phone: _smartcardNumber,
                         pin: pin,
+                        saveBeneficiary: _saveAsBeneficiary,
+                        beneficiaryName: _nameController.text.trim(),
                       );
 
                       if (!mounted) return;
 
                       final isSuccess = result?.responseSuccessful == true ||
                                         result?.responseBody?.status == "SUCCESS";
+
+                      if (isSuccess) {
+                        ref.invalidate(billBeneficiariesProvider('CABLE_TV'));
+                      }
 
                       context.goNamed(
                         RouteList.successScreen,
@@ -1039,5 +1145,63 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
 
     final maxHeight = width >= 1400 ? 550.h : (width >= 1100 ? 500.h : 450.h);
     return totalHeight > maxHeight ? maxHeight : totalHeight;
+  }
+}
+
+class _CableBeneficiarySection extends ConsumerWidget {
+  final void Function(String name, String account) onSelect;
+
+  const _CableBeneficiarySection({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final beneficiariesAsync = ref.watch(billBeneficiariesProvider('CABLE_TV'));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.people_outline_rounded, color: primaryColor, size: 15.sp),
+            SizedBox(width: 6.w),
+            Text(
+              'Select Beneficiary',
+              style: TextStyle(
+                color: const Color(0xFF0F172A),
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: 260.h,
+            minHeight: 140.h,
+          ),
+          child: beneficiariesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(child: Text('Error loading: $err')),
+            data: (data) {
+              final recents = data?.recent.map((e) => {
+                "name": e.destination,
+                "account": e.destination,
+              }).toList() ?? [];
+
+              return BeneficiaryTabSection(
+                favorites: const [],
+                recents: recents,
+                onSelectBeneficiary: onSelect,
+                onSearchTap: () => debugPrint('Search tapped'),
+                showProgress: false,
+                showLogo: true,
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

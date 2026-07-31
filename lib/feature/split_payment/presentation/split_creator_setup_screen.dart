@@ -46,6 +46,16 @@ class _SplitCreatorSetupScreenState
   final List<Map<String, dynamic>> _addedParticipants = [];
   bool _isSearching = false;
   CreateSplitResponse? _generatedResponse;
+  String _selectedType = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(userSplitPaymentsProvider.notifier).fetchSplitPayments(type: 'all');
+      ref.read(splitStatsProvider.notifier).fetchStats();
+    });
+  }
 
   Future<void> _saveCreatedSplitToCache(CreateSplitResponse response) async {
     try {
@@ -431,168 +441,599 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildTrackHistoryView(ThemeData theme) {
-    final history = _getCreatedSplits();
+    final statsState = ref.watch(splitStatsProvider);
+    final paymentsState = ref.watch(userSplitPaymentsProvider);
 
-    if (history.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.r),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(20.r),
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.splitscreen_rounded,
-                  color: primaryColor,
-                  size: 48.sp,
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                "No Split Bills Found",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: darkBackground,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                "Any split bills you create will appear here so you can easily track collections and payments.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: lightSecondaryText,
-                  fontSize: 13.sp,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.wait([
+          ref.read(userSplitPaymentsProvider.notifier).fetchSplitPayments(type: _selectedType),
+          ref.read(splitStatsProvider.notifier).fetchStats(),
+        ]);
+      },
+      color: primaryColor,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Stats ─────────────────────────────────────────────────────
+            statsState.when(
+              loading: () => _buildStatsShimmer(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (stats) {
+                if (stats == null) return const SizedBox.shrink();
+                return _buildStatsCards(theme, stats);
+              },
+            ),
 
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      itemCount: history.length,
-      separatorBuilder: (context, index) => SizedBox(height: 12.h),
-      itemBuilder: (context, index) {
-        final item = history[index];
-        final splitId = item['splitId'] ?? '';
-        final title = item['title'] ?? 'Split Bill';
-        final amount = item['totalAmount'] ?? 0.0;
-        final dateStr = item['createdAt'] ?? '';
-        
-        String formattedDate = '';
-        if (dateStr.isNotEmpty) {
-          try {
-            final dt = DateTime.parse(dateStr).toLocal();
-            formattedDate = "${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-          } catch (_) {
-            formattedDate = dateStr;
-          }
-        }
+            SizedBox(height: 28.h),
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(
-              color: lightBorderColor.withValues(alpha: 0.5),
-            ),
-          ),
-          child: ListTile(
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            leading: Container(
-              width: 42.r,
-              height: 42.r,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: primaryColor.withValues(alpha: 0.1),
-              ),
-              child: const Icon(
-                Icons.call_split_rounded,
-                color: primaryColor,
-              ),
-            ),
-            title: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14.sp,
-                color: darkBackground,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // ── Filter + Label ────────────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 4.h),
                 Text(
-                  "ID: $splitId",
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: lightSecondaryText,
+                  'Transactions',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: darkBackground,
+                    letterSpacing: -0.2,
                   ),
                 ),
-                if (formattedDate.isNotEmpty) ...[
-                  SizedBox(height: 2.h),
-                  Text(
-                    formattedDate,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: lightSecondaryText.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
+                _buildFilterToggle(),
               ],
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+
+            SizedBox(height: 14.h),
+
+            // ── History List ──────────────────────────────────────────────
+            paymentsState.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: CircularProgressIndicator(color: primaryColor, strokeWidth: 2),
+                ),
+              ),
+              error: (_, __) => Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'Failed to load split bills',
+                    style: TextStyle(color: errorColor, fontSize: 13.sp),
+                  ),
+                ),
+              ),
+              data: (payments) {
+                final list = payments?.data ?? [];
+                if (list.isEmpty) return _buildEmptyHistoryState(theme);
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: list.length,
+                  separatorBuilder: (_, __) => SizedBox(height: 10.h),
+                  itemBuilder: (_, i) => _buildHistoryItem(theme, list[i]),
+                );
+              },
+            ),
+            SizedBox(height: 20.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsShimmer() {
+    return Container(
+      height: 130.h,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+    );
+  }
+
+  Widget _buildStatsCards(ThemeData theme, SplitDashboardStats stats) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1F3A), Color(0xFF12284E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A1F3A).withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Incoming row ─────────────────────────────────────────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(18.w, 18.h, 18.w, 12.h),
+            child: Row(
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      "₦${amount.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14.sp,
-                        color: darkBackground,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      "Track Details",
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                Container(
+                  padding: EdgeInsets.all(7.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(Icons.south_rounded, color: const Color(0xFF9D97FF), size: 14.sp),
                 ),
                 SizedBox(width: 8.w),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: errorColor, size: 20),
-                  onPressed: () => _confirmDeleteSplit(splitId, title),
+                Text(
+                  'Incoming · To Pay',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                  ),
                 ),
               ],
             ),
-            onTap: () {
-              context.pushNamed(
-                RouteList.splitCreatorDashboard,
-                pathParameters: {'splitId': splitId},
-              );
-            },
           ),
-        );
-      },
+          Padding(
+            padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 16.h),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatChip(
+                    label: 'Pending',
+                    count: stats.incoming.pendingCount,
+                    amount: stats.incoming.pendingAmount,
+                    chipColor: const Color(0xFFF59E0B),
+                    accentBg: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _buildStatChip(
+                    label: 'Paid',
+                    count: stats.incoming.paidCount ?? 0,
+                    amount: stats.incoming.paidAmount ?? 0,
+                    chipColor: successColor,
+                    accentBg: successColor.withValues(alpha: 0.12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Divider ──────────────────────────────────────────────────
+          Divider(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.08),
+            indent: 18.w,
+            endIndent: 18.w,
+          ),
+          // ── Outgoing row ─────────────────────────────────────────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 12.h),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(7.r),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(Icons.north_rounded, color: const Color(0xFF34D399), size: 14.sp),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Outgoing · To Collect',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 18.h),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildStatChip(
+                    label: 'Pending',
+                    count: stats.outgoing.pendingCount,
+                    amount: stats.outgoing.pendingAmount,
+                    chipColor: const Color(0xFFF59E0B),
+                    accentBg: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _buildStatChip(
+                    label: 'Collected',
+                    count: stats.outgoing.completedCount ?? 0,
+                    amount: stats.outgoing.completedAmount ?? 0,
+                    chipColor: successColor,
+                    accentBg: successColor.withValues(alpha: 0.12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildStatChip({
+    required String label,
+    required int count,
+    required double amount,
+    required Color chipColor,
+    required Color accentBg,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: accentBg,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            '₦${amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 3.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+            decoration: BoxDecoration(
+              color: chipColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(6.r),
+            ),
+            child: Text(
+              '$count split${count == 1 ? '' : 's'}',
+              style: TextStyle(
+                color: chipColor,
+                fontSize: 9.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      padding: EdgeInsets.all(3.r),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildFilterChip('all', 'All'),
+          _buildFilterChip('pending', 'Pending'),
+          _buildFilterChip('history', 'Done'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String type, String label) {
+    final isSelected = _selectedType == type;
+    return GestureDetector(
+      onTap: () {
+        if (isSelected) return;
+        setState(() => _selectedType = type);
+        ref.read(userSplitPaymentsProvider.notifier).fetchSplitPayments(type: type);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : [],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : lightSecondaryText,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11.sp,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(ThemeData theme, UserSplitPaymentItem item) {
+    final isIncoming = item.isPendingPayment;
+
+    // ── status resolution ───────────────────────────────────────────────
+    Color statusFg = const Color(0xFFF59E0B);
+    Color statusBg = const Color(0xFFF59E0B).withValues(alpha: 0.1);
+    String statusText = isIncoming ? 'Pending Pay' : 'Pending';
+    IconData statusIcon = Icons.schedule_rounded;
+
+    if (item.status == 'COMPLETED' || item.paymentStatus == 'PAID') {
+      statusFg = successColor;
+      statusBg = successColor.withValues(alpha: 0.1);
+      statusText = 'Paid';
+      statusIcon = Icons.check_circle_outline_rounded;
+    } else if (item.status == 'CANCELLED') {
+      statusFg = errorColor;
+      statusBg = errorColor.withValues(alpha: 0.1);
+      statusText = 'Cancelled';
+      statusIcon = Icons.cancel_outlined;
+    }
+
+    // ── direction colors ─────────────────────────────────────────────────
+    const incomingColor = Color(0xFF6C63FF);
+    const outgoingColor = Color(0xFF10B981);
+    final directionColor = isIncoming ? incomingColor : outgoingColor;
+
+    return GestureDetector(
+      onTap: () {
+        if (isIncoming) {
+          context.pushNamed(
+            RouteList.splitScanView,
+            extra: {'splitId': item.splitId, 'token': ''},
+          );
+        } else {
+          context.pushNamed(
+            RouteList.splitCreatorDashboard,
+            pathParameters: {'splitId': item.splitId},
+          );
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Left accent bar ───────────────────────────────────
+                Container(
+                  width: 4.w,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        directionColor,
+                        directionColor.withValues(alpha: 0.4),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+                // ── Content ───────────────────────────────────────────
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    child: Row(
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 40.r,
+                          height: 40.r,
+                          decoration: BoxDecoration(
+                            color: directionColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: Icon(
+                            isIncoming ? Icons.south_west_rounded : Icons.north_east_rounded,
+                            color: directionColor,
+                            size: 18.sp,
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        // Text block
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                item.title?.isNotEmpty == true ? item.title! : 'Split Bill',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14.sp,
+                                  color: darkBackground,
+                                  letterSpacing: -0.2,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 3.h),
+                              Text(
+                                isIncoming
+                                    ? 'From ${item.creatorName}'
+                                    : 'You created',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: lightSecondaryText,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              Text(
+                                _formatDateTime(item.createdAt),
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: lightSecondaryText.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        // Right — amount + badge
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '₦${(isIncoming ? item.assignedAmount : item.totalAmount).toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14.sp,
+                                color: darkBackground,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                              decoration: BoxDecoration(
+                                color: statusBg,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(statusIcon, color: statusFg, size: 9.sp),
+                                  SizedBox(width: 3.w),
+                                  Text(
+                                    statusText,
+                                    style: TextStyle(
+                                      color: statusFg,
+                                      fontSize: 9.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(width: 4.w),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.grey.shade300,
+                          size: 18.sp,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyHistoryState(ThemeData theme) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 48.h),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(22.r),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6C63FF), Color(0xFF4F46E5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.call_split_rounded,
+              color: Colors.white,
+              size: 36.sp,
+            ),
+          ),
+          SizedBox(height: 20.h),
+          Text(
+            'No split bills yet',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: darkBackground,
+              letterSpacing: -0.3,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            child: Text(
+              'Split bills you create or are invited to will show up here so you can track payments easily.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: lightSecondaryText,
+                fontSize: 13.sp,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      return "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    } catch (_) {
+      return dateStr;
+    }
   }
 
   Widget _buildSetupForm(ThemeData theme) {

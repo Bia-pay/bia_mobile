@@ -142,11 +142,39 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
     try {
       dynamic response;
       if (widget.type == "airtime") {
-        response = await controller.buyAirtime(context, phone: widget.recipientAccount, amount: widget.amount.toInt(), network: widget.meta?['network']?.toString().toLowerCase() ?? '', pin: transactionPin);
+        response = await controller.buyAirtime(
+          context, 
+          phone: widget.recipientAccount, 
+          amount: widget.amount.toInt(), 
+          network: widget.meta?['network']?.toString().toLowerCase() ?? '', 
+          pin: transactionPin,
+          saveBeneficiary: widget.saveAsBeneficiary || (widget.meta?['saveBeneficiary'] ?? false),
+          beneficiaryName: widget.meta?['beneficiaryName'],
+        );
       } else if (widget.type == "data") {
-        response = await controller.buyData(context, phone: widget.recipientAccount, serviceId: widget.meta?['serviceId'], variationCode: widget.meta?['variationCode'], amount: widget.amount.toInt(), pin: transactionPin);
+        response = await controller.buyData(
+          context, 
+          phone: widget.recipientAccount, 
+          serviceId: widget.meta?['serviceId'], 
+          variationCode: widget.meta?['variationCode'], 
+          amount: widget.amount.toInt(), 
+          pin: transactionPin,
+          saveBeneficiary: widget.saveAsBeneficiary || (widget.meta?['saveBeneficiary'] ?? false),
+          beneficiaryName: widget.meta?['beneficiaryName'],
+        );
       } else if (widget.type == "cable") {
-        response = await controller.buyCable(context, serviceId: widget.meta?['serviceId'], smartcard: widget.recipientAccount, packageName: widget.meta?['packageName'] ?? widget.meta?['variationCode'], variationCode: widget.meta?['variationCode'], amount: widget.amount.toInt(), phone: widget.recipientAccount, pin: transactionPin);
+        response = await controller.buyCable(
+          context, 
+          serviceId: widget.meta?['serviceId'], 
+          smartcard: widget.recipientAccount, 
+          packageName: widget.meta?['packageName'] ?? widget.meta?['variationCode'], 
+          variationCode: widget.meta?['variationCode'], 
+          amount: widget.amount.toInt(), 
+          phone: widget.recipientAccount, 
+          pin: transactionPin,
+          saveBeneficiary: widget.saveAsBeneficiary || (widget.meta?['saveBeneficiary'] ?? false),
+          beneficiaryName: widget.meta?['beneficiaryName'],
+        );
       } else if (widget.type == "electricity") {
         response = await controller.buyElectricity(
           context, 
@@ -155,7 +183,9 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
           variationCode: widget.meta?['variationCode'], 
           amount: widget.amount.toInt(), 
           phone: widget.meta?['userPhone'] ?? widget.recipientAccount, 
-          pin: transactionPin
+          pin: transactionPin,
+          saveBeneficiary: widget.saveAsBeneficiary || (widget.meta?['saveBeneficiary'] ?? false),
+          beneficiaryName: widget.meta?['beneficiaryName'],
         );
       } else {
         response = await controller.sendMoney(

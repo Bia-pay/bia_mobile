@@ -20,6 +20,7 @@ import '../../../dashboard_repo/repo.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../dashboardcontroller/provider.dart';
 import '../../../widgets/transaction.dart';
+import '../../send_money/widget/tabs.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 
@@ -212,7 +213,7 @@ class _ElectricityState extends State<Electricity> {
   }
 }
 
-class CardOne extends StatefulWidget {
+class CardOne extends ConsumerStatefulWidget {
   final Function(int amount)? onAmountSelected;
   final Map<String, dynamic>? selectedProvider;
   final String? phoneNumber;
@@ -225,10 +226,10 @@ class CardOne extends StatefulWidget {
   });
 
   @override
-  State<CardOne> createState() => _CardOneState();
+  ConsumerState<CardOne> createState() => _CardOneState();
 }
 
-class _CardOneState extends State<CardOne> {
+class _CardOneState extends ConsumerState<CardOne> {
   Map<String, dynamic>? _selectedProvider;
   String _phoneNumber = '';
   Timer? _debounce;
@@ -236,6 +237,20 @@ class _CardOneState extends State<CardOne> {
   String? _address;
   String? _minPurchaseAmount;
   bool _isVerifying = false;
+  bool _saveAsBeneficiary = false;
+  final TextEditingController _nameController = TextEditingController();
+
+  final TextEditingController _meterController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+
+  @override
+  void dispose() {
+    _meterController.dispose();
+    _amountController.dispose();
+    _nameController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
 
   bool get _isFormValid {
     final amount = int.tryParse(_amountController.text) ?? 0;
@@ -359,8 +374,7 @@ class _CardOneState extends State<CardOne> {
     }
   }
 
-  final TextEditingController _meterController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
+  // Controllers removed here as they are moved up to state variables level
 
   @override
   Widget build(BuildContext context) {
@@ -529,6 +543,69 @@ class _CardOneState extends State<CardOne> {
                     ),
                   ),
 
+                SizedBox(height: isTablet ? 14.h : 10.h),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 24.w,
+                      height: 24.h,
+                      child: Checkbox(
+                        value: _saveAsBeneficiary,
+                        onChanged: (v) {
+                          setState(() {
+                            _saveAsBeneficiary = v ?? false;
+                          });
+                        },
+                        activeColor: primaryColor,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      'Save as beneficiary',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14.sp,
+                        color: const Color(0xFF475569),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_saveAsBeneficiary) ...[
+                  SizedBox(height: 10.h),
+                  Container(
+                    height: inputHeight,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 16.w : 12.w,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(width: 0.4),
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(isTablet ? 14.r : 10.r),
+                      ),
+                    ),
+                    child: TextFormField(
+                      controller: _nameController,
+                      style: TextStyle(
+                        color: const Color(0xFF1E293B),
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Enter beneficiary name (e.g. My Meter)',
+                        hintStyle: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        border: InputBorder.none,
+                        counterText: "",
+                      ),
+                      onChanged: (value) {
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
                 SizedBox(height: isTablet ? 28.h : 20.h),
                 Text(
                   'Amount',
@@ -664,7 +741,7 @@ class _CardOneState extends State<CardOne> {
                     buttonTextColor: Colors.white,
                     //fontSize: isTablet ? 18.sp : 16.sp,
                     onPressed: _isFormValid
-                        ? () {
+                        ? () async {
                             final serviceId =
                                 widget.selectedProvider?['serviceID'];
                             final meter = _meterController.text.trim();
@@ -717,12 +794,25 @@ class _CardOneState extends State<CardOne> {
                             }
 
                             /// ✅ ONLY REACH HERE IF VALID
+                            // Resolve cashback dynamically (await future to ensure completed fetch)
+                            final cashbackRule = await ref
+                                .read(billCashbackProvider('ELECTRICITY').future)
+                                .catchError((_) => null);
+                            final cashbackLabel = cashbackRule?.displayLabel(
+                                transactionAmount: amount.toDouble());
+                            final hasCashback =
+                                cashbackLabel != null && cashbackLabel.isNotEmpty;
+
+                            if (!mounted) return;
+
                             ConfirmationBottomSheet.show(
                               context: context,
                               config: BottomSheetConfig(
                                 title: "Confirm Electricity",
                                 subtitle: "electricity",
                                 amount: amount.toDouble(),
+                                showCashback: hasCashback,
+                                cashbackAmount: hasCashback ? cashbackLabel : null,
                                 details: [
                                   BottomSheetDetailItem(
                                     label: "Provider",
@@ -760,7 +850,7 @@ class _CardOneState extends State<CardOne> {
 
                                 LoadingHelper.show('');
                                 
-                                final controller = ProviderScope.containerOf(context).read(dashboardControllerProvider.notifier);
+                                final controller = ref.read(dashboardControllerProvider.notifier);
                                 
                                 final response = await controller.buyElectricity(
                                   context,
@@ -770,6 +860,8 @@ class _CardOneState extends State<CardOne> {
                                   amount: amount,
                                   phone: phone,
                                   pin: pin,
+                                  saveBeneficiary: _saveAsBeneficiary,
+                                  beneficiaryName: _nameController.text.trim(),
                                 );
                                 
                                 LoadingHelper.dismiss();
@@ -777,6 +869,7 @@ class _CardOneState extends State<CardOne> {
                                 if (!context.mounted) return;
 
                                   if (response != null && response.responseSuccessful) {
+                                    ref.invalidate(billBeneficiariesProvider('ELECTRICITY'));
                                     context.goNamed(
                                       RouteList.successScreen,
                                       extra: {
@@ -805,6 +898,13 @@ class _CardOneState extends State<CardOne> {
                           }
                         : null,
                   ),
+                ),
+                SizedBox(height: 20.h),
+                _ElectricityBeneficiarySection(
+                  onSelect: (name, account) {
+                    _meterController.text = account;
+                    _verifyMeter(account);
+                  },
                 ),
               ],
             ),
@@ -987,6 +1087,64 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
 
   bool isTablet(BuildContext context) {
     return MediaQuery.of(context).size.width >= 600;
+  }
+}
+
+class _ElectricityBeneficiarySection extends ConsumerWidget {
+  final void Function(String name, String account) onSelect;
+
+  const _ElectricityBeneficiarySection({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final beneficiariesAsync = ref.watch(billBeneficiariesProvider('ELECTRICITY'));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.people_outline_rounded, color: primaryColor, size: 15.sp),
+            SizedBox(width: 6.w),
+            Text(
+              'Select Beneficiary',
+              style: TextStyle(
+                color: const Color(0xFF0F172A),
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: 260.h,
+            minHeight: 140.h,
+          ),
+          child: beneficiariesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(child: Text('Error loading: $err')),
+            data: (data) {
+              final recents = data?.recent.map((e) => {
+                "name": e.destination,
+                "account": e.destination,
+              }).toList() ?? [];
+
+              return BeneficiaryTabSection(
+                favorites: const [],
+                recents: recents,
+                onSelectBeneficiary: onSelect,
+                onSearchTap: () => debugPrint('Search tapped'),
+                showProgress: false,
+                showLogo: true,
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 

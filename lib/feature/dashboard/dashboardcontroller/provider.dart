@@ -7,6 +7,8 @@ import '../model/deposit.dart';
 import '../model/recent_transaction.dart';
 import '../model/virtual_account_model.dart';
 import '../model/services_status_model.dart';
+import '../model/bill_beneficiary_model.dart';
+import '../model/cashback_rule_model.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 
 final userIdProvider = StateProvider<String>((ref) {
@@ -418,4 +420,73 @@ final servicesStatusProvider =
     StateNotifierProvider<ServicesStatusNotifier, ServicesStatus>((ref) {
   final repo = ref.watch(dashboardRepositoryProvider);
   return ServicesStatusNotifier(repo);
+});
+
+class BillBeneficiariesNotifier extends StateNotifier<AsyncValue<RecentAndSavedBillBeneficiaries?>> {
+  final DashboardRepository _repo;
+  final String _serviceType;
+
+  BillBeneficiariesNotifier(this._repo, this._serviceType) : super(const AsyncValue.loading()) {
+    fetchBeneficiaries();
+  }
+
+  Future<void> fetchBeneficiaries() async {
+    state = const AsyncValue.loading();
+    try {
+      final data = await _repo.getRecentAndSavedBillBeneficiaries(_serviceType);
+      if (mounted) state = AsyncValue.data(data);
+    } catch (e, st) {
+      if (mounted) state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<bool> saveBeneficiary({
+    required String destination,
+    required String name,
+    String? provider,
+  }) async {
+    try {
+      final success = await _repo.saveBillBeneficiary(
+        serviceType: _serviceType,
+        destination: destination,
+        name: name,
+        provider: provider,
+      );
+      if (success) {
+        await fetchBeneficiaries();
+      }
+      return success;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteBeneficiary(int id) async {
+    try {
+      final success = await _repo.deleteBillBeneficiary(id);
+      if (success) {
+        await fetchBeneficiaries();
+      }
+      return success;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+final billBeneficiariesProvider = StateNotifierProvider.autoDispose.family<
+    BillBeneficiariesNotifier,
+    AsyncValue<RecentAndSavedBillBeneficiaries?>,
+    String
+>((ref, serviceType) {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  return BillBeneficiariesNotifier(repo, serviceType);
+});
+
+/// Fetches the cashback rule for a given [serviceType] (AIRTIME, DATA, CABLE_TV, ELECTRICITY).
+/// Returns null when the service has no active cashback or the call fails.
+final billCashbackProvider =
+    FutureProvider.autoDispose.family<CashbackRule?, String>((ref, serviceType) async {
+  final repo = ref.watch(dashboardRepositoryProvider);
+  return repo.fetchBillCashback(serviceType);
 });

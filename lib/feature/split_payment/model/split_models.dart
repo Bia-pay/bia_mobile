@@ -216,3 +216,130 @@ class SplitDetailsResponse {
     );
   }
 }
+
+class UserSplitPaymentItem {
+  final String splitId;
+  final String? title;
+  final String creatorName;
+  final double totalAmount;
+  final String status;
+  final String createdAt;
+  final double assignedAmount;
+  final String paymentStatus;
+  final String? paidAt;
+  final bool isPendingPayment;
+
+  UserSplitPaymentItem({
+    required this.splitId,
+    this.title,
+    required this.creatorName,
+    required this.totalAmount,
+    required this.status,
+    required this.createdAt,
+    required this.assignedAmount,
+    required this.paymentStatus,
+    this.paidAt,
+    required this.isPendingPayment,
+  });
+
+  factory UserSplitPaymentItem.fromJson(Map<String, dynamic> json) {
+    return UserSplitPaymentItem(
+      splitId: json['splitId'] ?? '',
+      title: json['title'],
+      creatorName: json['creatorName'] ?? '',
+      totalAmount: double.tryParse(json['totalAmount']?.toString() ?? '') ?? 0.0,
+      status: json['status'] ?? 'PENDING',
+      createdAt: json['createdAt'] ?? '',
+      assignedAmount: double.tryParse(json['assignedAmount']?.toString() ?? '') ?? 0.0,
+      paymentStatus: json['paymentStatus'] ?? 'PENDING',
+      paidAt: json['paidAt'],
+      isPendingPayment: json['isPendingPayment'] ?? false,
+    );
+  }
+}
+
+class UserSplitPaymentsMeta {
+  final int total;
+  final int page;
+  final int limit;
+  final int totalPages;
+
+  UserSplitPaymentsMeta({
+    required this.total,
+    required this.page,
+    required this.limit,
+    required this.totalPages,
+  });
+
+  factory UserSplitPaymentsMeta.fromJson(Map<String, dynamic> json) {
+    return UserSplitPaymentsMeta(
+      total: (json['total'] as num?)?.toInt() ?? 0,
+      page: (json['page'] as num?)?.toInt() ?? 1,
+      limit: (json['limit'] as num?)?.toInt() ?? 10,
+      totalPages: (json['totalPages'] as num?)?.toInt() ?? 1,
+    );
+  }
+}
+
+class UserSplitPaymentsResponse {
+  final List<UserSplitPaymentItem> data;
+  final UserSplitPaymentsMeta meta;
+
+  UserSplitPaymentsResponse({
+    required this.data,
+    required this.meta,
+  });
+
+  factory UserSplitPaymentsResponse.fromJson(Map<String, dynamic> json) {
+    final list = json['data'] as List? ?? [];
+    final items = list.map((e) => UserSplitPaymentItem.fromJson(e)).toList();
+    final meta = UserSplitPaymentsMeta.fromJson(json['meta'] ?? {});
+    return UserSplitPaymentsResponse(data: items, meta: meta);
+  }
+}
+
+class SplitStatDetail {
+  final int pendingCount;
+  final double pendingAmount;
+  final int? paidCount;
+  final double? paidAmount;
+  final int? completedCount;
+  final double? completedAmount;
+
+  SplitStatDetail({
+    required this.pendingCount,
+    required this.pendingAmount,
+    this.paidCount,
+    this.paidAmount,
+    this.completedCount,
+    this.completedAmount,
+  });
+
+  factory SplitStatDetail.fromJson(Map<String, dynamic> json) {
+    return SplitStatDetail(
+      pendingCount: (json['pendingCount'] as num?)?.toInt() ?? 0,
+      pendingAmount: double.tryParse(json['pendingAmount']?.toString() ?? '') ?? 0.0,
+      paidCount: (json['paidCount'] as num?)?.toInt(),
+      paidAmount: double.tryParse(json['paidAmount']?.toString() ?? ''),
+      completedCount: (json['completedCount'] as num?)?.toInt(),
+      completedAmount: double.tryParse(json['completedAmount']?.toString() ?? ''),
+    );
+  }
+}
+
+class SplitDashboardStats {
+  final SplitStatDetail incoming;
+  final SplitStatDetail outgoing;
+
+  SplitDashboardStats({
+    required this.incoming,
+    required this.outgoing,
+  });
+
+  factory SplitDashboardStats.fromJson(Map<String, dynamic> json) {
+    return SplitDashboardStats(
+      incoming: SplitStatDetail.fromJson(json['incoming'] ?? {}),
+      outgoing: SplitStatDetail.fromJson(json['outgoing'] ?? {}),
+    );
+  }
+}

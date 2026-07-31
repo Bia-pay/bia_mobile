@@ -351,3 +351,113 @@ final splitDetailsProvider =
       final repo = ref.watch(splitPaymentRepositoryProvider);
       return SplitDetailsNotifier(repo, splitId, ref);
     });
+
+class UserSplitPaymentsNotifier extends StateNotifier<AsyncValue<UserSplitPaymentsResponse?>> {
+  final SplitPaymentRepository _repo;
+
+  UserSplitPaymentsNotifier(this._repo) : super(const AsyncValue.loading());
+
+  Future<void> fetchSplitPayments({
+    String? type,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _repo.getUserSplitPayments(
+        type: type,
+        page: page,
+        limit: limit,
+      );
+      if (response != null) {
+        state = AsyncValue.data(response);
+      } else {
+        state = AsyncValue.error('Failed to load user split payments', StackTrace.current);
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final userSplitPaymentsProvider = StateNotifierProvider<
+    UserSplitPaymentsNotifier,
+    AsyncValue<UserSplitPaymentsResponse?>>((ref) {
+  final repo = ref.watch(splitPaymentRepositoryProvider);
+  return UserSplitPaymentsNotifier(repo);
+});
+
+class SplitStatsNotifier extends StateNotifier<AsyncValue<SplitDashboardStats?>> {
+  final SplitPaymentRepository _repo;
+
+  SplitStatsNotifier(this._repo) : super(const AsyncValue.loading()) {
+    fetchStats();
+  }
+
+  Future<void> fetchStats() async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _repo.getUserSplitPayments(type: 'all', page: 1, limit: 100);
+      if (response != null) {
+        int incomingPendingCount = 0;
+        double incomingPendingAmount = 0.0;
+        int incomingPaidCount = 0;
+        double incomingPaidAmount = 0.0;
+
+        int outgoingPendingCount = 0;
+        double outgoingPendingAmount = 0.0;
+        int outgoingCompletedCount = 0;
+        double outgoingCompletedAmount = 0.0;
+
+        for (final item in response.data) {
+          if (item.isPendingPayment) {
+            // Incoming (To pay)
+            if (item.paymentStatus == 'PAID') {
+              incomingPaidCount++;
+              incomingPaidAmount += item.assignedAmount;
+            } else if (item.paymentStatus == 'PENDING') {
+              incomingPendingCount++;
+              incomingPendingAmount += item.assignedAmount;
+            }
+          } else {
+            // Outgoing (To collect)
+            if (item.status == 'COMPLETED') {
+              outgoingCompletedCount++;
+              outgoingCompletedAmount += item.totalAmount;
+            } else if (item.status == 'PENDING') {
+              outgoingPendingCount++;
+              outgoingPendingAmount += item.totalAmount;
+            }
+          }
+        }
+
+        final stats = SplitDashboardStats(
+          incoming: SplitStatDetail(
+            pendingCount: incomingPendingCount,
+            pendingAmount: incomingPendingAmount,
+            paidCount: incomingPaidCount,
+            paidAmount: incomingPaidAmount,
+          ),
+          outgoing: SplitStatDetail(
+            pendingCount: outgoingPendingCount,
+            pendingAmount: outgoingPendingAmount,
+            completedCount: outgoingCompletedCount,
+            completedAmount: outgoingCompletedAmount,
+          ),
+        );
+        state = AsyncValue.data(stats);
+      } else {
+        state = AsyncValue.error('Failed to load split statistics', StackTrace.current);
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final splitStatsProvider = StateNotifierProvider<
+    SplitStatsNotifier,
+    AsyncValue<SplitDashboardStats?>>((ref) {
+  final repo = ref.watch(splitPaymentRepositoryProvider);
+  return SplitStatsNotifier(repo);
+});

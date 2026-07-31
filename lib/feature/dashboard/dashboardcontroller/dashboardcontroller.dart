@@ -1112,6 +1112,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required int amount,
         required String network,
         required String pin,
+        bool? saveBeneficiary,
+        String? beneficiaryName,
       }) async {
     if (phone.isEmpty || amount <= 0 || pin.isEmpty || network.isEmpty) {
       ToastHelper.showToast(
@@ -1132,6 +1134,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         amount: amount,
         network: network.toLowerCase().trim(), // ✅ CRITICAL FIX
         pin: pin,
+        saveBeneficiary: saveBeneficiary,
+        beneficiaryName: beneficiaryName,
       );
 
       LoadingHelper.dismiss();
@@ -1190,6 +1194,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required String variationCode,
         required int amount,
         required String pin,
+        bool? saveBeneficiary,
+        String? beneficiaryName,
       }) async {
 
     // 🔍 Debug: print all fields before validation
@@ -1232,6 +1238,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         variationCode: variationCode.trim(),
         amount: amount,
         pin: pin.trim(),
+        saveBeneficiary: saveBeneficiary,
+        beneficiaryName: beneficiaryName,
       );
 
       LoadingHelper.dismiss();
@@ -1357,6 +1365,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required int amount,
         required String phone,
         required String pin,
+        bool? saveBeneficiary,
+        String? beneficiaryName,
       }) async {
     if (smartcard.isEmpty || variationCode.isEmpty || pin.isEmpty) {
       ToastHelper.showToast(
@@ -1381,6 +1391,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         amount: amount,
         phone: phone,
         pin: pin,
+        saveBeneficiary: saveBeneficiary,
+        beneficiaryName: beneficiaryName,
       );
 
       LoadingHelper.dismiss();
@@ -1413,6 +1425,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
         required int amount,
         required String phone,
         required String pin,
+        bool? saveBeneficiary,
+        String? beneficiaryName,
       }) async {
     final repo = dashboardRepository;
     final response = await repo.purchaseElectricity(
@@ -1422,6 +1436,8 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
       amount: amount,
       phone: phone,
       pin: pin,
+      saveBeneficiary: saveBeneficiary,
+      beneficiaryName: beneficiaryName,
     );
     if (response.responseSuccessful) {
       await loadWalletBalance();

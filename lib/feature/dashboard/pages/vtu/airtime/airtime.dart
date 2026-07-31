@@ -15,7 +15,9 @@ import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
 import '../../../../../app/view/widget/custom_textfiels_with_contact.dart';
 import '../../../../../app/view/widget/quick_access_app_bar.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import '../../../dashboardcontroller/provider.dart';
 import 'package:bia/feature/dashboard/widgets/service_guard.dart';
+import '../../send_money/widget/tabs.dart';
 
 // ==================== RESPONSIVE HELPERS ====================
 
@@ -55,6 +57,8 @@ class AirtimeFormState {
   final int? amount;
   final bool isLoading;
   final String? error;
+  final bool saveBeneficiary;
+  final String beneficiaryName;
 
   const AirtimeFormState({
     this.selectedProvider,
@@ -62,6 +66,8 @@ class AirtimeFormState {
     this.amount,
     this.isLoading = false,
     this.error,
+    this.saveBeneficiary = false,
+    this.beneficiaryName = '',
   });
 
   AirtimeFormState copyWith({
@@ -70,6 +76,8 @@ class AirtimeFormState {
     int? amount,
     bool? isLoading,
     String? error,
+    bool? saveBeneficiary,
+    String? beneficiaryName,
   }) {
     return AirtimeFormState(
       selectedProvider: selectedProvider ?? this.selectedProvider,
@@ -77,6 +85,8 @@ class AirtimeFormState {
       amount: amount ?? this.amount,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
+      saveBeneficiary: saveBeneficiary ?? this.saveBeneficiary,
+      beneficiaryName: beneficiaryName ?? this.beneficiaryName,
     );
   }
 
@@ -108,6 +118,14 @@ class AirtimeFormNotifier extends StateNotifier<AirtimeFormState> {
 
   void setError(String? error) {
     state = state.copyWith(error: error);
+  }
+
+  void setSaveBeneficiary(bool value) {
+    state = state.copyWith(saveBeneficiary: value);
+  }
+
+  void setBeneficiaryName(String name) {
+    state = state.copyWith(beneficiaryName: name);
   }
 
   void clear() {
@@ -185,7 +203,7 @@ class _AirtimeState extends ConsumerState<Airtime> {
         SizedBox(height: 16.h),
         const CardOne().animate().fadeIn(duration: 350.ms, delay: 100.ms).slideY(begin: 0.05),
         SizedBox(height: 16.h),
-       // const CardThree().animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05),
+        const CardThree().animate().fadeIn(duration: 400.ms, delay: 200.ms).slideY(begin: 0.05),
         SizedBox(height: 20.h),
       ],
     );
@@ -206,10 +224,10 @@ class _AirtimeState extends ConsumerState<Airtime> {
           ),
         ),
         SizedBox(width: 24.w),
-        // const Expanded(
-        //   flex: 4,
-        //   child: CardThree(),
-        // ),
+        const Expanded(
+          flex: 4,
+          child: CardThree(),
+        ),
       ],
     );
   }
@@ -234,6 +252,8 @@ class _CardTwoState extends ConsumerState<CardTwo> {
 
   Map<String, dynamic>? _selectedProvider;
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  bool _saveAsBeneficiary = false;
   bool _isVerifying = false;
   String? _selectedContactName;
 
@@ -255,6 +275,7 @@ class _CardTwoState extends ConsumerState<CardTwo> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -317,8 +338,11 @@ class _CardTwoState extends ConsumerState<CardTwo> {
 
     // Sync state if changed externally (e.g. from beneficiary tab)
     if (formState.phoneNumber != _phoneController.text) {
-      _phoneController.text = formState.phoneNumber;
-      _detectNetwork(formState.phoneNumber);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _phoneController.text = formState.phoneNumber;
+        _detectNetwork(formState.phoneNumber);
+      });
     }
 
     return Container(
@@ -481,6 +505,71 @@ class _CardTwoState extends ConsumerState<CardTwo> {
               ],
             ),
           ),
+
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              SizedBox(
+                width: 24.w,
+                height: 24.h,
+                child: Checkbox(
+                  value: _saveAsBeneficiary,
+                  onChanged: (v) {
+                    setState(() {
+                      _saveAsBeneficiary = v ?? false;
+                      ref.read(airtimeFormProvider.notifier).setSaveBeneficiary(_saveAsBeneficiary);
+                    });
+                  },
+                  activeColor: primaryColor,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'Save as beneficiary',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14.sp,
+                  color: const Color(0xFF475569),
+                ),
+              ),
+            ],
+          ),
+          if (_saveAsBeneficiary) ...[
+            SizedBox(height: 10.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: _nameController.text.isNotEmpty ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+                  width: 1.5,
+                ),
+              ),
+              child: TextFormField(
+                controller: _nameController,
+                style: TextStyle(
+                  color: const Color(0xFF1E293B),
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: const InputDecoration(
+                  hintText: 'Enter beneficiary name (e.g. My Line)',
+                  hintStyle: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  border: InputBorder.none,
+                  counterText: "",
+                ),
+                onChanged: (value) {
+                  ref.read(airtimeFormProvider.notifier).setBeneficiaryName(value);
+                  setState(() {});
+                },
+              ),
+            ),
+          ],
 
           if (_selectedContactName != null)
             Padding(
@@ -670,6 +759,31 @@ class _CardOneState extends ConsumerState<CardOne> {
               ),
             ),
 
+          // Cashback Indicator
+          Builder(builder: (context) {
+            final cashbackRule = ref.watch(billCashbackProvider('AIRTIME')).valueOrNull;
+            final label = (selectedAmount != null && selectedAmount! > 0)
+                ? cashbackRule?.displayLabel(transactionAmount: selectedAmount!.toDouble())
+                : cashbackRule?.displayLabel();
+            if (label == null || label.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: EdgeInsets.only(top: 8.h, left: 4.w),
+              child: Row(
+                children: [
+                  Icon(Icons.card_giftcard_rounded, color: successColor, size: 14.sp),
+                  SizedBox(width: 6.w),
+                  Text(
+                    "Earn $label reward on this purchase",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: successColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
           SizedBox(height: 20.h),
           Text(
             'Quick Selection',
@@ -761,14 +875,24 @@ class _CardOneState extends ConsumerState<CardOne> {
       return;
     }
 
+    // Resolve cashback dynamically (await future to ensure completed fetch)
+    final cashbackRule = await ref
+        .read(billCashbackProvider('AIRTIME').future)
+        .catchError((_) => null);
+    final cashbackLabel =
+        cashbackRule?.displayLabel(transactionAmount: amount.toDouble());
+    final hasCashback = cashbackLabel != null && cashbackLabel.isNotEmpty;
+
+    if (!mounted) return;
+
     ConfirmationBottomSheet.show(
       context: context,
       config: BottomSheetConfig(
         title: '${Constants.nairaCurrencySymbol}$amount.00',
         subtitle: 'Confirm Airtime Recharge',
-        showCashback: true,
+        showCashback: hasCashback,
         amount: amount.toDouble(),
-        cashbackAmount: '+${Constants.nairaCurrencySymbol}1 Cashback',
+        cashbackAmount: hasCashback ? cashbackLabel : null,
         details: [
           BottomSheetDetailItem(
             label: 'Network',
@@ -793,6 +917,8 @@ class _CardOneState extends ConsumerState<CardOne> {
               amount: amount,
               network: provider['id'],
               pin: pin,
+              saveBeneficiary: formState.saveBeneficiary,
+              beneficiaryName: formState.beneficiaryName,
             );
 
         ref.read(airtimeFormProvider.notifier).setLoading(false);
@@ -800,6 +926,10 @@ class _CardOneState extends ConsumerState<CardOne> {
 
         final isSuccess = result?.responseSuccessful == true ||
                           result?.responseBody?.status == "SUCCESS";
+
+        if (isSuccess) {
+          ref.invalidate(billBeneficiariesProvider('AIRTIME'));
+        }
 
         context.goNamed(
           RouteList.successScreen,
@@ -817,75 +947,74 @@ class _CardOneState extends ConsumerState<CardOne> {
   }
 }
 
-// // ==================== CARD THREE: BENEFICIARY ====================
-//
-// class CardThree extends ConsumerStatefulWidget {
-//   const CardThree({super.key});
-//
-//   @override
-//   ConsumerState<CardThree> createState() => _CardThreeState();
-// }
-//
-// class _CardThreeState extends ConsumerState<CardThree> {
-//   @override
-//   Widget build(BuildContext context) {
-//     final isSmall = ResponsiveConfig.isSmallScreen(context);
-//     final isTablet = ResponsiveConfig.isTablet(context);
-//
-//     return Container(
-//       padding: EdgeInsets.symmetric(
-//         horizontal: isSmall ? 16.w : (isTablet ? 24.w : 20.w),
-//         vertical: isSmall ? 16.h : (isTablet ? 24.h : 20.h),
-//       ),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(20.r),
-//         boxShadow: [
-//           BoxShadow(
-//             color: Colors.black.withValues(alpha: 0.03),
-//             blurRadius: 15,
-//             offset: const Offset(0, 4),
-//           ),
-//         ],
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Text(
-//             'Select Beneficiary',
-//             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-//               fontWeight: FontWeight.bold,
-//               fontSize: 15.sp,
-//               color: const Color(0xFF1E293B),
-//             ),
-//           ),
-//           SizedBox(height: 12.h),
-//
-//           ConstrainedBox(
-//             constraints: BoxConstraints(
-//               minHeight: isSmall ? 140.h : 165.h,
-//               maxHeight: isTablet ? 400.h : 260.h,
-//             ),
-//             child: BeneficiaryTabSection(
-//               favorites: const [
-//                 {"name": "Mustapha Garba", "account": "08034567890"},
-//                 {"name": "Aisha Bello", "account": "08014567890"},
-//               ],
-//               recents: const [
-//                 {"name": "Fatima Yusuf", "account": "08023456789"},
-//                 {"name": "John Musa", "account": "08034567891"},
-//               ],
-//               onSelectBeneficiary: (name, account) {
-//                 debugPrint('Selected $name - $account');
-//                 ref.read(airtimeFormProvider.notifier).setPhoneNumber(account);
-//               },
-//               onSearchTap: () => debugPrint('Search tapped'),
-//               showProgress: false,
-//               showLogo: true,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+class CardThree extends ConsumerWidget {
+  const CardThree({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSmall = ResponsiveConfig.isSmallScreen(context);
+    final isTablet = ResponsiveConfig.isTablet(context);
+
+    final beneficiariesAsync = ref.watch(billBeneficiariesProvider('AIRTIME'));
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmall ? 16.w : (isTablet ? 24.w : 20.w),
+        vertical: isSmall ? 16.h : (isTablet ? 24.h : 20.h),
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Select Beneficiary',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 15.sp,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+          SizedBox(height: 12.h),
+
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: isSmall ? 140.h : 165.h,
+              maxHeight: isTablet ? 400.h : 260.h,
+            ),
+            child: beneficiariesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error loading: $err')),
+              data: (data) {
+                final recents = data?.recent.map((e) => {
+                  "name": e.destination,
+                  "account": e.destination,
+                }).toList() ?? [];
+
+                return BeneficiaryTabSection(
+                  favorites: const [],
+                  recents: recents,
+                  onSelectBeneficiary: (name, account) {
+                    ref.read(airtimeFormProvider.notifier).setPhoneNumber(account);
+                  },
+                  onSearchTap: () => debugPrint('Search tapped'),
+                  showProgress: false,
+                  showLogo: true,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

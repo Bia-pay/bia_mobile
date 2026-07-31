@@ -76,5 +76,18 @@ class ApiConstant {
   static String GET_SPLIT_DETAILS(String splitId) => '/api/v1/split/$splitId';
   static String REMIND_SPLIT(String splitId) => '/api/v1/split/$splitId/remind';
   static String CANCEL_SPLIT(String splitId) => '/api/v1/split/$splitId/cancel';
+  static const String GET_PENDING_SPLITS = '/api/v1/split/pending';
+  static const String GET_SPLIT_STATS = '/api/v1/split/stats';
+
+  // ------------ BILL PAYMENT BENEFICIARIES
+  static const String GET_RECENT_BILL_PAYMENTS = '/api/v1/billpayment/recent';
+  static const String GET_BILL_BENEFICIARIES = '/api/v1/billpayment/beneficiaries';
+  static const String SAVE_BILL_BENEFICIARY = '/api/v1/billpayment/beneficiary';
+  static String DELETE_BILL_BENEFICIARY(int id) => '/api/v1/billpayment/beneficiary/$id';
+  static const String GET_RECENT_AND_SAVED_BILL_BENEFICIARIES = '/api/v1/billpayment/beneficiary/recent-and-saved';
+
+  // ------------ BILL PAYMENT CASHBACK
+  static String BILL_CASHBACK(String serviceType) =>
+      '/api/v1/user/billpayment/cashback/$serviceType';
 }
 

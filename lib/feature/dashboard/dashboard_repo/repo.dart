@@ -18,6 +18,8 @@ import '../model/verify_transactions.dart';
 import '../model/notification_model.dart';
 import '../model/virtual_account_model.dart';
 import '../model/services_status_model.dart';
+import '../model/bill_beneficiary_model.dart';
+import '../model/cashback_rule_model.dart';
 
 final dashboardRepositoryProvider = Provider((ref) {
   final apiClient = ref.read(apiClientProvider);
@@ -990,6 +992,8 @@ class DashboardRepository {
     required int amount,
     required String network,
     required String pin,
+    bool? saveBeneficiary,
+    String? beneficiaryName,
   }) async {
     try {
       final body = {
@@ -998,6 +1002,8 @@ class DashboardRepository {
         "network": network,
         "pin": pin
       };
+      if (saveBeneficiary != null) body["saveBeneficiary"] = saveBeneficiary;
+      if (beneficiaryName != null && beneficiaryName.isNotEmpty) body["beneficiaryName"] = beneficiaryName;
 
       final response =
       await _apiClient.postData(ApiConstant.BUY_AIRTIME, body);
@@ -1051,6 +1057,8 @@ class DashboardRepository {
     required String variationCode,
     required int amount,
     required String pin,
+    bool? saveBeneficiary,
+    String? beneficiaryName,
   }) async {
     final body = {
       "serviceID": serviceId,
@@ -1060,6 +1068,8 @@ class DashboardRepository {
       "phone": phone,
       "pin": pin,
     };
+    if (saveBeneficiary != null) body["saveBeneficiary"] = saveBeneficiary;
+    if (beneficiaryName != null && beneficiaryName.isNotEmpty) body["beneficiaryName"] = beneficiaryName;
 
     debugPrint("📤 DATA PURCHASE BODY: $body");
 
@@ -1195,6 +1205,8 @@ class DashboardRepository {
     required int amount,
     required String phone,
     required String pin,
+    bool? saveBeneficiary,
+    String? beneficiaryName,
   }) async {
     try {
       final body = {
@@ -1206,6 +1218,8 @@ class DashboardRepository {
         "phone": phone,
         "pin": pin,
       };
+      if (saveBeneficiary != null) body["saveBeneficiary"] = saveBeneficiary;
+      if (beneficiaryName != null && beneficiaryName.isNotEmpty) body["beneficiaryName"] = beneficiaryName;
 
       final response = await _apiClient.postData(
         ApiConstant.PURCHASE_CABLE,
@@ -1286,6 +1300,8 @@ class DashboardRepository {
     required int amount,
     required String phone,
     required String pin,
+    bool? saveBeneficiary,
+    String? beneficiaryName,
   }) async {
     try {
       final body = {
@@ -1297,6 +1313,8 @@ class DashboardRepository {
         "phone": phone,
         "pin": pin,
       };
+      if (saveBeneficiary != null) body["saveBeneficiary"] = saveBeneficiary;
+      if (beneficiaryName != null && beneficiaryName.isNotEmpty) body["beneficiaryName"] = beneficiaryName;
 
       final response = await _apiClient.postData(
         ApiConstant.PURCHASE_ELECTRICITY_UNIT,
@@ -1440,5 +1458,113 @@ class DashboardRepository {
       utility: true,
       qr: true,
     );
+  }
+
+  Future<List<RecentBillPaymentItem>> getRecentBillPayments({String? serviceType}) async {
+    try {
+      String url = ApiConstant.GET_RECENT_BILL_PAYMENTS;
+      if (serviceType != null && serviceType.isNotEmpty) {
+        url += '?serviceType=$serviceType';
+      }
+      final response = await _apiClient.getData(url);
+      final json = jsonDecode(response.body);
+      if (json['responseSuccessful'] == true && json['responseBody'] != null) {
+        final list = json['responseBody'] as List? ?? [];
+        return list.map((e) => RecentBillPaymentItem.fromJson(e)).toList();
+      }
+    } catch (e, st) {
+      debugPrint('❌ getRecentBillPayments error: $e\n$st');
+    }
+    return [];
+  }
+
+  Future<List<BillBeneficiaryItem>> getSavedBillBeneficiaries({String? serviceType}) async {
+    try {
+      String url = ApiConstant.GET_BILL_BENEFICIARIES;
+      if (serviceType != null && serviceType.isNotEmpty) {
+        url += '?serviceType=$serviceType';
+      }
+      final response = await _apiClient.getData(url);
+      final json = jsonDecode(response.body);
+      if (json['responseSuccessful'] == true && json['responseBody'] != null) {
+        final list = json['responseBody'] as List? ?? [];
+        return list.map((e) => BillBeneficiaryItem.fromJson(e)).toList();
+      }
+    } catch (e, st) {
+      debugPrint('❌ getSavedBillBeneficiaries error: $e\n$st');
+    }
+    return [];
+  }
+
+  Future<bool> saveBillBeneficiary({
+    required String serviceType,
+    required String destination,
+    required String name,
+    String? provider,
+  }) async {
+    try {
+      final body = {
+        "serviceType": serviceType,
+        "destination": destination,
+        "name": name,
+      };
+      if (provider != null) body["provider"] = provider;
+
+      final response = await _apiClient.postData(ApiConstant.SAVE_BILL_BENEFICIARY, body);
+      final json = jsonDecode(response.body);
+      return json['responseSuccessful'] == true;
+    } catch (e, st) {
+      debugPrint('❌ saveBillBeneficiary error: $e\n$st');
+      return false;
+    }
+  }
+
+  Future<bool> deleteBillBeneficiary(int id) async {
+    try {
+      final response = await _apiClient.deleteData(ApiConstant.DELETE_BILL_BENEFICIARY(id));
+      final json = jsonDecode(response.body);
+      return json['responseSuccessful'] == true;
+    } catch (e, st) {
+      debugPrint('❌ deleteBillBeneficiary error: $e\n$st');
+      return false;
+    }
+  }
+
+  Future<RecentAndSavedBillBeneficiaries?> getRecentAndSavedBillBeneficiaries(String serviceType) async {
+    try {
+      final url = '${ApiConstant.GET_RECENT_AND_SAVED_BILL_BENEFICIARIES}?serviceType=$serviceType';
+      final response = await _apiClient.getData(url);
+      final json = jsonDecode(response.body);
+      if (json['responseSuccessful'] == true && json['responseBody'] != null) {
+        return RecentAndSavedBillBeneficiaries.fromJson(json['responseBody']);
+      }
+    } catch (e, st) {
+      debugPrint('❌ getRecentAndSavedBillBeneficiaries error: $e\n$st');
+    }
+    return null;
+  }
+
+  // ------------ BILL PAYMENT CASHBACK ------------
+
+  Future<CashbackRule?> fetchBillCashback(String serviceType) async {
+    try {
+      var response = await _apiClient.getData(ApiConstant.BILL_CASHBACK(serviceType));
+      
+      // Fallback in case endpoint is defined without /v1 on server
+      if (response.statusCode == 404) {
+        response = await _apiClient.getData('/api/user/billpayment/cashback/$serviceType');
+      }
+
+      if (response.statusCode == 200 && response.body.trim().startsWith('{')) {
+        final json = jsonDecode(response.body);
+        if (json['responseSuccessful'] == true && json['responseBody'] != null) {
+          final rule = CashbackRule.fromJson(json['responseBody'] as Map<String, dynamic>);
+          if (rule.isActive) return rule;
+        }
+      }
+    } catch (e, st) {
+      debugPrint('❌ fetchBillCashback($serviceType) error: $e\n$st');
+    }
+    return null;
   }
 }
