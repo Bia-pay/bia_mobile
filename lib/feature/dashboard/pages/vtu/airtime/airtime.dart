@@ -759,31 +759,6 @@ class _CardOneState extends ConsumerState<CardOne> {
               ),
             ),
 
-          // Cashback Indicator
-          Builder(builder: (context) {
-            final cashbackRule = ref.watch(billCashbackProvider('AIRTIME')).valueOrNull;
-            final label = (selectedAmount != null && selectedAmount! > 0)
-                ? cashbackRule?.displayLabel(transactionAmount: selectedAmount!.toDouble())
-                : cashbackRule?.displayLabel();
-            if (label == null || label.isEmpty) return const SizedBox.shrink();
-            return Padding(
-              padding: EdgeInsets.only(top: 8.h, left: 4.w),
-              child: Row(
-                children: [
-                  Icon(Icons.card_giftcard_rounded, color: successColor, size: 14.sp),
-                  SizedBox(width: 6.w),
-                  Text(
-                    "Earn $label reward on this purchase",
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: successColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-
           SizedBox(height: 20.h),
           Text(
             'Quick Selection',

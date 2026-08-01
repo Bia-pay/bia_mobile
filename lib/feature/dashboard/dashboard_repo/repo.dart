@@ -1547,24 +1547,40 @@ class DashboardRepository {
   // ------------ BILL PAYMENT CASHBACK ------------
 
   Future<CashbackRule?> fetchBillCashback(String serviceType) async {
-    try {
-      var response = await _apiClient.getData(ApiConstant.BILL_CASHBACK(serviceType));
-      
-      // Fallback in case endpoint is defined without /v1 on server
-      if (response.statusCode == 404) {
-        response = await _apiClient.getData('/api/user/billpayment/cashback/$serviceType');
-      }
+    final serviceUpper = serviceType.toUpperCase();
+    final serviceLower = serviceType.toLowerCase();
 
-      if (response.statusCode == 200 && response.body.trim().startsWith('{')) {
-        final json = jsonDecode(response.body);
-        if (json['responseSuccessful'] == true && json['responseBody'] != null) {
-          final rule = CashbackRule.fromJson(json['responseBody'] as Map<String, dynamic>);
-          if (rule.isActive) return rule;
+    final endpoints = [
+      ApiConstant.BILL_CASHBACK(serviceUpper),
+      '/api/v1/user/billpayment/cashback/$serviceUpper',
+      '/api/user/billpayment/cashback/$serviceUpper',
+      '/api/v1/billpayment/cashback/$serviceUpper',
+      '/api/billpayment/cashback/$serviceUpper',
+      '/api/v1/user/bill-payment/cashback/$serviceUpper',
+      '/api/v1/user/billpayment/cashback/$serviceLower',
+      '/api/user/billpayment/cashback/$serviceLower',
+    ];
+
+    for (final path in endpoints) {
+      try {
+        final response = await _apiClient.getData(path);
+        AppLogger.debug('🔍 fetchBillCashback [$path] => status: ${response.statusCode}');
+        if (response.statusCode == 200 && response.body.trim().startsWith('{')) {
+          final json = jsonDecode(response.body);
+          if ((json['responseSuccessful'] == true || json['success'] == true) &&
+              json['responseBody'] != null) {
+            final rule = CashbackRule.fromJson(
+                json['responseBody'] as Map<String, dynamic>);
+            AppLogger.debug(
+                '✅ Active Admin Cashback Rule fetched for $serviceType: ${rule.type} ${rule.amount} (isActive: ${rule.isActive})');
+            if (rule.isActive) return rule;
+          }
         }
+      } catch (e) {
+        AppLogger.debug('⚠️ Error fetching cashback from $path: $e');
       }
-    } catch (e, st) {
-      debugPrint('❌ fetchBillCashback($serviceType) error: $e\n$st');
     }
+    AppLogger.debug('⚠️ No active admin cashback rule found for $serviceType');
     return null;
   }
 }

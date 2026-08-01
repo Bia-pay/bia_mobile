@@ -925,28 +925,6 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                                 ),
                               ),
                               SizedBox(height: 4.h),
-                              Builder(builder: (context) {
-                                final planPrice = double.tryParse(
-                                        plan['variation_amount']?.toString() ?? '') ??
-                                    0.0;
-                                final cashbackRule = ref
-                                    .watch(billCashbackProvider('CABLE_TV'))
-                                    .valueOrNull;
-                                final label = cashbackRule?.displayLabel(
-                                    transactionAmount: planPrice);
-                                if (label == null || label.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-                                return Text(
-                                  label,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: greenAccent,
-                                    fontSize: 11.sp,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                );
-                              }),
-                              SizedBox(height: 4.h),
                               Text(
                                 CablePlanConfig.getPlanDescription(variationCode),
                                 maxLines: 1,
