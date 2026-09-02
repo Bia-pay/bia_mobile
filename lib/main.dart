@@ -27,9 +27,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint("🔥 Handling a background message: ${message.messageId}");
   
-  // Explicitly show the notification in the background
-  // This is required for 'data' only messages or when we want custom display logic
-  _showNotification(message);
+  // Only show manually if it's a data-only message, as the OS automatically
+  // displays notifications that contain a notification payload in the background.
+  if (message.notification == null) {
+    _showNotification(message);
+  }
 }
 
 final FlutterLocalNotificationsPlugin localNotifications =
@@ -115,7 +117,13 @@ Future<void> initLocalNotifications() async {
 void listenForForegroundMessages() {
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint("🟢 Message received in foreground!");
-    _showNotification(message);
+    
+    // On iOS, if setForegroundNotificationPresentationOptions is set to alert,
+    // the system automatically displays the notification if a notification payload is present.
+    // Therefore, only manually trigger a notification on Android, or for data-only messages.
+    if (Platform.isAndroid || message.notification == null) {
+      _showNotification(message);
+    }
   });
 }
 
@@ -138,44 +146,47 @@ void setupNotificationTapHandlers() {
 // ==================== MAIN ENTRY ====================
 
 /// Fires immediately so the splash screen appears in <200ms.
-/// All heavy initialisation (Hive, Firebase, FCM) is deferred to the background.
+/// All heavy initialisation (Firebase, FCM) is deferred to the background.
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // ✅ Step 1 — Run the app IMMEDIATELY so the native splash turns into Flutter
-  //    rendering without any blocking I/O in front of it.
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  try {
+    // Initialize Hive and open local storage boxes before building the widget tree
+    // to prevent synchronous race conditions / HiveError.
+    await Hive.initFlutter();
+    await Future.wait([
+      Hive.openBox("authBox"),
+      Hive.openBox("appBox"),
+      Hive.openBox("transactionCacheBox"),
+    ]);
+  } catch (e) {
+    debugPrint("⚠️ Hive initialization error: $e");
+  }
+
+  // ✅ Step 1 — Run the app so the splash screen renders
   runApp(const ProviderScope(child: AppSocketListener(child: MyApp())));
 
-  // ✅ Step 2 — Everything else happens in the background while the splash
-  //    screen is already visible to the user.
+  // ✅ Step 2 — Initialize heavier network-bound services (Firebase, FCM) in the background.
   _initAllServicesInBackground();
 }
 
 /// Runs all heavy initialisation off the critical path.
 Future<void> _initAllServicesInBackground() async {
   try {
-    // Hive init + box openings are fast (~100-300 ms) but used to block runApp.
-    await Hive.initFlutter();
-
-    final results = await Future.wait([
-      Hive.openBox("authBox"),
-      Hive.openBox("appBox"),
-      Hive.openBox("transactionCacheBox"),
-      if (Platform.isAndroid) MediaStore.ensureInitialized(),
-    ]);
-
-    final authBox = results[0] as Box;
     if (Platform.isAndroid) {
+      await MediaStore.ensureInitialized();
       MediaStore.appFolder = "Bia";
     }
 
-    // Firebase is the heaviest init — run it only after Hive boxes are ready.
+    // Firebase is the heaviest init — run it in the background.
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
+    final authBox = Hive.box("authBox");
     // All secondary services (FCM, notifications) need Firebase to be ready.
     await _initSecondaryServices(authBox);
   } catch (e) {

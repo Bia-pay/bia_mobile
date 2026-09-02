@@ -14,6 +14,24 @@ import 'package:bia/feature/dashboard/dashboardcontroller/provider.dart';
 import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:bia/app/utils/image.dart';
 import 'package:bia/app/view/widget/dashboard_header.dart';
+import 'package:bia/feature/bia_trike/presentation/bia_trike_onboarding_screen.dart';
+
+void _runProtectedAction(BuildContext context, VoidCallback onAllowed) {
+  final box = Hive.box('authBox');
+  final isComplete = box.get('isCompleteRegistration', defaultValue: true) == true;
+  if (!isComplete) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please complete your profile to use this feature.'),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.red,
+      ),
+    );
+    context.pushNamed(RouteList.completeProfile);
+  } else {
+    onAllowed();
+  }
+}
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -45,6 +63,104 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (!mounted) return;
       context.go(RouteList.setTransactionPin);
     }
+  }
+
+  Widget _buildCompleteProfileBanner() {
+    final userProfile = ref.watch(userProfileProvider);
+    final box = Hive.box('authBox');
+    final isComplete = userProfile?.isCompleteRegistration ?? box.get('isCompleteRegistration', defaultValue: true) == true;
+    
+    if (isComplete) return const SizedBox.shrink();
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6.h),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFF3CD), Color(0xFFFFEBA8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: const Color(0xFFFFE082), width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(4.r),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFB300),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.white,
+                size: 13,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Complete Profile Setup',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11.sp,
+                      color: const Color(0xFF664D03),
+                    ),
+                  ),
+                  Text(
+                    'Add name, email, and PIN to secure wallet.',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      color: const Color(0xFF856404),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 6.w),
+            ElevatedButton(
+              onPressed: () {
+                context.pushNamed(RouteList.completeProfile);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF664D03),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Setup',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 9.5.sp,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -115,6 +231,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        _buildCompleteProfileBanner(),
                         const BalanceCard()
                             .animate()
                             .fadeIn(duration: 350.ms)
@@ -177,6 +294,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildCompleteProfileBanner(),
                   SizedBox(height: 10.h),
                   const BalanceCard()
                       .animate()
@@ -240,6 +358,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               bell: bell,
               notificationRoute: RouteList.notification,
               profileRoute: RouteList.userSettings,
+              helpRoute: RouteList.helpCenter,
             ),
             Expanded(
               child: RefreshIndicator(
@@ -300,63 +419,24 @@ class ActionRibbon extends StatelessWidget {
                 BlendMode.srcIn,
               ),
             ),
-            onTap: () => context.pushNamed(RouteList.sendMoneyTransfer),
+            onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyTransfer)),
           ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              ActionButton(
-                label: 'Bia Trike',
-                icon: Icon(
-                  Icons.electric_rickshaw_rounded,
-                  color: primaryColor,
-                  size: 21.sp,
+          ActionButton(
+            label: 'Bia Trike',
+            icon: Icon(
+              Icons.electric_rickshaw_rounded,
+              color: primaryColor,
+              size: 21.sp,
+            ),
+            onTap: () => _runProtectedAction(
+              context,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BiaTrikeOnboardingScreen(),
                 ),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Bia Trike coming soon!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
               ),
-              Positioned(
-                top: -6.h,
-                right: -24.w,
-                child:
-                    Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 5.w,
-                            vertical: 2.5.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: primaryGreenColor,
-                            borderRadius: BorderRadius.circular(6.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: primaryGreenColor.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            'Soon',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 6.5.sp,
-                              color: Colors.white,
-                            ),
-                          ),
-                        )
-                        .animate(
-                          onPlay: (controller) =>
-                              controller.repeat(reverse: true),
-                        )
-                        .scaleXY(begin: 0.94, end: 1.06, duration: 1000.ms),
-              ),
-            ],
+            ),
           ),
           ActionButton(
             label: 'Withdrawal',
@@ -370,7 +450,7 @@ class ActionRibbon extends StatelessWidget {
                 size: 20,
               ),
             ),
-            onTap: () => context.pushNamed(RouteList.sendMoneyToBank),
+            onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyToBank)),
           ),
           ActionButton(
             label: 'Split Bill',
@@ -379,7 +459,7 @@ class ActionRibbon extends StatelessWidget {
               color: primaryColor,
               size: 21.sp,
             ),
-            onTap: () => context.pushNamed(RouteList.splitCreatorSetup),
+            onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.splitCreatorSetup)),
           ),
         ],
       ),
@@ -421,25 +501,22 @@ class BiaAiCard extends ConsumerWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16.r),
         child: InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(
-                      Icons.auto_awesome,
-                      color: Colors.amberAccent,
-                      size: 20.sp,
-                    ),
-                    SizedBox(width: 8.w),
-                    const Text('Bia AI Assistant is coming soon! Stay tuned.'),
-                  ],
-                ),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: primaryColor,
-              ),
-            );
-          },
+          onTap: () => _runProtectedAction(context, () async {
+            final authBox = Hive.box('authBox');
+            final userId = authBox.get('userId')?.toString() ?? '';
+            final phone = authBox.get('phone')?.toString() ?? '';
+            final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+            final prefsBox = await Hive.openBox('appPrefs');
+            final completedOnboarding = prefsBox.get('biaAiLanguageSelected_$effectiveUserId', defaultValue: false) == true;
+
+            if (!context.mounted) return;
+            if (completedOnboarding) {
+              context.pushNamed(RouteList.aiChat);
+            } else {
+              context.pushNamed(RouteList.biaLanguageOnboarding);
+            }
+          }),
           borderRadius: BorderRadius.circular(16.r),
           child: Stack(
             children: [
@@ -471,7 +548,7 @@ class BiaAiCard extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Bia AI Assistant (Coming Soon)',
+                            'Bia AI Assistant',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               fontSize: 13.sp,
@@ -480,7 +557,7 @@ class BiaAiCard extends ConsumerWidget {
                           ),
                           SizedBox(height: 2.h),
                           Text(
-                            'Voice & text transactions in local dialect. Stay tuned!',
+                            'Voice & text transactions in local dialect.',
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w400,
                               fontSize: 9.sp,
@@ -606,15 +683,19 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
     ),
     _BannerData(
       gradientColors: [Color(0xFF4C1D95), Color(0xFF7C3AED)],
-      title: 'Bia AI Assistant — Coming Soon',
+      title: 'Bia AI Assistant',
       subtitle: 'Make transactions with voice commands in your local dialect.',
       icon: Icons.mic_rounded,
+      actionLabel: 'Chat Now',
+      route: RouteList.aiChat,
     ),
     _BannerData(
       gradientColors: [Color(0xFF92400E), Color(0xFFD97706)],
-      title: 'Bia Trike — Coming Soon',
-      subtitle: 'Book affordable rides right from your wallet. Stay tuned!',
+      title: 'Bia Trike Fleet',
+      subtitle: 'Onboard your trike today to start earning across commercial hubs.',
       icon: Icons.electric_rickshaw_rounded,
+      actionLabel: 'Onboard Rider',
+      route: RouteList.biaTrikeOnboarding,
     ),
   ];
 
@@ -672,7 +753,35 @@ class _PromoBannerCarouselState extends State<PromoBannerCarousel> {
               return _BannerCard(
                 banner: banner,
                 onTap: banner.route != null
-                    ? () => context.pushNamed(banner.route!)
+                    ? () => _runProtectedAction(context, () async {
+                        if (banner.route == RouteList.aiChat) {
+                          final authBox = Hive.box('authBox');
+                          final userId = authBox.get('userId')?.toString() ?? '';
+                          final phone = authBox.get('phone')?.toString() ?? '';
+                          final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+                          final prefsBox = await Hive.openBox('appPrefs');
+                          final completedOnboarding = prefsBox.get('biaAiLanguageSelected_$effectiveUserId', defaultValue: false) == true;
+
+                          if (!context.mounted) return;
+                          if (completedOnboarding) {
+                            context.pushNamed(RouteList.aiChat);
+                          } else {
+                            context.pushNamed(RouteList.biaLanguageOnboarding);
+                          }
+                        } else {
+                          if (banner.route == RouteList.biaTrikeOnboarding) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const BiaTrikeOnboardingScreen(),
+                              ),
+                            );
+                          } else {
+                            context.push(banner.route!);
+                          }
+                        }
+                      })
                     : null,
               );
             },
@@ -1020,7 +1129,7 @@ class BalanceCard extends ConsumerWidget {
                     children: [
                       // Top Right: Add Money Icon
                       GestureDetector(
-                        onTap: () => context.pushNamed(RouteList.topUp),
+                        onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.topUp)),
                         child: Container(
                           padding: EdgeInsets.all(5.r),
                           decoration: BoxDecoration(
@@ -1040,8 +1149,7 @@ class BalanceCard extends ConsumerWidget {
                       ),
                       // Bottom Right: Transaction History Link
                       GestureDetector(
-                        onTap: () =>
-                            context.pushNamed(RouteList.transactionHistory),
+                        onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.transactionHistory)),
                         behavior: HitTestBehavior.opaque,
                         child: Container(
                           padding: EdgeInsets.symmetric(
@@ -1155,31 +1263,25 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
         size: 20.sp,
       ),
       'color': secondaryColor,
-      'onTap': () => context.pushNamed(RouteList.airtime),
+      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.airtime)),
     },
     {
       'label': 'Data',
       'icon': Icon(Icons.wifi_rounded, color: primaryColor, size: 20.sp),
       'color': secondaryColor,
-      'onTap': () => context.pushNamed(RouteList.data),
+      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.data)),
     },
     {
       'label': 'Cable TV',
       'icon': Icon(Icons.live_tv_rounded, color: primaryColor, size: 20.sp),
       'color': secondaryColor,
-      'onTap': () => context.pushNamed(RouteList.cable),
-    },
-    {
-      'label': 'Split Bill',
-      'icon': Icon(Icons.splitscreen_rounded, color: primaryColor, size: 20.sp),
-      'color': secondaryColor,
-      'onTap': () => context.pushNamed(RouteList.splitCreatorSetup),
+      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.cable)),
     },
     {
       'label': 'Electricity',
       'icon': Icon(Icons.bolt_rounded, color: primaryColor, size: 20.sp),
       'color': secondaryColor,
-      'onTap': () => context.pushNamed(RouteList.electricity),
+      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.electricity)),
     },
     {
       'label': 'Water Bill',
@@ -1504,6 +1606,8 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accountAsync = ref.watch(virtualAccountProvider);
+    final box = Hive.box('authBox');
+    final isComplete = box.get('isCompleteRegistration', defaultValue: true) == true;
 
     final double screenHeight = MediaQuery.of(context).size.height;
     final bool isXSmall = screenHeight < 680;
@@ -1515,91 +1619,120 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
       return _ShimmerBanner(height: cardHeight);
     }
 
-    return Container(
-      height: cardHeight,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: primaryColor.withOpacity(0.18), width: 0.8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.012),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+    final displayProvider = isComplete ? account.provider : "Virtual Account";
+    final displayAccountName = isComplete ? account.virtualAccountName : "Incomplete Profile";
+    final displayAccountNo = isComplete ? account.virtualAccountNo : "••••••••••";
+
+    return GestureDetector(
+      onTap: isComplete ? null : () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please complete your profile to view virtual account details.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-        child: Row(
-          children: [
-            // Bank logo indicator
-            Icon(
-              Icons.account_balance_rounded,
-              color: primaryColor,
-              size: isXSmall ? 13.sp : 14.sp,
-            ),
-            SizedBox(width: 8.w),
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Row 1: Provider + Account Name
-                  Row(
-                    children: [
-                      Text(
-                        account.provider,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: isXSmall ? 8.sp : 9.sp,
-                          fontWeight: FontWeight.w800,
-                          color: primaryColor,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          '  •  ${account.virtualAccountName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: isXSmall ? 8.sp : 9.sp,
-                            fontWeight: FontWeight.w600,
-                            color: lightSecondaryText,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 1.h),
-                  // Row 2: Account Number
-                  Text(
-                    account.virtualAccountNo,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: isXSmall ? 10.sp : 11.sp,
-                      fontWeight: FontWeight.w800,
-                      color: accentColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 8.w),
-            // Copy button icon
-            GestureDetector(
-              onTap: () => _copyAccountNumber(account.virtualAccountNo),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  _copied ? Icons.check_circle_rounded : Icons.copy_rounded,
-                  key: ValueKey<bool>(_copied),
-                  size: isXSmall ? 12.sp : 13.sp,
-                  color: _copied ? successColor : primaryColor,
-                ),
-              ),
+        );
+        context.pushNamed(RouteList.completeProfile);
+      },
+      child: Container(
+        height: cardHeight,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: primaryColor.withOpacity(0.18), width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.012),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+          child: Row(
+            children: [
+              // Bank logo indicator
+              Icon(
+                Icons.account_balance_rounded,
+                color: primaryColor,
+                size: isXSmall ? 13.sp : 14.sp,
+              ),
+              SizedBox(width: 8.w),
+              // Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Row 1: Provider + Account Name
+                    Row(
+                      children: [
+                        Text(
+                          displayProvider,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: isXSmall ? 8.sp : 9.sp,
+                            fontWeight: FontWeight.w800,
+                            color: primaryColor,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '  •  $displayAccountName',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: isXSmall ? 8.sp : 9.sp,
+                              fontWeight: FontWeight.w600,
+                              color: lightSecondaryText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 1.h),
+                    // Row 2: Account Number
+                    Text(
+                      displayAccountNo,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: isXSmall ? 10.sp : 11.sp,
+                        fontWeight: FontWeight.w800,
+                        color: accentColor,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8.w),
+              // Copy button icon
+              GestureDetector(
+                onTap: () {
+                  if (isComplete) {
+                    _copyAccountNumber(account.virtualAccountNo);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please complete your profile to view virtual account details.'),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    context.pushNamed(RouteList.completeProfile);
+                  }
+                },
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    _copied ? Icons.check_circle_rounded : Icons.copy_rounded,
+                    key: ValueKey<bool>(_copied),
+                    size: isXSmall ? 12.sp : 13.sp,
+                    color: _copied ? successColor : primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

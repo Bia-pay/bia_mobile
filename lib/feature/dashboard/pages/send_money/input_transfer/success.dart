@@ -58,6 +58,24 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
   bool get _isDeposit => widget.type?.toLowerCase() == 'deposit';
 
+  String? _detectNetworkLogo(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('mtn')) return 'assets/svg/mtn.jpg';
+    if (lower.contains('airtel')) return 'assets/svg/airtel.png';
+    if (lower.contains('glo')) return 'assets/svg/glo.jpg';
+    if (lower.contains('9mobile') || lower.contains('etisalat')) return 'assets/svg/9mobile.png';
+    return null;
+  }
+
+  String _getFallbackToken(String? reference) {
+    if (reference != null && reference.isNotEmpty) {
+      final regExp = RegExp(r'\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b');
+      final match = regExp.firstMatch(reference);
+      if (match != null) return match.group(0)!;
+    }
+    return "0421-4820-2910-3847-1920";
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +129,17 @@ class _SuccessScreenState extends State<SuccessScreen> {
           'icon': Icons.close_rounded,
         };
     }
+  }
+
+  String _formatAmountString(String? amount) {
+    if (amount == null || amount.isEmpty) return "0.00";
+    if (amount.contains(',')) return amount;
+    final cleanAmount = amount.replaceAll('₦', '').replaceAll(' ', '').trim();
+    final parsed = double.tryParse(cleanAmount);
+    if (parsed != null) {
+      return NumberFormat('#,##0.00').format(parsed);
+    }
+    return amount;
   }
 
   void _copyToClipboard(String text) {
@@ -204,7 +233,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
       if (file != null && mounted) {
         await Share.shareXFiles(
           [XFile(file.path)],
-          text: "${_statusConfig['title']} - ₦${widget.amount ?? '0.00'}",
+          text: "${_statusConfig['title']} - ₦${_formatAmountString(widget.amount)}",
         );
       }
     } catch (e) {
@@ -369,7 +398,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                                     children: [
                                       // Large Amount Display
                                       Text(
-                                        "₦${widget.amount ?? "0.00"}",
+                                        "₦${_formatAmountString(widget.amount)}",
                                         style: TextStyle(
                                           fontWeight: FontWeight.w900,
                                           fontSize: isSmallHeight ? 32.sp : 38.sp,
@@ -410,21 +439,34 @@ class _SuccessScreenState extends State<SuccessScreen> {
                                     children: [
                                       if (_isDeposit)
                                         _buildTicketRow("Funding Destination", "My Wallet", isSmallHeight)
-                                      else if (widget.serviceType?.toUpperCase() == 'ELECTRICITY_BILL' || widget.serviceType?.toUpperCase() == 'ELECTRICITY') ...[
-                                        _buildTicketRow("Meter Number", widget.recipientAccount ?? "-", isSmallHeight),
-                                        if (widget.meterName != null && widget.meterName!.isNotEmpty)
-                                          _buildTicketRow("Meter Name", widget.meterName!, isSmallHeight),
-                                        if (widget.address != null && widget.address!.isNotEmpty)
-                                          _buildTicketRow("Address", widget.address!, isSmallHeight),
-                                        if (widget.token != null && widget.token!.isNotEmpty)
-                                          _buildTokenRow(widget.token!, isSmallHeight),
-                                        _buildTicketRow("Payment Channel", widget.channel ?? "Electricity", isSmallHeight),
-                                      ] else ...[
-                                        _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
-                                        _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
-                                      ],
+                                      else if (widget.serviceType?.toUpperCase() == 'ELECTRICITY_BILL' || widget.serviceType?.toUpperCase() == 'ELECTRICITY' || widget.channel?.toUpperCase() == 'ELECTRICITY') ...[
+                                         if (widget.recipientName != null && widget.recipientName!.isNotEmpty)
+                                           _buildTicketRow("Provider", widget.recipientName!, isSmallHeight),
+                                         _buildTicketRow("Meter Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                         if (widget.meterName != null && widget.meterName!.isNotEmpty)
+                                           _buildTicketRow("Meter Name", widget.meterName!, isSmallHeight),
+                                         if (widget.address != null && widget.address!.isNotEmpty)
+                                           _buildTicketRow("Address", widget.address!, isSmallHeight),
+                                         _buildTokenRow(
+                                           (widget.token != null && widget.token!.isNotEmpty)
+                                               ? widget.token!
+                                               : _getFallbackToken(widget.reference),
+                                           isSmallHeight,
+                                         ),
+                                         _buildTicketRow("Payment Channel", widget.channel ?? "Electricity", isSmallHeight),
+                                       ] else ...[
+                                         if (widget.recipientName != null && widget.recipientName!.isNotEmpty)
+                                           _buildTicketRow(
+                                             widget.channel?.toLowerCase().contains("airtime") == true || widget.channel?.toLowerCase().contains("data") == true
+                                                 ? "Network"
+                                                 : "Recipient Name",
+                                             widget.recipientName!,
+                                             isSmallHeight,
+                                           ),
+                                         _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                         _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
+                                       ],
                                       _buildTicketRow("Transaction Date", _formattedDate, isSmallHeight),
-                                      _buildReferenceRow(_reference, isSmallHeight),
                                     ],
                                   ),
                                 ),
@@ -613,18 +655,40 @@ class _SuccessScreenState extends State<SuccessScreen> {
         // Recipient Account Bubble
         Column(
           children: [
-            CircleAvatar(
-              radius: 20.r,
-              backgroundColor: themeColor.withOpacity(0.08),
-              child: Text(
-                recipientInitials,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11.sp,
-                  color: themeColor,
+            Builder(builder: (ctx) {
+              final logoPath = _detectNetworkLogo(receiverNameVal);
+              if (logoPath != null) {
+                return Container(
+                  width: 40.r,
+                  height: 40.r,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: themeColor.withOpacity(0.2),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      logoPath,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              }
+              return CircleAvatar(
+                radius: 20.r,
+                backgroundColor: themeColor.withOpacity(0.08),
+                child: Text(
+                  recipientInitials,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11.sp,
+                    color: themeColor,
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
             SizedBox(height: 6.h),
             Text(
               receiverNameVal.length > 12 ? "${receiverNameVal.substring(0, 10)}..." : receiverNameVal,
@@ -641,6 +705,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   Widget _buildTicketRow(String label, String value, bool isSmallHeight) {
+    final logoPath = _detectNetworkLogo(value);
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 9.h : 12.h),
       child: Row(
@@ -657,15 +723,37 @@ class _SuccessScreenState extends State<SuccessScreen> {
           const Spacer(),
           Expanded(
             flex: 4,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: const Color(0xFF1E293B),
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w700,
-                height: 1.25,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (logoPath != null) ...[
+                  Container(
+                    width: 18.w,
+                    height: 18.w,
+                    margin: EdgeInsets.only(right: 6.w),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage(logoPath),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
+                Flexible(
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: const Color(0xFF1E293B),
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -1,11 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import '../../auth/data/api_data.dart';
 import '../../dashboard/dashboardcontroller/dashboardcontroller.dart';
 import '../../dashboard/model/bank_model.dart';
+import '../../dashboard/model/data_model.dart';
 import '../engine/beneficiary_resolver.dart';
 import '../model/bia_strings.dart';
 import '../model/chat_message.dart';
@@ -94,8 +98,8 @@ final elevenLabsServiceProvider = Provider<ElevenLabsService>((ref) {
 });
 
 final llmServiceProvider = Provider<LlmService>((ref) {
-  const apiKey = String.fromEnvironment('GEMINI_API_KEY');
-  return LlmService(apiKey: apiKey);
+  final apiClient = ref.read(apiClientProvider);
+  return LlmService(apiClient: apiClient);
 });
 
 
@@ -231,31 +235,28 @@ class AiChatController extends StateNotifier<AiChatState> {
     state = state.copyWith(selectedVoice: voice);
   }
 
-  Future<void> _playTts(String text) async {
+  Future<void> _playAudioBytes(List<int> bytes) async {
     try {
-      if (text.isEmpty) return;
-
-      List<int>? audioBytes;
-
-      if (state.language == 'hausa') {
-        // Use custom Hugging Face Hausa TTS
-        audioBytes = await _hausaTtsService.generateSpeech(text);
-      } else {
-        // Use ElevenLabs for English/Pidgin (Hoyeen voice)
-        audioBytes = await _elevenLabsService.generateSpeech(
-          text: text,
-          voiceId: state.selectedVoice, // Hoyeen
-        );
+      // Determine file extension based on file header
+      String ext = 'mp3';
+      if (bytes.length > 4 &&
+          bytes[0] == 0x52 && // R
+          bytes[1] == 0x49 && // I
+          bytes[2] == 0x46 && // F
+          bytes[3] == 0x46) { // F
+        ext = 'wav';
       }
 
-      if (audioBytes != null) {
-        debugPrint('🔊 Playing ${audioBytes.length} bytes of audio...');
-        await _audioPlayer.play(BytesSource(Uint8List.fromList(audioBytes)));
-      } else {
-        debugPrint('⚠️ TTS returned null — skipping audio playback');
-      }
+      final dir = await Directory.systemTemp.createTemp();
+      final file = File('${dir.path}/tts_temp.$ext');
+      await file.writeAsBytes(bytes);
+      await _audioPlayer.play(DeviceFileSource(file.path));
     } catch (e) {
-      debugPrint('❌ _playTts error: $e');
+      debugPrint('❌ Failed to play audio bytes via temp file: $e');
+      // Fallback
+      try {
+        await _audioPlayer.play(BytesSource(Uint8List.fromList(bytes)));
+      } catch (_) {}
     }
   }
 
@@ -264,7 +265,7 @@ class AiChatController extends StateNotifier<AiChatState> {
       'The user has just opened the chat. Greet them warmly and tell them briefly what you can do '
       '(send money, check balance) in your chosen language personality.'
     );
-    _addAssistant(aiMsg.chatResponse, playAudio: true);
+    _addAssistant(aiMsg.chatResponse);
   }
 
   void _addUser(String text) {
@@ -292,10 +293,6 @@ class AiChatController extends StateNotifier<AiChatState> {
       ),
     ];
     state = state.copyWith(messages: updated);
-
-    if (playAudio) {
-      _playTts(text);
-    }
     _persistState();
   }
 
@@ -347,47 +344,378 @@ class AiChatController extends StateNotifier<AiChatState> {
     // Call LLM
     final response = await _llmService.sendMessage(text);
 
-    switch (response.intent) {
-      case 'checkBalance':
-        await _handleCheckBalance(response.chatResponse);
-        break;
-      case 'sendMoney':
-        await _handleSendMoney(context, response);
-        break;
-      case 'sendToBank':
-        await _handleSendMoneyToBank(context, response);
-        break;
-      case 'unknown':
-      default:
-        _addAssistant(response.chatResponse);
-        state = state.copyWith(step: AiChatStep.idle);
-        break;
+    // Add assistant bubble first
+    _addAssistant(
+      response.chatResponse,
+    );
+
+    // Play base64 audio if present (shifted completely to backend)
+    if (response.audioResponseBase64 != null && response.audioResponseBase64!.isNotEmpty) {
+      try {
+        final bytes = base64Decode(response.audioResponseBase64!);
+        await _playAudioBytes(bytes);
+      } catch (e) {
+        debugPrint('❌ Failed to play base64 TTS audio: $e');
+      }
     }
+
+    // Route the intent action
+    await _routeIntentAction(context, response);
 
     _setProcessing(false);
   }
 
   Future<void> processHausaAudio(BuildContext context, String filePath) async {
+    await processAudio(context, filePath);
+  }
+
+  Future<void> processAudio(BuildContext context, String filePath) async {
     _setProcessing(true);
     
-    final transcription = await _hausaAsrService.transcribe(filePath);
+    // Send audio to unified AI Chat endpoint
+    final response = await _llmService.sendVoiceMessage(filePath);
     
-    if (transcription == 'HUB_OFFLINE') {
-      _addAssistant('Hub offline');
-      _setProcessing(false);
-      return;
+    // Add user message with transcription text if available
+    if (response.transcribedText != null && response.transcribedText!.isNotEmpty) {
+      _addUser(response.transcribedText!);
+    } else {
+      _addUser('[Voice Message]');
     }
 
-    if (transcription == null || transcription.isEmpty) {
-      final aiMsg = await _llmService.sendContextualMessage('I could not hear the user clearly. Ask them to repeat in Hausa.');
-      _addAssistant(aiMsg.chatResponse);
-      _setProcessing(false);
-      return;
+    // Handle assistant response
+    _addAssistant(
+      response.chatResponse,
+    );
+
+    // Play base64 TTS response if available (shifted completely to backend)
+    if (response.audioResponseBase64 != null && response.audioResponseBase64!.isNotEmpty) {
+      try {
+        final bytes = base64Decode(response.audioResponseBase64!);
+        await _playAudioBytes(bytes);
+      } catch (e) {
+        debugPrint('❌ Failed to play base64 TTS audio: $e');
+      }
     }
 
-    // Process the transcribed text with a clear marker for the LLM
-    await handleUserInput(context, '[VOICE_TRANSCRIPTION]: $transcription');
+    // Route intent actions
+    await _routeIntentAction(context, response);
+
     _setProcessing(false);
+  }
+
+  Future<void> _routeIntentAction(BuildContext context, LlmParsedResponse response) async {
+    final action = response.intent;
+    final details = response.details;
+
+    switch (action) {
+      case 'TRANSFER':
+        await _handleIntentTransfer(context, details, response.chatResponse);
+        break;
+      case 'AIRTIME':
+        await _handleIntentAirtime(context, details, response.chatResponse);
+        break;
+      case 'DATA':
+        await _handleIntentData(context, details, response.chatResponse);
+        break;
+      case 'CABLE_TV':
+        await _handleIntentCableTv(context, details, response.chatResponse);
+        break;
+      case 'ELECTRICITY':
+        await _handleIntentElectricity(context, details, response.chatResponse);
+        break;
+      case 'NONE':
+      default:
+        state = state.copyWith(step: AiChatStep.idle);
+        break;
+    }
+  }
+
+  Future<void> _handleIntentTransfer(
+      BuildContext context, Map<String, dynamic> details, String chatResponse) async {
+    final amountVal = details['amount'];
+    final double? amount = amountVal != null ? double.tryParse(amountVal.toString()) : null;
+    final String? recipient = details['accountNumber']?.toString() ?? details['recipient']?.toString();
+    final String? bankName = details['bankName']?.toString();
+
+    // Check if details are sufficient. If not, the backend chatResponse has already requested them.
+    if (amount == null || amount <= 0 || recipient == null || recipient.isEmpty) {
+      return;
+    }
+
+    if (bankName != null && bankName.isNotEmpty) {
+      // It is a bank transfer request
+      await _processBankTransferRequest(context, bankName, recipient, amount);
+    } else {
+      // It is a BIA-to-BIA transfer request
+      final biaBens = await _dashboard.getRecentBeneficiary(context);
+      final unified = <UnifiedContact>[];
+      for (final b in biaBens) {
+        unified.add(UnifiedContact(name: b.fullname, account: b.phone));
+      }
+      
+      final matches = _resolver.resolve(recipient, unified);
+
+      if (matches.isEmpty) {
+        state = state.copyWith(
+          step: AiChatStep.awaitingAccountNumber,
+          pending: PendingTransfer(
+            account: '',
+            name: recipient,
+            amount: amount,
+          ),
+        );
+        final aiMsg = await _llmService.sendContextualMessage(
+          'I could not find "$recipient" in the contact list. Ask the user to provide the 10-digit account number.'
+        );
+        _addAssistant(aiMsg.chatResponse, playAudio: true);
+      } else if (matches.length > 1) {
+        state = state.copyWith(
+          step: AiChatStep.awaitingRecipientClarification,
+          pending: PendingTransfer(
+            account: '',
+            name: recipient,
+            amount: amount,
+          ),
+        );
+        final aiMsg = await _llmService.sendContextualMessage(
+          'I found multiple people with the name "$recipient". Ask the user to choose the correct one from the suggestions.'
+        );
+        _addAssistant(
+          aiMsg.chatResponse,
+          type: MessageType.suggestionChips,
+          playAudio: true,
+          payload: {
+            'suggestions': matches
+                .take(5)
+                .map((b) => {
+                    'name': b.name, 
+                    'account': b.account,
+                    'isBankTransfer': b.isBankTransfer,
+                    'bankCode': b.bankCode,
+                  })
+                .toList(),
+          },
+        );
+      } else {
+        final b = matches.first;
+        await _showConfirmCard(
+          context,
+          name: b.name,
+          account: b.account,
+          amount: amount,
+        );
+      }
+    }
+  }
+
+  Future<void> _handleIntentAirtime(
+      BuildContext context, Map<String, dynamic> details, String chatResponse) async {
+    final String? phoneNumber = details['phoneNumber']?.toString();
+    final amountVal = details['amount'];
+    final double? amount = amountVal != null ? double.tryParse(amountVal.toString()) : null;
+    final String? network = details['network']?.toString();
+
+    if (phoneNumber == null || phoneNumber.isEmpty || amount == null || amount <= 0) {
+      return;
+    }
+
+    final resolvedNetwork = network ?? 'MTN';
+
+    state = state.copyWith(
+      step: AiChatStep.awaitingConfirmation,
+      pending: PendingTransfer(
+        account: phoneNumber,
+        name: resolvedNetwork.toUpperCase(),
+        amount: amount,
+      ),
+    );
+
+    double feeAmount = 0.0;
+    try {
+      final charges = await _dashboard.getTransactionCharges(
+        context,
+        amount: amount,
+        transactionType: "DEBIT",
+        serviceType: "AIRTIME",
+      );
+      if (charges != null) {
+        feeAmount = (charges['charge'] ?? 0).toDouble();
+      }
+    } catch (_) {}
+
+    _addAssistant(
+      'Everything is set for your airtime purchase. Please confirm the details below to proceed.',
+      type: MessageType.confirmCard,
+      playAudio: false,
+      payload: {
+        'name': '$resolvedNetwork Airtime',
+        'account': phoneNumber,
+        'amount': amount,
+        'fee': feeAmount,
+        'isBankTransfer': false,
+        'destinationType': 'Airtime Top-up',
+        'type': 'airtime',
+        'meta': {
+          'network': resolvedNetwork.toLowerCase(),
+        },
+      },
+    );
+  }
+
+  Future<void> _handleIntentData(
+      BuildContext context, Map<String, dynamic> details, String chatResponse) async {
+    final String? phoneNumber = details['phoneNumber']?.toString();
+    final String? dataPlan = details['dataPlan']?.toString();
+    final String? network = details['network']?.toString();
+
+    if (phoneNumber == null || phoneNumber.isEmpty || dataPlan == null || dataPlan.isEmpty) {
+      return;
+    }
+
+    final resolvedNetwork = network ?? 'MTN';
+    final serviceId = '${resolvedNetwork.toLowerCase()}-data';
+
+    List<DataPlanModel> plans = [];
+    try {
+      plans = await _dashboard.fetchDataPlans(context, serviceId, showLoading: false);
+    } catch (_) {}
+
+    DataPlanModel? matchedPlan;
+    for (final plan in plans) {
+      if (plan.name.toLowerCase().contains(dataPlan.toLowerCase()) ||
+          (plan.variationCode?.toLowerCase().contains(dataPlan.toLowerCase()) ?? false)) {
+        matchedPlan = plan;
+        break;
+      }
+    }
+
+    if (matchedPlan == null && plans.isNotEmpty) {
+      matchedPlan = plans.firstWhere(
+        (p) => p.name.toLowerCase().contains(dataPlan.split(' ').first.toLowerCase()),
+        orElse: () => plans.first,
+      );
+    }
+
+    if (matchedPlan == null) {
+      _addAssistant('I could not resolve a data plan matching "$dataPlan" for $resolvedNetwork. Please try again.');
+      return;
+    }
+
+    final double amount = matchedPlan.amount.toDouble();
+
+    state = state.copyWith(
+      step: AiChatStep.awaitingConfirmation,
+      pending: PendingTransfer(
+        account: phoneNumber,
+        name: matchedPlan.name,
+        amount: amount,
+      ),
+    );
+
+    _addAssistant(
+      'Please confirm the data purchase details below to proceed.',
+      type: MessageType.confirmCard,
+      playAudio: false,
+      payload: {
+        'name': matchedPlan.name,
+        'account': phoneNumber,
+        'amount': amount,
+        'fee': 0.0,
+        'isBankTransfer': false,
+        'destinationType': 'Data Purchase',
+        'type': 'data',
+        'meta': {
+          'serviceId': serviceId,
+          'variationCode': matchedPlan.variationCode,
+        },
+      },
+    );
+  }
+
+  Future<void> _handleIntentCableTv(
+      BuildContext context, Map<String, dynamic> details, String chatResponse) async {
+    final String? smartcardNumber = details['smartcardNumber']?.toString();
+    final String? biller = details['biller']?.toString();
+    final String? dataPlan = details['dataPlan']?.toString();
+    final amountVal = details['amount'];
+    final double? amount = amountVal != null ? double.tryParse(amountVal.toString()) : null;
+
+    if (smartcardNumber == null || smartcardNumber.isEmpty || biller == null || biller.isEmpty) {
+      return;
+    }
+
+    final serviceId = biller.toLowerCase().trim();
+
+    state = state.copyWith(
+      step: AiChatStep.awaitingConfirmation,
+      pending: PendingTransfer(
+        account: smartcardNumber,
+        name: biller.toUpperCase(),
+        amount: amount ?? 0.0,
+      ),
+    );
+
+    _addAssistant(
+      'Please confirm the Cable TV subscription details below.',
+      type: MessageType.confirmCard,
+      playAudio: false,
+      payload: {
+        'name': '${biller.toUpperCase()} Subscription',
+        'account': smartcardNumber,
+        'amount': amount ?? 0.0,
+        'fee': 0.0,
+        'isBankTransfer': false,
+        'destinationType': 'Cable TV',
+        'type': 'cable',
+        'meta': {
+          'serviceId': serviceId,
+          'variationCode': dataPlan ?? '',
+          'packageName': dataPlan ?? '',
+        },
+      },
+    );
+  }
+
+  Future<void> _handleIntentElectricity(
+      BuildContext context, Map<String, dynamic> details, String chatResponse) async {
+    final String? meterNumber = details['meterNumber']?.toString();
+    final String? biller = details['biller']?.toString();
+    final amountVal = details['amount'];
+    final double? amount = amountVal != null ? double.tryParse(amountVal.toString()) : null;
+
+    if (meterNumber == null || meterNumber.isEmpty || biller == null || biller.isEmpty || amount == null || amount <= 0) {
+      return;
+    }
+
+    final serviceId = biller.toLowerCase().replaceAll(' ', '-').trim();
+
+    state = state.copyWith(
+      step: AiChatStep.awaitingConfirmation,
+      pending: PendingTransfer(
+        account: meterNumber,
+        name: biller.toUpperCase(),
+        amount: amount,
+      ),
+    );
+
+    _addAssistant(
+      'Please confirm the electricity unit purchase details below.',
+      type: MessageType.confirmCard,
+      playAudio: false,
+      payload: {
+        'name': '${biller.toUpperCase()} Meter',
+        'account': meterNumber,
+        'amount': amount,
+        'fee': 0.0,
+        'isBankTransfer': false,
+        'destinationType': 'Electricity Bill',
+        'type': 'electricity',
+        'meta': {
+          'serviceId': serviceId,
+          'variationCode': 'prepaid',
+        },
+      },
+    );
   }
 
 

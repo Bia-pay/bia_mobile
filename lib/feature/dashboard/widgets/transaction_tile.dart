@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:bia/app/utils/colors.dart';
 import '../model/recent_transaction.dart';
 import '../../../core/helper/helper.dart';
+import 'package:intl/intl.dart';
 
 /// A clean, modern transaction list tile used across
 /// the Home page and the Transaction History page.
@@ -52,7 +53,7 @@ class TransactionTile extends StatelessWidget {
 
     final String statusLabel = tx.status ?? '';
     final String amountLabel =
-        '${isCredit ? '+' : '-'}₦${tx.amount}';
+        '${isCredit ? '+' : '-'}₦${NumberFormat('#,##0.00').format(tx.amount)}';
 
     final IconData iconData = _iconForType(tx.serviceType, isCredit);
 

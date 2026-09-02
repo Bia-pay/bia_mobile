@@ -18,6 +18,7 @@ import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../dashboardcontroller/provider.dart';
+import 'package:intl/intl.dart';
 import '../../send_money/widget/tabs.dart';
 import 'package:bia/feature/dashboard/widgets/service_guard.dart';
 
@@ -202,6 +203,13 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
             ? _selectedPlan!['variation_code']
             : '$serviceId-$_selectedAmount';
 
+    // Show loading indicator to prevent double taps while fetching cashback
+    EasyLoading.show(
+      indicator: const CustomLoader(),
+      maskType: EasyLoadingMaskType.black,
+      dismissOnTap: false,
+    );
+
     // Resolve cashback dynamically (await future to ensure completed fetch)
     final cashbackRule = await ref
         .read(billCashbackProvider('DATA').future)
@@ -209,6 +217,8 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
     final cashbackLabel = cashbackRule?.displayLabel(
         transactionAmount: _selectedAmount.toDouble());
     final hasCashback = cashbackLabel != null && cashbackLabel.isNotEmpty;
+
+    EasyLoading.dismiss();
 
     if (!mounted) return;
 
@@ -412,7 +422,7 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
                                 Icon(Icons.account_balance_wallet_rounded, color: Colors.white.withValues(alpha: 0.8), size: 14.sp),
                                 SizedBox(width: 6.w),
                                 Text(
-                                  'Balance: ₦${balance.toStringAsFixed(2)}',
+                                  'Balance: ₦${NumberFormat('#,##0.00').format(balance)}',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 12.sp,
@@ -779,7 +789,7 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
                         SizedBox(width: 6.w),
                         Text(
                           _selectedPlan != null
-                              ? 'Pay ₦$_selectedAmount'
+                              ? 'Pay ₦${NumberFormat('#,##0').format(_selectedAmount)}'
                               : 'Select a Plan to Continue',
                           style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                         ),
@@ -906,7 +916,7 @@ class _PlanCard extends StatelessWidget {
             SizedBox(height: 5.h),
             // Price
             Text(
-              '₦${plan['price']}',
+              '₦${NumberFormat('#,##0').format(plan['price'])}',
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w900,
@@ -999,7 +1009,7 @@ class _SelectedPlanSummary extends StatelessWidget {
                 SizedBox(height: 2.h),
                 Text(
                   insufficient
-                      ? 'Your balance ₦${balance.toStringAsFixed(0)} is less than ₦${plan['price']}'
+                      ? 'Your balance ₦${NumberFormat('#,##0.00').format(balance)} is less than ₦${NumberFormat('#,##0').format(plan['price'])}'
                       : '${plan['data']} for $providerName · ${plan['duration']}',
                   style: TextStyle(
                     fontSize: 11.sp,
@@ -1011,7 +1021,7 @@ class _SelectedPlanSummary extends StatelessWidget {
             ),
           ),
           Text(
-            '₦${plan['price']}',
+            '₦${NumberFormat('#,##0').format(plan['price'])}',
             style: TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 15.sp,

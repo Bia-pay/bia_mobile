@@ -1,12 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/u_popup.dart';
 import '../../ai_chat/controller/ai_chat_controller.dart';
-import '../../dashboard/dashboardcontroller/provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 
 class LanguageSettingsScreen extends ConsumerWidget {
@@ -86,7 +84,13 @@ class LanguageSettingsScreen extends ConsumerWidget {
                   ref,
                   title: "Change App Language",
                   content: "Are you sure you want to change the app interface language?",
-                  onConfirm: () => ref.read(appLocaleProvider.notifier).setLocale(code),
+                  onConfirm: () {
+                    ref.read(appLocaleProvider.notifier).setLocale(code);
+                    final aiLang = code == 'ha'
+                        ? 'hausa'
+                        : (code == 'pcm' ? 'pidgin' : 'english');
+                    ref.read(aiChatControllerProvider.notifier).updateLanguage(aiLang);
+                  },
                 );
               },
             ),

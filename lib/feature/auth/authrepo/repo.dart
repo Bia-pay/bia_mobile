@@ -16,6 +16,7 @@ import '../data/api_constant.dart';
 import '../data/api_data.dart';
 import '../modal/reponse/response_modal.dart';
 import 'package:local_auth/local_auth.dart';
+import '../../../app/utils/image.dart';
 
 final authRepositoryProvider = Provider((ref) {
   final apiClient = ref.read(apiClientProvider);
@@ -119,6 +120,8 @@ class AuthRepository {
       final response =
       await _apiClient.postData(ApiConstant.LOGIN, body);
 
+      debugPrint('🔑 LOGIN API RESPONSE BODY: ${response.body}');
+
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 ||
@@ -191,18 +194,23 @@ class AuthRepository {
           });
         }
 
+        final randomAvatar = getRandomDiceBearAvatar();
+        final finalPicture = (userJson['picture'] != null && userJson['picture'].toString().isNotEmpty)
+            ? userJson['picture']
+            : randomAvatar;
+
         // Tokens are now stored exclusively in SecureStorage via ApiClient for security.
         await box.put("userId", newUserId);
         await box.put("fullname", userJson['fullname'] ?? '');
-        await box.put("picture", userJson['picture']);
+        await box.put("picture", finalPicture);
         await box.put("phone", phone);
         await box.put("balance", walletJson['balance'] ?? 0);
         await box.put("currency", walletJson['currency'] ?? 'NGN');
         await box.put(
           "has_pin",
-          userJson['pin'] != null &&
-              userJson['pin'].toString().isNotEmpty,
+          userJson['hasPin'] == true || (userJson['pin'] != null && userJson['pin'].toString().isNotEmpty),
         );
+        await box.put("isCompleteRegistration", responseBody['isCompleteRegistration'] ?? userJson['isCompleteRegistration'] ?? true);
         await box.put("is_logged_in", true);
 
         // Prime ApiClient: updates in-memory headers AND persists tokens in parallel
@@ -219,13 +227,26 @@ class AuthRepository {
           } catch (_) {}
         });
 
+        final parsedBody = ResponseBody.fromJson(responseBody);
+        final finalUser = parsedBody.user?.copyWith(
+          picture: (parsedBody.user?.picture != null && parsedBody.user!.picture!.isNotEmpty)
+              ? parsedBody.user!.picture
+              : finalPicture,
+        );
+
         return ResponseModel(
           responseMessage:
           jsonResponse['responseMessage'] ??
               'Login successful',
           responseSuccessful: true,
           statusCode: response.statusCode,
-          responseBody: ResponseBody.fromJson(responseBody),
+          responseBody: ResponseBody(
+            user: finalUser,
+            wallet: parsedBody.wallet,
+            accessToken: parsedBody.accessToken,
+            refreshToken: parsedBody.refreshToken,
+            recentTransactions: parsedBody.recentTransactions,
+          ),
         );
       }
 
@@ -400,7 +421,7 @@ class AuthRepository {
         await box.put("phone", userJson['phone']);
         await box.put(
           "has_pin",
-          userJson['pin'] != null && userJson['pin'].toString().isNotEmpty,
+          userJson['hasPin'] == true || (userJson['pin'] != null && userJson['pin'].toString().isNotEmpty),
         );
         await box.put("balance", walletJson['balance']);
 
@@ -460,20 +481,39 @@ class AuthRepository {
       final jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-
         final responseModel =
         ResponseModel.fromJson(jsonResponse, response.statusCode);
 
-      final box = await _getAuthBox();
+        final randomAvatar = getRandomDiceBearAvatar();
+        final finalPicture = (responseModel.responseBody?.user?.picture != null && responseModel.responseBody!.user!.picture!.isNotEmpty)
+            ? responseModel.responseBody!.user!.picture
+            : randomAvatar;
+
+        final box = await _getAuthBox();
         await box.put("userId", responseModel.responseBody?.user?.id?.toString() ?? '');
         await box.put("fullname", responseModel.responseBody?.user?.fullname);
         await box.put("has_pin", false);
-        await box.put("picture", responseModel.responseBody?.user?.picture);
+        await box.put("picture", finalPicture);
         await box.put("phone", responseModel.responseBody?.user?.phone);
         await box.put("pin", responseModel.responseBody?.user?.pin);
         await box.put("balance", responseModel.responseBody?.wallet?.balance ?? 0);
 
-        return responseModel;
+        final updatedUser = responseModel.responseBody?.user?.copyWith(
+          picture: finalPicture,
+        );
+
+        return ResponseModel(
+          responseMessage: responseModel.responseMessage,
+          responseSuccessful: responseModel.responseSuccessful,
+          statusCode: responseModel.statusCode,
+          responseBody: ResponseBody(
+            user: updatedUser,
+            wallet: responseModel.responseBody?.wallet,
+            accessToken: responseModel.responseBody?.accessToken,
+            refreshToken: responseModel.responseBody?.refreshToken,
+            recentTransactions: responseModel.responseBody?.recentTransactions,
+          ),
+        );
       }
 
       return ResponseModel(
@@ -615,6 +655,165 @@ class AuthRepository {
       debugPrint('🔥 Exception during reset password: $e');
       return ResponseModel(
         responseMessage: 'Something went wrong. Please try again.',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  // ---------------- V2 ONBOARDING METHODS ----------------
+  Future<ResponseModel> registerV2(Map<String, dynamic> body) async {
+    try {
+      http.Response response = await _apiClient.postData(ApiConstant.REGISTER_V2, body);
+      final jsonResponse = jsonDecode(response.body);
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong: $e',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> verifyOtpV2(Map<String, dynamic> body) async {
+    try {
+      http.Response response = await _apiClient.postData(ApiConstant.VERIFY_OTP_V2, body);
+      final jsonResponse = jsonDecode(response.body);
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong: $e',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> resendOtpV2(Map<String, dynamic> body) async {
+    try {
+      http.Response response = await _apiClient.postData(ApiConstant.RESEND_OTP_V2, body);
+      final jsonResponse = jsonDecode(response.body);
+      return ResponseModel.fromJson(jsonResponse, response.statusCode);
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong: $e',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> createAccountV2(Map<String, dynamic> body) async {
+    try {
+      http.Response response = await _apiClient.postData(ApiConstant.CREATE_ACCOUNT_V2, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseBody = jsonResponse['responseBody'] ?? {};
+        final userJson = Map<String, dynamic>.from(responseBody['user'] ?? {});
+        final walletJson = Map<String, dynamic>.from(responseBody['wallet'] ?? {});
+        final accessToken = responseBody['accessToken'] ?? '';
+        final refreshToken = responseBody['refreshToken'] ?? '';
+        final isCompleteReg = responseBody['isCompleteRegistration'] ?? userJson['isCompleteRegistration'] ?? false;
+
+        final newUserId = userJson['id']?.toString() ?? '';
+        final phone = userJson['phone']?.toString() ?? '';
+        final effectiveId = newUserId.isNotEmpty ? newUserId : phone;
+
+        final box = await _getAuthBox();
+        await box.put("userId", newUserId);
+        await box.put("fullname", userJson['fullname'] ?? '');
+        await box.put("phone", phone);
+        await box.put("balance", walletJson['balance'] ?? 0);
+        await box.put("currency", walletJson['currency'] ?? 'NGN');
+        await box.put(
+          "has_pin",
+          userJson['hasPin'] == true || (userJson['pin'] != null && userJson['pin'].toString().isNotEmpty),
+        );
+        await box.put("isCompleteRegistration", isCompleteReg);
+        await box.put("is_logged_in", true);
+
+        try {
+          final fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await box.put('fcmToken', fcmToken);
+            debugPrint("🔥 Registration FCM Token stored: $fcmToken");
+          }
+        } catch (e) {
+          debugPrint("⚠️ FCM token retrieval failed during registration: $e");
+        }
+
+        await _apiClient.initForUser(effectiveId, accessToken, refreshToken);
+
+        final authFlowService = _ref.read(authFlowServiceProvider);
+        authFlowService.completeAuthFlow();
+
+        final parsedBody = ResponseBody.fromJson(responseBody);
+        return ResponseModel(
+          responseMessage: jsonResponse['responseMessage'] ?? 'Account created successfully',
+          responseSuccessful: true,
+          statusCode: response.statusCode,
+          responseBody: ResponseBody(
+            user: parsedBody.user,
+            wallet: parsedBody.wallet,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            isCompleteRegistration: isCompleteReg,
+          ),
+        );
+      }
+
+      return ResponseModel(
+        responseMessage: jsonResponse["responseMessage"] ?? "Failed to create account",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong: $e',
+        responseSuccessful: false,
+        statusCode: 500,
+      );
+    }
+  }
+
+  Future<ResponseModel> completeRegistrationV2(Map<String, dynamic> body) async {
+    try {
+      http.Response response = await _apiClient.postData(ApiConstant.COMPLETE_REGISTRATION_V2, body);
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseBody = jsonResponse['responseBody'] ?? {};
+        final userJson = Map<String, dynamic>.from(responseBody['user'] ?? {});
+        final isCompleteReg = responseBody['isCompleteRegistration'] ?? userJson['isCompleteRegistration'] ?? true;
+
+        final box = await _getAuthBox();
+        await box.put("fullname", userJson['fullname'] ?? '');
+        await box.put("isCompleteRegistration", isCompleteReg);
+        await box.put("has_pin", true);
+        await box.put("saved_user_profile", userJson);
+
+        final parsedBody = ResponseBody.fromJson(responseBody);
+        return ResponseModel(
+          responseMessage: jsonResponse['responseMessage'] ?? 'Registration completed successfully',
+          responseSuccessful: true,
+          statusCode: response.statusCode,
+          responseBody: ResponseBody(
+            user: parsedBody.user,
+            isCompleteRegistration: isCompleteReg,
+          ),
+        );
+      }
+
+      return ResponseModel(
+        responseMessage: jsonResponse["responseMessage"] ?? "Failed to complete registration",
+        responseSuccessful: false,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return ResponseModel(
+        responseMessage: 'Something went wrong: $e',
         responseSuccessful: false,
         statusCode: 500,
       );

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
@@ -246,7 +247,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
+                      '$currencySymbol${NumberFormat('#,##0.00').format(_totalAmount)}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 28.sp,
@@ -434,7 +435,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                     _buildDetailRow(
                       context,
                       label: 'Principal Amount',
-                      value: '$currencySymbol${widget.amount}.00',
+                      value: '$currencySymbol${NumberFormat('#,##0.00').format(double.tryParse(widget.amount) ?? 0.0)}',
                     ),
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
@@ -449,7 +450,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                       _buildSummaryRow(
                         context,
                         _feeDescription.isNotEmpty ? _feeDescription : 'Transfer Fee',
-                        '$currencySymbol${_chargeAmount.toStringAsFixed(2)}',
+                        '$currencySymbol${NumberFormat('#,##0.00').format(_chargeAmount)}',
                       ),
 
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
@@ -457,7 +458,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                     _buildSummaryRow(
                       context,
                       'Total Payable',
-                      '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
+                      '$currencySymbol${NumberFormat('#,##0.00').format(_totalAmount)}',
                       isHighlighted: true,
                     ),
 
@@ -488,7 +489,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
               constraints: BoxConstraints(maxWidth: r.maxContentWidth),
               child: _buildWalletBalanceRow(
                 context,
-                balance: _getWalletBalance().toStringAsFixed(2),
+                balance: NumberFormat('#,##0.00').format(_getWalletBalance()),
                 currencySymbol: currencySymbol,
               ),
             ),

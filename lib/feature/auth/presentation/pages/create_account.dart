@@ -111,12 +111,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       setState(() => _isLoading = false);
 
       if (response?.responseSuccessful == true) {
-        UPopup.success(
-          context,
-          title: 'Success!',
-          message: 'Your account has been created successfully.',
-          onConfirm: () => context.pushNamed(RouteList.bottomNavBar),
-        );
+        if (mounted) {
+          context.pushNamed(RouteList.bottomNavBar);
+        }
       } else {
         UPopup.error(context, title: 'Failed', message: response?.responseMessage ?? 'Registration failed');
       }

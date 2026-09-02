@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/router/route_constant.dart';
@@ -90,7 +91,7 @@ class _SplitParticipantScanScreenState
         RouteList.successScreen,
         extra: {
           "type": "success",
-          "amount": response.amountPaid.toStringAsFixed(2),
+          "amount": NumberFormat('#,##0.00').format(response.amountPaid),
           "recipientName": "Split Bill Share",
           "recipientAccount": widget.splitId,
           "reference": response.transactionReference,
@@ -151,7 +152,7 @@ class _SplitParticipantScanScreenState
                     ),
                     SizedBox(height: 16.h),
                     Text(
-                      "Scan Failed",
+                      "Split Request Unavailable",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: darkBackground,
@@ -286,7 +287,7 @@ class _SplitParticipantScanScreenState
                     ),
                     SizedBox(height: 12.h),
                     Text(
-                      "₦${details.assignedAmount.toStringAsFixed(2)}",
+                      "₦${NumberFormat('#,##0.00').format(details.assignedAmount)}",
                       style: TextStyle(
                         fontSize: 32.sp,
                         fontWeight: FontWeight.w800,
@@ -423,7 +424,7 @@ class _SplitParticipantScanScreenState
           ),
           SizedBox(height: 6.h),
           Text(
-            'Confirm payment of ₦${details.assignedAmount.toStringAsFixed(2)} to Split Bill',
+            'Confirm payment of ₦${NumberFormat('#,##0.00').format(details.assignedAmount)} to Split Bill',
             style: TextStyle(color: lightSecondaryText, fontSize: 12.sp),
             textAlign: TextAlign.center,
           ),

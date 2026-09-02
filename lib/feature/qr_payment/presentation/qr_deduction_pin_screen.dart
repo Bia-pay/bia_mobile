@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../dashboard/widgets/keypad.dart';
@@ -166,7 +167,7 @@ class _QrDeductionPinScreenState extends ConsumerState<QrDeductionPinScreen> wit
       if (mounted) {
         context.goNamed(RouteList.successScreen, extra: {
           "type": status,
-          "amount": (_totalAmount > 0 ? _totalAmount : widget.amount).toStringAsFixed(2),
+          "amount": NumberFormat('#,##0.00').format(_totalAmount > 0 ? _totalAmount : widget.amount),
           "recipientName": widget.ownerAccount,
           "recipientAccount": "QR Deduction",
           "reference": refId ?? '',
@@ -273,7 +274,7 @@ class _QrDeductionPinScreenState extends ConsumerState<QrDeductionPinScreen> wit
                       ),
                       SizedBox(height: 6.h),
                       Text(
-                        'Authorize collection request of ₦${widget.amount.toStringAsFixed(2)}',
+                        'Authorize collection request of ₦${NumberFormat('#,##0.00').format(widget.amount)}',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: lightSecondaryText,
                           fontWeight: FontWeight.w500,

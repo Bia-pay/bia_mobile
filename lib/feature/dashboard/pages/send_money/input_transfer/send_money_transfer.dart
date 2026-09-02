@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../../app/utils/router/route_constant.dart';
-import '../../../../../app/view/widget/app_search_field.dart';
 import '../../../../../core/easy_loading_config.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import '../../../model/favourite_beneficiary.dart';
@@ -22,10 +21,7 @@ class SendMoneyTransfer extends ConsumerStatefulWidget {
 }
 
 class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
-  int _selectedMethodIndex = 0;
-
-  final TextEditingController accountController = TextEditingController();
-  final TextEditingController tagController = TextEditingController();
+  final TextEditingController inputController = TextEditingController();
 
   String? errorText;
   bool isVerified = false;
@@ -40,13 +36,11 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   @override
   void initState() {
     super.initState();
-    _selectedMethodIndex = widget.initialIndex;
   }
 
   @override
   void dispose() {
-    accountController.dispose();
-    tagController.dispose();
+    inputController.dispose();
     super.dispose();
   }
 
@@ -160,6 +154,25 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
         'recipientAccount': verifiedAccount,
       },
     );
+  }
+
+  void _handleVerification(String value) {
+    final cleanValue = value.trim();
+    if (cleanValue.isEmpty) return;
+
+    final isNumeric = RegExp(r'^\d+$').hasMatch(cleanValue);
+    if (isNumeric) {
+      if (cleanValue.length == 10) {
+        _verifyAccountFromInput(context, cleanValue);
+      } else {
+        setState(() {
+          errorText = "Account number must be 10 digits";
+          isVerified = false;
+        });
+      }
+    } else {
+      _verifyTagFromInput(context, cleanValue);
+    }
   }
 
   void _clearVerification() {
@@ -353,180 +366,128 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Tab Selector
+            Text(
+              'Recipient Account Number or BIA Tag',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: lightSecondaryText,
+                fontSize: 12.sp,
+              ),
+            ),
+            SizedBox(height: 8.h),
             Container(
-              height: 44.h,
-              padding: EdgeInsets.all(4.r),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: isVerified
+                      ? primaryColor.withValues(alpha: 0.5)
+                      : const Color(0xFFE2E8F0),
+                  width: 1.5,
+                ),
               ),
               child: Row(
                 children: [
-                  _buildTabButton(
-                    label: 'Account Number',
-                    index: 0,
-                    icon: Icons.numbers_rounded,
-                  ),
-                  SizedBox(width: 4.w),
-                  _buildTabButton(
-                    label: 'BIA Tag',
-                    index: 1,
-                    icon: Icons.alternate_email_rounded,
-                  ),
-                ],
-              ),
-            ),
+                  Expanded(
+                    child: TextField(
+                      controller: inputController,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF0F172A),
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Enter account number or @tag',
+                        hintStyle: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF94A3B8),
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 14.h,
+                        ),
+                      ),
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (value) => _handleVerification(value),
+                      onChanged: (value) {
+                        setState(() {
+                          errorText = null;
+                        });
 
-            SizedBox(height: 20.h),
-
-            /// Form Input
-            if (_selectedMethodIndex == 0) ...[
-              Text(
-                'Recipient Account Number',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: lightSecondaryText,
-                  fontSize: 12.sp,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              AppField.transparent(
-                hintText: 'Enter 10-digit account number',
-                width: double.infinity,
-                keyboardType: TextInputType.number,
-                maxLength: 10,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                initialValue: verifiedAccount,
-                withClearButton: true,
-                onChanged: (value) {
-                  setState(() {
-                    errorText = null;
-                  });
-
-                  if (value.length == 10) {
-                    _verifyAccountFromInput(context, value.trim());
-                  } else {
-                    setState(() {
-                      isVerified = false;
-                    });
-                  }
-                },
-              ),
-            ] else ...[
-              Text(
-                'Recipient BIA Tag',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: lightSecondaryText,
-                  fontSize: 12.sp,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14.r),
-                  border: Border.all(
-                    color: isVerified
-                        ? primaryColor.withValues(alpha: 0.5)
-                        : const Color(0xFFE2E8F0),
-                    width: 1.5,
+                        final cleanValue = value.trim();
+                        final isNumeric = RegExp(r'^\d+$').hasMatch(cleanValue);
+                        if (isNumeric && cleanValue.length == 10) {
+                          _verifyAccountFromInput(context, cleanValue);
+                        } else {
+                          setState(() {
+                            isVerified = false;
+                          });
+                        }
+                      },
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
+                  if (inputController.text.isNotEmpty) ...[
+                    GestureDetector(
+                      onTap: () {
+                        inputController.clear();
+                        _clearVerification();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: Icon(
+                          Icons.clear_rounded,
+                          color: const Color(0xFF94A3B8),
+                          size: 20.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (isResolving)
                     Padding(
-                      padding: EdgeInsets.only(left: 14.w),
-                      child: Text(
-                        '@',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w700,
+                      padding: EdgeInsets.only(right: 14.w),
+                      child: SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
                           color: primaryColor,
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: tagController,
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172A),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: inputController.text.trim().isEmpty
+                          ? null
+                          : () => _handleVerification(inputController.text),
+                      child: Container(
+                        margin: EdgeInsets.only(right: 8.w),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 9.h,
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter BIA Tag',
-                          hintStyle: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w500,
-                            color: const Color(0xFF94A3B8),
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 10.w,
-                            vertical: 14.h,
-                          ),
+                        decoration: BoxDecoration(
+                          color: inputController.text.trim().isEmpty
+                              ? const Color(0xFFE2E8F0)
+                              : primaryColor,
+                          borderRadius: BorderRadius.circular(10.r),
                         ),
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (value) => _verifyTagFromInput(context, value),
-                        onChanged: (value) {
-                          setState(() {
-                            if (errorText != null || isVerified) {
-                              errorText = null;
-                              isVerified = false;
-                            }
-                          });
-                        },
-                      ),
-                    ),
-                    if (isResolving)
-                      Padding(
-                        padding: EdgeInsets.only(right: 14.w),
-                        child: SizedBox(
-                          width: 18.w,
-                          height: 18.w,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: primaryColor,
-                          ),
-                        ),
-                      )
-                    else
-                      GestureDetector(
-                        onTap: tagController.text.trim().isEmpty
-                            ? null
-                            : () => _verifyTagFromInput(context, tagController.text),
-                        child: Container(
-                          margin: EdgeInsets.only(right: 8.w),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 9.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tagController.text.trim().isEmpty
-                                ? const Color(0xFFE2E8F0)
-                                : primaryColor,
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          child: Text(
-                            'Verify',
-                            style: TextStyle(
-                              color: tagController.text.trim().isEmpty
-                                  ? const Color(0xFF94A3B8)
-                                  : Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        child: Text(
+                          'Verify',
+                          style: TextStyle(
+                            color: inputController.text.trim().isEmpty
+                                ? const Color(0xFF94A3B8)
+                                : Colors.white,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-            ],
+            ),
 
             /// Error
             if (errorText != null)
@@ -660,60 +621,6 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
           ],
         ),
       ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0, duration: 400.ms),
-    );
-  }
-
-  Widget _buildTabButton({
-    required String label,
-    required int index,
-    required IconData icon,
-  }) {
-    final isActive = _selectedMethodIndex == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          if (_selectedMethodIndex == index) return;
-          _clearVerification();
-          setState(() => _selectedMethodIndex = index);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(10.r),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 14.sp,
-                  color: isActive ? primaryColor : const Color(0xFF94A3B8),
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isActive ? primaryColor : const Color(0xFF64748B),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12.sp,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

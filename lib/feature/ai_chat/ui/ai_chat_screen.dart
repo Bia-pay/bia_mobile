@@ -154,7 +154,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     if (path != null) {
       if (!mounted) return;
       _scrollToBottom();
-      await ref.read(aiChatControllerProvider.notifier).processHausaAudio(context, path);
+      await ref.read(aiChatControllerProvider.notifier).processAudio(context, path);
     }
   }
 
@@ -475,6 +475,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final isBankTransfer = (p['isBankTransfer'] as bool?) ?? false;
     final bankCode = p['bankCode'] as String?;
     final bankName = p['bankName'] as String?;
+    final String type = p['type']?.toString() ?? 'transfer';
+    final Map<String, dynamic>? meta = p['meta'] != null ? Map<String, dynamic>.from(p['meta']) : null;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -515,6 +517,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         isBankTransfer: isBankTransfer,
                         bankCode: bankCode,
                         bankName: bankName,
+                        type: type,
+                        meta: meta,
                       ),
                       onCancel: () =>
                           ref.read(aiChatControllerProvider.notifier).cancelTransfer(),
@@ -551,6 +555,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final isBankTransfer = (p['isBankTransfer'] as bool?) ?? false;
     final bankCode = p['bankCode'] as String?;
     final bankName = p['bankName'] as String?;
+    final String type = p['type']?.toString() ?? 'transfer';
+    final Map<String, dynamic>? meta = p['meta'] != null ? Map<String, dynamic>.from(p['meta']) : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,6 +578,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               isBankTransfer: isBankTransfer,
               bankCode: bankCode,
               bankName: bankName,
+              type: type,
+              meta: meta,
             ),
             onCancel: () =>
                 ref.read(aiChatControllerProvider.notifier).cancelTransfer(),
@@ -673,6 +681,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     required bool isBankTransfer,
     String? bankCode,
     String? bankName,
+    String type = 'transfer',
+    Map<String, dynamic>? meta,
   }) {
     ref.read(aiChatControllerProvider.notifier).confirmTransfer(context);
     
@@ -697,7 +707,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             recipientName: name,
             amount: amount,
             saveAsBeneficiary: false,
-            type: 'transfer',
+            type: type,
+            meta: meta,
           ),
         ),
       );

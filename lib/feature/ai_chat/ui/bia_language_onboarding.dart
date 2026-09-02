@@ -120,22 +120,38 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
     super.dispose();
   }
 
+  bool _isSubmitting = false;
+
   Future<void> _confirm() async {
-    if (_selected == null) return;
-    
-    // 1. Save and apply language via controller
-    await ref.read(aiChatControllerProvider.notifier).updateLanguage(_selected!);
-    
-    final authBox = await Hive.openBox('authBox');
-    final userId = authBox.get('userId')?.toString() ?? '';
-    final phone = authBox.get('phone')?.toString() ?? '';
-    final effectiveUserId = userId.isNotEmpty ? userId : phone;
+    if (_selected == null || _isSubmitting) return;
 
-    final box = await Hive.openBox('appPrefs');
-    await box.put('biaAiLanguageSelected_$effectiveUserId', true);
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    if (mounted) {
-      context.pushNamed(RouteList.aiChat);
+    try {
+      final authBox = await Hive.openBox('authBox');
+      final userId = authBox.get('userId')?.toString() ?? '';
+      final phone = authBox.get('phone')?.toString() ?? '';
+      final effectiveUserId = userId.isNotEmpty ? userId : phone;
+
+      if (effectiveUserId.isNotEmpty) {
+        final box = await Hive.openBox('appPrefs');
+        await box.put('biaAiLanguageSelected_$effectiveUserId', true);
+      }
+
+      // Trigger language update in background
+      ref.read(aiChatControllerProvider.notifier).updateLanguage(_selected!);
+
+      if (mounted) {
+        context.pushReplacementNamed(RouteList.aiChat);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
@@ -656,28 +672,51 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            onTap: _confirm,
+                            onTap: _isSubmitting ? null : _confirm,
                             child: Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Initialize BIA Companion',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.4,
+                              child: _isSubmitting
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 18.r,
+                                          height: 18.r,
+                                          child: const CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10.w),
+                                        Text(
+                                          'Setting up your assistant...',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Initialize BIA Companion',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15.sp,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.4,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8.w),
+                                        Icon(
+                                          Icons.arrow_forward_rounded,
+                                          color: Colors.white,
+                                          size: 16.sp,
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    color: Colors.white,
-                                    size: 16.sp,
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         ),

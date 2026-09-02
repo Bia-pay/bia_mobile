@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/utils/colors.dart';
 import '../../../../../app/utils/custom_button.dart';
@@ -719,7 +720,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                         SizedBox(width: 4.w),
                         Expanded(
                           child: Text(
-                            "Insufficient balance. Your balance is ₦${walletBalance.toStringAsFixed(2)}",
+                            "Insufficient balance. Your balance is ₦${NumberFormat('#,##0.00').format(walletBalance)}",
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: errorColor,
                               fontWeight: FontWeight.w600,

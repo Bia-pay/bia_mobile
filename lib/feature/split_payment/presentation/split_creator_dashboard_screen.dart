@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/router/route_constant.dart';
@@ -227,7 +228,7 @@ class _SplitCreatorDashboardScreenState
                     children: [
                       _buildStatColumn(
                         "Total Split",
-                        "₦${total.toStringAsFixed(2)}",
+                        "₦${NumberFormat('#,##0.00').format(total)}",
                         accentColor,
                       ),
                       Container(
@@ -237,7 +238,7 @@ class _SplitCreatorDashboardScreenState
                       ),
                       _buildStatColumn(
                         "Collected",
-                        "₦${collected.toStringAsFixed(2)}",
+                        "₦${NumberFormat('#,##0.00').format(collected)}",
                         successColor,
                       ),
                       Container(
@@ -247,7 +248,7 @@ class _SplitCreatorDashboardScreenState
                       ),
                       _buildStatColumn(
                         "Remaining",
-                        "₦${remaining.toStringAsFixed(2)}",
+                        "₦${NumberFormat('#,##0.00').format(remaining)}",
                         pendingColor,
                       ),
                     ],
@@ -349,7 +350,7 @@ class _SplitCreatorDashboardScreenState
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              "Share: ₦${p.amountAssigned.toStringAsFixed(2)}",
+                              "Share: ₦${NumberFormat('#,##0.00').format(p.amountAssigned)}",
                               style: TextStyle(
                                 color: lightSecondaryText,
                                 fontSize: 11.sp,

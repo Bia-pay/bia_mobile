@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:intl/intl.dart';
 
 import 'package:hive/hive.dart';
 
@@ -697,7 +698,7 @@ class _SplitCreatorSetupScreenState
           ),
           SizedBox(height: 4.h),
           Text(
-            '₦${amount.toStringAsFixed(2)}',
+            '₦${NumberFormat('#,##0.00').format(amount)}',
             style: TextStyle(
               color: Colors.white,
               fontSize: 14.sp,
@@ -919,7 +920,7 @@ class _SplitCreatorSetupScreenState
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              '₦${(isIncoming ? item.assignedAmount : item.totalAmount).toStringAsFixed(2)}',
+                              '₦${NumberFormat('#,##0.00').format(isIncoming ? item.assignedAmount : item.totalAmount)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14.sp,
@@ -1339,7 +1340,7 @@ class _SplitCreatorSetupScreenState
                 ),
               ),
               Text(
-                "₦${_totalAmount.toStringAsFixed(2)}",
+                "₦${NumberFormat('#,##0.00').format(_totalAmount)}",
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 18.sp,
@@ -1389,7 +1390,7 @@ class _SplitCreatorSetupScreenState
                   ? "Split Bill"
                   : _titleController.text.trim(),
               subtitle:
-                  "Total: ₦${_generatedResponse!.totalAmount.toStringAsFixed(2)}",
+                  "Total: ₦${NumberFormat('#,##0.00').format(_generatedResponse!.totalAmount)}",
               child: Container(
                 padding: EdgeInsets.all(16.r),
                 color: Colors.white,

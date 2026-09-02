@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import '../../../app/utils/image.dart';
 import 'package:hive/hive.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../auth/data/api_constant.dart';
@@ -516,14 +518,20 @@ class DashboardRepository {
 
       final jsonResponse = jsonDecode(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final user = UserResponse.fromJson(jsonResponse['responseBody']['user']);
+        var user = UserResponse.fromJson(jsonResponse['responseBody']['user']);
         
         // 🔹 Save locally - Sync all relevant keys
         final box = await _getAuthBox();
+        
+        final randomAvatar = getRandomDiceBearAvatar();
+        final finalPicture = (user.picture != null && user.picture!.isNotEmpty)
+            ? user.picture!
+            : (box.get('picture')?.toString() ?? randomAvatar);
+
+        await box.put('picture', finalPicture);
+        user = user.copyWith(picture: finalPicture);
         await box.put('saved_user_profile', user.toJson());
         
-        // 🟢 Update individual keys used by Home and Welcome Screens
-        if (user.picture != null) await box.put('picture', user.picture);
         if (user.fullname != null) await box.put('fullname', user.fullname);
         
         return user;
@@ -616,12 +624,7 @@ class DashboardRepository {
 
       final json = jsonDecode(response.body);
 
-      return ResponseModel(
-        responseMessage:
-        json['responseMessage'] ?? json['error'] ?? 'Upload failed',
-        responseSuccessful: response.statusCode == 200 || response.statusCode == 201,
-        statusCode: response.statusCode,
-      );
+      return ResponseModel.fromJson(json, response.statusCode);
     } catch (e) {
       return ResponseModel(
         responseMessage: 'Image upload failed',
@@ -1322,6 +1325,14 @@ class DashboardRepository {
       );
 
       final jsonResponse = jsonDecode(response.body);
+
+      // 🔍 DEBUG: log full electricity response to identify token key
+      debugPrint('⚡ ELECTRICITY RESPONSE: $jsonResponse');
+      if (jsonResponse['responseBody'] is Map) {
+        final rb = jsonResponse['responseBody'] as Map;
+        debugPrint('⚡ ELECTRICITY RESPONSE BODY KEYS: ${rb.keys.toList()}');
+        rb.forEach((k, v) => debugPrint('  ⚡ $k => $v'));
+      }
 
       return ResponseModel.fromJson(
         jsonResponse,

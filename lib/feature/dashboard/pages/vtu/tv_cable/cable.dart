@@ -7,6 +7,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import '../../../../../app/utils/image.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
@@ -250,14 +251,14 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
 
   String _formatPrice(dynamic amount) {
     if (amount == null) return '0';
-    final str = amount.toString();
-    if (str.contains('.')) {
-      final parts = str.split('.');
-      if (parts[1] == '00' || parts[1] == '0') {
-        return parts[0];
+    final parsed = double.tryParse(amount.toString());
+    if (parsed != null) {
+      if (parsed % 1 == 0) {
+        return NumberFormat('#,##0').format(parsed);
       }
+      return NumberFormat('#,##0.00').format(parsed);
     }
-    return str;
+    return amount.toString();
   }
 
   String _getProviderLogo(String name) {
@@ -841,7 +842,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                "Insufficient balance. Your balance is ₦${walletBalance.toStringAsFixed(2)}",
+                                "Insufficient balance. Your balance is ₦${NumberFormat('#,##0.00').format(walletBalance)}",
                               ),
                               backgroundColor: errorColor,
                             ),

@@ -14,6 +14,7 @@ import '../../../feature/auth/presentation/pages/login.dart';
 import '../../../feature/auth/presentation/pages/onboarding.dart';
 import '../../../feature/auth/presentation/pages/splash_screen.dart';
 import '../../../feature/auth/presentation/pages/welcome_back.dart';
+import '../../../feature/auth/presentation/pages/complete_profile.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password2.dart';
 import '../../../feature/bottom_nav_bar/bottom_nav.dart';
@@ -57,9 +58,12 @@ import '../../../feature/settings/presentation/auto_logout_settings.dart';
 import '../../../feature/referral/presentation/referral_screen.dart';
 import '../../../feature/support/presentation/support_tickets_page.dart';
 import '../../../feature/support/presentation/ticket_details_page.dart';
+import '../../../feature/support/presentation/help_center_page.dart';
 import '../../../feature/split_payment/presentation/split_creator_setup_screen.dart';
 import '../../../feature/split_payment/presentation/split_participant_scan_screen.dart';
 import '../../../feature/split_payment/presentation/split_creator_dashboard_screen.dart';
+import '../../../feature/bia_trike/presentation/bia_trike_onboarding_screen.dart';
+import '../../../feature/bia_trike/presentation/bia_trike_success_screen.dart';
 
 
 export '../../../feature/settings/presentation/change_password.dart'
@@ -114,10 +118,18 @@ class AppRouter {
                           currentPath.startsWith('/cable') ||
                           currentPath.startsWith('/electricity') ||
                           currentPath.startsWith('/top-up') ||
-                          currentPath.startsWith('/socket-test');
+                          currentPath.startsWith('/socket-test') ||
+                          currentPath.startsWith('/complete-profile');
 
       if (isProtected && !hasActiveSession) {
         return RouteList.loginScreen;
+      }
+
+      if (hasActiveSession) {
+        final isComplete = authBox.get('isCompleteRegistration', defaultValue: true) == true;
+        if (isComplete && currentPath == '/complete-profile') {
+          return RouteList.bottomNavBar;
+        }
       }
       return null;
     },
@@ -273,6 +285,15 @@ class AppRouter {
         name: RouteList.transactionDetailsScreen,
         builder: (context, state) => TransactionDetailsScreen(transaction: state.extra as TransactionItem),
 
+      ),
+      GoRoute(
+        path: '/complete-profile',
+        name: RouteList.completeProfile,
+        pageBuilder: (context, state) => buildPageWithFadeTransition(
+          context: context,
+          state: state,
+          child: const CompleteProfileScreen(),
+        ),
       ),
       GoRoute(
         path: '/amount',
@@ -527,6 +548,11 @@ class AppRouter {
         builder: (context, state) => const SupportTicketsPage(),
       ),
       GoRoute(
+        path: RouteList.helpCenter,
+        name: RouteList.helpCenter,
+        builder: (context, state) => const HelpCenterPage(),
+      ),
+      GoRoute(
         path: '/support-tickets/:id',
         name: RouteList.ticketDetails,
         builder: (context, state) {
@@ -557,6 +583,16 @@ class AppRouter {
           final splitId = state.pathParameters['splitId'] ?? '';
           return SplitCreatorDashboardScreen(splitId: splitId);
         },
+      ),
+      GoRoute(
+        path: RouteList.biaTrikeOnboarding,
+        name: RouteList.biaTrikeOnboarding,
+        builder: (context, state) => const BiaTrikeOnboardingScreen(),
+      ),
+      GoRoute(
+        path: RouteList.biaTrikeSuccess,
+        name: RouteList.biaTrikeSuccess,
+        builder: (context, state) => const BiaTrikeSuccessScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

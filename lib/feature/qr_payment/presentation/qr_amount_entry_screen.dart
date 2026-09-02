@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:intl/intl.dart';
 import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../../../app/utils/widgets/custom_text_field.dart';
@@ -84,7 +85,8 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
         current += value;
       }
 
-      amount = '₦$current';
+      final parsed = double.tryParse(current) ?? 0;
+      amount = '₦${NumberFormat('#,##0').format(parsed)}';
       _checkAmountValidation();
     });
   }
@@ -99,7 +101,8 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
         current = "0";
       }
 
-      amount = '₦$current';
+      final parsed = double.tryParse(current) ?? 0;
+      amount = '₦${NumberFormat('#,##0').format(parsed)}';
       _checkAmountValidation();
     });
   }
@@ -133,7 +136,7 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
     } else if (balance >= 1000) {
       return '₦${(balance / 1000).toStringAsFixed(1)}K';
     }
-    return '₦${balance.toStringAsFixed(2)}';
+    return '₦${NumberFormat('#,##0.00').format(balance)}';
   }
 
   void _onContinue() async {
@@ -235,78 +238,82 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
 
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    return Scaffold(
-      backgroundColor: offWhiteBackground,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenH = constraints.maxHeight;
-            final isSmall = screenH < 780;
-            final isTiny = screenH < 600;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: offWhiteBackground,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenH = constraints.maxHeight;
+              final isSmall = screenH < 780;
+              final isTiny = screenH < 600;
 
-            final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
-            final recipientCard = _buildRecipientCard(context, theme, isTiny);
-            final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
-            final keypad = _buildKeypad(isTiny, isSmall, isLoading);
+              final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
+              final recipientCard = _buildRecipientCard(context, theme, isTiny);
+              final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
+              final keypad = _buildKeypad(isTiny, isSmall, isLoading);
 
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
-                  child: Column(
-                    children: [
-                      topBar,
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              recipientCard,
-                              SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
-                              amountDisplay,
-                              SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                                child: CustomTextFormField(
-                                  controller: _narrationController,
-                                  label: 'Narration (Optional)',
-                                  hintText: 'What is this for?',
-                                  validator: (val) => null,
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
+                    child: Column(
+                      children: [
+                        topBar,
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                recipientCard,
+                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                                amountDisplay,
+                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                                  child: CustomTextFormField(
+                                    controller: _narrationController,
+                                    label: 'Narration (Optional)',
+                                    hintText: 'What is this for?',
+                                    validator: (val) => null,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (!keyboardOpen) ...[
-                        keypad,
-                      ] else ...[
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.w),
-                            child: TextButton.icon(
-                              onPressed: () => FocusScope.of(context).unfocus(),
-                              icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
-                              label: const Text('Done'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: primaryColor,
-                                backgroundColor: primaryColor.withValues(alpha: 0.08),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                              ),
+                              ],
                             ),
                           ),
                         ),
+                        if (!keyboardOpen) ...[
+                          keypad,
+                        ] else ...[
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 24.w),
+                              child: TextButton.icon(
+                                onPressed: () => FocusScope.of(context).unfocus(),
+                                icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
+                                label: const Text('Done'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: primaryColor,
+                                  backgroundColor: primaryColor.withValues(alpha: 0.08),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -500,7 +507,7 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
           ),
         if (showInsufficientFundsWarning)
           _buildWarningChip(
-            "Insufficient balance (₦${walletBalance.toStringAsFixed(2)})",
+            "Insufficient balance (₦${NumberFormat('#,##0.00').format(walletBalance)})",
             Icons.error_outline_rounded,
             errorColor,
             isTiny,

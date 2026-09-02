@@ -36,10 +36,10 @@ class TopUp {
 
 // Example dummy transactions list
 final List<TopUp> topUp = [
+  TopUp(name: "Receive Money", dateTime: "Share your account and ask for transfer", amount: 1200, isOutgoing: false),
   TopUp(name: "Cash Deposit", dateTime: "Fund your account with nearby agents", amount: 250, isOutgoing: true),
   TopUp(name: "Top-up with Card/Account", dateTime: "Add money from your bank card/account", amount: 1200, isOutgoing: false),
   TopUp(name: "USSD", dateTime: "Use your other bank's USSD code", amount: 500, isOutgoing: true),
-  TopUp(name: "Receive Money", dateTime: "Share your account and ask for transfer", amount: 1200, isOutgoing: false),
 ];
 class DataTopUp {
   final String name;

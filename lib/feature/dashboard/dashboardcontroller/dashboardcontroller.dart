@@ -654,6 +654,15 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
       LoadingHelper.dismiss();
 
+      if (response.responseSuccessful) {
+        final updatedUser = response.responseBody?.user;
+        if (updatedUser != null) {
+          ref.read(userProfileProvider.notifier).updateProfile(updatedUser);
+        } else {
+          await fetchUserProfile(context);
+        }
+      }
+
       ToastHelper.showToast(
         context: context,
         message: response.responseMessage,

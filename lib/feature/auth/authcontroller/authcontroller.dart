@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -88,6 +89,8 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
         final isNew = appBox.get('is_new_registration', defaultValue: false);
         if (isNew) {
           await appBox.put('is_new_registration', false);
+          await appBox.put('qr_onboarding_completed', false);
+          ref.read(qrOnboardingProvider.notifier).setOnboardingCompleted(false);
         } else {
           await appBox.put('qr_onboarding_completed', true);
           ref.read(qrOnboardingProvider.notifier).setOnboardingCompleted(true);
@@ -183,6 +186,14 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
     try {
       EasyLoading.show(status: "Logging out...");
 
+      // Delete the FCM token to prevent cross-account notification leak on shared devices
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+        debugPrint("🔥 FCM Token deleted successfully on logout.");
+      } catch (e) {
+        debugPrint("⚠️ Failed to delete FCM token on logout: $e");
+      }
+
       // Hit the backend logout API if the user logs out themselves (manual)
       if (isManual) {
         try {
@@ -208,6 +219,8 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
       if (isManual) {
         // Aggressively clear all SharedPreferences/Hive if manual logout
         await authBox.clear();
+        final appBox = await Hive.openBox('appBox');
+        await appBox.clear();
       } else {
         // Only remove tokens for session lock, keeping profile for "Welcome Back"
         await authBox.delete('token');
@@ -649,4 +662,294 @@ class AuthController extends StateNotifier<AsyncValue<bool>> {
   //     );
   //   }
   // }
+
+  // ---------------- V2 ONBOARDING ACTIONS ----------------
+  Future<ResponseModel?> registerV2(
+    BuildContext context,
+    String phone, {
+    String? referralCode,
+  }) async {
+    if (phone.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Phone number required",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+
+      final Map<String, dynamic> body = {"phone": phone};
+      if (referralCode != null && referralCode.isNotEmpty) {
+        body["referralCode"] = referralCode;
+      }
+      final ResponseModel response = await authRepository.registerV2(body);
+
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        EasyLoading.showToast(response.responseMessage);
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.info,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: 'Error: $e',
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> verifyOtpV2(
+    BuildContext context,
+    String otp,
+    String phone,
+  ) async {
+    if (otp.isEmpty || phone.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Field is required.",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final body = {'otp': otp, 'phone': phone};
+      final ResponseModel response = await authRepository.verifyOtpV2(body);
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.check_circle,
+          iconColor: Colors.green,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.info,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: 'Error: $e',
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> resendOtpV2(
+    BuildContext context,
+    String phone,
+  ) async {
+    if (phone.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "Phone number required",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final body = {'phone': phone};
+      final ResponseModel response = await authRepository.resendOtpV2(body);
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.check_circle,
+          iconColor: Colors.green,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.info,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: 'Error: $e',
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> createAccountV2(
+    BuildContext context, {
+    required String phone,
+    required String otp,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    if (phone.isEmpty || otp.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields are required.",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final body = {
+        'phone': phone,
+        'otp': otp,
+        'password': password,
+        'confirmPassword': confirmPassword,
+      };
+      final ResponseModel response = await authRepository.createAccountV2(body);
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        final appBox = await Hive.openBox('appBox');
+        await appBox.put('is_new_registration', true);
+        await appBox.put('qr_onboarding_completed', false);
+        ref.read(qrOnboardingProvider.notifier).setOnboardingCompleted(false);
+
+        ref.invalidate(dashboardControllerProvider);
+        ref.invalidate(userProfileProvider);
+
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.check_circle,
+          iconColor: Colors.green,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.info,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: 'Error: $e',
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
+
+  Future<ResponseModel?> completeRegistrationV2(
+    BuildContext context, {
+    required String fullname,
+    required String email,
+    required String pin,
+    required String confirmPin,
+  }) async {
+    if (fullname.isEmpty || email.isEmpty || pin.isEmpty || confirmPin.isEmpty) {
+      ToastHelper.showToast(
+        context: context,
+        message: "All fields are required.",
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+
+    try {
+      LoadingHelper.show('');
+      final body = {
+        'fullname': fullname,
+        'email': email,
+        'pin': pin,
+        'confirmPin': confirmPin,
+      };
+      final ResponseModel response = await authRepository.completeRegistrationV2(body);
+      LoadingHelper.dismiss();
+
+      if (response.responseSuccessful) {
+        ref.read(userProfileProvider.notifier).updateProfile(response.responseBody?.user);
+        ref.invalidate(dashboardControllerProvider);
+
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.check_circle,
+          iconColor: Colors.green,
+          position: ToastPosition.top,
+        );
+      } else {
+        ToastHelper.showToast(
+          context: context,
+          message: response.responseMessage,
+          icon: Icons.info,
+          iconColor: errorColor,
+          position: ToastPosition.top,
+        );
+      }
+      return response;
+    } catch (e) {
+      LoadingHelper.dismiss();
+      ToastHelper.showToast(
+        context: context,
+        message: 'Error: $e',
+        icon: Icons.info,
+        iconColor: errorColor,
+        position: ToastPosition.top,
+      );
+      return null;
+    }
+  }
 }

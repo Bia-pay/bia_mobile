@@ -36,6 +36,7 @@ class SplitPaymentRepository {
   }
 
   Future<ScanSplitResponse?> scanSplit(String splitId, String token) async {
+    if (token.trim().isEmpty) return null;
     try {
       final response = await _apiClient.postData(ApiConstant.SCAN_SPLIT, {
         'splitId': splitId,

@@ -87,4 +87,9 @@ class RouteList {
   static const String splitCreatorSetup = '/split-creator-setup';
   static const String splitScanView = '/split-scan-view';
   static const String splitCreatorDashboard = '/split-creator-dashboard';
+  static const String completeProfile = '/complete-profile';
+
+  // ------------ BIA TRIKE
+  static const String biaTrikeOnboarding = '/bia-trike-onboarding';
+  static const String biaTrikeSuccess = '/bia-trike-success';
 }

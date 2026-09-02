@@ -91,6 +91,19 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
       extendBody: true,
       floatingActionButton: GestureDetector(
         onTap: () {
+          final box = Hive.box('authBox');
+          final isComplete = box.get('isCompleteRegistration', defaultValue: true) == true;
+          if (!isComplete) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please complete your profile to use this feature.'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.red,
+              ),
+            );
+            context.pushNamed(RouteList.completeProfile);
+            return;
+          }
           if (!isQrEnabled) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

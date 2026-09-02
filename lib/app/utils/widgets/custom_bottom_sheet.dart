@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/constants.dart';
 import '../colors.dart';
 import '../router/route_constant.dart';
+import '../image.dart';
 
 /// Configuration class for bottom sheet customization
 class BottomSheetConfig {
@@ -152,11 +154,11 @@ class ConfirmationBottomSheet {
       context: context,
       isScrollControlled: true,
       backgroundColor: transparent,
-      isDismissible: false,
-      enableDrag: false,
+      isDismissible: true,
+      enableDrag: true,
       builder: (BuildContext modalContext) {
         return PopScope(
-          canPop: false,
+          canPop: true,
           child: Container(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.9,
@@ -249,7 +251,7 @@ class ConfirmationBottomSheet {
                               FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
-                                  '$currencySymbol${config.amount.toStringAsFixed(2)}',
+                                  '$currencySymbol${NumberFormat('#,##0.00').format(config.amount)}',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 28.sp,
@@ -350,10 +352,8 @@ class ConfirmationBottomSheet {
                                           ),
                                         ],
                                       ),
-                                      child: const Icon(
-                                        Icons.account_balance_wallet_rounded,
-                                        color: Colors.white,
-                                        size: 22,
+                                      child: ClipOval(
+                                        child: _buildUserAvatar(),
                                       ),
                                     ),
                                     SizedBox(height: 6.h),
@@ -483,7 +483,7 @@ class ConfirmationBottomSheet {
                           constraints: BoxConstraints(maxWidth: r.maxContentWidth),
                           child: _buildWalletBalanceRow(
                             modalContext,
-                            balance: config.walletBalance ?? _getWalletBalance().toStringAsFixed(2),
+                            balance: config.walletBalance ?? NumberFormat('#,##0.00').format(_getWalletBalance()),
                             currencySymbol: currencySymbol,
                             primaryColor: primary,
                           ),
@@ -850,5 +850,29 @@ class ConfirmationBottomSheet {
         ],
       ),
     );
+  }
+
+  static Widget _buildUserAvatar() {
+    try {
+      final box = Hive.box('authBox');
+      final picture = box.get('picture')?.toString();
+      final fullname = box.get('fullname')?.toString() ?? 'default';
+      
+      final avatarUrl = (picture != null && picture.isNotEmpty)
+          ? picture
+          : getDiceBearAvatar(fullname);
+
+      return Image.network(
+        avatarUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Image.network(getDiceBearAvatar(fullname), fit: BoxFit.cover),
+      );
+    } catch (_) {
+      return const Icon(
+        Icons.account_balance_wallet_rounded,
+        color: Colors.white,
+        size: 22,
+      );
+    }
   }
 }

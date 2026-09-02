@@ -191,19 +191,19 @@ class _GetStartedState extends ConsumerState<GetStarted> {
             height: 65.h,
             child: CustomButton(
               onPressed: () => context.go(RouteList.onBoardingScreen),
-              buttonColor: Colors.white,
-              buttonTextColor: primaryColor,
+              buttonColor: primaryColor,
+              buttonTextColor: Colors.white,
               buttonName: 'Create Free Account',
               textStyle: theme.textTheme.headlineMedium?.copyWith(
                 fontSize: 18.spMin,
                 fontWeight: FontWeight.w900,
-                color: primaryColor,
+                color: Colors.white,
               ),
             ),
           ).animate().fadeIn(delay: 600.ms).scale(),
-          
+
           SizedBox(height: 16.h),
-          
+
           SizedBox(
             width: double.infinity,
             height: 65.h,
@@ -214,14 +214,14 @@ class _GetStartedState extends ConsumerState<GetStarted> {
                   context.go(RouteList.loginScreen);
                 }
               },
-              buttonColor: primaryColor,
-              buttonTextColor: Colors.white,
+              buttonColor: Colors.white,
+              buttonTextColor: primaryColor,
               buttonName: 'Log In',
               buttonBorderColor: Colors.white.withOpacity(0.2),
               textStyle: theme.textTheme.headlineMedium?.copyWith(
                 fontSize: 18.spMin,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: primaryColor,
               ),
             ),
           ).animate().fadeIn(delay: 800.ms).scale(),

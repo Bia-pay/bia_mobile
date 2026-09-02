@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/custom_button.dart';
@@ -182,7 +183,7 @@ class _QrCompleteTransactionBottomSheetState
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
+                      '$currencySymbol${NumberFormat('#,##0.00').format(_totalAmount)}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 28.sp,
@@ -362,14 +363,14 @@ class _QrCompleteTransactionBottomSheetState
                     _buildDetailRow(
                       context,
                       label: 'Subtotal Amount',
-                      value: '$currencySymbol${widget.amount.toStringAsFixed(2)}',
+                      value: '$currencySymbol${NumberFormat('#,##0.00').format(widget.amount)}',
                     ),
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
 
                     _buildSummaryRow(
                       context,
                       _feeDescription.isNotEmpty ? _feeDescription : 'Transaction Fee',
-                      '$currencySymbol${_chargeAmount.toStringAsFixed(2)}',
+                      '$currencySymbol${NumberFormat('#,##0.00').format(_chargeAmount)}',
                     ),
 
                     const Divider(height: 20, color: Color(0xFFF1F5F9)),
@@ -377,7 +378,7 @@ class _QrCompleteTransactionBottomSheetState
                     _buildSummaryRow(
                       context,
                       'Total Deductable',
-                      '$currencySymbol${_totalAmount.toStringAsFixed(2)}',
+                      '$currencySymbol${NumberFormat('#,##0.00').format(_totalAmount)}',
                       isHighlighted: true,
                     ),
                   ],

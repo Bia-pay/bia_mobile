@@ -7,8 +7,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../app/utils/custom_button.dart';
+import '../../../../../app/utils/custom_loader.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import '../../../../../app/utils/router/route_constant.dart';
 import '../../../../../app/utils/widgets/cus_textfield.dart';
 import '../../../../../app/utils/widgets/custom_bottom_sheet.dart';
@@ -748,7 +751,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                   SizedBox(width: 6.w),
                   Expanded(
                     child: Text(
-                      "Insufficient Balance (₦${walletBalance.toStringAsFixed(2)})",
+                      "Insufficient Balance (₦${NumberFormat('#,##0.00').format(walletBalance)})",
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: errorColor,
                         fontWeight: FontWeight.w600,
@@ -850,6 +853,13 @@ class _CardOneState extends ConsumerState<CardOne> {
       return;
     }
 
+    // Show loading indicator to prevent double taps while fetching cashback
+    EasyLoading.show(
+      indicator: const CustomLoader(),
+      maskType: EasyLoadingMaskType.black,
+      dismissOnTap: false,
+    );
+
     // Resolve cashback dynamically (await future to ensure completed fetch)
     final cashbackRule = await ref
         .read(billCashbackProvider('AIRTIME').future)
@@ -857,6 +867,8 @@ class _CardOneState extends ConsumerState<CardOne> {
     final cashbackLabel =
         cashbackRule?.displayLabel(transactionAmount: amount.toDouble());
     final hasCashback = cashbackLabel != null && cashbackLabel.isNotEmpty;
+
+    EasyLoading.dismiss();
 
     if (!mounted) return;
 

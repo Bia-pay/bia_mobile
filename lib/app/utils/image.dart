@@ -1,5 +1,7 @@
 
 
+import 'dart:math';
+
 // --------------- SVG IMAGES ------------------
 const appLogoPng = 'assets/svg/logo-two.png';
 const logoPng = 'assets/svg/logo-one.png';
@@ -45,4 +47,36 @@ const backgroundImage = 'assets/image/bg.png';
 const cameraImages = 'assets/image/camera.png';
 const NoChatImage = 'assets/image/nochat.png';
 const NoChatImageDark = 'assets/image/nochatdark.png';
+
+String getRandomDiceBearAvatar() {
+  final styles = [
+    'adventurer',
+    'lorelei',
+    'avataaars',
+    'bottts',
+    'fun-emoji',
+    'pixel-art',
+    'notionists',
+    'croodles'
+  ];
+  final style = styles[Random().nextInt(styles.length)];
+  final seed = Random().nextInt(1000000).toString();
+  return 'https://api.dicebear.com/7.x/$style/png?seed=$seed';
+}
+
+String getDiceBearAvatar(String seed) {
+  final styles = [
+    'adventurer',
+    'lorelei',
+    'avataaars',
+    'bottts',
+    'fun-emoji',
+    'pixel-art',
+    'notionists',
+    'croodles'
+  ];
+  final styleIndex = seed.hashCode.abs() % styles.length;
+  final style = styles[styleIndex];
+  return 'https://api.dicebear.com/7.x/$style/png?seed=$seed';
+}
 

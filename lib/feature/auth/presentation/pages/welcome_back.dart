@@ -289,7 +289,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _buildAvatar(avatarR, effectivePictureUrl),
+                                _buildAvatar(avatarR, effectivePictureUrl, effectiveFullname),
                                 SizedBox(height: innerGap),
                                 Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
                                 Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
@@ -343,7 +343,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     );
   }
 
-  Widget _buildAvatar(double radius, String? imgUrl) {
+  Widget _buildAvatar(double radius, String? imgUrl, String seed) {
     return Container(
       width: radius * 2,
       height: radius * 2,
@@ -357,9 +357,9 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
             ? Image.network(
                 imgUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.person_outline, size: radius, color: accentColor),
+                errorBuilder: (context, error, stackTrace) => Image.network(getDiceBearAvatar(seed), fit: BoxFit.cover),
               )
-            : Icon(Icons.person_outline, size: radius, color: accentColor),
+            : Image.network(getDiceBearAvatar(seed), fit: BoxFit.cover),
       ),
     );
   }

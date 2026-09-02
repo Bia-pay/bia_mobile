@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/router/route_constant.dart';
 import '../../dashboard/widgets/keypad.dart';
@@ -82,7 +83,7 @@ class _QrPaymentReviewScreenState extends ConsumerState<QrPaymentReviewScreen> {
       if (mounted) {
         context.goNamed(RouteList.successScreen, extra: {
           "type": status,
-          "amount": widget.amount.toStringAsFixed(2),
+          "amount": NumberFormat('#,##0.00').format(widget.amount),
           "recipientName": widget.receiverName,
           "recipientAccount": "QR Payment",
           "reference": refId ?? '',
@@ -140,7 +141,7 @@ class _QrPaymentReviewScreenState extends ConsumerState<QrPaymentReviewScreen> {
               ),
               SizedBox(height: 16.h),
               Text(
-                '₦${widget.amount.toStringAsFixed(2)}',
+                '₦${NumberFormat('#,##0.00').format(widget.amount)}',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: primaryColor,

@@ -245,7 +245,7 @@ class _UserSettingsScreenState extends ConsumerState<UserSettingsScreen> {
                                             child: ClipOval(
                                               child: hasPicture
                                                   ? Image.network(user.picture!, fit: BoxFit.cover)
-                                                  : Image.asset(appLogoPng, fit: BoxFit.cover),
+                                                  : Image.network(getDiceBearAvatar(user?.phone ?? 'default'), fit: BoxFit.cover),
                                             ),
                                           ),
                                         ),

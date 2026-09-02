@@ -1,12 +1,20 @@
 class ApiConstant {
   // ------------- BASE URL LINK -------------------
   static const BASE_URL = 'https://api.bia.com.ng';
+  static const String AI_CHAT = '/api/v1/ai/chat';
   // ------------ USER SIGN
   static const LOGIN = '/api/v1/auth/login';
   static const REGISTER_STEP_ONE = '/api/v1/auth/register';
   static const REGISTER_STEP_TWO = '/api/v1/auth/verify/otp';
   static const RESEND_OTP = '/api/v1/auth/resend/otp';
   static const REGISTER_STEP_THREE = '/api/v1/auth/complete/registration';
+
+  // ------------ V2 USER SIGN
+  static const REGISTER_V2 = '/api/v2/auth/register';
+  static const VERIFY_OTP_V2 = '/api/v2/auth/verify-otp';
+  static const RESEND_OTP_V2 = '/api/v2/auth/resend-otp';
+  static const CREATE_ACCOUNT_V2 = '/api/v2/auth/create-account';
+  static const COMPLETE_REGISTRATION_V2 = '/api/v2/auth/complete-registration';
   static const FORGET_PASSWORD = '/api/v1/auth/forgot/password';
   static const RESET_PASSWORD = '/api/v1/auth/reset/password';
   static const PROFILE = '/api/v1/user/profile';

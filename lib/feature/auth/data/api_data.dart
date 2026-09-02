@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:http_parser/http_parser.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -126,6 +128,14 @@ class ApiClient {
     debugPrint('🚪 Force logout triggered — clearing tokens');
 
     try {
+      // Invalidate FCM token to prevent notification leaks
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+        debugPrint("🔥 FCM Token deleted on force logout");
+      } catch (e) {
+        debugPrint("⚠️ Failed to delete FCM token on force logout: $e");
+      }
+
       // Clear per-user secure tokens
       if (_userId.isNotEmpty) {
         await _storage.delete(key: _tokenKey(_userId));
@@ -465,7 +475,24 @@ class ApiClient {
       Uri.parse(ApiConstant.BASE_URL + url),
     );
     request.fields.addAll({'URL': url});
-    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    
+    final extension = imagePath.split('.').last.toLowerCase();
+    MediaType? contentType;
+    if (extension == 'jpg' || extension == 'jpeg') {
+      contentType = MediaType('image', 'jpeg');
+    } else if (extension == 'png') {
+      contentType = MediaType('image', 'png');
+    } else if (extension == 'gif') {
+      contentType = MediaType('image', 'gif');
+    } else if (extension == 'webp') {
+      contentType = MediaType('image', 'webp');
+    }
+
+    request.files.add(await http.MultipartFile.fromPath(
+      'image',
+      imagePath,
+      contentType: contentType,
+    ));
     request.headers.addAll(headers);
 
     http.StreamedResponse response = await request.send();
@@ -514,7 +541,24 @@ class ApiClient {
     request.headers['x-signature'] = digest.toString();
 
     request.fields.addAll(fields);
-    request.files.add(await http.MultipartFile.fromPath(fileField, filePath));
+    
+    final extension = filePath.split('.').last.toLowerCase();
+    MediaType? contentType;
+    if (extension == 'jpg' || extension == 'jpeg') {
+      contentType = MediaType('image', 'jpeg');
+    } else if (extension == 'png') {
+      contentType = MediaType('image', 'png');
+    } else if (extension == 'gif') {
+      contentType = MediaType('image', 'gif');
+    } else if (extension == 'webp') {
+      contentType = MediaType('image', 'webp');
+    }
+
+    request.files.add(await http.MultipartFile.fromPath(
+      fileField,
+      filePath,
+      contentType: contentType,
+    ));
 
     debugPrint('📤 MULTIPART $method $fullUrl');
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sliding_toast/flutter_sliding_toast.dart';
+import 'package:hive/hive.dart';
 import '../../../app/socket/socket_provider.dart';
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
@@ -119,7 +120,59 @@ class ScanSplitNotifier extends StateNotifier<AsyncValue<ScanSplitResponse?>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final details = await _repo.scanSplit(splitId, token);
+      ScanSplitResponse? details;
+
+      // 1. If token is provided, attempt QR scan endpoint first
+      if (token.trim().isNotEmpty) {
+        details = await _repo.scanSplit(splitId, token);
+      }
+
+      // 2. If token is empty or scanSplit fails (e.g. invited participant opening from list or notification), fallback to getSplitDetails
+      if (details == null) {
+        final splitDetails = await _repo.getSplitDetails(splitId);
+        if (splitDetails != null) {
+          String phone = '';
+          int? currentUserId;
+          try {
+            final authBox = await Hive.openBox('authBox');
+            phone = authBox.get('phone')?.toString() ?? '';
+            final userIdVal = authBox.get('userId');
+            if (userIdVal != null) {
+              currentUserId = int.tryParse(userIdVal.toString());
+            }
+          } catch (_) {}
+
+          SplitParticipant? myParticipant;
+          if (splitDetails.participants.isNotEmpty) {
+            for (final p in splitDetails.participants) {
+              if (currentUserId != null && p.userId == currentUserId) {
+                myParticipant = p;
+                break;
+              }
+              if (phone.isNotEmpty && _phonesMatch(phone, p.phone)) {
+                myParticipant = p;
+                break;
+              }
+            }
+            // Fallback to first participant if not explicitly matched
+            myParticipant ??= splitDetails.participants.first;
+          }
+
+          details = ScanSplitResponse(
+            splitId: splitDetails.splitId,
+            title: splitDetails.title,
+            description: splitDetails.description,
+            creatorName: splitDetails.creator.fullname.trim().isNotEmpty
+                ? splitDetails.creator.fullname
+                : 'Bia User',
+            assignedAmount:
+                myParticipant?.amountAssigned ?? splitDetails.totalAmount,
+            amountPaid: myParticipant?.amountPaid ?? 0.0,
+            paymentStatus: myParticipant?.paymentStatus ?? 'PENDING',
+          );
+        }
+      }
+
       if (details != null) {
         state = AsyncValue.data(details);
         return details;
@@ -144,6 +197,15 @@ class ScanSplitNotifier extends StateNotifier<AsyncValue<ScanSplitResponse?>> {
       state = AsyncValue.error(e, st);
       return null;
     }
+  }
+
+  bool _phonesMatch(String p1, String p2) {
+    final d1 = p1.replaceAll(RegExp(r'\D'), '');
+    final d2 = p2.replaceAll(RegExp(r'\D'), '');
+    if (d1.isEmpty || d2.isEmpty) return false;
+    final sub1 = d1.length >= 10 ? d1.substring(d1.length - 10) : d1;
+    final sub2 = d2.length >= 10 ? d2.substring(d2.length - 10) : d2;
+    return sub1 == sub2;
   }
 
   Future<PaySplitResponse?> paySplit({

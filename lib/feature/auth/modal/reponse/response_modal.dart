@@ -41,6 +41,7 @@ class ResponseBody {
   final dynamic fee;
   final dynamic senderBalance;
   final String? receiverName;
+  final bool? isCompleteRegistration;
 
   ResponseBody({
     this.user,
@@ -58,6 +59,7 @@ class ResponseBody {
     this.receiverName,
     this.status,
     this.recentTransactions,
+    this.isCompleteRegistration,
   });
 
   factory ResponseBody.fromJson(Map<String, dynamic> json) {
@@ -66,7 +68,16 @@ class ResponseBody {
       wallet: json['wallet'] != null ? WalletResponse.fromJson(json['wallet']) : null,
       accessToken: json['accessToken'],
       refreshToken: json['refreshToken'],
-      token: json['token']?.toString() ?? json['mainToken']?.toString() ?? json['purchasedToken']?.toString(),
+      token: json['token']?.toString() ?? 
+             json['mainToken']?.toString() ?? 
+             json['purchasedToken']?.toString() ?? 
+             json['purchased_token']?.toString() ?? 
+             json['purchased_code']?.toString() ?? 
+             json['purchasedCode']?.toString() ?? 
+             json['token_code']?.toString() ?? 
+             json['tokenCode']?.toString() ?? 
+             json['main_token']?.toString() ?? 
+             json['pin']?.toString(),
       reference: json['reference'],
       debitReference: json['debitReference'],
       requestId: json['requestId'],
@@ -77,6 +88,7 @@ class ResponseBody {
       senderBalance: json['senderBalance'],
       receiverName: json['receiverName'],
       recentTransactions: json['recentTransactions'],
+      isCompleteRegistration: json['isCompleteRegistration'],
     );
   }
 
@@ -95,6 +107,7 @@ class ResponseBody {
     'senderBalance': senderBalance,
     'receiverName': receiverName,
     'recentTransactions': recentTransactions,
+    'isCompleteRegistration': isCompleteRegistration,
   };
 }
 
@@ -110,6 +123,7 @@ class UserResponse {
   final String? picture;
   final String? tag;
   final bool? isVerified;
+  final bool? isCompleteRegistration;
   final String? createdAt;
   final String? updatedAt;
 
@@ -125,6 +139,7 @@ class UserResponse {
     this.picture,
     this.tag,
     this.isVerified,
+    this.isCompleteRegistration,
     this.createdAt,
     this.updatedAt,
   });
@@ -142,6 +157,7 @@ class UserResponse {
       picture: json['picture'],
       tag: json['tag'],
       isVerified: json['isVerified'],
+      isCompleteRegistration: json['isCompleteRegistration'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
     );
@@ -159,6 +175,7 @@ class UserResponse {
     'picture': picture,
     'tag': tag,
     'isVerified': isVerified,
+    'isCompleteRegistration': isCompleteRegistration,
     'createdAt': createdAt,
     'updatedAt': updatedAt,
   };
@@ -168,6 +185,7 @@ class UserResponse {
     String? phone,
     String? picture,
     String? tag,
+    bool? isCompleteRegistration,
   }) {
     return UserResponse(
       id: id,
@@ -181,6 +199,7 @@ class UserResponse {
       picture: picture ?? this.picture,
       tag: tag ?? this.tag,
       isVerified: isVerified,
+      isCompleteRegistration: isCompleteRegistration ?? this.isCompleteRegistration,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

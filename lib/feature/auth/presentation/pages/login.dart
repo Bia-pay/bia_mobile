@@ -1,27 +1,22 @@
-import 'dart:io';
-
-import 'package:bia/app/utils/image.dart';
-import 'package:bia/core/__core.dart';
-import 'package:bia/core/easy_loading_config.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:hive/hive.dart';
-
-import '../../../../app/utils/colors.dart';
-import '../../../../app/utils/u_popup.dart';
-import '../../../../app/utils/custom_button.dart';
-import '../../../../app/utils/router/route_constant.dart';
-import '../../../../app/utils/widgets/custom_text_field.dart';
-import '../../../../app/utils/widgets/phone_input_widget.dart';
-import '../../authcontroller/authcontroller.dart';
-
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../app/utils/colors.dart';
+import '../../../../app/utils/custom_button.dart';
+import '../../../../app/utils/router/route_constant.dart';
+import '../../../../app/utils/u_popup.dart';
+import '../../../../app/utils/widgets/custom_text_field.dart';
+import '../../../../app/utils/widgets/phone_input_widget.dart';
+import '../../../../core/easy_loading_config.dart';
+import '../../authcontroller/authcontroller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -43,6 +38,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoginInProgress = false;
 
   @override
+  void initState() {
+    super.initState();
+    phoneController.addListener(_refresh);
+    passwordController.addListener(_refresh);
+  }
+
+  @override
   void dispose() {
     phoneController.dispose();
     passwordController.dispose();
@@ -51,11 +53,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    phoneController.addListener(_refresh);
-    passwordController.addListener(_refresh);
+  void _refresh() {
+    if (mounted) setState(() {});
   }
 
   // Show error modal
@@ -171,7 +170,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!success || _isApiFailure(authState.lastResponse)) {
         final errorMessage = _getErrorMessage(authState.lastResponse, null);
 
-        // Check if it's a server error
         if (_isServerError(errorMessage)) {
           _showErrorModal(
             'Server Error',
@@ -186,23 +184,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
         }
 
-        setState(() {
-          isLoading = false;
-          _isLoginInProgress = false;
-        });
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+            _isLoginInProgress = false;
+          });
+        }
         return;
       }
 
-      // After successful logIn, the repository has already persisted tokens to SecureStorage.
-      // We can trust the 'success' boolean and the controller's state.
       if (mounted) {
         context.go(RouteList.bottomNavBar);
-      }
         setState(() {
           isLoading = false;
           _isLoginInProgress = false;
         });
-      } on TimeoutException catch (e) {
+      }
+    } on TimeoutException catch (_) {
       LoadingHelper.dismiss();
       _showErrorModal(
         'Connection Timeout',
@@ -210,11 +208,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         isNetworkError: true,
         onRetry: _login,
       );
-      setState(() {
-        isLoading = false;
-        _isLoginInProgress = false;
-      });
-    } on SocketException catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          _isLoginInProgress = false;
+        });
+      }
+    } on SocketException catch (_) {
       LoadingHelper.dismiss();
       _showErrorModal(
         'Network Error',
@@ -222,11 +222,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         isNetworkError: true,
         onRetry: _login,
       );
-      setState(() {
-        isLoading = false;
-        _isLoginInProgress = false;
-      });
-    } on HandshakeException catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          _isLoginInProgress = false;
+        });
+      }
+    } on HandshakeException catch (_) {
       LoadingHelper.dismiss();
       _showErrorModal(
         'Secure Connection Failed',
@@ -234,10 +236,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         isNetworkError: true,
         onRetry: _login,
       );
-      setState(() {
-        isLoading = false;
-        _isLoginInProgress = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          _isLoginInProgress = false;
+        });
+      }
     } catch (e) {
       LoadingHelper.dismiss();
       debugPrint("Login error: $e");
@@ -265,20 +269,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
 
-      setState(() {
-        isLoading = false;
-        _isLoginInProgress = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          _isLoginInProgress = false;
+        });
+      }
     }
   }
-
-  void _refresh() => setState(() {});
 
   bool get _canLogin {
     final text = phoneController.text.trim();
     final isValidPhone = (text.length == 10 && !text.startsWith('0')) ||
-                         (text.length == 11 && text.startsWith('0'));
-    return isValidPhone && passwordController.text.trim().isNotEmpty;
+        (text.length == 11 && text.startsWith('0'));
+    return isValidPhone && passwordController.text.trim().length == 6;
   }
 
   @override
@@ -287,7 +291,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
-      backgroundColor: primaryColor, // Modern dark top bg
+      backgroundColor: accentColor,
       resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
@@ -322,183 +326,252 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Section
+                // ── Top Header Navigation & Pill ─────────────
+                // Padding(
+                //   padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                //   child: Align(
+                //     alignment: Alignment.centerLeft,
+                //     child: Container(
+                //       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+                //       decoration: BoxDecoration(
+                //         color: primaryColor.withOpacity(0.15),
+                //         borderRadius: BorderRadius.circular(100.r),
+                //         border: Border.all(
+                //           color: primaryColor.withOpacity(0.3),
+                //           width: 1,
+                //         ),
+                //       ),
+                //       child: Row(
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: [
+                //           Container(
+                //             width: 6.r,
+                //             height: 6.r,
+                //             decoration: const BoxDecoration(
+                //               shape: BoxShape.circle,
+                //               color: primaryColor,
+                //             ),
+                //           ),
+                //           SizedBox(width: 6.w),
+                //           Text(
+                //             'WELCOME BACK',
+                //             style: TextStyle(
+                //               fontSize: 11.spMin,
+                //               fontWeight: FontWeight.w800,
+                //               color: primaryColor,
+                //               letterSpacing: 1.2,
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ).animate().fadeIn(duration: 300.ms).scale(),
+                // ),
+
+                SizedBox(height: 26.h),
+
+                // ── Header Title & Subtitle ─────────────────
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(10.r),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: Colors.white),
-                        ),
-                      ).animate().fadeIn().slideX(begin: -0.1),
-
-                      SizedBox(height: 30.h),
-                      // Text(
-                      //   'Welcome Back',
-                      //   style: theme.textTheme.headlineMedium?.copyWith(
-                      //     fontSize: 32.sp,
-                      //     fontWeight: FontWeight.w900,
-                      //     color: Colors.white,
-                      //     height: 1.1,
-                      //   ),
-                      // ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
-                      SizedBox(height: 10.h),
                       Text(
-                        'Login to access your Bia account.',
+                        'Login',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontSize: 30.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                          height: 1.15,
+                        ),
+                      ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+
+                      SizedBox(height: 8.h),
+
+                      Text(
+                        'Login to access your secure Bia wallet and instant payments.',
                         style: TextStyle(
-                          fontSize: 16.sp,
-                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14.sp,
+                          color: Colors.white.withOpacity(0.75),
                           fontWeight: FontWeight.w400,
+                          height: 1.4,
                         ),
                       ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
                     ],
                   ),
                 ),
 
-                SizedBox(height: 20.h),
+                SizedBox(height: 24.h),
 
-                // Form Section (Bottom Sheet style)
+                // ── Form Sheet Container ────────────────────
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 30.h),
                     decoration: BoxDecoration(
                       color: lightBackground,
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(40.r),
-                        topRight: Radius.circular(40.r),
+                        topLeft: Radius.circular(36.r),
+                        topRight: Radius.circular(36.r),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, -5),
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 25,
+                          offset: const Offset(0, -10),
                         ),
                       ],
                     ),
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10.h),
-                          
-                          PhoneInputWidget(
-                            controller: phoneController,
-                            focusNode: phoneFocusNode,
-                            textInputAction: TextInputAction.next,
-                            onSubmitted: (_) {
-                              FocusScope.of(context).requestFocus(passwordFocusNode);
-                            },
-                            label: 'Mobile Number',
-                            hintText: '801 234 5678',
-                             validator: (value) {
-                              if (value.isEmpty) return 'Phone number is required';
-                              final text = value.trim();
-                              if (text.length == 11 && !text.startsWith('0')) {
-                                return '11-digit number must start with 0';
-                              }
-                              if (text.length != 10 && text.length != 11) {
-                                return 'Phone number must be 10 or 11 digits';
-                              }
-                              return null;
-                            },
-                            onCountryChanged: (country) {
-                              _countryDialCode = country.dialCode.replaceAll('+', '');
-                            },
-                          ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
-
-                          SizedBox(height: 24.h),
-
-                          CustomTextFormField(
-                            label: 'Password',
-                            focusNode: passwordFocusNode,
-                            controller: passwordController,
-                            hintText: '******',
-                            obscureText: _obscurePassword,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _login(),
-                            validator: (value) => value.isEmpty ? 'Password is required' : null,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: primaryColor.withOpacity(0.4),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(36.r),
+                        topRight: Radius.circular(36.r),
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Top Drag Handle
+                            Center(
+                              child: Container(
+                                width: 40.w,
+                                height: 4.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
+                            ),
+
+                            SizedBox(height: 20.h),
+
+                            // Phone Input Field
+                            PhoneInputWidget(
+                              controller: phoneController,
+                              focusNode: phoneFocusNode,
+                              textInputAction: TextInputAction.next,
+                              onSubmitted: (_) {
+                                FocusScope.of(context).requestFocus(passwordFocusNode);
                               },
-                            ),
-                          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+                              label: 'Mobile Phone Number',
+                              hintText: '801 234 5678',
+                              validator: (value) {
+                                if (value.isEmpty) return 'Phone number is required';
+                                final text = value.trim();
+                                if (text.length == 11 && !text.startsWith('0')) {
+                                  return '11-digit number must start with 0';
+                                }
+                                if (text.length != 10 && text.length != 11) {
+                                  return 'Phone number must be 10 or 11 digits';
+                                }
+                                return null;
+                              },
+                              onCountryChanged: (country) {
+                                _countryDialCode = country.dialCode.replaceAll('+', '');
+                              },
+                            ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.08),
 
-                          SizedBox(height: 16.h),
-                          
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: GestureDetector(
-                              onTap: () => context.go(RouteList.forgotPassword),
-                              child: Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                  color: primaryColor,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14.sp,
+                            SizedBox(height: 18.h),
+
+                            // Password Field
+                            CustomTextFormField(
+                              label: 'Password',
+                              focusNode: passwordFocusNode,
+                              controller: passwordController,
+                              hintText: 'Enter 6-digit password',
+                              obscureText: _obscurePassword,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _login(),
+                              icons: Icons.lock_outline_rounded,
+                              validator: (value) => value.isEmpty ? 'Password is required' : null,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: primaryColor.withOpacity(0.6),
                                 ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
                               ),
-                            ),
-                          ).animate().fadeIn(delay: 500.ms),
+                            ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.08),
 
-                          SizedBox(height: 40.h),
+                            SizedBox(height: 14.h),
 
-                          CustomButton(
-                            buttonColor: _canLogin ? primaryColor : inactiveColor,
-                            buttonTextColor: Colors.white,
-                            buttonName: 'Login',
-                            isLoading: isLoading,
-                            onPressed: _canLogin ? _login : null,
-                            elevation: _canLogin ? 8.0 : 0.0,
-                          ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2),
-
-                          SizedBox(height: 30.h),
-
-                          Center(
-                            child: RichText(
-                              text: TextSpan(
-                                text: "Don't have an account?  ",
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14.sp,
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: 'Sign Up',
+                            // Forgot Password Link
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: InkWell(
+                                onTap: () => context.go(RouteList.forgotPassword),
+                                borderRadius: BorderRadius.circular(6.r),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                                  child: Text(
+                                    'Forgot Password?',
                                     style: TextStyle(
                                       color: primaryColor,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13.5.sp,
                                     ),
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () => context.go(RouteList.phoneRegScreen),
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ).animate().fadeIn(delay: 700.ms),
-                          SizedBox(height: 20.h + bottomInset),
-                        ],
+                            ).animate().fadeIn(delay: 400.ms),
+
+                            SizedBox(height: 32.h),
+
+                            // Submit Button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56.h,
+                              child: CustomButton(
+                                buttonColor: _canLogin ? primaryColor : inactiveColor,
+                                buttonTextColor: Colors.white,
+                                buttonName: 'Login',
+                                isLoading: isLoading,
+                                onPressed: _canLogin ? _login : null,
+                                elevation: _canLogin ? 6.0 : 0.0,
+                              ),
+                            ).animate().fadeIn(delay: 450.ms).scale(begin: const Offset(0.96, 0.96)),
+
+                            SizedBox(height: 28.h),
+
+                            // Sign Up Footer Link
+                            Center(
+                              child: RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                  text: "Don't have an account? ",
+                                  style: TextStyle(
+                                    color: lightSecondaryText,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14.sp,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: 'Sign Up',
+                                      style: TextStyle(
+                                        color: primaryColor,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                      recognizer: TapGestureRecognizer()
+                                        ..onTap = () => context.go(RouteList.phoneRegScreen),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ).animate().fadeIn(delay: 500.ms),
+
+                            SizedBox(height: 24.h + bottomInset),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -508,6 +581,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBackgroundOrbs() {
+    return Stack(
+      children: [
+        // Top Right Glowing Orb
+        Positioned(
+          top: -80.h,
+          right: -80.w,
+          child: Container(
+            width: 260.r,
+            height: 260.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  primaryColor.withOpacity(0.35),
+                  primaryColor.withOpacity(0.0),
+                ],
+              ),
+            ),
+          ).animate(onPlay: (c) => c.repeat(reverse: true))
+           .scale(duration: 4.seconds, begin: const Offset(0.9, 0.9), end: const Offset(1.15, 1.15)),
+        ),
+
+        // Middle Left Glowing Blob
+        Positioned(
+          top: 120.h,
+          left: -100.w,
+          child: Container(
+            width: 220.r,
+            height: 220.r,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  secondaryColor.withOpacity(0.2),
+                  secondaryColor.withOpacity(0.0),
+                ],
+              ),
+            ),
+          ).animate(onPlay: (c) => c.repeat(reverse: true))
+           .moveY(duration: 5.seconds, begin: -15, end: 15),
+        ),
+      ],
     );
   }
 }

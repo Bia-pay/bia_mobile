@@ -51,6 +51,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
   String? _errorText;
   late CountryCode _selectedCountry;
   late final VoidCallback _controllerListener;
+  bool _hasInteracted = false;
 
   bool get _isKeyboardDisabled => widget.keyboardType == TextInputType.none;
 
@@ -66,7 +67,17 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
             );
 
     _controllerListener = () {
-      final error = widget.validator(widget.controller.text);
+      final text = widget.controller.text;
+      
+      // Do not validate an empty field if the user has not started typing
+      if (text.isEmpty && !_hasInteracted) {
+        if (_errorText != null) {
+          setState(() => _errorText = null);
+        }
+        return;
+      }
+
+      final error = widget.validator(text);
       if (!mounted) return;
       if (error != _errorText) {
         setState(() => _errorText = error);
@@ -152,7 +163,12 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                   inputFormatters: _isKeyboardDisabled
                       ? null
                       : [FilteringTextInputFormatter.digitsOnly],
-                  onChanged: widget.onChanged,
+                  onChanged: (value) {
+                    if (value.isNotEmpty) {
+                      _hasInteracted = true;
+                    }
+                    widget.onChanged?.call(value);
+                  },
                   focusNode: widget.focusNode, // ✅
                   textInputAction: widget.textInputAction, // ✅
                   onFieldSubmitted: widget.onSubmitted,

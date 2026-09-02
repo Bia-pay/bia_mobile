@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:intl/intl.dart';
 import '../../../widgets/keypad.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import 'complete_transaction.dart';
@@ -46,7 +47,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   void initState() {
     super.initState();
     if (widget.initialAmount != null && widget.initialAmount! > 0) {
-      amount = '₦${widget.initialAmount!.toStringAsFixed(0)}';
+      amount = '₦${NumberFormat('#,##0').format(widget.initialAmount)}';
       widget.controller.text = amount;
       _checkAmountValidation();
     }
@@ -63,7 +64,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
 
   void addDigit(String value) {
     setState(() {
-      String current = amount.replaceAll('₦', '');
+      String current = amount.replaceAll('₦', '').replaceAll(',', '');
 
       if (current == "0") {
         current = value;
@@ -71,7 +72,8 @@ class _AmountPageState extends ConsumerState<AmountPage> {
         current += value;
       }
 
-      amount = '₦$current';
+      final parsed = double.tryParse(current) ?? 0;
+      amount = '₦${NumberFormat('#,##0').format(parsed)}';
       widget.controller.text = amount;
 
       _checkAmountValidation();
@@ -80,7 +82,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
 
   void removeDigit() {
     setState(() {
-      String current = amount.replaceAll('₦', '');
+      String current = amount.replaceAll('₦', '').replaceAll(',', '');
       if (current.isNotEmpty) {
         current = current.substring(0, current.length - 1);
       }
@@ -88,7 +90,8 @@ class _AmountPageState extends ConsumerState<AmountPage> {
         current = "0";
       }
 
-      amount = '₦$current';
+      final parsed = double.tryParse(current) ?? 0;
+      amount = '₦${NumberFormat('#,##0').format(parsed)}';
       widget.controller.text = amount;
 
       _checkAmountValidation();
@@ -120,7 +123,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
     } else if (balance >= 1000) {
       return '₦${(balance / 1000).toStringAsFixed(1)}K';
     }
-    return '₦${balance.toStringAsFixed(2)}';
+    return '₦${NumberFormat('#,##0.00').format(balance)}';
   }
 
   Future<void> _showConfirmBottomSheet() async {
@@ -190,126 +193,130 @@ class _AmountPageState extends ConsumerState<AmountPage> {
     final walletBalance = _getWalletBalance();
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    return Scaffold(
-      backgroundColor: offWhiteBackground,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenH = constraints.maxHeight;
-            final isSmall = screenH < 780;
-            final isTiny = screenH < 600;
-            final isTablet = constraints.maxWidth >= 768;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: offWhiteBackground,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenH = constraints.maxHeight;
+              final isSmall = screenH < 780;
+              final isTiny = screenH < 600;
+              final isTablet = constraints.maxWidth >= 768;
 
-            final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
-            final recipientCard = _buildRecipientCard(context, theme, isTiny);
-            final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
-            final keypad = _buildKeypad(isTiny, isSmall);
+              final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
+              final recipientCard = _buildRecipientCard(context, theme, isTiny);
+              final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
+              final keypad = _buildKeypad(isTiny, isSmall);
 
-            if (isTablet) {
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: Column(
-                    children: [
-                      topBar,
-                      SizedBox(height: 24.h),
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              flex: 10,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  recipientCard,
-                                  SizedBox(height: 32.h),
-                                  amountDisplay,
-                                  SizedBox(height: 24.h),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 40.w),
-                                    child: CustomTextFormField(
-                                      controller: _narrationController,
-                                      label: 'Narration (Optional)',
-                                      hintText: 'What is this for?',
-                                      validator: (val) => null,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 48.w),
-                            Expanded(
-                              flex: 9,
-                              child: keypad,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
-                  child: Column(
-                    children: [
-                      topBar,
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
+              if (isTablet) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Column(
+                      children: [
+                        topBar,
+                        SizedBox(height: 24.h),
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              recipientCard,
-                              SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
-                              amountDisplay,
-                              SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                                child: CustomTextFormField(
-                                  controller: _narrationController,
-                                  label: 'Narration (Optional)',
-                                  hintText: 'What is this for?',
-                                  validator: (val) => null,
+                              Expanded(
+                                flex: 10,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    recipientCard,
+                                    SizedBox(height: 32.h),
+                                    amountDisplay,
+                                    SizedBox(height: 24.h),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 40.w),
+                                      child: CustomTextFormField(
+                                        controller: _narrationController,
+                                        label: 'Narration (Optional)',
+                                        hintText: 'What is this for?',
+                                        validator: (val) => null,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                              ),
+                              SizedBox(width: 48.w),
+                              Expanded(
+                                flex: 9,
+                                child: keypad,
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      if (!keyboardOpen) ...[
-                        keypad,
-                      ] else ...[
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 24.w),
-                            child: TextButton.icon(
-                              onPressed: () => FocusScope.of(context).unfocus(),
-                              icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
-                              label: const Text('Done'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: primaryColor,
-                                backgroundColor: primaryColor.withValues(alpha: 0.08),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                              ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
+                    child: Column(
+                      children: [
+                        topBar,
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                recipientCard,
+                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                                amountDisplay,
+                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                                  child: CustomTextFormField(
+                                    controller: _narrationController,
+                                    label: 'Narration (Optional)',
+                                    hintText: 'What is this for?',
+                                    validator: (val) => null,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                        if (!keyboardOpen) ...[
+                          keypad,
+                        ] else ...[
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 24.w),
+                              child: TextButton.icon(
+                                onPressed: () => FocusScope.of(context).unfocus(),
+                                icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
+                                label: const Text('Done'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: primaryColor,
+                                  backgroundColor: primaryColor.withValues(alpha: 0.08),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -512,7 +519,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
           ),
         if (showInsufficientFundsWarning)
           _buildWarningChip(
-            "Insufficient balance (₦${walletBalance.toStringAsFixed(2)})",
+            "Insufficient balance (₦${NumberFormat('#,##0.00').format(walletBalance)})",
             Icons.error_outline_rounded,
             errorColor,
             isTiny,

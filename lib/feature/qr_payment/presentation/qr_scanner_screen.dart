@@ -176,35 +176,45 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                     children: [
                       GestureDetector(
                         onTap: () => setState(() => _isCollectMode = false),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
                           padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
                           decoration: BoxDecoration(
                             color: !_isCollectMode ? primaryColor : Colors.transparent,
                             borderRadius: BorderRadius.circular(30.r),
                           ),
-                          child: Text(
-                            'Pay',
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
                             style: TextStyle(
                               color: !_isCollectMode ? Colors.white : Colors.white70,
                               fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
                             ),
+                            child: const Text('Pay'),
                           ),
                         ),
                       ),
                       GestureDetector(
                         onTap: () => setState(() => _isCollectMode = true),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
                           padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 12.h),
                           decoration: BoxDecoration(
                             color: _isCollectMode ? primaryColor : Colors.transparent,
                             borderRadius: BorderRadius.circular(30.r),
                           ),
-                          child: Text(
-                            'Collect',
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
                             style: TextStyle(
                               color: _isCollectMode ? Colors.white : Colors.white70,
                               fontWeight: FontWeight.bold,
+                              fontSize: 14.sp,
                             ),
+                            child: const Text('Collect'),
                           ),
                         ),
                       ),

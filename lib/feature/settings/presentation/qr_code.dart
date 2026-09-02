@@ -70,18 +70,7 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
   }
 
   Future<void> _fetchStaticQrCode() async {
-    setState(() => isLoading = true);
-    final controller = ref.read(dashboardControllerProvider.notifier);
-    final response = await controller.getUserQrCode(context);
-
-    if (response?.responseSuccessful == true) {
-      setState(() {
-        staticQrUrl = response?.responseBody?.url;
-        isLoading = false;
-      });
-    } else {
-      setState(() => isLoading = false);
-    }
+    setState(() => isLoading = false);
   }
 
   Future<void> _generateDynamicQr() async {
@@ -89,23 +78,9 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
       _showSnack("Please enter an amount", errorColor);
       return;
     }
-
-    setState(() => isLoading = true);
-    final controller = ref.read(dashboardControllerProvider.notifier);
-    final response = await controller.getUserQrCode(
-      context,
-      amount: double.tryParse(_amountController.text),
-      narration: _narrationController.text,
-    );
-
-    if (response?.responseSuccessful == true) {
-      setState(() {
-        dynamicQrUrl = response?.responseBody?.url;
-        isLoading = false;
-      });
-    } else {
-      setState(() => isLoading = false);
-    }
+    setState(() {
+      dynamicQrUrl = "local";
+    });
   }
 
   Future<void> _saveToGallery() async {
@@ -219,8 +194,8 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
                       fontSize: 13.sp,
                     ),
                     tabs: const [
-                      Tab(text: "Request Payment"),
                       Tab(text: "My QR Code"),
+                      Tab(text: "Request Payment"),
                     ],
                   ),
                 ),
@@ -230,8 +205,8 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildDynamicTab(),
                     _buildStaticTab(),
+                    _buildDynamicTab(),
                   ],
                 ),
               ),
@@ -243,6 +218,8 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
   }
 
   Widget _buildStaticTab() {
+    final qrData = "https://bia.com.ng/pay?account=${account ?? ''}&name=${Uri.encodeComponent(fullname ?? '')}";
+
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       child: Column(
@@ -251,35 +228,32 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
             controller: _screenshotController,
             child: PremiumGlassCard(
               title: fullname ?? "Bia User",
-              subtitle: "Account: $account",
-              child: isLoading
+              subtitle: "Account: ${account ?? ''}",
+              child: account == null || account!.isEmpty
                   ? SizedBox(
                       height: 200.r,
                       width: 200.r,
                       child: Center(child: CustomLoader()),
                     )
-                  : staticQrUrl != null
-                      ? Image.network(
-                          staticQrUrl!,
-                          height: 200.r,
-                          width: 200.r,
-                          fit: BoxFit.contain,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Container(height: 200.r, width: 200.r, color: Colors.white),
-                            );
-                          },
-                        )
-                      : Icon(Icons.qr_code, size: 200.r, color: Colors.grey[300]),
+                  : Container(
+                      padding: EdgeInsets.all(10.r),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      child: QrImageView(
+                        data: qrData,
+                        version: QrVersions.auto,
+                        size: 180.r,
+                        gapless: false,
+                      ),
+                    ),
             ),
           ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.9, 0.9)),
           
           SizedBox(height: 30.h),
           
-          _buildActionButtons(),
+          _buildActionButtons(isDynamic: false),
           
           SizedBox(height: 40.h),
           
@@ -293,6 +267,8 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
   }
 
   Widget _buildDynamicTab() {
+    final qrData = "https://bia.com.ng/pay?account=${account ?? ''}&name=${Uri.encodeComponent(fullname ?? '')}&amount=${_amountController.text}&narration=${Uri.encodeComponent(_narrationController.text)}";
+
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
       child: Column(
@@ -353,9 +329,21 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
             PremiumGlassCard(
               title: "Payment Requested",
               subtitle: "Amount: ₦${_amountController.text}",
-              child: isLoading
+              child: account == null || account!.isEmpty
                   ? SizedBox(height: 200.r, width: 200.r, child: Center(child: CustomLoader()))
-                  : Image.network(dynamicQrUrl!, height: 200.r, width: 200.r, fit: BoxFit.contain),
+                  : Container(
+                      padding: EdgeInsets.all(10.r),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      child: QrImageView(
+                        data: qrData,
+                        version: QrVersions.auto,
+                        size: 180.r,
+                        gapless: false,
+                      ),
+                    ),
             ),
             SizedBox(height: 20.h),
             TextButton(
@@ -363,20 +351,32 @@ class _QrScreenState extends ConsumerState<QrScreen> with SingleTickerProviderSt
               child: const Text("Create New Request", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
             SizedBox(height: 20.h),
-            _buildActionButtons(),
+            _buildActionButtons(isDynamic: true),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons({required bool isDynamic}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildCircularAction(Icons.download_rounded, "Save", _saveToGallery),
         _buildCircularAction(Icons.share_rounded, "Share", _shareQrCode),
-        _buildCircularAction(Icons.copy_rounded, "Copy Link", () => _copyToClipboard(staticQrUrl ?? "")),
+        _buildCircularAction(
+          Icons.copy_rounded, 
+          "Copy Link", 
+          () {
+            String link;
+            if (isDynamic && _amountController.text.isNotEmpty) {
+              link = "https://bia.com.ng/pay?account=${account ?? ''}&name=${Uri.encodeComponent(fullname ?? '')}&amount=${_amountController.text}&narration=${Uri.encodeComponent(_narrationController.text)}";
+            } else {
+              link = "https://bia.com.ng/pay?account=${account ?? ''}&name=${Uri.encodeComponent(fullname ?? '')}";
+            }
+            _copyToClipboard(link);
+          },
+        ),
       ],
     );
   }

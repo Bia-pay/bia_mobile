@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:intl/intl.dart';
 import '../../../widgets/keypad.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
 import 'on_bank_complete_payment.dart';
@@ -130,9 +131,10 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
 
   void addDigit(String value) {
     setState(() {
-      String current = amount.replaceAll('₦', '');
+      String current = amount.replaceAll('₦', '').replaceAll(',', '');
       current = (current == "0") ? value : current + value;
-      amount = '₦$current';
+      final parsed = double.tryParse(current) ?? 0;
+      amount = '₦${NumberFormat('#,##0').format(parsed)}';
       widget.controller.text = amount;
       _checkAmountValidation();
     });
@@ -140,10 +142,11 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
 
   void removeDigit() {
     setState(() {
-      String current = amount.replaceAll('₦', '');
+      String current = amount.replaceAll('₦', '').replaceAll(',', '');
       if (current.isNotEmpty) current = current.substring(0, current.length - 1);
       if (current.isEmpty) current = "0";
-      amount = '₦$current';
+      final parsed = double.tryParse(current) ?? 0;
+      amount = '₦${NumberFormat('#,##0').format(parsed)}';
       widget.controller.text = amount;
       _checkAmountValidation();
     });
@@ -169,7 +172,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
   String _formatBalance(double balance) {
     if (balance >= 1000000) return '₦${(balance / 1000000).toStringAsFixed(1)}M';
     if (balance >= 1000) return '₦${(balance / 1000).toStringAsFixed(1)}K';
-    return '₦${balance.toStringAsFixed(2)}';
+    return '₦${NumberFormat('#,##0.00').format(balance)}';
   }
 
   // ── Confirm sheet ─────────────────────────────────────────────────────────
@@ -240,17 +243,21 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     final theme = Theme.of(context);
     final walletBalance = _getWalletBalance();
 
-    return Scaffold(
-      backgroundColor: offWhiteBackground,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final d = _Dims.of(constraints);
-            return d.isTablet
-                ? _buildTabletLayout(theme, walletBalance, d)
-                : _buildPhoneLayout(theme, walletBalance, d);
-          },
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: offWhiteBackground,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final d = _Dims.of(constraints);
+              return d.isTablet
+                  ? _buildTabletLayout(theme, walletBalance, d)
+                  : _buildPhoneLayout(theme, walletBalance, d);
+            },
+          ),
         ),
       ),
     );
@@ -578,7 +585,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
           ),
         if (showInsufficientFundsWarning)
           _buildWarningChip(
-            "Insufficient balance (₦${walletBalance.toStringAsFixed(2)})",
+            "Insufficient balance (₦${NumberFormat('#,##0.00').format(walletBalance)})",
             Icons.error_outline_rounded,
             errorColor,
             d,

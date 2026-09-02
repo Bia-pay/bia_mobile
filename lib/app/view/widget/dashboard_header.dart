@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../feature/dashboard/dashboardcontroller/unread_count_notifier.dart';
 
 import '../../utils/colors.dart';
+import '../../utils/image.dart';
 
 class HomeHeader extends StatelessWidget {
   final String? picture;
@@ -18,6 +19,7 @@ class HomeHeader extends StatelessWidget {
   final String bell;
   final String notificationRoute;
   final String profileRoute;
+  final String helpRoute;
 
   const HomeHeader({
     super.key,
@@ -31,6 +33,7 @@ class HomeHeader extends StatelessWidget {
     required this.bell,
     required this.notificationRoute,
     required this.profileRoute,
+    required this.helpRoute,
   });
 
   @override
@@ -61,9 +64,9 @@ class HomeHeader extends StatelessWidget {
                       picture!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) =>
-                          Image.asset(appLogoPng),
+                          Image.network(getDiceBearAvatar(fullname)),
                     )
-                        : Image.asset(appLogoPng),
+                        : Image.network(getDiceBearAvatar(fullname)),
                   ),
                 ),
               ),
@@ -96,52 +99,70 @@ class HomeHeader extends StatelessWidget {
               ),
             ],
           ),
-          GestureDetector(
-            onTap: () => context.pushNamed(notificationRoute),
-            child: Consumer(
-              builder: (context, ref, _) {
-                final unreadCount = ref.watch(unreadCountProvider);
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      height: 22.r,
-                      width: 22.r,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: SvgPicture.asset(bell),
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: -5,
-                        right: -5,
-                        child: Container(
-                          padding: EdgeInsets.all(4.r),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => context.pushNamed(helpRoute),
+                child: Container(
+                  height: 22.r,
+                  width: 22.r,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.help_outline_rounded,
+                    color: lightText,
+                    size: 22.r,
+                  ),
+                ),
+              ),
+              SizedBox(width: 14.w),
+              GestureDetector(
+                onTap: () => context.pushNamed(notificationRoute),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final unreadCount = ref.watch(unreadCountProvider);
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          height: 22.r,
+                          width: 22.r,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(100),
                           ),
-                          constraints: BoxConstraints(
-                            minWidth: 16.r,
-                            minHeight: 16.r,
-                          ),
-                          child: Center(
-                            child: Text(
-                              unreadCount > 9 ? '9+' : unreadCount.toString(),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8.sp,
-                                fontWeight: FontWeight.bold,
+                          child: SvgPicture.asset(bell),
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            top: -5,
+                            right: -5,
+                            child: Container(
+                              padding: EdgeInsets.all(4.r),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: BoxConstraints(
+                                minWidth: 16.r,
+                                minHeight: 16.r,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  unreadCount > 9 ? '9+' : unreadCount.toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
