@@ -34,58 +34,76 @@ class _GetStartedState extends ConsumerState<GetStarted> {
 
           // 2. Main Content
           SafeArea(
-            child: Column(
-              children: [
-                const Spacer(flex: 2),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                        maxWidth: 550,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          children: [
+                            const Spacer(flex: 2),
 
-                /// 🔥 Feature Bento-Glass Card
-                _buildHeroCard(screenHeight),
+                            /// 🔥 Feature Bento-Glass Card
+                            _buildHeroCard(screenHeight),
 
-                const Spacer(flex: 3),
+                            const Spacer(flex: 3),
 
-                /// 🔥 Branding & Hook
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 32.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildBadge(theme),
-                      SizedBox(height: 16.h),
-                      
-                      /// 🔥 Headline
-                      Text(
-                        'Fast Payments.\nNo Boundaries.',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontSize: 28.spMin,
-                          fontWeight: FontWeight.w800,
-                          color: offWhiteBackground,
-                          letterSpacing: 0.5,
+                            /// 🔥 Branding & Hook
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 32.w),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildBadge(theme),
+                                  SizedBox(height: 16.h),
+
+                                  /// 🔥 Headline
+                                  Text(
+                                    'Fast Payments.\nNo Boundaries.',
+                                    style: theme.textTheme.headlineMedium?.copyWith(
+                                      fontSize: 28.spMin,
+                                      fontWeight: FontWeight.w800,
+                                      color: offWhiteBackground,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+
+                                  SizedBox(height: 16.h),
+
+                                  /// 🔥 Supporting Text
+                                  Text(
+                                    'Experience the next generation of QR payments. Secure, instant, and designed for you.',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontSize: 16.spMin,
+                                      height: 1.6,
+                                      color: offWhiteBackground.withOpacity(0.7),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
+                                ],
+                              ),
+                            ),
+
+                            const Spacer(flex: 3),
+
+                            /// 🔥 Footer Actions
+                            _buildFooterActions(context, theme),
+
+                            SizedBox(height: 30.h),
+                          ],
                         ),
-                      ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
-                      
-                      SizedBox(height: 16.h),
-                      
-                      /// 🔥 Supporting Text (Using the pattern)
-                      Text(
-                        'Experience the next generation of QR payments. Secure, instant, and designed for you.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontSize: 16.spMin,
-                          height: 1.6,
-                          color: offWhiteBackground.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
-
-                const Spacer(flex: 3),
-
-                /// 🔥 Footer Actions
-                _buildFooterActions(context, theme),
-                
-                SizedBox(height: 30.h),
-              ],
+                );
+              },
             ),
           ),
         ],

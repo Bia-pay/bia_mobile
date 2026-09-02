@@ -104,55 +104,61 @@ class _BiaTrikeOnboardingScreenState
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
-            return Container(
-              padding: EdgeInsets.all(24.r),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 44.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10.r),
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Container(
+                  padding: EdgeInsets.all(24.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 44.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 16.h),
+
+                      Text(
+                        'Bia Trike Language Settings',
+                        style: TextStyle(
+                          color: darkBackground,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Change your dialect for audio and text prompts.',
+                        style: TextStyle(
+                          color: lightSecondaryText,
+                          fontSize: 12.sp,
+                        ),
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      _buildLangSettingTile('english', 'Standard English', '🇬🇧', setModalState),
+                      SizedBox(height: 8.h),
+                      _buildLangSettingTile('pidgin', 'Nigerian Pidgin', '🇳🇬', setModalState),
+                      SizedBox(height: 8.h),
+                      _buildLangSettingTile('hausa', 'Hausa Dialect', '🌙', setModalState),
+
+                      SizedBox(height: 24.h),
+                    ],
                   ),
-                  SizedBox(height: 16.h),
-
-                  Text(
-                    'Bia Trike Language Settings',
-                    style: TextStyle(
-                      color: darkBackground,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    'Change your dialect for audio and text prompts.',
-                    style: TextStyle(
-                      color: lightSecondaryText,
-                      fontSize: 12.sp,
-                    ),
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  _buildLangSettingTile('english', 'Standard English', '🇬🇧', setModalState),
-                  SizedBox(height: 8.h),
-                  _buildLangSettingTile('pidgin', 'Nigerian Pidgin', '🇳🇬', setModalState),
-                  SizedBox(height: 8.h),
-                  _buildLangSettingTile('hausa', 'Hausa Dialect', '🌙', setModalState),
-
-                  SizedBox(height: 24.h),
-                ],
+                ),
               ),
             );
           },
@@ -216,180 +222,183 @@ class _BiaTrikeOnboardingScreenState
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
-            return Container(
-              padding: EdgeInsets.all(24.r),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(32.r),
-                  topRight: Radius.circular(32.r),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    blurRadius: 25,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 48.w,
-                      height: 5.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Container(
+                  padding: EdgeInsets.all(24.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32.r),
+                      topRight: Radius.circular(32.r),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 25,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 20.h),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          'Welcome to Bia Trike 🛺',
-                          style: TextStyle(
-                            color: darkBackground,
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w900,
+                      Center(
+                        child: Container(
+                          width: 48.w,
+                          height: 5.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(10.r),
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      SizedBox(width: 8.w),
-                      GestureDetector(
+                      SizedBox(height: 20.h),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Welcome to Bia Trike 🛺',
+                              style: TextStyle(
+                                color: darkBackground,
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w900,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pop(modalContext);
+                              _showLanguageSettingsSheet();
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(100.r),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    _selectedLanguage == 'hausa'
+                                        ? '🌙 Hausa'
+                                        : _selectedLanguage == 'pidgin'
+                                            ? '🇳🇬 Pidgin'
+                                            : '🇬🇧 English',
+                                    style: TextStyle(
+                                      color: primaryColor,
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Icon(Icons.keyboard_arrow_down_rounded,
+                                      color: primaryColor, size: 14.sp),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Select your language and tell us how you want to proceed:',
+                        style: TextStyle(
+                          color: lightSecondaryText,
+                          fontSize: 12.5.sp,
+                          height: 1.35,
+                        ),
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      Text(
+                        'PREFERRED LANGUAGE',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      SizedBox(height: 8.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildLangChip(
+                                'english', '🇬🇧 English', setModalState),
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: _buildLangChip(
+                                'pidgin', '🇳🇬 Pidgin', setModalState),
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: _buildLangChip(
+                                'hausa', '🌙 Hausa', setModalState),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      Text(
+                        'CHOOSE YOUR SERVICE',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+
+                      _buildModalRoleCard(
+                        title: 'Book a Keke Ride',
+                        subtitle: 'Passenger looking for fast, affordable town rides',
+                        icon: Icons.hail_rounded,
+                        color: primaryColor,
                         onTap: () {
                           Navigator.pop(modalContext);
-                          _showLanguageSettingsSheet();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BiaTrikeBookingScreen(
+                                  language: _selectedLanguage),
+                            ),
+                          );
                         },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 10.w, vertical: 4.h),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(100.r),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                _selectedLanguage == 'hausa'
-                                    ? '🌙 Hausa'
-                                    : _selectedLanguage == 'pidgin'
-                                        ? '🇳🇬 Pidgin'
-                                        : '🇬🇧 English',
-                                style: TextStyle(
-                                  color: primaryColor,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              SizedBox(width: 4.w),
-                              Icon(Icons.keyboard_arrow_down_rounded,
-                                  color: primaryColor, size: 14.sp),
-                            ],
-                          ),
-                        ),
                       ),
+
+                      SizedBox(height: 12.h),
+
+                      _buildModalRoleCard(
+                        title: 'Register as Trike Rider',
+                        subtitle:
+                            'Drive your Trike, accept requests & earn daily money',
+                        icon: Icons.electric_rickshaw_rounded,
+                        color: const Color(0xFFF59E0B),
+                        onTap: () {
+                          Navigator.pop(modalContext);
+                          setState(() {
+                            _showFormView = true;
+                          });
+                        },
+                      ),
+
+                      SizedBox(height: 24.h),
                     ],
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    'Select your language and tell us how you want to proceed:',
-                    style: TextStyle(
-                      color: lightSecondaryText,
-                      fontSize: 12.5.sp,
-                      height: 1.35,
-                    ),
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Language selector pills
-                  Text(
-                    'PREFERRED LANGUAGE',
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildLangChip(
-                            'english', '🇬🇧 English', setModalState),
-                      ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: _buildLangChip(
-                            'pidgin', '🇳🇬 Pidgin', setModalState),
-                      ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: _buildLangChip(
-                            'hausa', '🌙 Hausa', setModalState),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 24.h),
-
-                  Text(
-                    'CHOOSE YOUR SERVICE',
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-
-                  // Passenger Choice Card
-                  _buildModalRoleCard(
-                    title: 'Book a Keke Ride',
-                    subtitle: 'Passenger looking for fast, affordable town rides',
-                    icon: Icons.hail_rounded,
-                    color: primaryColor,
-                    onTap: () {
-                      Navigator.pop(modalContext);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BiaTrikeBookingScreen(
-                              language: _selectedLanguage),
-                        ),
-                      );
-                    },
-                  ),
-
-                  SizedBox(height: 12.h),
-
-                  // Rider Driver Choice Card
-                  _buildModalRoleCard(
-                    title: 'Register as Trike Rider',
-                    subtitle:
-                        'Drive your Trike, accept requests & earn daily money',
-                    icon: Icons.electric_rickshaw_rounded,
-                    color: const Color(0xFFF59E0B),
-                    onTap: () {
-                      Navigator.pop(modalContext);
-                      setState(() {
-                        _showFormView = true;
-                      });
-                    },
-                  ),
-
-                  SizedBox(height: 24.h),
-                ],
+                ),
               ),
             );
           },
@@ -578,25 +587,31 @@ class _BiaTrikeOnboardingScreenState
         ],
       ),
       body: SafeArea(
-        child: appState.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: primaryColor),
-          ),
-          error: (err, _) => Center(
-            child: Text(
-              'Error loading state: $err',
-              style: TextStyle(color: darkBackground),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650),
+            child: appState.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: primaryColor),
+              ),
+              error: (err, _) => Center(
+                child: Text(
+                  'Error loading state: $err',
+                  style: TextStyle(color: darkBackground),
+                ),
+              ),
+              data: (existingApp) {
+                if (existingApp != null) {
+                  return _buildExistingAppCard(theme, existingApp);
+                }
+                if (!_showFormView) {
+                  return _buildHubOverview(theme);
+                }
+                return _buildRiderFormView(theme);
+              },
             ),
           ),
-          data: (existingApp) {
-            if (existingApp != null) {
-              return _buildExistingAppCard(theme, existingApp);
-            }
-            if (!_showFormView) {
-              return _buildHubOverview(theme);
-            }
-            return _buildRiderFormView(theme);
-          },
         ),
       ),
     );
@@ -714,7 +729,6 @@ class _BiaTrikeOnboardingScreenState
 
           SizedBox(height: 28.h),
 
-          // Summary Card
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(20.r),
@@ -851,7 +865,6 @@ class _BiaTrikeOnboardingScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Full Name
                   CustomTextFormField(
                     controller: _fullNameCtrl,
                     label: "Rider Full Name",
@@ -866,7 +879,6 @@ class _BiaTrikeOnboardingScreenState
 
                   SizedBox(height: 16.h),
 
-                  // Phone Number
                   Text(
                     "Phone Number",
                     style: TextStyle(
@@ -889,7 +901,6 @@ class _BiaTrikeOnboardingScreenState
 
                   SizedBox(height: 16.h),
 
-                  // City of Operation Dropdown
                   Text(
                     "City of Operation",
                     style: TextStyle(
@@ -936,7 +947,6 @@ class _BiaTrikeOnboardingScreenState
 
                   SizedBox(height: 16.h),
 
-                  // Trike Model Dropdown
                   Text(
                     "Trike Model / Type",
                     style: TextStyle(
@@ -983,7 +993,6 @@ class _BiaTrikeOnboardingScreenState
 
                   SizedBox(height: 16.h),
 
-                  // Vehicle Plate Number
                   CustomTextFormField(
                     controller: _plateNumberCtrl,
                     label: "Vehicle Plate Number",
@@ -998,7 +1007,6 @@ class _BiaTrikeOnboardingScreenState
 
                   SizedBox(height: 16.h),
 
-                  // Driver's License or NIN
                   CustomTextFormField(
                     controller: _licenseOrNinCtrl,
                     label: "Driver's License / NIN Number",
@@ -1014,7 +1022,6 @@ class _BiaTrikeOnboardingScreenState
 
                   SizedBox(height: 24.h),
 
-                  // Submit Button
                   SizedBox(
                     width: double.infinity,
                     height: 52.h,

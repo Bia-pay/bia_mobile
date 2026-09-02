@@ -66,55 +66,61 @@ class _BiaTrikeBookingScreenState
       builder: (ctx) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
-            return Container(
-              padding: EdgeInsets.all(24.r),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 44.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10.r),
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Container(
+                  padding: EdgeInsets.all(24.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 44.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 16.h),
+
+                      Text(
+                        'Select Dialect / Language',
+                        style: TextStyle(
+                          color: darkBackground,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Choose your preferred language for prompts and ride booking.',
+                        style: TextStyle(
+                          color: lightSecondaryText,
+                          fontSize: 12.sp,
+                        ),
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      _buildLangTile('english', 'Standard English', '🇬🇧', setModalState),
+                      SizedBox(height: 8.h),
+                      _buildLangTile('pidgin', 'Nigerian Pidgin', '🇳🇬', setModalState),
+                      SizedBox(height: 8.h),
+                      _buildLangTile('hausa', 'Hausa Dialect', '🌙', setModalState),
+
+                      SizedBox(height: 24.h),
+                    ],
                   ),
-                  SizedBox(height: 16.h),
-
-                  Text(
-                    'Select Dialect / Language',
-                    style: TextStyle(
-                      color: darkBackground,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    'Choose your preferred language for prompts and ride booking.',
-                    style: TextStyle(
-                      color: lightSecondaryText,
-                      fontSize: 12.sp,
-                    ),
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  _buildLangTile('english', 'Standard English', '🇬🇧', setModalState),
-                  SizedBox(height: 8.h),
-                  _buildLangTile('pidgin', 'Nigerian Pidgin', '🇳🇬', setModalState),
-                  SizedBox(height: 8.h),
-                  _buildLangTile('hausa', 'Hausa Dialect', '🌙', setModalState),
-
-                  SizedBox(height: 24.h),
-                ],
+                ),
               ),
             );
           },
@@ -341,30 +347,36 @@ class _BiaTrikeBookingScreenState
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _t('subtitle'),
-                style: TextStyle(
-                  color: lightSecondaryText,
-                  fontSize: 13.sp,
-                  height: 1.4,
-                ),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 650),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _t('subtitle'),
+                    style: TextStyle(
+                      color: lightSecondaryText,
+                      fontSize: 13.sp,
+                      height: 1.4,
+                    ),
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  if (_isSearchingDriver)
+                    _buildSearchingCard()
+                  else if (_driverAssigned)
+                    _buildDriverAssignedCard()
+                  else
+                    _buildBookingForm(),
+                ],
               ),
-
-              SizedBox(height: 20.h),
-
-              if (_isSearchingDriver)
-                _buildSearchingCard()
-              else if (_driverAssigned)
-                _buildDriverAssignedCard()
-              else
-                _buildBookingForm(),
-            ],
+            ),
           ),
         ),
       ),
@@ -375,7 +387,6 @@ class _BiaTrikeBookingScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Map Preview Simulation Card
         Container(
           height: 130.h,
           width: double.infinity,
@@ -445,7 +456,6 @@ class _BiaTrikeBookingScreenState
 
         SizedBox(height: 20.h),
 
-        // Pickup & Destination Inputs
         Container(
           padding: EdgeInsets.all(20.r),
           decoration: BoxDecoration(
@@ -519,7 +529,6 @@ class _BiaTrikeBookingScreenState
 
         SizedBox(height: 20.h),
 
-        // Ride Option Types
         Text(
           _t('rideType'),
           style: TextStyle(
@@ -543,7 +552,6 @@ class _BiaTrikeBookingScreenState
 
         SizedBox(height: 20.h),
 
-        // Interactive Fare Negotiation / Offer Widget
         Container(
           padding: EdgeInsets.all(20.r),
           decoration: BoxDecoration(
@@ -595,7 +603,6 @@ class _BiaTrikeBookingScreenState
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Minus Button
                   InkWell(
                     onTap: () => _adjustFare(-50),
                     borderRadius: BorderRadius.circular(100.r),
@@ -613,7 +620,6 @@ class _BiaTrikeBookingScreenState
 
                   SizedBox(width: 24.w),
 
-                  // Offer Amount Display
                   Text(
                     '₦${NumberFormat('#,##0').format(_passengerOfferFare)}',
                     style: TextStyle(
@@ -625,7 +631,6 @@ class _BiaTrikeBookingScreenState
 
                   SizedBox(width: 24.w),
 
-                  // Plus Button
                   InkWell(
                     onTap: () => _adjustFare(50),
                     borderRadius: BorderRadius.circular(100.r),
@@ -656,7 +661,6 @@ class _BiaTrikeBookingScreenState
 
         SizedBox(height: 24.h),
 
-        // Book Button
         SizedBox(
           width: double.infinity,
           height: 52.h,
@@ -779,7 +783,6 @@ class _BiaTrikeBookingScreenState
 
           SizedBox(height: 24.h),
 
-          // Live Bidding Offers Card Simulation
           Text(
             'LIVE DRIVER COUNTER-OFFERS',
             style: TextStyle(
@@ -961,7 +964,6 @@ class _BiaTrikeBookingScreenState
 
           SizedBox(height: 24.h),
 
-          // Driver details card
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(20.r),
