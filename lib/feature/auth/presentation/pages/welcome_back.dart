@@ -286,37 +286,40 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
                               ],
                               border: Border.all(color: accentColor.withOpacity(0.08), width: 1),
                             ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildAvatar(avatarR, effectivePictureUrl, effectiveFullname),
-                                SizedBox(height: innerGap),
-                                Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
-                                Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
-                                SizedBox(height: innerGap / 2),
-                                
-                                if (_showPasswordField || !_biometricEnabled)
-                                  PinInputWidget(
-                                    title: "",
-                                    subtitle: _showPasswordField ? "Enter 6-digit Password" : "Protecting your account",
-                                    fieldType: InputFieldType.pin,
-                                    inputLength: 6,
-                                    showKeypad: _showPasswordField || !_biometricEnabled,
-                                    textColor: accentColor,
-                                    dotColor: accentColor,
-                                    keyColor: grey100,
-                                    keypadHeight: keypadH,
-                                    onPinComplete: (val) => _performLogin(phone!, val),
-                                    onBiometricAction: _biometricEnabled ? _authenticate : null,
-                                    biometricIcon: _biometricIcon,
-                                    onForgotPin: () => context.go(RouteList.forgotPassword),
-                                  ),
-                                
-                                if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
-                                  SizedBox(height: innerGap * 1.5),
-                                  _buildBiometricPrompt(),
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildAvatar(avatarR, effectivePictureUrl, effectiveFullname),
+                                  SizedBox(height: innerGap),
+                                  Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
+                                  Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
+                                  SizedBox(height: innerGap / 2),
+                                  
+                                  if (_showPasswordField || !_biometricEnabled)
+                                    PinInputWidget(
+                                      title: "",
+                                      subtitle: _showPasswordField ? "Enter 6-digit Password" : "Protecting your account",
+                                      fieldType: InputFieldType.pin,
+                                      inputLength: 6,
+                                      showKeypad: _showPasswordField || !_biometricEnabled,
+                                      textColor: accentColor,
+                                      dotColor: accentColor,
+                                      keyColor: grey100,
+                                      keypadHeight: keypadH,
+                                      onPinComplete: (val) => _performLogin(phone!, val),
+                                      onBiometricAction: _biometricEnabled ? _authenticate : null,
+                                      biometricIcon: _biometricIcon,
+                                      onForgotPin: () => context.go(RouteList.forgotPassword),
+                                    ),
+                                  
+                                  if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
+                                    SizedBox(height: innerGap * 1.5),
+                                    _buildBiometricPrompt(),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         ),

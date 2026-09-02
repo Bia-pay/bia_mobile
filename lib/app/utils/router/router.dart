@@ -199,17 +199,25 @@ class AppRouter {
         pageBuilder: (context, state) => buildPageWithFadeTransition(
           context: context,
           state: state,
-          child: const PhoneRegScreen(),
+          child: const CreateAccountPhoneScreen(),
         ),
       ),
       GoRoute(
         path: '/verify-otp',
         name: RouteList.createAccountVerifyOtpScreen,
-        pageBuilder: (context, state) => buildPageWithFadeTransition(
-          context: context,
-          state: state,
-          child: CreateAccountVerifyOtpScreen(phone: state.extra as String? ?? ''),
-        ),
+        pageBuilder: (context, state) {
+          String phone = '';
+          if (state.extra is String) {
+            phone = state.extra as String;
+          } else if (state.extra is Map) {
+            phone = (state.extra as Map)['phone']?.toString() ?? '';
+          }
+          return buildPageWithFadeTransition(
+            context: context,
+            state: state,
+            child: CreateAccountVerifyOtpScreen(phone: phone),
+          );
+        },
       ),
       GoRoute(
         path: '/forgot-password',

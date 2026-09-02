@@ -38,12 +38,16 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16.w,
-        vertical: 10.h,
-      ),
-      color: offWhiteBackground, 
+      padding: isTablet
+          ? const EdgeInsets.symmetric(horizontal: 24, vertical: 12)
+          : EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 10.h,
+            ),
+      color: offWhiteBackground,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -52,8 +56,8 @@ class HomeHeader extends StatelessWidget {
               GestureDetector(
                 onTap: () => context.pushNamed(profileRoute),
                 child: Container(
-                  height: 42.r,
-                  width: 42.r,
+                  height: isTablet ? 44 : 42.r,
+                  width: isTablet ? 44 : 42.r,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: primaryColor, width: 1.5),
@@ -70,7 +74,7 @@ class HomeHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 10.w),
+              SizedBox(width: isTablet ? 12 : 10.w),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -79,21 +83,18 @@ class HomeHeader extends StatelessWidget {
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w500,
                       color: lightSecondaryText,
-                      fontSize: 11.sp,
+                      fontSize: isTablet ? 13 : 11.sp,
                     ),
                   ),
-                  SizedBox(
-                    width: 130.w,
-                    child: Text(
-                      fullname,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: lightText,
-                        fontSize: 12.sp,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    fullname,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: lightText,
+                      fontSize: isTablet ? 16 : 12.sp,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -104,17 +105,17 @@ class HomeHeader extends StatelessWidget {
               GestureDetector(
                 onTap: () => context.pushNamed(helpRoute),
                 child: Container(
-                  height: 22.r,
-                  width: 22.r,
+                  height: isTablet ? 24 : 22.r,
+                  width: isTablet ? 24 : 22.r,
                   alignment: Alignment.center,
                   child: Icon(
                     Icons.help_outline_rounded,
                     color: lightText,
-                    size: 22.r,
+                    size: isTablet ? 24 : 22.r,
                   ),
                 ),
               ),
-              SizedBox(width: 14.w),
+              SizedBox(width: isTablet ? 18 : 14.w),
               GestureDetector(
                 onTap: () => context.pushNamed(notificationRoute),
                 child: Consumer(
@@ -124,8 +125,8 @@ class HomeHeader extends StatelessWidget {
                       clipBehavior: Clip.none,
                       children: [
                         Container(
-                          height: 22.r,
-                          width: 22.r,
+                          height: isTablet ? 24 : 22.r,
+                          width: isTablet ? 24 : 22.r,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(100),
                           ),
@@ -136,21 +137,21 @@ class HomeHeader extends StatelessWidget {
                             top: -5,
                             right: -5,
                             child: Container(
-                              padding: EdgeInsets.all(4.r),
+                              padding: EdgeInsets.all(isTablet ? 3 : 4.r),
                               decoration: const BoxDecoration(
                                 color: Colors.red,
                                 shape: BoxShape.circle,
                               ),
                               constraints: BoxConstraints(
-                                minWidth: 16.r,
-                                minHeight: 16.r,
+                                minWidth: isTablet ? 18 : 16.r,
+                                minHeight: isTablet ? 18 : 16.r,
                               ),
                               child: Center(
                                 child: Text(
                                   unreadCount > 9 ? '9+' : unreadCount.toString(),
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 8.sp,
+                                    fontSize: isTablet ? 9 : 8.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

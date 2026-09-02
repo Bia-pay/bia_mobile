@@ -8,7 +8,7 @@ class CustomTextFormField extends StatefulWidget {
   final String? label;
   final String? Function(String value) validator;
   final bool obscureText;
-  final bool readOnly; // 👈 Added this line
+  final bool readOnly;
   final IconData? icons;
   final FocusNode? focusNode;
   final ValueChanged<String>? onSubmitted;
@@ -21,6 +21,8 @@ class CustomTextFormField extends StatefulWidget {
   final int? maxLength;
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
+  final bool isTablet;
+
   const CustomTextFormField({
     super.key,
     required this.controller,
@@ -39,8 +41,9 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.readOnly = false,
     this.textInputAction,
-    this.focusNode, //
-    this.autofillHints, // 🔥 ADD THIS LINE
+    this.focusNode,
+    this.autofillHints,
+    this.isTablet = false,
   });
 
   @override
@@ -90,13 +93,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               widget.label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: 13.spMin,
+                fontSize: widget.isTablet ? 13 : 13.spMin,
               ),
             ),
           ),
         TextFormField(
           controller: widget.controller,
-          autofillHints: widget.autofillHints, // 🔥 ADD THIS
+          autofillHints: widget.autofillHints,
           obscureText: widget.obscureText,
           keyboardType: widget.keyboardType,
           maxLength: widget.maxLength,
@@ -109,7 +112,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           decoration: InputDecoration(
             counterText: "",
             prefixIcon: widget.icons != null
-                ? Icon(widget.icons, color: Colors.grey, size: 18.sp)
+                ? Icon(widget.icons, color: Colors.grey, size: widget.isTablet ? 18 : 18.sp)
                 : widget.images != null
                 ? Padding(
                     padding: EdgeInsets.all(8.w),
@@ -123,19 +126,18 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 : null,
             suffixIcon: widget.suffixIcon,
             hintText: widget.hintText,
+            isDense: widget.isTablet,
             hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: widget.hintColor ?? Colors.grey[400],
               fontWeight: FontWeight.w400,
-              fontSize: 13.sp,
+              fontSize: widget.isTablet ? 12.5 : 13.sp,
             ),
             errorText: _errorText,
             filled: true,
             fillColor: Colors.grey.shade100,
-            isDense: true,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 14.w,
-              vertical: 10.h,
-            ),
+            contentPadding: widget.isTablet
+                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 9)
+                : EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
@@ -155,6 +157,10 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Colors.red, width: 1),
             ),
+          ),
+          style: TextStyle(
+            fontSize: widget.isTablet ? 14 : 14.sp,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],

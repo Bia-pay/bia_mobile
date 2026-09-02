@@ -181,31 +181,34 @@ class _UPopupDialogState extends State<UPopupDialog> {
         break;
     }
 
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     return Stack(
       alignment: Alignment.center,
       children: [
         Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.r)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isTablet ? 24 : 32.r)),
           backgroundColor: Colors.white,
           elevation: 0,
-          child: Padding(
-            padding: EdgeInsets.all(28.r),
+          child: Container(
+            width: isTablet ? 420 : null,
+            padding: EdgeInsets.all(isTablet ? 24 : 28.r),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 /// ICON HEADER
                 Container(
-                  width: 64.w,
-                  height: 64.w,
+                  width: isTablet ? 56 : 64.w,
+                  height: isTablet ? 56 : 64.w,
                   decoration: BoxDecoration(
                     color: mainColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                     child: widget.isLoading 
                       ? CustomLoader(color: mainColor)
-                      : Icon(icon, color: mainColor, size: 32.sp),
+                      : Icon(icon, color: mainColor, size: isTablet ? 28 : 32.sp),
                 ),
-                SizedBox(height: 24.h),
+                SizedBox(height: isTablet ? 18 : 24.h),
 
                 /// CONTENT
                 Text(
@@ -213,18 +216,18 @@ class _UPopupDialogState extends State<UPopupDialog> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: lightText,
-                    fontSize: 20.sp,
+                    fontSize: isTablet ? 18 : 20.sp,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),
                 ),
-                SizedBox(height: 12.h),
+                SizedBox(height: isTablet ? 10 : 12.h),
                 Text(
                   widget.message,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: lightSecondaryText,
-                    fontSize: 14.sp,
+                    fontSize: isTablet ? 14 : 14.sp,
                     height: 1.5,
                     fontWeight: FontWeight.w500,
                   ),

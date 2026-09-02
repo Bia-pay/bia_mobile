@@ -58,8 +58,8 @@ class _SplashScreenState extends ConsumerState<Splash> {
           // ✅ Known user with active session: Send to Welcome Back (PIN/Biometric lock)
           context.go(RouteList.welcomeBackScreen);
         } else {
-          // 🚪 Identity exists but logged out: Send to login screen
-          context.go(RouteList.loginScreen);
+          // 🚪 Not logged in: Show Get Started onboarding screen
+          context.go(RouteList.getStarted);
         }
       }
     } catch (e) {

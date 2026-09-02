@@ -52,6 +52,9 @@ class _PulsingLogoIndicatorState extends State<PulsingLogoIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final effectiveSize = isTablet ? widget.size : widget.size.w;
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -64,8 +67,8 @@ class _PulsingLogoIndicatorState extends State<PulsingLogoIndicator>
               child: Transform.scale(
                 scale: _scaleAnimation.value * 1.3,
                 child: Container(
-                  width: widget.size.w,
-                  height: widget.size.w,
+                  width: effectiveSize,
+                  height: effectiveSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: widget.pulseColor ?? Colors.white.withOpacity(0.3),
@@ -79,8 +82,8 @@ class _PulsingLogoIndicatorState extends State<PulsingLogoIndicator>
               child: Transform.scale(
                 scale: _scaleAnimation.value * 1.15,
                 child: Container(
-                  width: widget.size.w,
-                  height: widget.size.w,
+                  width: effectiveSize,
+                  height: effectiveSize,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: widget.pulseColor ?? Colors.white.withOpacity(0.5),
@@ -92,9 +95,9 @@ class _PulsingLogoIndicatorState extends State<PulsingLogoIndicator>
             Transform.scale(
               scale: _scaleAnimation.value,
               child: Container(
-                width: widget.size.w,
-                height: widget.size.w,
-                padding: EdgeInsets.all(6.w),
+                width: effectiveSize,
+                height: effectiveSize,
+                padding: EdgeInsets.all(isTablet ? 6 : 6.w),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,

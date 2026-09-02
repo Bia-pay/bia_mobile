@@ -136,7 +136,10 @@ class _CustomButtonState extends State<CustomButton>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
-          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+          padding: EdgeInsets.symmetric(
+            vertical: MediaQuery.of(context).size.width > 600 ? 0 : 14.h,
+            horizontal: MediaQuery.of(context).size.width > 600 ? 8 : 16.w,
+          ),
           decoration: BoxDecoration(
             color: widget.buttonColor.withOpacity(isDisabled ? 0.6 : 1.0),
             borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -179,6 +182,9 @@ class _CustomButtonState extends State<CustomButton>
                               color: widget.buttonTextColor
                                   .withOpacity(isDisabled ? 0.8 : 1.0),
                               fontWeight: FontWeight.w700,
+                              fontSize: MediaQuery.of(context).size.width > 600
+                                  ? 16
+                                  : null,
                               letterSpacing: 0.5,
                             ),
                       ),

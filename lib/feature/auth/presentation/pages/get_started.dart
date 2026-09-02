@@ -1,13 +1,13 @@
 import 'dart:ui';
-import 'package:bia/core/__core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bia/core/services/secure_storage_service.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:bia/core/services/secure_storage_service.dart';
 
+import '../../../../app/utils/colors.dart';
 import '../../../../app/utils/custom_button.dart';
 import '../../../../app/utils/image.dart';
 import '../../../../app/utils/router/route_constant.dart';
@@ -24,90 +24,153 @@ class _GetStartedState extends ConsumerState<GetStarted> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: accentColor,
       body: Stack(
         children: [
-          // 1. Organic Background Blobs (Dynamic & Modern)
+          // 1. Organic Background Blobs
           _buildAnimatedBackground(),
 
           // 2. Main Content
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                        maxWidth: 550,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Column(
-                          children: [
-                            const Spacer(flex: 2),
+            child: isTablet
+                ? _buildTabletLayout(context, theme, screenHeight)
+                : _buildPhoneLayout(context, theme, screenHeight),
+          ),
+        ],
+      ),
+    );
+  }
 
-                            /// 🔥 Feature Bento-Glass Card
-                            _buildHeroCard(screenHeight),
+  Widget _buildTabletLayout(
+      BuildContext context, ThemeData theme, double screenHeight) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 48.w, vertical: 24.h),
+      child: Row(
+        children: [
+          // Left Side: Hero Card
+          Expanded(
+            flex: 5,
+            child: Center(
+              child: _buildHeroCard(screenHeight),
+            ),
+          ),
 
-                            const Spacer(flex: 3),
+          SizedBox(width: 40.w),
 
-                            /// 🔥 Branding & Hook
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 32.w),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildBadge(theme),
-                                  SizedBox(height: 16.h),
+          // Right Side: Hook Text & Action Buttons
+          Expanded(
+            flex: 5,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBadge(theme),
+                SizedBox(height: 20.h),
 
-                                  /// 🔥 Headline
-                                  Text(
-                                    'Fast Payments.\nNo Boundaries.',
-                                    style: theme.textTheme.headlineMedium?.copyWith(
-                                      fontSize: 28.spMin,
-                                      fontWeight: FontWeight.w800,
-                                      color: offWhiteBackground,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
-
-                                  SizedBox(height: 16.h),
-
-                                  /// 🔥 Supporting Text
-                                  Text(
-                                    'Experience the next generation of QR payments. Secure, instant, and designed for you.',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 16.spMin,
-                                      height: 1.6,
-                                      color: offWhiteBackground.withOpacity(0.7),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
-                                ],
-                              ),
-                            ),
-
-                            const Spacer(flex: 3),
-
-                            /// 🔥 Footer Actions
-                            _buildFooterActions(context, theme),
-
-                            SizedBox(height: 30.h),
-                          ],
-                        ),
-                      ),
-                    ),
+                Text(
+                  'Fast Payments.\nNo Boundaries.',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontSize: 32.spMin,
+                    fontWeight: FontWeight.w900,
+                    color: offWhiteBackground,
+                    letterSpacing: 0.5,
+                    height: 1.15,
                   ),
-                );
-              },
+                ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+
+                SizedBox(height: 16.h),
+
+                Text(
+                  'Experience the next generation of QR payments. Secure, instant, and designed for you.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontSize: 16.spMin,
+                    height: 1.6,
+                    color: offWhiteBackground.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
+
+                SizedBox(height: 40.h),
+
+                _buildFooterActions(context, theme, isTablet: true),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPhoneLayout(
+      BuildContext context, ThemeData theme, double screenHeight) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                children: [
+                  const Spacer(flex: 2),
+
+                  /// 🔥 Feature Bento-Glass Card
+                  _buildHeroCard(screenHeight),
+
+                  const Spacer(flex: 3),
+
+                  /// 🔥 Branding & Hook
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildBadge(theme),
+                        SizedBox(height: 16.h),
+
+                        /// 🔥 Headline
+                        Text(
+                          'Fast Payments.\nNo Boundaries.',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontSize: 28.spMin,
+                            fontWeight: FontWeight.w800,
+                            color: offWhiteBackground,
+                            letterSpacing: 0.5,
+                          ),
+                        ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.2),
+
+                        SizedBox(height: 16.h),
+
+                        /// 🔥 Supporting Text
+                        Text(
+                          'Experience the next generation of QR payments. Secure, instant, and designed for you.',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontSize: 16.spMin,
+                            height: 1.6,
+                            color: offWhiteBackground.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(flex: 3),
+
+                  /// 🔥 Footer Actions
+                  _buildFooterActions(context, theme),
+
+                  SizedBox(height: 30.h),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -199,14 +262,15 @@ class _GetStartedState extends ConsumerState<GetStarted> {
     ).animate().fadeIn(delay: 100.ms).scale();
   }
 
-  Widget _buildFooterActions(BuildContext context, ThemeData theme) {
+  Widget _buildFooterActions(BuildContext context, ThemeData theme,
+      {bool isTablet = false}) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 0 : 24.w),
       child: Column(
         children: [
           SizedBox(
             width: double.infinity,
-            height: 65.h,
+            height: 60.h,
             child: CustomButton(
               onPressed: () => context.go(RouteList.onBoardingScreen),
               buttonColor: primaryColor,
@@ -224,7 +288,7 @@ class _GetStartedState extends ConsumerState<GetStarted> {
 
           SizedBox(
             width: double.infinity,
-            height: 65.h,
+            height: 60.h,
             child: CustomButton(
               onPressed: () async {
                 await ref.read(secureStorageServiceProvider).setHasSeenOnboarding(true);
@@ -261,7 +325,7 @@ class _GetStartedState extends ConsumerState<GetStarted> {
           ).animate(onPlay: (c) => c.repeat(reverse: true))
            .move(begin: const Offset(-20, -20), end: const Offset(30, 30), duration: 10.seconds),
         ),
-        
+
         // Bottom Right Blob
         Positioned(
           bottom: -100.h,

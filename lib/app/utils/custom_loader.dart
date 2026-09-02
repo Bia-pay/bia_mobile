@@ -14,10 +14,11 @@ class CustomLoader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Center(
       child: PulsingLogoIndicator(
         logoPath: appLogoPng,
-        size: size ?? 40, // Balanced size for inline placeholders
+        size: size ?? (isTablet ? 42.0 : 40.0),
         pulseColor: color,
       ),
     );

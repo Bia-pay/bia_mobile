@@ -213,72 +213,61 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (isTablet) {
         return Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1080),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Column: Main Dashboard Controls
-                Expanded(
-                  flex: 11,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(
-                      left: paddingHorizontal,
-                      right: paddingHorizontal / 2,
-                      top: 8.h,
-                      bottom: 130.h,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildCompleteProfileBanner(),
-                        const BalanceCard()
-                            .animate()
-                            .fadeIn(duration: 350.ms)
-                            .slideY(begin: 0.08, end: 0, duration: 350.ms),
-                        SizedBox(height: 6.h),
-                        const VirtualAccountCard()
-                            .animate()
-                            .fadeIn(duration: 370.ms, delay: 30.ms)
-                            .slideY(begin: 0.06, end: 0, duration: 370.ms),
-                        SizedBox(height: elementSpacing),
-                        const ActionRibbon()
-                            .animate()
-                            .fadeIn(duration: 400.ms, delay: 50.ms)
-                            .slideY(begin: 0.08, end: 0, duration: 400.ms),
-                        SizedBox(height: elementSpacing),
-                        const BiaAiCard()
-                            .animate()
-                            .fadeIn(duration: 450.ms, delay: 100.ms)
-                            .slideY(begin: 0.08, end: 0, duration: 450.ms),
-                        SizedBox(height: elementSpacing),
-                        const QuickActionsGrid()
-                            .animate()
-                            .fadeIn(duration: 500.ms, delay: 150.ms)
-                            .slideY(begin: 0.08, end: 0, duration: 500.ms),
-                        SizedBox(height: 16.h),
-                      ],
-                    ),
-                  ),
-                ),
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildCompleteProfileBanner(),
 
-                // Right Column: Promo Banner
-                Expanded(
-                  flex: 9,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.only(
-                      right: paddingHorizontal,
-                      top: 8.h,
-                      bottom: 130.h,
-                    ),
-                    child: const PromoBannerCarousel()
-                        .animate()
-                        .fadeIn(duration: 550.ms, delay: 200.ms)
-                        .slideX(begin: 0.05, end: 0, duration: 550.ms),
-                  ),
-                ),
-              ],
+                  // 1. Full-Width Hero Balance Card
+                  const BalanceCard()
+                      .animate()
+                      .fadeIn(duration: 350.ms)
+                      .slideY(begin: 0.06, end: 0, duration: 350.ms),
+                  const SizedBox(height: 10),
+
+                  // 2. Virtual Account Copy Bar
+                  const VirtualAccountCard()
+                      .animate()
+                      .fadeIn(duration: 370.ms, delay: 30.ms)
+                      .slideY(begin: 0.06, end: 0, duration: 370.ms),
+                  const SizedBox(height: 16),
+
+                  // 3. Primary Actions Ribbon (Send TP, Bia Trike, Withdrawal, Split Bill)
+                  const ActionRibbon()
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: 50.ms)
+                      .slideY(begin: 0.06, end: 0, duration: 400.ms),
+                  const SizedBox(height: 16),
+
+                  // 4. Quick Utilities & Services Grid (4 Column Grid)
+                  const QuickActionsGrid()
+                      .animate()
+                      .fadeIn(duration: 500.ms, delay: 150.ms)
+                      .slideY(begin: 0.06, end: 0, duration: 500.ms),
+                  const SizedBox(height: 16),
+
+                  // 5. Bia AI Voice Assistant Card
+                  const BiaAiCard()
+                      .animate()
+                      .fadeIn(duration: 450.ms, delay: 100.ms)
+                      .slideY(begin: 0.06, end: 0, duration: 450.ms),
+                  const SizedBox(height: 16),
+
+                  // 6. Promotions & Savings Carousel Banner
+                  const PromoBannerCarousel()
+                      .animate()
+                      .fadeIn(duration: 550.ms, delay: 200.ms)
+                      .slideY(begin: 0.06, end: 0, duration: 550.ms),
+
+                  const SizedBox(height: 100),
+                ],
+              ),
             ),
           ),
         );
@@ -381,11 +370,14 @@ class ActionRibbon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final double screenHeight = MediaQuery.of(context).size.height;
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    final double vPad = isXSmall
+    final double vPad = isTablet
+        ? 12.0
+        : isXSmall
         ? 8.h
         : isSmall
         ? 10.h
@@ -393,7 +385,9 @@ class ActionRibbon extends StatelessWidget {
         ? 16.h
         : 14.h;
     return Container(
-      padding: EdgeInsets.symmetric(vertical: vPad, horizontal: 8.w),
+      padding: isTablet
+          ? const EdgeInsets.symmetric(vertical: 12, horizontal: 16)
+          : EdgeInsets.symmetric(vertical: vPad, horizontal: 8.w),
       decoration: BoxDecoration(
         color: offWhite,
         borderRadius: BorderRadius.circular(16.r),
@@ -407,59 +401,66 @@ class ActionRibbon extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          ActionButton(
-            label: 'Send TP',
-            icon: SvgPicture.asset(
-              send,
-              height: 20.h,
-              colorFilter: const ColorFilter.mode(
-                primaryColor,
-                BlendMode.srcIn,
+          Expanded(
+            child: ActionButton(
+              label: 'Send TP',
+              icon: SvgPicture.asset(
+                send,
+                height: isTablet ? 22 : 20.h,
+                colorFilter: const ColorFilter.mode(
+                  primaryColor,
+                  BlendMode.srcIn,
+                ),
               ),
+              onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyTransfer)),
             ),
-            onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyTransfer)),
           ),
-          ActionButton(
-            label: 'Bia Trike',
-            icon: Icon(
-              Icons.electric_rickshaw_rounded,
-              color: primaryColor,
-              size: 21.sp,
-            ),
-            onTap: () => _runProtectedAction(
-              context,
-              () => Navigator.push(
+          Expanded(
+            child: ActionButton(
+              label: 'Bia Trike',
+              icon: Icon(
+                Icons.electric_rickshaw_rounded,
+                color: primaryColor,
+                size: isTablet ? 22 : 21.sp,
+              ),
+              onTap: () => _runProtectedAction(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const BiaTrikeOnboardingScreen(),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BiaTrikeOnboardingScreen(),
+                  ),
                 ),
               ),
             ),
           ),
-          ActionButton(
-            label: 'Withdrawal',
-            icon: Image.asset(
-              atm,
-              height: 20.h,
-              color: primaryColor,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.account_balance_rounded,
+          Expanded(
+            child: ActionButton(
+              label: 'Withdrawal',
+              icon: Image.asset(
+                atm,
+                height: isTablet ? 22 : 20.h,
                 color: primaryColor,
-                size: 20,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.account_balance_rounded,
+                  color: primaryColor,
+                  size: 20,
+                ),
               ),
+              onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyToBank)),
             ),
-            onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyToBank)),
           ),
-          ActionButton(
-            label: 'Split Bill',
-            icon: Icon(
-              Icons.splitscreen_rounded,
-              color: primaryColor,
-              size: 21.sp,
+          Expanded(
+            child: ActionButton(
+              label: 'Split Bill',
+              icon: Icon(
+                Icons.splitscreen_rounded,
+                color: primaryColor,
+                size: isTablet ? 22 : 21.sp,
+              ),
+              onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.splitCreatorSetup)),
             ),
-            onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.splitCreatorSetup)),
           ),
         ],
       ),
@@ -473,11 +474,14 @@ class BiaAiCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final double screenHeight = MediaQuery.of(context).size.height;
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    final double cardHeight = isXSmall
+    final double cardHeight = isTablet
+        ? 74.0
+        : isXSmall
         ? 56.h
         : isSmall
         ? 64.h
@@ -538,7 +542,9 @@ class BiaAiCard extends ConsumerWidget {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                padding: isTablet
+                    ? const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
+                    : EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -551,16 +557,16 @@ class BiaAiCard extends ConsumerWidget {
                             'Bia AI Assistant',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
-                              fontSize: 13.sp,
+                              fontSize: isTablet ? 14 : 13.sp,
                               color: lightText,
                             ),
                           ),
-                          SizedBox(height: 2.h),
+                          SizedBox(height: isTablet ? 2 : 2.h),
                           Text(
                             'Voice & text transactions in local dialect.',
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w400,
-                              fontSize: 9.sp,
+                              fontSize: isTablet ? 11 : 9.sp,
                               color: lightSecondaryText,
                             ),
                           ),
@@ -999,7 +1005,10 @@ class BalanceCard extends ConsumerWidget {
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
-    final double cardHeight = isXSmall
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final double cardHeight = isTablet
+        ? 110.0
+        : isXSmall
         ? 72.h
         : isSmall
         ? 81.h
@@ -1048,14 +1057,16 @@ class BalanceCard extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: isXSmall
-                    ? 8.h
-                    : isSmall
-                    ? 10.h
-                    : 12.h,
-                horizontal: 16.w,
-              ),
+              padding: isTablet
+                  ? const EdgeInsets.symmetric(horizontal: 20, vertical: 14)
+                  : EdgeInsets.symmetric(
+                      vertical: isXSmall
+                          ? 8.h
+                          : isSmall
+                          ? 10.h
+                          : 12.h,
+                      horizontal: 16.w,
+                    ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1071,11 +1082,11 @@ class BalanceCard extends ConsumerWidget {
                               'Available Balance',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: Colors.white.withOpacity(0.85),
-                                fontSize: 11.5.sp,
+                                fontSize: isTablet ? 13 : 11.5.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            SizedBox(width: 8.w),
+                            SizedBox(width: isTablet ? 8 : 8.w),
                             GestureDetector(
                               onTap: () {
                                 ref
@@ -1094,14 +1105,14 @@ class BalanceCard extends ConsumerWidget {
                                       ? Icons.visibility_rounded
                                       : Icons.visibility_off_rounded,
                                   key: ValueKey<bool>(isVisible),
-                                  size: 15.sp,
+                                  size: isTablet ? 17 : 15.sp,
                                   color: Colors.white.withOpacity(0.9),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 5.h),
+                        SizedBox(height: isTablet ? 6 : 5.h),
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           child: Text(
@@ -1114,7 +1125,7 @@ class BalanceCard extends ConsumerWidget {
                             style: theme.textTheme.titleLarge?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
-                              fontSize: 23.sp,
+                              fontSize: isTablet ? 26 : 23.sp,
                               letterSpacing: isVisible ? 0.2 : 2.0,
                             ),
                           ),
@@ -1122,7 +1133,7 @@ class BalanceCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  SizedBox(width: 10.w),
+                  SizedBox(width: isTablet ? 12 : 10.w),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1131,7 +1142,7 @@ class BalanceCard extends ConsumerWidget {
                       GestureDetector(
                         onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.topUp)),
                         child: Container(
-                          padding: EdgeInsets.all(5.r),
+                          padding: EdgeInsets.all(isTablet ? 6 : 5.r),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
                             shape: BoxShape.circle,
@@ -1143,7 +1154,7 @@ class BalanceCard extends ConsumerWidget {
                           child: Icon(
                             Icons.add_rounded,
                             color: Colors.white,
-                            size: isXSmall ? 14.sp : 16.sp,
+                            size: isTablet ? 18 : (isXSmall ? 14.sp : 16.sp),
                           ),
                         ),
                       ),
@@ -1152,10 +1163,12 @@ class BalanceCard extends ConsumerWidget {
                         onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.transactionHistory)),
                         behavior: HitTestBehavior.opaque,
                         child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 4.h,
-                          ),
+                          padding: isTablet
+                              ? const EdgeInsets.symmetric(horizontal: 10, vertical: 5)
+                              : EdgeInsets.symmetric(
+                                  horizontal: 8.w,
+                                  vertical: 4.h,
+                                ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.10),
                             borderRadius: BorderRadius.circular(6.r),
@@ -1166,14 +1179,14 @@ class BalanceCard extends ConsumerWidget {
                               Icon(
                                 Icons.history_rounded,
                                 color: Colors.white.withOpacity(0.95),
-                                size: isXSmall ? 10.sp : 12.sp,
+                                size: isTablet ? 14 : (isXSmall ? 10.sp : 12.sp),
                               ),
                               SizedBox(width: 4.w),
                               Text(
                                 'History',
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: Colors.white.withOpacity(0.95),
-                                  fontSize: isXSmall ? 8.5.sp : 9.5.sp,
+                                  fontSize: isTablet ? 11 : (isXSmall ? 8.5.sp : 9.5.sp),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -1207,15 +1220,17 @@ class ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            height: 46.r,
-            width: 46.r,
+            height: isTablet ? 46 : 46.r,
+            width: isTablet ? 46 : 46.r,
             decoration: BoxDecoration(
               color: secondaryColor,
               borderRadius: BorderRadius.circular(14.r),
@@ -1229,13 +1244,16 @@ class ActionButton extends StatelessWidget {
             ),
             child: Center(child: icon),
           ),
-          SizedBox(height: 8.h),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: lightText,
-              fontWeight: FontWeight.w700,
-              fontSize: 11.sp,
+          SizedBox(height: isTablet ? 6 : 8.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: lightText,
+                fontWeight: FontWeight.w700,
+                fontSize: isTablet ? 11.5 : 11.sp,
+              ),
             ),
           ),
         ],
@@ -1371,9 +1389,9 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
                 ? actions.length
                 : (isTablet ? actions.length : 4),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isTablet ? 8 : 4,
+              crossAxisCount: isTablet ? 7 : 4,
               mainAxisExtent: isTablet
-                  ? 75.h
+                  ? 88.0
                   : (isXSmall
                         ? 68.h
                         : isSmall
@@ -1381,12 +1399,8 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
                         : isLarge
                         ? 80.h
                         : 76.h),
-              mainAxisSpacing: isXSmall
-                  ? 6
-                  : isSmall
-                  ? 8
-                  : 10,
-              crossAxisSpacing: isTablet ? 4 : 8,
+              mainAxisSpacing: isTablet ? 12 : (isXSmall ? 6 : 8),
+              crossAxisSpacing: isTablet ? 12 : 8,
             ),
             itemBuilder: (context, index) {
               final item = actions[index];
@@ -1487,10 +1501,12 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double opacity = (isSoon || isDisabled) ? 0.4 : 1.0;
+    final double opacity = (isSoon || isDisabled) ? 0.45 : 1.0;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Opacity(
         opacity: opacity,
         child: Column(
@@ -1503,29 +1519,28 @@ class QuickActionButton extends StatelessWidget {
                 Builder(
                   builder: (ctx) {
                     final h = MediaQuery.of(ctx).size.height;
-                    final w = MediaQuery.of(ctx).size.width;
-                    final sz = w > 600
-                        ? 40.r
-                        : h < 680
-                        ? 38.r
-                        : h < 780
-                        ? 42.r
-                        : h > 900
-                        ? 48.r
-                        : 44.r;
+                    final sz = isTablet
+                        ? 50.0
+                        : (h < 680
+                            ? 38.r
+                            : h < 780
+                            ? 42.r
+                            : h > 900
+                            ? 48.r
+                            : 44.r);
 
                     return Container(
                       height: sz,
                       width: sz,
                       decoration: BoxDecoration(
                         color: backgroundColor,
-                        borderRadius: BorderRadius.circular(14.r),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.white, width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.015),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                            color: primaryColor.withOpacity(0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                       ),
@@ -1538,8 +1553,8 @@ class QuickActionButton extends StatelessWidget {
                     bottom: -2,
                     right: -2,
                     child: Container(
-                      height: 12.r,
-                      width: 12.r,
+                      height: isTablet ? 14 : 12.r,
+                      width: isTablet ? 14 : 12.r,
                       decoration: BoxDecoration(
                         color: isDisabled
                             ? Colors.orange.shade800
@@ -1552,7 +1567,7 @@ class QuickActionButton extends StatelessWidget {
                           isDisabled
                               ? Icons.construction_rounded
                               : Icons.lock_rounded,
-                          size: 7.r,
+                          size: isTablet ? 8 : 7.r,
                           color: Colors.white,
                         ),
                       ),
@@ -1560,7 +1575,7 @@ class QuickActionButton extends StatelessWidget {
                   ),
               ],
             ),
-            SizedBox(height: 6.h),
+            SizedBox(height: isTablet ? 8 : 6.h),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -1568,10 +1583,10 @@ class QuickActionButton extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: (isSoon || isDisabled)
-                    ? lightSecondaryText.withOpacity(0.4)
-                    : lightSecondaryText,
+                    ? lightSecondaryText.withOpacity(0.5)
+                    : darkBackground,
                 fontWeight: FontWeight.w700,
-                fontSize: 10.sp,
+                fontSize: isTablet ? 12.0 : 10.sp,
               ),
             ),
           ],
@@ -1609,9 +1624,10 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
     final box = Hive.box('authBox');
     final isComplete = box.get('isCompleteRegistration', defaultValue: true) == true;
 
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final double screenHeight = MediaQuery.of(context).size.height;
     final bool isXSmall = screenHeight < 680;
-    final double cardHeight = isXSmall ? 40.h : 44.h;
+    final double cardHeight = isTablet ? 58.0 : (isXSmall ? 40.h : 44.h);
 
     final account = accountAsync.value;
 
@@ -1671,7 +1687,7 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
                         Text(
                           displayProvider,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: isXSmall ? 8.sp : 9.sp,
+                            fontSize: isTablet ? 11 : (isXSmall ? 8.sp : 9.sp),
                             fontWeight: FontWeight.w800,
                             color: primaryColor,
                           ),
@@ -1682,7 +1698,7 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: isXSmall ? 8.sp : 9.sp,
+                              fontSize: isTablet ? 11 : (isXSmall ? 8.sp : 9.sp),
                               fontWeight: FontWeight.w600,
                               color: lightSecondaryText,
                             ),
@@ -1690,12 +1706,12 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 1.h),
+                    SizedBox(height: isTablet ? 2 : 1.h),
                     // Row 2: Account Number
                     Text(
                       displayAccountNo,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: isXSmall ? 10.sp : 11.sp,
+                        fontSize: isTablet ? 13 : (isXSmall ? 10.sp : 11.sp),
                         fontWeight: FontWeight.w800,
                         color: accentColor,
                         letterSpacing: 0.5,

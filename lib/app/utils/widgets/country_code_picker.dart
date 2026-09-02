@@ -6,12 +6,14 @@ class CountryCodePicker extends StatelessWidget {
   final CountryCode selectedCountry;
   final ValueChanged<CountryCode?> onChanged;
   final bool showBorder;
+  final bool isTablet;
 
   const CountryCodePicker({
     super.key,
     required this.selectedCountry,
     required this.onChanged,
     this.showBorder = true,
+    this.isTablet = false,
   });
 
   void _showCountryPickerDialog(BuildContext context) {
@@ -34,7 +36,9 @@ class CountryCodePicker extends StatelessWidget {
       onTap: () => _showCountryPickerDialog(context),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+        padding: isTablet
+            ? const EdgeInsets.only(left: 14, right: 10, top: 7, bottom: 7)
+            : EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
         decoration: BoxDecoration(
           border: showBorder
               ? Border(
@@ -47,13 +51,13 @@ class CountryCodePicker extends StatelessWidget {
           children: [
             Text(
               selectedCountry.flag,
-              style: TextStyle(fontSize: 18.sp),
+              style: TextStyle(fontSize: isTablet ? 16 : 18.sp),
             ),
-            SizedBox(width: 6.w),
+            SizedBox(width: isTablet ? 4 : 6.w),
             Text(
               selectedCountry.dialCode,
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: isTablet ? 13 : 14.sp,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF0C284E),
               ),
@@ -62,7 +66,7 @@ class CountryCodePicker extends StatelessWidget {
             Icon(
               Icons.keyboard_arrow_down_rounded,
               color: Colors.grey[600],
-              size: 18.sp,
+              size: isTablet ? 16 : 18.sp,
             ),
           ],
         ),

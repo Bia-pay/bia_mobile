@@ -56,6 +56,8 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
 
     return Scaffold(
       backgroundColor: inactiveColorOp,
@@ -74,16 +76,17 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
                 data: onboardingPages[index],
                 theme: theme,
                 screenHeight: screenHeight,
+                isTablet: isTablet,
               );
             },
           ),
 
           // 3. Navigation Footer
           Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 30.h,
-            left: 24.w,
-            right: 24.w,
-            child: _buildFooter(theme),
+            bottom: MediaQuery.of(context).padding.bottom + (isTablet ? 40.h : 30.h),
+            left: isTablet ? 48.w : 24.w,
+            right: isTablet ? 48.w : 24.w,
+            child: _buildFooter(theme, isTablet),
           ),
         ],
       ),
@@ -109,7 +112,7 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
     );
   }
 
-  Widget _buildFooter(ThemeData theme) {
+  Widget _buildFooter(ThemeData theme, bool isTablet) {
     final isLastPage = _currentIndex == onboardingPages.length - 1;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -124,8 +127,8 @@ class _OnBoardingScreenState extends ConsumerState<OnBoardingScreen> {
 
         // Action Button
         SizedBox(
-          width: 140.w,
-          height: 56.h,
+          width: isTablet ? 180.w : 140.w,
+          height: isTablet ? 60.h : 56.h,
           child: CustomButton(
             buttonColor: primaryColor,
             buttonTextColor: Colors.white,
@@ -188,15 +191,99 @@ class _OnboardingPageContent extends StatelessWidget {
   final OnboardingData data;
   final ThemeData theme;
   final double screenHeight;
+  final bool isTablet;
 
   const _OnboardingPageContent({
     required this.data,
     required this.theme,
     required this.screenHeight,
+    this.isTablet = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (isTablet) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 48.w, vertical: 32.h),
+        child: Row(
+          children: [
+            // Left Column: Illustration
+            Expanded(
+              flex: 5,
+              child: Center(
+                child: Container(
+                  width: double.infinity,
+                  height: 380.h,
+                  padding: EdgeInsets.all(24.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(40.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.06),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30.r),
+                    child: data.isSvg
+                        ? SvgPicture.asset(data.imagePath, fit: BoxFit.contain)
+                        : Image.asset(data.imagePath, fit: BoxFit.contain),
+                  ),
+                ).animate(key: ValueKey(data.imagePath)).fadeIn().scale(begin: const Offset(0.95, 0.95)),
+              ),
+            ),
+
+            SizedBox(width: 48.w),
+
+            // Right Column: Typography
+            Expanded(
+              flex: 5,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontSize: 36.spMin,
+                        fontWeight: FontWeight.w900,
+                        color: primaryColor,
+                        height: 1.15,
+                      ),
+                      children: [
+                        TextSpan(text: '${data.title}\n'),
+                        TextSpan(
+                          text: data.titleHighlight,
+                          style: TextStyle(color: accentColor.withOpacity(0.8)),
+                        ),
+                      ],
+                    ),
+                  ).animate(key: ValueKey(data.title)).fadeIn(delay: 200.ms).slideX(begin: 0.1),
+
+                  SizedBox(height: 20.h),
+
+                  Text(
+                    data.subtitle,
+                    style: TextStyle(
+                      fontSize: 18.spMin,
+                      color: primaryColor.withOpacity(0.55),
+                      height: 1.55,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ).animate(key: ValueKey(data.subtitle)).fadeIn(delay: 400.ms).slideX(begin: 0.1),
+
+                  SizedBox(height: 80.h), // Clearance for bottom footer
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(

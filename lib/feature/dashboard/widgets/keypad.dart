@@ -23,10 +23,12 @@ class CustomGridKeypad extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    final horizontalPadding = 32.w;
-    final mainSpacing = 16.h;
-    final crossSpacing = 24.w;
-    final fontSize = 24.sp;
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
+    final horizontalPadding = isTablet ? 12.0 : 32.w;
+    final mainSpacing = isTablet ? 12.0 : 16.h;
+    final crossSpacing = isTablet ? 16.0 : 24.w;
+    final fontSize = isTablet ? 22.0 : 24.sp;
 
     final List<String> numbers = [
       "1", "2", "3",

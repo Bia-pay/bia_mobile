@@ -19,9 +19,9 @@ class PhoneInputWidget extends StatefulWidget {
   final TextInputType? keyboardType;
   final FocusNode? focusNode;
   final TextInputAction? textInputAction;
-  // ✅ NEW
   final Color? backgroundColor;
   final Color? borderColor;
+  final bool isTablet;
 
   const PhoneInputWidget({
     super.key,
@@ -38,9 +38,9 @@ class PhoneInputWidget extends StatefulWidget {
     this.keyboardType,
     this.focusNode,
     this.textInputAction,
-    // ✅ NEW
     this.backgroundColor,
     this.borderColor,
+    this.isTablet = false,
   });
 
   @override
@@ -69,7 +69,6 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
     _controllerListener = () {
       final text = widget.controller.text;
       
-      // Do not validate an empty field if the user has not started typing
       if (text.isEmpty && !_hasInteracted) {
         if (_errorText != null) {
           setState(() => _errorText = null);
@@ -100,10 +99,8 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
     }
   }
 
-  /// Returns full phone number in 234XXXXXXXXXX format
   String get fullPhoneNumber {
     String phoneNumber = widget.controller.text.trim();
-
     phoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
 
     if (phoneNumber.startsWith('0')) {
@@ -135,16 +132,16 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
               widget.label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: 13.spMin,
+                fontSize: widget.isTablet ? 13 : 13.spMin,
               ),
             ),
           ),
         Container(
           decoration: BoxDecoration(
-            color: widget.backgroundColor ?? defaultBackground, // ✅
+            color: widget.backgroundColor ?? defaultBackground,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: widget.borderColor ?? defaultBorderColor, // ✅
+              color: widget.borderColor ?? defaultBorderColor,
               width: 1,
             ),
           ),
@@ -154,11 +151,12 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                 selectedCountry: _selectedCountry,
                 onChanged: _onCountryChanged,
                 showBorder: true,
+                isTablet: widget.isTablet,
               ),
               Expanded(
                 child: TextFormField(
                   controller: widget.controller,
-                  keyboardType:  TextInputType.phone,
+                  keyboardType: TextInputType.phone,
                   maxLength: 11,
                   inputFormatters: _isKeyboardDisabled
                       ? null
@@ -169,8 +167,8 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                     }
                     widget.onChanged?.call(value);
                   },
-                  focusNode: widget.focusNode, // ✅
-                  textInputAction: widget.textInputAction, // ✅
+                  focusNode: widget.focusNode,
+                  textInputAction: widget.textInputAction,
                   onFieldSubmitted: widget.onSubmitted,
                   readOnly: widget.readOnly || _isKeyboardDisabled,
                   enableInteractiveSelection: !_isKeyboardDisabled,
@@ -178,19 +176,19 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                   decoration: InputDecoration(
                     counterText: "",
                     hintText: widget.hintText,
+                    isDense: widget.isTablet,
                     hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: widget.hintColor ?? Colors.grey[400],
                       fontWeight: FontWeight.w400,
-                      fontSize: 13.sp,
+                      fontSize: widget.isTablet ? 12.5 : 13.sp,
                     ),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14.w,
-                      vertical: 10.h,
-                    ),
+                    contentPadding: widget.isTablet
+                        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 9)
+                        : EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
                   ),
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: widget.isTablet ? 14 : 14.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -205,7 +203,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
               _errorText!,
               style: TextStyle(
                 color: errorColor,
-                fontSize: 12.sp,
+                fontSize: widget.isTablet ? 12 : 12.sp,
                 fontWeight: FontWeight.w400,
               ),
             ),
