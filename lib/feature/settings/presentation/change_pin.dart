@@ -44,6 +44,7 @@ class _RestoreNewPinState extends ConsumerState<RestoreNewPin> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: lightBackground,
@@ -56,104 +57,122 @@ class _RestoreNewPinState extends ConsumerState<RestoreNewPin> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
-        child: Column(
-          children: [
-            SizedBox(height: 50.h),
-
-            /// Lock icon card
-            Container(
-              padding: EdgeInsets.all(15.w),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    accentColor.withOpacity(0.4),
-                    primaryColor,
-                    primaryColor.withOpacity(0.9),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10.r),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 540 : double.infinity),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 32.0 : 24.w,
+                vertical: isTablet ? 20.0 : 30.h,
               ),
-              child: Icon(Icons.lock, color: Colors.white, size: 30.sp),
-            ),
+              child: Column(
+                children: [
+                  SizedBox(height: isTablet ? 20.0 : 30.h),
 
-            SizedBox(height: 20.h),
-
-            Text(
-              "Set Transaction PIN",
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            SizedBox(height: 15.h),
-
-            Text(
-              "Enter a new 4-digit PIN",
-              style: theme.textTheme.bodySmall,
-            ),
-
-            SizedBox(height: 40.h),
-
-            /// PIN dots
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) {
-                final filled = index < pin.length;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 16,
-                  height: 16,
-                  margin: EdgeInsets.symmetric(horizontal: 6.w),
-                  decoration: BoxDecoration(
-                    color: filled ? primaryColor : Colors.transparent,
-                    border: Border.all(
-                      color: filled ? inactiveColor : disabledTextColor,
-                      width: 2,
+                  /// Lock icon card
+                  Container(
+                    padding: EdgeInsets.all(isTablet ? 14.0 : 15.w),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accentColor.withOpacity(0.4),
+                          primaryColor,
+                          primaryColor.withOpacity(0.9),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                     ),
-                    shape: BoxShape.circle,
+                    child: Icon(Icons.lock, color: Colors.white, size: isTablet ? 26.0 : 30.sp),
                   ),
-                );
-              }),
-            ),
 
-            if (showWarning)
-              Padding(
-                padding: EdgeInsets.only(top: 15.h),
-                child: Text(
-                  "PIN must be 4 digits",
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
+                  SizedBox(height: isTablet ? 16.0 : 20.h),
 
-            SizedBox(height: 70.h),
+                  Text(
+                    "Set Transaction PIN",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 22.0 : null,
+                    ),
+                  ),
 
-            Expanded(
-              child: CustomGridKeypad(
-                onNumberPressed: addDigit,
-                leftAction: ActionKey(
-                  child: const Icon(Icons.check_rounded, color: Colors.white),
-                  backgroundColor: primaryColor,
-                  onTap: () {
-                    if (pin.length == 4) {
-                      context.pushNamed(
-                        RouteList.confirmRestoreNewPin,
-                        extra: pin,
+                  SizedBox(height: isTablet ? 10.0 : 15.h),
+
+                  Text(
+                    "Enter a new 4-digit PIN",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: isTablet ? 14.0 : null,
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 30.0 : 40.h),
+
+                  /// PIN dots
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(4, (index) {
+                      final filled = index < pin.length;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: isTablet ? 14.0 : 16.0,
+                        height: isTablet ? 14.0 : 16.0,
+                        margin: EdgeInsets.symmetric(horizontal: isTablet ? 6.0 : 6.w),
+                        decoration: BoxDecoration(
+                          color: filled ? primaryColor : Colors.transparent,
+                          border: Border.all(
+                            color: filled ? inactiveColor : disabledTextColor,
+                            width: 2,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
                       );
-                    } else {
-                      setState(() => showWarning = true);
-                    }
-                  },
-                ),
-                rightAction: ActionKey(
-                  child: Icon(Icons.backspace_rounded, color: primaryColor),
-                  backgroundColor: primaryColor.withOpacity(0.1),
-                  onTap: removeDigit,
-                ),
+                    }),
+                  ),
+
+                  if (showWarning)
+                    Padding(
+                      padding: EdgeInsets.only(top: isTablet ? 12.0 : 15.h),
+                      child: const Text(
+                        "PIN must be 4 digits",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+
+                  SizedBox(height: isTablet ? 30.0 : 40.h),
+
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: isTablet ? 360 : double.infinity),
+                        child: CustomGridKeypad(
+                          onNumberPressed: addDigit,
+                          leftAction: ActionKey(
+                            child: const Icon(Icons.check_rounded, color: Colors.white),
+                            backgroundColor: primaryColor,
+                            onTap: () {
+                              if (pin.length == 4) {
+                                context.pushNamed(
+                                  RouteList.confirmRestoreNewPin,
+                                  extra: pin,
+                                );
+                              } else {
+                                setState(() => showWarning = true);
+                              }
+                            },
+                          ),
+                          rightAction: ActionKey(
+                            child: Icon(Icons.backspace_rounded, color: primaryColor),
+                            backgroundColor: primaryColor.withOpacity(0.1),
+                            onTap: removeDigit,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -225,6 +244,7 @@ class _ConfirmRestoreNewPinState extends ConsumerState<ConfirmRestoreNewPin> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: lightBackground,
@@ -233,94 +253,111 @@ class _ConfirmRestoreNewPinState extends ConsumerState<ConfirmRestoreNewPin> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 50.h),
-        child: Column(
-          children: [
-            SizedBox(height: 50.h),
-
-            Container(
-              padding: EdgeInsets.all(15.w),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    accentColor.withOpacity(0.4),
-                    primaryColor,
-                    primaryColor.withOpacity(0.9),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10.r),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 540 : double.infinity),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 32.0 : 24.w,
+                vertical: isTablet ? 20.0 : 30.h,
               ),
-              child: Icon(Icons.lock_outline,
-                  color: Colors.white, size: 30.sp),
-            ),
+              child: Column(
+                children: [
+                  SizedBox(height: isTablet ? 20.0 : 30.h),
 
-            SizedBox(height: 20.h),
-
-            Text(
-              "Confirm PIN",
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            SizedBox(height: 15.h),
-
-            Text(
-              "Re-enter your 4-digit PIN",
-              style: theme.textTheme.bodySmall,
-            ),
-
-            SizedBox(height: 40.h),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) {
-                final filled = index < pin.length;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 16,
-                  height: 16,
-                  margin: EdgeInsets.symmetric(horizontal: 6.w),
-                  decoration: BoxDecoration(
-                    color: filled ? primaryColor : Colors.transparent,
-                    border: Border.all(
-                      color: filled ? inactiveColor : disabledTextColor,
-                      width: 2,
+                  Container(
+                    padding: EdgeInsets.all(isTablet ? 14.0 : 15.w),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          accentColor.withOpacity(0.4),
+                          primaryColor,
+                          primaryColor.withOpacity(0.9),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                     ),
-                    shape: BoxShape.circle,
+                    child: Icon(Icons.lock_outline, color: Colors.white, size: isTablet ? 26.0 : 30.sp),
                   ),
-                );
-              }),
-            ),
 
-            if (showError)
-              Padding(
-                padding: EdgeInsets.only(top: 15.h),
-                child: Text(
-                  "PINs do not match",
-                  style: TextStyle(color: Colors.red),
-                ),
+                  SizedBox(height: isTablet ? 16.0 : 20.h),
+
+                  Text(
+                    "Confirm PIN",
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 22.0 : null,
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 10.0 : 15.h),
+
+                  Text(
+                    "Re-enter your 4-digit PIN",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: isTablet ? 14.0 : null,
+                    ),
+                  ),
+
+                  SizedBox(height: isTablet ? 30.0 : 40.h),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(4, (index) {
+                      final filled = index < pin.length;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: isTablet ? 14.0 : 16.0,
+                        height: isTablet ? 14.0 : 16.0,
+                        margin: EdgeInsets.symmetric(horizontal: isTablet ? 6.0 : 6.w),
+                        decoration: BoxDecoration(
+                          color: filled ? primaryColor : Colors.transparent,
+                          border: Border.all(
+                            color: filled ? inactiveColor : disabledTextColor,
+                            width: 2,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    }),
+                  ),
+
+                  if (showError)
+                    Padding(
+                      padding: EdgeInsets.only(top: isTablet ? 12.0 : 15.h),
+                      child: const Text(
+                        "PINs do not match",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+
+                  SizedBox(height: isTablet ? 30.0 : 40.h),
+
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: isTablet ? 360 : double.infinity),
+                        child: CustomGridKeypad(
+                          onNumberPressed: addDigit,
+                          leftAction: ActionKey(
+                            child: const Icon(Icons.check_rounded, color: Colors.white),
+                            backgroundColor: primaryColor,
+                            onTap: _submit,
+                          ),
+                          rightAction: ActionKey(
+                            child: Icon(Icons.backspace_rounded, color: primaryColor),
+                            backgroundColor: primaryColor.withOpacity(0.1),
+                            onTap: removeDigit,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-
-            SizedBox(height: 70.h),
-
-            Expanded(
-              child: CustomGridKeypad(
-                onNumberPressed: addDigit,
-                leftAction: ActionKey(
-                  child: const Icon(Icons.check_rounded, color: Colors.white),
-                  backgroundColor: primaryColor,
-                  onTap: _submit,
-                ),
-                rightAction: ActionKey(
-                  child: Icon(Icons.backspace_rounded, color: primaryColor),
-                  backgroundColor: primaryColor.withOpacity(0.1),
-                  onTap: removeDigit,
-                ),
-              ),
             ),
-          ],
+          ),
         ),
       ),
     );

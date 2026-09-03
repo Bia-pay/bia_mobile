@@ -264,11 +264,43 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
   Widget _buildLayout(ThemeData theme, double walletBalance, _Dims d) {
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
+    if (d.isTablet) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTopBar(theme, walletBalance, d),
+                const SizedBox(height: 12),
+                _buildRecipientCard(theme, d),
+                const SizedBox(height: 16),
+                _buildAmountDisplay(walletBalance, d),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: CustomTextFormField(
+                    controller: _narrationController,
+                    label: 'Narration (Optional)',
+                    hintText: 'What is this for?',
+                    validator: (val) => null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (!keyboardOpen) _buildKeypad(d),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Center(
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: d.isTablet ? 540 : double.infinity,
-        ),
+        constraints: const BoxConstraints(maxWidth: 600),
         child: Column(
           children: [
             _buildTopBar(theme, walletBalance, d),
@@ -277,13 +309,13 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    SizedBox(height: d.isTablet ? 8.0 : 4.h),
+                    SizedBox(height: 4.h),
                     _buildRecipientCard(theme, d),
-                    SizedBox(height: d.isTablet ? 12.0 : d.sectionGap),
+                    SizedBox(height: d.sectionGap),
                     _buildAmountDisplay(walletBalance, d),
-                    SizedBox(height: d.isTablet ? 12.0 : d.sectionGap),
+                    SizedBox(height: d.sectionGap),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: d.isTablet ? 20.0 : 24.w),
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
                       child: CustomTextFormField(
                         controller: _narrationController,
                         label: 'Narration (Optional)',
@@ -291,7 +323,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
                         validator: (val) => null,
                       ),
                     ),
-                    SizedBox(height: d.isTablet ? 12.0 : 12.h),
+                    SizedBox(height: 12.h),
                   ],
                 ),
               ),
@@ -303,7 +335,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: d.isTablet ? 20.0 : 24.w),
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
                   child: TextButton.icon(
                     onPressed: () => FocusScope.of(context).unfocus(),
                     icon: const Icon(Icons.keyboard_hide_rounded, size: 18),

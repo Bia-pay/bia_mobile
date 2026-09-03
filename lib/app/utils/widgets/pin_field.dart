@@ -47,8 +47,9 @@ class AppPinCodeField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
-    final h = fieldHeight ?? 45.h;
+    final h = fieldHeight ?? (isTablet ? 52.0 : 45.h);
 
     return PinCodeTextField(
       appContext: context,
@@ -65,7 +66,7 @@ class AppPinCodeField extends StatelessWidget {
 
       // 🔥 THIS CONTROLS CENTERING
       textStyle: TextStyle(
-        fontSize: h * 0.6,
+        fontSize: h * 0.5,
         fontWeight: FontWeight.w600,
         height: 1,
       ),
@@ -74,9 +75,9 @@ class AppPinCodeField extends StatelessWidget {
 
       pinTheme: PinTheme(
         shape: shape,
-        borderRadius: borderRadius ?? BorderRadius.circular(10.r),
+        borderRadius: borderRadius ?? BorderRadius.circular(isTablet ? 10.0 : 10.r),
         fieldHeight: h,
-        fieldWidth: fieldWidth ?? 45.w,
+        fieldWidth: fieldWidth ?? (isTablet ? 48.0 : 45.w),
 
         activeColor: activeColor ?? theme.colorScheme.primary,
         selectedColor: selectedColor ?? theme.colorScheme.primary,
@@ -87,7 +88,7 @@ class AppPinCodeField extends StatelessWidget {
         inactiveFillColor: fillColor ?? Colors.grey.shade200,
 
         fieldOuterPadding:
-        fieldPadding ?? EdgeInsets.symmetric(horizontal: 2.w),
+        fieldPadding ?? EdgeInsets.symmetric(horizontal: isTablet ? 3.0 : 2.w),
       ),
       onChanged: onChanged,
       onCompleted: onCompleted,

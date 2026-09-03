@@ -212,12 +212,46 @@ class _AmountPageState extends ConsumerState<AmountPage> {
               final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
               final keypad = _buildKeypad(isTiny, isSmall);
 
+              if (isTablet) {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          topBar,
+                          const SizedBox(height: 12),
+                          recipientCard,
+                          const SizedBox(height: 16),
+                          amountDisplay,
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: CustomTextFormField(
+                              controller: _narrationController,
+                              label: 'Narration (Optional)',
+                              hintText: 'What is this for?',
+                              validator: (val) => null,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          if (!keyboardOpen) keypad,
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+
               return Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isTablet ? 580 : 600),
+                  constraints: const BoxConstraints(maxWidth: 600),
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      vertical: isTablet ? 12.0 : (isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
+                      vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h),
                     ),
                     child: Column(
                       children: [
@@ -229,13 +263,11 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 recipientCard,
-                                SizedBox(height: isTablet ? 16.0 : (isTiny ? 6.h : (isSmall ? 12.h : 18.h))),
+                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
                                 amountDisplay,
-                                SizedBox(height: isTablet ? 16.0 : (isTiny ? 6.h : (isSmall ? 12.h : 18.h))),
+                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isTablet ? 24.0 : 24.w,
-                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: 24.w),
                                   child: CustomTextFormField(
                                     controller: _narrationController,
                                     label: 'Narration (Optional)',
@@ -253,7 +285,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 24.0 : 24.w),
+                              padding: EdgeInsets.symmetric(horizontal: 24.w),
                               child: TextButton.icon(
                                 onPressed: () => FocusScope.of(context).unfocus(),
                                 icon: const Icon(Icons.keyboard_hide_rounded, size: 18),

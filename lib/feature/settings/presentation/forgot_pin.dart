@@ -22,7 +22,7 @@ class ForgotPinScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
-  final TextEditingController otpController = TextEditingController();
+  late TextEditingController otpController;
   int _secondsRemaining = 60;
   bool _canResend = false;
   Timer? _timer;
@@ -50,14 +50,15 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
   @override
   void initState() {
     super.initState();
+    otpController = TextEditingController();
     _startTimer();
     debugPrint(widget.phone);
   }
 
   @override
   void dispose() {
-    otpController.dispose();
     _timer?.cancel();
+    otpController.dispose();
     super.dispose();
   }
 
@@ -109,16 +110,10 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
     final isLargeScreen = screenHeight > 900;
     final isTablet = screenWidth > 600;
 
-    // Adaptive spacing
-    final headerSpacing = isSmallScreen ? 8.h : (isLargeScreen ? 30.h : 20.h);
-    final sectionSpacing = isSmallScreen ? 10.h : (isLargeScreen ? 30.h : 25.h);
-    final pinSpacing = isSmallScreen ? 12.h : (isLargeScreen ? 40.h : 35.h);
-    final keypadSpacing = isSmallScreen ? 10.h : (isLargeScreen ? 40.h : 30.h);
-
     // Adaptive keypad height
-    final keypadHeight = isSmallScreen
-        ? (screenHeight * 0.35) // Proportional height
-        : (isLargeScreen ? 400.h : (isTablet ? 450.h : 420.h));
+    final keypadHeight = isTablet
+        ? 370.0
+        : (isSmallScreen ? (screenHeight * 0.35) : (isLargeScreen ? 400.h : 420.h));
 
     final box = Hive.box('authBox');
     final phone = box.get('phone', defaultValue: 'User');
@@ -127,25 +122,31 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 540 : double.infinity),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Back Button
                 Padding(
-                  padding: EdgeInsets.fromLTRB(20.w, isSmallScreen ? 10.h : 20.h, 20.w, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    isTablet ? 20.0 : 20.w,
+                    isTablet ? 16.0 : (isSmallScreen ? 10.h : 20.h),
+                    isTablet ? 20.0 : 20.w,
+                    0,
+                  ),
                   child: GestureDetector(
                     onTap: () => context.pop(),
                     child: Container(
-                      padding: EdgeInsets.all(isSmallScreen ? 8.w : 10.w),
+                      padding: EdgeInsets.all(isTablet ? 10.0 : (isSmallScreen ? 8.w : 10.w)),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.arrow_back_ios_new,
-                        size: isSmallScreen ? 18.sp : 20.sp,
+                        size: isTablet ? 18.0 : (isSmallScreen ? 18.sp : 20.sp),
                         color: Colors.black,
                       ),
                     ),
@@ -154,7 +155,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
 
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 40.w : 20.w),
+                    padding: EdgeInsets.symmetric(horizontal: isTablet ? 32.0 : 20.w),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,17 +168,17 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                               'Enter 6-digit code',
                               style: theme.textTheme.headlineLarge?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                fontSize: isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp),
+                                fontSize: isTablet ? 24.0 : (isSmallScreen ? 20.sp : (isLargeScreen ? 28.sp : 24.sp)),
                               ),
                             ),
-                            SizedBox(height: 4.h),
+                            SizedBox(height: isTablet ? 4.0 : 4.h),
                             // Subtitle & Phone
                             Text(
                               "We've sent a verification code to",
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: borderColor,
                                 fontWeight: FontWeight.w600,
-                                fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                fontSize: isTablet ? 14.0 : (isSmallScreen ? 11.sp : 14.sp),
                               ),
                             ),
                             RichText(
@@ -186,7 +187,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: borderColor,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                  fontSize: isTablet ? 14.0 : (isSmallScreen ? 11.sp : 14.sp),
                                 ),
                                 children: [
                                   TextSpan(
@@ -194,7 +195,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: primaryColor,
                                       fontWeight: FontWeight.w600,
-                                      fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                      fontSize: isTablet ? 14.0 : (isSmallScreen ? 11.sp : 14.sp),
                                     ),
                                   ),
                                 ],
@@ -222,7 +223,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: borderColor,
                                 fontWeight: FontWeight.w600,
-                                fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                fontSize: isTablet ? 13.0 : (isSmallScreen ? 11.sp : 14.sp),
                               ),
                               children: [
                                 TextSpan(
@@ -232,7 +233,7 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: _canResend ? primaryColor : borderColor,
                                     fontWeight: FontWeight.w600,
-                                    fontSize: isSmallScreen ? 11.sp : 14.sp,
+                                    fontSize: isTablet ? 13.0 : (isSmallScreen ? 11.sp : 14.sp),
                                   ),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = _canResend ? _restartTimer : null,
@@ -243,27 +244,32 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                         ),
 
                         // Keypad
-                        SizedBox(
-                          height: keypadHeight,
-                          child: CustomGridKeypad(
-                            onNumberPressed: addDigit,
-                            leftAction: ActionKey(
-                              child: Icon(
-                                Icons.arrow_forward_rounded,
-                                color: lightBackground,
-                                size: isSmallScreen ? 20.sp : 24.sp,
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: isTablet ? 360 : double.infinity),
+                            child: SizedBox(
+                              height: keypadHeight,
+                              child: CustomGridKeypad(
+                                onNumberPressed: addDigit,
+                                leftAction: ActionKey(
+                                  child: Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: lightBackground,
+                                    size: isTablet ? 22.0 : (isSmallScreen ? 20.sp : 24.sp),
+                                  ),
+                                  backgroundColor: primaryColor,
+                                  onTap: _verifyOtp,
+                                ),
+                                rightAction: ActionKey(
+                                  child: Icon(
+                                    Icons.backspace_rounded,
+                                    color: primaryColor,
+                                    size: isTablet ? 22.0 : (isSmallScreen ? 20.sp : 24.sp),
+                                  ),
+                                  backgroundColor: primaryColor.withValues(alpha: 0.1),
+                                  onTap: removeDigit,
+                                ),
                               ),
-                              backgroundColor: primaryColor,
-                              onTap: _verifyOtp,
-                            ),
-                            rightAction: ActionKey(
-                              child: Icon(
-                                Icons.backspace_rounded,
-                                color: primaryColor,
-                                size: isSmallScreen ? 20.sp : 24.sp,
-                              ),
-                              backgroundColor: primaryColor.withOpacity(0.1),
-                              onTap: removeDigit,
                             ),
                           ),
                         ),
@@ -271,11 +277,10 @@ class _ForgotPinScreenState extends ConsumerState<ForgotPinScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: 8.h),
+                SizedBox(height: isTablet ? 8.0 : 8.h),
               ],
-            );
-
-          },
+            ),
+          ),
         ),
       ),
     );

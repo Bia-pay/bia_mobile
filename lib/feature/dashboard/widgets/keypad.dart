@@ -26,9 +26,10 @@ class CustomGridKeypad extends StatelessWidget {
     final isTablet = MediaQuery.of(context).size.width > 600;
 
     final horizontalPadding = isTablet ? 12.0 : 32.w;
-    final mainSpacing = isTablet ? 12.0 : 16.h;
-    final crossSpacing = isTablet ? 16.0 : 24.w;
-    final fontSize = isTablet ? 22.0 : 24.sp;
+    final mainSpacing = isTablet ? 8.0 : 16.h;
+    final crossSpacing = isTablet ? 12.0 : 24.w;
+    final fontSize = isTablet ? 20.0 : 24.sp;
+    final aspectRatio = isTablet ? 1.25 : 1.0;
 
     final List<String> numbers = [
       "1", "2", "3",
@@ -45,7 +46,7 @@ class CustomGridKeypad extends StatelessWidget {
         crossAxisCount: 3,
         mainAxisSpacing: mainSpacing,
         crossAxisSpacing: crossSpacing,
-        childAspectRatio: 1.0,
+        childAspectRatio: aspectRatio,
       ),
       itemBuilder: (context, index) {
         Widget child;
