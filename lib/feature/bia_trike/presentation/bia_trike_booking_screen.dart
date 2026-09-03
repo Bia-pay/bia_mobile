@@ -293,22 +293,24 @@ class _BiaTrikeBookingScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        toolbarHeight: isTablet ? 60.0 : null,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: darkBackground, size: 18.sp),
+              color: darkBackground, size: isTablet ? 18.0 : 18.sp),
           onPressed: () => context.pop(),
         ),
         title: Text(
           _t('title'),
           style: TextStyle(
             color: darkBackground,
-            fontSize: 16.sp,
+            fontSize: isTablet ? 16.0 : 16.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -317,11 +319,14 @@ class _BiaTrikeBookingScreenState
           GestureDetector(
             onTap: _showLanguageSwitcher,
             child: Container(
-              margin: EdgeInsets.only(right: 16.w),
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+              margin: EdgeInsets.only(right: isTablet ? 16.0 : 16.w),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 10.0 : 10.w,
+                vertical: isTablet ? 4.0 : 4.h,
+              ),
               decoration: BoxDecoration(
                 color: primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(100.r),
+                borderRadius: BorderRadius.circular(100.0),
               ),
               child: Row(
                 children: [
@@ -333,13 +338,13 @@ class _BiaTrikeBookingScreenState
                             : '🇬🇧 English',
                     style: TextStyle(
                       color: primaryColor,
-                      fontSize: 10.sp,
+                      fontSize: isTablet ? 11.0 : 10.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(width: 4.w),
+                  SizedBox(width: isTablet ? 4.0 : 4.w),
                   Icon(Icons.keyboard_arrow_down_rounded,
-                      color: primaryColor, size: 14.sp),
+                      color: primaryColor, size: isTablet ? 14.0 : 14.sp),
                 ],
               ),
             ),
@@ -350,10 +355,13 @@ class _BiaTrikeBookingScreenState
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 650),
+            constraints: BoxConstraints(maxWidth: isTablet ? 500 : 650),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 24.0 : 24.w,
+                vertical: isTablet ? 12.0 : 12.h,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -361,12 +369,12 @@ class _BiaTrikeBookingScreenState
                     _t('subtitle'),
                     style: TextStyle(
                       color: lightSecondaryText,
-                      fontSize: 13.sp,
+                      fontSize: isTablet ? 13.0 : 13.sp,
                       height: 1.4,
                     ),
                   ),
 
-                  SizedBox(height: 20.h),
+                  SizedBox(height: isTablet ? 16.0 : 20.h),
 
                   if (_isSearchingDriver)
                     _buildSearchingCard()
@@ -384,15 +392,16 @@ class _BiaTrikeBookingScreenState
   }
 
   Widget _buildBookingForm() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          height: 130.h,
+          height: isTablet ? 120.0 : 130.h,
           width: double.infinity,
           decoration: BoxDecoration(
             color: const Color(0xFFE2E8F0),
-            borderRadius: BorderRadius.circular(24.r),
+            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
             border: Border.all(color: const Color(0xFFCBD5E1)),
           ),
           child: Stack(
@@ -401,29 +410,29 @@ class _BiaTrikeBookingScreenState
                 child: Icon(
                   Icons.map_rounded,
                   color: Colors.white,
-                  size: 90.sp,
+                  size: isTablet ? 60.0 : 90.sp,
                 ),
               ),
               Positioned(
-                top: 16.h,
-                left: 20.w,
+                top: isTablet ? 14.0 : 16.h,
+                left: isTablet ? 16.0 : 20.w,
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(6.r),
+                      padding: EdgeInsets.all(isTablet ? 6.0 : 6.r),
                       decoration: const BoxDecoration(
                         color: primaryColor,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.my_location_rounded,
-                          color: Colors.white, size: 14.sp),
+                          color: Colors.white, size: isTablet ? 14.0 : 14.sp),
                     ),
-                    SizedBox(width: 8.w),
+                    SizedBox(width: isTablet ? 8.0 : 8.w),
                     Text(
                       'Kano City Hub',
                       style: TextStyle(
                         color: darkBackground,
-                        fontSize: 12.sp,
+                        fontSize: isTablet ? 12.0 : 12.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -431,20 +440,22 @@ class _BiaTrikeBookingScreenState
                 ),
               ),
               Positioned(
-                bottom: 16.h,
-                right: 20.w,
+                bottom: isTablet ? 14.0 : 16.h,
+                right: isTablet ? 16.0 : 20.w,
                 child: Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 10.0 : 10.w,
+                    vertical: isTablet ? 4.0 : 4.h,
+                  ),
                   decoration: BoxDecoration(
                     color: primaryGreenColor,
-                    borderRadius: BorderRadius.circular(8.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
                   ),
                   child: Text(
                     '14 Drivers Online',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 10.sp,
+                      fontSize: isTablet ? 10.0 : 10.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -454,13 +465,13 @@ class _BiaTrikeBookingScreenState
           ),
         ),
 
-        SizedBox(height: 20.h),
+        SizedBox(height: isTablet ? 16.0 : 20.h),
 
         Container(
-          padding: EdgeInsets.all(20.r),
+          padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24.r),
+            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
             border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
               BoxShadow(
@@ -476,14 +487,15 @@ class _BiaTrikeBookingScreenState
               Text(
                 _t('pickup'),
                 style: TextStyle(
-                  fontSize: 12.sp,
+                  fontSize: isTablet ? 12.0 : 12.sp,
                   fontWeight: FontWeight.w700,
                   color: darkBackground,
                 ),
               ),
-              SizedBox(height: 6.h),
+              SizedBox(height: isTablet ? 6.0 : 6.h),
               TextField(
                 controller: _pickupCtrl,
+                style: TextStyle(fontSize: isTablet ? 14.0 : null),
                 decoration: InputDecoration(
                   prefixIcon:
                       const Icon(Icons.trip_origin_rounded, color: primaryColor),
@@ -491,26 +503,27 @@ class _BiaTrikeBookingScreenState
                   filled: true,
                   fillColor: offWhiteBackground,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
                     borderSide: BorderSide.none,
                   ),
                 ),
               ),
 
-              SizedBox(height: 16.h),
+              SizedBox(height: isTablet ? 14.0 : 16.h),
 
               Text(
                 _t('destination'),
                 style: TextStyle(
-                  fontSize: 12.sp,
+                  fontSize: isTablet ? 12.0 : 12.sp,
                   fontWeight: FontWeight.w700,
                   color: darkBackground,
                 ),
               ),
-              SizedBox(height: 6.h),
+              SizedBox(height: isTablet ? 6.0 : 6.h),
               TextField(
                 controller: _destinationCtrl,
                 onChanged: (_) => setState(() {}),
+                style: TextStyle(fontSize: isTablet ? 14.0 : null),
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.location_on_rounded,
                       color: Color(0xFFEF4444)),
@@ -518,7 +531,7 @@ class _BiaTrikeBookingScreenState
                   filled: true,
                   fillColor: offWhiteBackground,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
                     borderSide: BorderSide.none,
                   ),
                 ),
@@ -527,36 +540,36 @@ class _BiaTrikeBookingScreenState
           ),
         ),
 
-        SizedBox(height: 20.h),
+        SizedBox(height: isTablet ? 16.0 : 20.h),
 
         Text(
           _t('rideType'),
           style: TextStyle(
             color: darkBackground,
-            fontSize: 14.sp,
+            fontSize: isTablet ? 14.0 : 14.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(height: 10.h),
+        SizedBox(height: isTablet ? 8.0 : 10.h),
 
         Row(
           children: [
             Expanded(
                 child: _buildOptionChip('Standard', _t('standard'), '🛺')),
-            SizedBox(width: 8.w),
+            SizedBox(width: isTablet ? 8.0 : 8.w),
             Expanded(child: _buildOptionChip('Shared', _t('shared'), '👥')),
-            SizedBox(width: 8.w),
+            SizedBox(width: isTablet ? 8.0 : 8.w),
             Expanded(child: _buildOptionChip('Express', _t('express'), '📦')),
           ],
         ),
 
-        SizedBox(height: 20.h),
+        SizedBox(height: isTablet ? 16.0 : 20.h),
 
         Container(
-          padding: EdgeInsets.all(20.r),
+          padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24.r),
+            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
             border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
@@ -575,95 +588,97 @@ class _BiaTrikeBookingScreenState
                     _t('yourOffer'),
                     style: TextStyle(
                       color: primaryColor,
-                      fontSize: 11.sp,
+                      fontSize: isTablet ? 11.0 : 11.sp,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.0,
                     ),
                   ),
                   Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 8.0 : 10.w,
+                      vertical: isTablet ? 4.0 : 4.h,
+                    ),
                     decoration: BoxDecoration(
                       color: primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8.r),
+                      borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
                     ),
                     child: Text(
                       'Negotiable Fare',
                       style: TextStyle(
                         color: primaryColor,
-                        fontSize: 10.sp,
+                        fontSize: isTablet ? 10.0 : 10.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 14.h),
+              SizedBox(height: isTablet ? 12.0 : 14.h),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   InkWell(
                     onTap: () => _adjustFare(-50),
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(100.0),
                     child: Container(
-                      padding: EdgeInsets.all(12.r),
+                      padding: EdgeInsets.all(isTablet ? 10.0 : 12.r),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.grey.shade300),
                       ),
                       child: Icon(Icons.remove_rounded,
-                          color: darkBackground, size: 20.sp),
+                          color: darkBackground, size: isTablet ? 18.0 : 20.sp),
                     ),
                   ),
 
-                  SizedBox(width: 24.w),
+                  SizedBox(width: isTablet ? 20.0 : 24.w),
 
                   Text(
                     '₦${NumberFormat('#,##0').format(_passengerOfferFare)}',
                     style: TextStyle(
                       color: darkBackground,
-                      fontSize: 28.sp,
+                      fontSize: isTablet ? 26.0 : 28.sp,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
 
-                  SizedBox(width: 24.w),
+                  SizedBox(width: isTablet ? 20.0 : 24.w),
 
                   InkWell(
                     onTap: () => _adjustFare(50),
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(100.0),
                     child: Container(
-                      padding: EdgeInsets.all(12.r),
-                      decoration: BoxDecoration(
+                      padding: EdgeInsets.all(isTablet ? 10.0 : 12.r),
+                      decoration: const BoxDecoration(
                         color: primaryColor,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.add_rounded,
-                          color: Colors.white, size: 20.sp),
+                          color: Colors.white, size: isTablet ? 18.0 : 20.sp),
                     ),
                   ),
                 ],
               ),
 
-              SizedBox(height: 10.h),
+              SizedBox(height: isTablet ? 8.0 : 10.h),
               Text(
                 _t('negotiateHint'),
                 style: TextStyle(
                   color: lightSecondaryText,
-                  fontSize: 11.sp,
+                  fontSize: isTablet ? 11.0 : 11.sp,
                 ),
               ),
             ],
           ),
         ),
 
-        SizedBox(height: 24.h),
+        SizedBox(height: isTablet ? 20.0 : 24.h),
 
         SizedBox(
           width: double.infinity,
-          height: 52.h,
+          height: isTablet ? 48.0 : 52.h,
           child: ElevatedButton(
             onPressed: _startRideSearch,
             style: ElevatedButton.styleFrom(
@@ -671,7 +686,7 @@ class _BiaTrikeBookingScreenState
               foregroundColor: Colors.white,
               elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
               ),
             ),
             child: Row(
@@ -680,32 +695,36 @@ class _BiaTrikeBookingScreenState
                 Text(
                   _t('bookBtn'),
                   style: TextStyle(
-                    fontSize: 15.sp,
+                    fontSize: isTablet ? 14.0 : 15.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(width: 8.w),
-                Icon(Icons.arrow_forward_rounded, size: 18.sp),
+                SizedBox(width: isTablet ? 8.0 : 8.w),
+                Icon(Icons.arrow_forward_rounded, size: isTablet ? 18.0 : 18.sp),
               ],
             ),
           ),
         ),
 
-        SizedBox(height: 30.h),
+        SizedBox(height: isTablet ? 20.0 : 30.h),
       ],
     );
   }
 
   Widget _buildOptionChip(String key, String label, String emoji) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final isSelected = _selectedRideType == key;
     return GestureDetector(
       onTap: () => setState(() => _selectedRideType = key),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 10.0 : 10.w,
+          vertical: isTablet ? 10.0 : 12.h,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
           border: Border.all(
             color: isSelected ? primaryColor : const Color(0xFFCBD5E1),
           ),
@@ -721,14 +740,14 @@ class _BiaTrikeBookingScreenState
         ),
         child: Column(
           children: [
-            Text(emoji, style: TextStyle(fontSize: 20.sp)),
-            SizedBox(height: 6.h),
+            Text(emoji, style: TextStyle(fontSize: isTablet ? 18.0 : 20.sp)),
+            SizedBox(height: isTablet ? 4.0 : 6.h),
             Text(
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isSelected ? Colors.white : darkBackground,
-                fontSize: 11.sp,
+                fontSize: isTablet ? 11.0 : 11.sp,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
               ),
               maxLines: 1,
@@ -741,12 +760,13 @@ class _BiaTrikeBookingScreenState
   }
 
   Widget _buildSearchingCard() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 20.h),
+      padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(24.r),
+            padding: EdgeInsets.all(isTablet ? 20.0 : 24.r),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.12),
               shape: BoxShape.circle,
@@ -761,38 +781,38 @@ class _BiaTrikeBookingScreenState
                 duration: 800.ms,
               ),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 16.0 : 20.h),
 
           Text(
             _t('searchingTitle'),
             style: TextStyle(
               color: darkBackground,
-              fontSize: 20.sp,
+              fontSize: isTablet ? 18.0 : 20.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: isTablet ? 6.0 : 6.h),
           Text(
             _t('searchingDesc'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: lightSecondaryText,
-              fontSize: 13.sp,
+              fontSize: isTablet ? 13.0 : 13.sp,
             ),
           ),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: isTablet ? 20.0 : 24.h),
 
           Text(
             'LIVE DRIVER COUNTER-OFFERS',
             style: TextStyle(
               color: primaryColor,
-              fontSize: 10.sp,
+              fontSize: isTablet ? 10.0 : 10.sp,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.0,
             ),
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: isTablet ? 10.0 : 10.h),
 
           _buildDriverBiddingCard(
             0,
@@ -802,7 +822,7 @@ class _BiaTrikeBookingScreenState
             '★ 4.9',
             primaryGreenColor,
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: isTablet ? 8.0 : 8.h),
           _buildDriverBiddingCard(
             1,
             'Sani Abubakar Keke',
@@ -812,7 +832,7 @@ class _BiaTrikeBookingScreenState
             const Color(0xFFF59E0B),
           ),
 
-          SizedBox(height: 30.h),
+          SizedBox(height: isTablet ? 24.0 : 30.h),
 
           OutlinedButton(
             onPressed: () {
@@ -821,14 +841,20 @@ class _BiaTrikeBookingScreenState
             },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.grey),
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 24.0 : 24.w,
+                vertical: isTablet ? 12.0 : 12.h,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14.r),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
               ),
             ),
             child: Text(
               _t('cancelBtn'),
-              style: TextStyle(color: darkBackground),
+              style: TextStyle(
+                color: darkBackground,
+                fontSize: isTablet ? 14.0 : null,
+              ),
             ),
           ),
         ],
@@ -838,14 +864,15 @@ class _BiaTrikeBookingScreenState
 
   Widget _buildDriverBiddingCard(int index, String name, String offerText,
       String eta, String rating, Color badgeColor) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final isSelected = _selectedDriverOfferIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _selectedDriverOfferIndex = index),
       child: Container(
-        padding: EdgeInsets.all(16.r),
+        padding: EdgeInsets.all(isTablet ? 14.0 : 16.r),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18.r),
+          borderRadius: BorderRadius.circular(isTablet ? 14.0 : 18.r),
           border: Border.all(
             color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
             width: isSelected ? 1.8 : 1.0,
@@ -861,18 +888,18 @@ class _BiaTrikeBookingScreenState
         child: Row(
           children: [
             CircleAvatar(
-              radius: 20.r,
+              radius: isTablet ? 20.0 : 20.r,
               backgroundColor: primaryColor.withValues(alpha: 0.12),
               child: Text(
                 name.substring(0, 2).toUpperCase(),
                 style: TextStyle(
                   color: primaryColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 13.sp,
+                  fontSize: isTablet ? 13.0 : 13.sp,
                 ),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: isTablet ? 12.0 : 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -881,16 +908,16 @@ class _BiaTrikeBookingScreenState
                     name,
                     style: TextStyle(
                       color: darkBackground,
-                      fontSize: 14.sp,
+                      fontSize: isTablet ? 14.0 : 14.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(height: 2.h),
+                  SizedBox(height: isTablet ? 2.0 : 2.h),
                   Text(
                     offerText,
                     style: TextStyle(
                       color: badgeColor,
-                      fontSize: 12.sp,
+                      fontSize: isTablet ? 12.0 : 12.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -904,16 +931,16 @@ class _BiaTrikeBookingScreenState
                   rating,
                   style: TextStyle(
                     color: const Color(0xFFF59E0B),
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 11.0 : 11.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: isTablet ? 2.0 : 2.h),
                 Text(
                   eta,
                   style: TextStyle(
                     color: lightSecondaryText,
-                    fontSize: 10.sp,
+                    fontSize: isTablet ? 10.0 : 10.sp,
                   ),
                 ),
               ],
@@ -925,12 +952,13 @@ class _BiaTrikeBookingScreenState
   }
 
   Widget _buildDriverAssignedCard() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 20.h),
+      padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(20.r),
+            padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
             decoration: BoxDecoration(
               color: primaryGreenColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
@@ -938,38 +966,38 @@ class _BiaTrikeBookingScreenState
             child: Icon(
               Icons.check_circle_rounded,
               color: primaryGreenColor,
-              size: 54.sp,
+              size: isTablet ? 44.0 : 54.sp,
             ),
           ).animate().scale(duration: 400.ms),
 
-          SizedBox(height: 16.h),
+          SizedBox(height: isTablet ? 14.0 : 16.h),
 
           Text(
             _t('assignedTitle'),
             style: TextStyle(
               color: darkBackground,
-              fontSize: 22.sp,
+              fontSize: isTablet ? 20.0 : 22.sp,
               fontWeight: FontWeight.w900,
             ),
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: isTablet ? 6.0 : 6.h),
           Text(
             _t('assignedDesc'),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: lightSecondaryText,
-              fontSize: 13.sp,
+              fontSize: isTablet ? 13.0 : 13.sp,
             ),
           ),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: isTablet ? 20.0 : 24.h),
 
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(20.r),
+            padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24.r),
+              borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
@@ -984,18 +1012,18 @@ class _BiaTrikeBookingScreenState
                 Row(
                   children: [
                     CircleAvatar(
-                      radius: 24.r,
+                      radius: isTablet ? 22.0 : 24.r,
                       backgroundColor: primaryColor.withValues(alpha: 0.12),
                       child: Text(
                         'MG',
                         style: TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.bold,
-                          fontSize: 16.sp,
+                          fontSize: isTablet ? 15.0 : 16.sp,
                         ),
                       ),
                     ),
-                    SizedBox(width: 14.w),
+                    SizedBox(width: isTablet ? 12.0 : 14.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1004,16 +1032,16 @@ class _BiaTrikeBookingScreenState
                             'Mallam Garba Ibrahim',
                             style: TextStyle(
                               color: darkBackground,
-                              fontSize: 15.sp,
+                              fontSize: isTablet ? 14.0 : 15.sp,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          SizedBox(height: 2.h),
+                          SizedBox(height: isTablet ? 2.0 : 2.h),
                           Text(
                             _t('plate'),
                             style: TextStyle(
                               color: lightSecondaryText,
-                              fontSize: 12.sp,
+                              fontSize: isTablet ? 12.0 : 12.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1021,22 +1049,24 @@ class _BiaTrikeBookingScreenState
                       ),
                     ),
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 8.0 : 8.w,
+                        vertical: isTablet ? 4.0 : 4.h,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8.r),
+                        borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
                       ),
                       child: Row(
                         children: [
                           Icon(Icons.star_rounded,
-                              color: const Color(0xFFF59E0B), size: 14.sp),
-                          SizedBox(width: 3.w),
+                              color: const Color(0xFFF59E0B), size: isTablet ? 14.0 : 14.sp),
+                          SizedBox(width: isTablet ? 3.0 : 3.w),
                           Text(
                             '4.9',
                             style: TextStyle(
                               color: const Color(0xFFF59E0B),
-                              fontSize: 11.sp,
+                              fontSize: isTablet ? 11.0 : 11.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1045,9 +1075,9 @@ class _BiaTrikeBookingScreenState
                     ),
                   ],
                 ),
-                SizedBox(height: 16.h),
+                SizedBox(height: isTablet ? 12.0 : 16.h),
                 Divider(color: Colors.grey.shade200),
-                SizedBox(height: 10.h),
+                SizedBox(height: isTablet ? 8.0 : 10.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1055,14 +1085,14 @@ class _BiaTrikeBookingScreenState
                       'Negotiated Fare Total',
                       style: TextStyle(
                         color: lightSecondaryText,
-                        fontSize: 12.sp,
+                        fontSize: isTablet ? 12.0 : 12.sp,
                       ),
                     ),
                     Text(
                       '₦${NumberFormat('#,##0.00').format(_passengerOfferFare)}',
                       style: TextStyle(
                         color: darkBackground,
-                        fontSize: 16.sp,
+                        fontSize: isTablet ? 16.0 : 16.sp,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1072,7 +1102,7 @@ class _BiaTrikeBookingScreenState
             ),
           ),
 
-          SizedBox(height: 30.h),
+          SizedBox(height: isTablet ? 24.0 : 30.h),
 
           ElevatedButton(
             onPressed: () {
@@ -1080,16 +1110,19 @@ class _BiaTrikeBookingScreenState
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
-              padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 14.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 32.0 : 32.w,
+                vertical: isTablet ? 14.0 : 14.h,
+              ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
               ),
             ),
             child: Text(
               _t('homeBtn'),
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 14.sp,
+                fontSize: isTablet ? 14.0 : 14.sp,
                 fontWeight: FontWeight.bold,
               ),
             ),

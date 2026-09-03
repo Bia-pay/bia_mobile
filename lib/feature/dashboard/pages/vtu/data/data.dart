@@ -781,49 +781,61 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
         // ── Floating PAY Button ───────────────────────────────────────────────
         bottomNavigationBar: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          height: _isFormValid || _selectedPlan != null ? 88.h : 0,
-          child: OverflowBox(
-            maxHeight: 88.h,
-            child: Container(
-              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 20,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: _isFormValid ? 1.0 : 0.45,
-                  child: ElevatedButton(
-                    onPressed: _isFormValid ? _handlePurchase : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: grey300,
-                      elevation: _isFormValid ? 4 : 0,
-                      shadowColor: primaryColor.withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.flash_on_rounded, size: 18),
-                        SizedBox(width: 6.w),
-                        Text(
-                          _selectedPlan != null
-                              ? 'Pay ₦${NumberFormat('#,##0').format(_selectedAmount)}'
-                              : 'Select a Plan to Continue',
-                          style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800, letterSpacing: -0.3),
-                        ),
-                      ],
+          height: _isFormValid || _selectedPlan != null ? (isTablet ? 76.0 : 88.h) : 0,
+          child: Container(
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 20.0 : 20.w,
+              isTablet ? 10.0 : 12.h,
+              isTablet ? 20.0 : 20.w,
+              isTablet ? 14.0 : 24.h,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isTablet ? 680.0 : double.infinity),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: isTablet ? 48.0 : null,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _isFormValid ? 1.0 : 0.45,
+                    child: ElevatedButton(
+                      onPressed: _isFormValid ? _handlePurchase : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: grey300,
+                        elevation: _isFormValid ? 4 : 0,
+                        shadowColor: primaryColor.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r)),
+                        padding: EdgeInsets.symmetric(vertical: isTablet ? 12.0 : 14.h),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.flash_on_rounded, size: isTablet ? 18.0 : 18),
+                          SizedBox(width: isTablet ? 6.0 : 6.w),
+                          Text(
+                            _selectedPlan != null
+                                ? 'Pay ₦${NumberFormat('#,##0').format(_selectedAmount)}'
+                                : 'Select a Plan to Continue',
+                            style: TextStyle(
+                              fontSize: isTablet ? 15.0 : 15.sp,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

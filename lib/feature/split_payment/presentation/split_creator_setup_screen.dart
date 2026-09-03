@@ -1044,13 +1044,14 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildEmptyHistoryState(ThemeData theme) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 48.h),
+      padding: EdgeInsets.symmetric(vertical: isTablet ? 32.0 : 48.h),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.all(22.r),
+            padding: EdgeInsets.all(isTablet ? 20.0 : 22.r),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF6C63FF), Color(0xFF4F46E5)],
@@ -1069,27 +1070,28 @@ class _SplitCreatorSetupScreenState
             child: Icon(
               Icons.call_split_rounded,
               color: Colors.white,
-              size: 36.sp,
+              size: isTablet ? 32.0 : 36.sp,
             ),
           ),
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 16.0 : 20.h),
           Text(
             'No split bills yet',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: darkBackground,
               letterSpacing: -0.3,
+              fontSize: isTablet ? 16.0 : null,
             ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: isTablet ? 8.0 : 8.h),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 32.0 : 32.w),
             child: Text(
               'Split bills you create or are invited to will show up here so you can track payments easily.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: lightSecondaryText,
-                fontSize: 13.sp,
+                fontSize: isTablet ? 13.0 : 13.sp,
                 height: 1.5,
               ),
             ),
@@ -1453,19 +1455,23 @@ class _SplitCreatorSetupScreenState
           // Generate Button
           SizedBox(
             width: double.infinity,
-            height: 55.h,
+            height: isTablet ? 48.0 : 52.h,
             child: ElevatedButton(
               onPressed: _submitCreateSplit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                 ),
+                elevation: 2,
               ),
               child: Text(
                 "Generate QR Code",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isTablet ? 14.0 : 14.sp,
+                ),
               ),
             ),
           ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
@@ -1475,10 +1481,14 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildQrPresenter(ThemeData theme) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final payloadString = jsonEncode(_generatedResponse!.qrPayload);
 
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24.0 : 24.w,
+        vertical: isTablet ? 20.0 : 20.h,
+      ),
       child: Column(
         children: [
           Screenshot(
@@ -1490,18 +1500,18 @@ class _SplitCreatorSetupScreenState
               subtitle:
                   "Total: ₦${NumberFormat('#,##0.00').format(_generatedResponse!.totalAmount)}",
               child: Container(
-                padding: EdgeInsets.all(16.r),
+                padding: EdgeInsets.all(isTablet ? 16.0 : 16.r),
                 color: Colors.white,
                 child: QrImageView(
                   data: payloadString,
                   version: QrVersions.auto,
-                  size: 200.r,
+                  size: isTablet ? 180.0 : 200.r,
                 ),
               ),
             ),
           ).animate().fadeIn(duration: 500.ms).scale(begin: const Offset(0.9, 0.9)),
 
-          SizedBox(height: 30.h),
+          SizedBox(height: isTablet ? 20.0 : 30.h),
 
           // Actions
           Row(
@@ -1520,12 +1530,12 @@ class _SplitCreatorSetupScreenState
             ],
           ),
 
-          SizedBox(height: 40.h),
+          SizedBox(height: isTablet ? 24.0 : 40.h),
 
           // Open Live Dashboard
           SizedBox(
             width: double.infinity,
-            height: 55.h,
+            height: isTablet ? 48.0 : 52.h,
             child: ElevatedButton(
               onPressed: () {
                 context.pushReplacementNamed(
@@ -1537,16 +1547,20 @@ class _SplitCreatorSetupScreenState
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                 ),
+                elevation: 2,
               ),
-              child: const Text(
+              child: Text(
                 "Go to Live Dashboard",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isTablet ? 14.0 : 14.sp,
+                ),
               ),
             ),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: isTablet ? 14.0 : 16.h),
           TextButton(
             onPressed: () {
               ref.read(splitCreatorProvider.notifier).reset();
@@ -1557,11 +1571,12 @@ class _SplitCreatorSetupScreenState
                 _descController.clear();
               });
             },
-            child: const Text(
+            child: Text(
               "Create Another Bill",
               style: TextStyle(
                 color: primaryColor,
                 fontWeight: FontWeight.bold,
+                fontSize: isTablet ? 13.5 : 14.sp,
               ),
             ),
           ),
@@ -1571,25 +1586,26 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildCircularAction(IconData icon, String label, VoidCallback onTap) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(12.r),
+            padding: EdgeInsets.all(isTablet ? 12.0 : 12.r),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
             ),
-            child: Icon(icon, color: primaryColor, size: 24.sp),
+            child: Icon(icon, color: primaryColor, size: isTablet ? 22.0 : 24.sp),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: isTablet ? 6.0 : 8.h),
           Text(
             label,
             style: TextStyle(
               color: darkBackground,
-              fontSize: 12.sp,
+              fontSize: isTablet ? 12.0 : 12.sp,
               fontWeight: FontWeight.w600,
             ),
           ),

@@ -32,12 +32,13 @@ class CountryCodePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = this.isTablet || MediaQuery.of(context).size.width > 600;
     return GestureDetector(
       onTap: () => _showCountryPickerDialog(context),
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: isTablet
-            ? const EdgeInsets.only(left: 14, right: 10, top: 7, bottom: 7)
+            ? const EdgeInsets.only(left: 14, right: 10, top: 10, bottom: 10)
             : EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
         decoration: BoxDecoration(
           border: showBorder
@@ -62,7 +63,7 @@ class CountryCodePicker extends StatelessWidget {
                 color: const Color(0xFF0C284E),
               ),
             ),
-            SizedBox(width: 2.w),
+            SizedBox(width: isTablet ? 2 : 2.w),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               color: Colors.grey[600],

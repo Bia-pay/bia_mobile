@@ -117,6 +117,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = widget.isTablet || MediaQuery.of(context).size.width > 600;
     final defaultBackground = Colors.grey.shade100;
     final defaultBorderColor = _errorText != null
         ? errorColor
@@ -127,19 +128,19 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
       children: [
         if (widget.label != null && widget.label!.isNotEmpty)
           Padding(
-            padding: EdgeInsets.only(bottom: 5.h),
+            padding: EdgeInsets.only(bottom: isTablet ? 5.0 : 5.h),
             child: Text(
               widget.label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: widget.isTablet ? 13 : 13.spMin,
+                fontSize: isTablet ? 13 : 13.spMin,
               ),
             ),
           ),
         Container(
           decoration: BoxDecoration(
             color: widget.backgroundColor ?? defaultBackground,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
             border: Border.all(
               color: widget.borderColor ?? defaultBorderColor,
               width: 1,
@@ -151,7 +152,7 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                 selectedCountry: _selectedCountry,
                 onChanged: _onCountryChanged,
                 showBorder: true,
-                isTablet: widget.isTablet,
+                isTablet: isTablet,
               ),
               Expanded(
                 child: TextFormField(
@@ -176,19 +177,19 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                   decoration: InputDecoration(
                     counterText: "",
                     hintText: widget.hintText,
-                    isDense: widget.isTablet,
+                    isDense: isTablet,
                     hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: widget.hintColor ?? Colors.grey[400],
                       fontWeight: FontWeight.w400,
-                      fontSize: widget.isTablet ? 12.5 : 13.sp,
+                      fontSize: isTablet ? 13.0 : 13.sp,
                     ),
                     border: InputBorder.none,
-                    contentPadding: widget.isTablet
-                        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 9)
+                    contentPadding: isTablet
+                        ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
                         : EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
                   ),
                   style: TextStyle(
-                    fontSize: widget.isTablet ? 14 : 14.sp,
+                    fontSize: isTablet ? 14.0 : 14.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -198,12 +199,12 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
         ),
         if (_errorText != null)
           Padding(
-            padding: EdgeInsets.only(top: 4.h, left: 4.w),
+            padding: EdgeInsets.only(top: isTablet ? 4.0 : 4.h, left: isTablet ? 4.0 : 4.w),
             child: Text(
               _errorText!,
               style: TextStyle(
                 color: errorColor,
-                fontSize: widget.isTablet ? 12 : 12.sp,
+                fontSize: isTablet ? 12.0 : 12.sp,
                 fontWeight: FontWeight.w400,
               ),
             ),

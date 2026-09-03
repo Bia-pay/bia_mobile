@@ -564,29 +564,31 @@ class _BiaTrikeOnboardingScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appState = ref.watch(biaTrikeProvider);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        toolbarHeight: isTablet ? 60.0 : null,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: darkBackground, size: 18.sp),
+              color: darkBackground, size: isTablet ? 18.0 : 18.sp),
           onPressed: () => context.pop(),
         ),
         title: Text(
           'Bia Trike Hub',
           style: TextStyle(
             color: darkBackground,
-            fontSize: 16.sp,
+            fontSize: isTablet ? 16.0 : 16.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.language_rounded, color: primaryColor, size: 20.sp),
+            icon: Icon(Icons.language_rounded, color: primaryColor, size: isTablet ? 20.0 : 20.sp),
             onPressed: _showLanguageSettingsSheet,
           ),
         ],
@@ -595,7 +597,7 @@ class _BiaTrikeOnboardingScreenState
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 650),
+            constraints: BoxConstraints(maxWidth: isTablet ? 540 : 650),
             child: appState.when(
               loading: () => const Center(
                 child: CircularProgressIndicator(color: primaryColor),
@@ -623,168 +625,69 @@ class _BiaTrikeOnboardingScreenState
   }
 
   Widget _buildHubOverview(ThemeData theme) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.all(24.r),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: EdgeInsets.all(24.r),
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.electric_rickshaw_rounded,
-              color: primaryColor,
-              size: 64.sp,
-            ),
-          ).animate().scale(duration: 400.ms),
-
-          SizedBox(height: 24.h),
-
-          Text(
-            'Bia Trike Mobility',
-            style: TextStyle(
-              color: darkBackground,
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Fast, safe, and commercial Keke transportation powered by Bia Pay.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: lightSecondaryText,
-              fontSize: 13.sp,
-              height: 1.4,
-            ),
-          ),
-
-          SizedBox(height: 32.h),
-
-          SizedBox(
-            width: double.infinity,
-            height: 52.h,
-            child: ElevatedButton(
-              onPressed: _showRoleSelectionBottomSheet,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-              ),
-              child: Text(
-                'Open Service Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExistingAppCard(
-      ThemeData theme, BiaTrikeRiderApplication app) {
-    return Padding(
-      padding: EdgeInsets.all(24.r),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: EdgeInsets.all(20.r),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.hourglass_top_rounded,
-              color: const Color(0xFFF59E0B),
-              size: 54.sp,
-            ),
-          ).animate().scale(duration: 400.ms),
-
-          SizedBox(height: 24.h),
-
-          Text(
-            'Application Under Review',
-            style: TextStyle(
-              color: darkBackground,
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Your Bia Trike rider application is currently under verification.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: lightSecondaryText,
-              fontSize: 13.sp,
-              height: 1.4,
-            ),
-          ),
-
-          SizedBox(height: 28.h),
-
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(20.r),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.r),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _buildSummaryRow('Full Name', app.fullName),
-                Divider(color: Colors.grey.shade200),
-                _buildSummaryRow('Phone', app.phoneNumber),
-                Divider(color: Colors.grey.shade200),
-                _buildSummaryRow('City', app.cityOfOperation),
-                Divider(color: Colors.grey.shade200),
-                _buildSummaryRow('Model', app.trikeModel),
-                Divider(color: Colors.grey.shade200),
-                _buildSummaryRow('Plate No.', app.plateNumber),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 28.h),
-
-          Row(
+      padding: EdgeInsets.all(isTablet ? 24.0 : 24.r),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 420 : double.infinity),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
+              Container(
+                padding: EdgeInsets.all(isTablet ? 20.0 : 24.r),
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.electric_rickshaw_rounded,
+                  color: primaryColor,
+                  size: isTablet ? 48.0 : 64.sp,
+                ),
+              ).animate().scale(duration: 400.ms),
+
+              SizedBox(height: isTablet ? 20.0 : 24.h),
+
+              Text(
+                'Bia Trike Mobility',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: darkBackground,
+                  fontSize: isTablet ? 22.0 : 24.sp,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              SizedBox(height: isTablet ? 8.0 : 8.h),
+              Text(
+                'Fast, safe, and commercial Keke transportation powered by Bia Pay.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: lightSecondaryText,
+                  fontSize: isTablet ? 13.0 : 13.sp,
+                  height: 1.4,
+                ),
+              ),
+
+              SizedBox(height: isTablet ? 24.0 : 32.h),
+
+              SizedBox(
+                width: double.infinity,
+                height: isTablet ? 48.0 : 52.h,
                 child: ElevatedButton(
-                  onPressed: () {
-                    context.push(RouteList.biaTrikeSuccess);
-                  },
+                  onPressed: _showRoleSelectionBottomSheet,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
-                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
+                      borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                     ),
                   ),
                   child: Text(
-                    'View Digital Rider Pass',
+                    'Open Service Menu',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 14.sp,
+                      fontSize: isTablet ? 14.0 : 14.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -792,7 +695,123 @@ class _BiaTrikeOnboardingScreenState
               ),
             ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExistingAppCard(
+      ThemeData theme, BiaTrikeRiderApplication app) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    return Padding(
+      padding: EdgeInsets.all(isTablet ? 24.0 : 24.r),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 460 : double.infinity),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(isTablet ? 18.0 : 20.r),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.hourglass_top_rounded,
+                  color: const Color(0xFFF59E0B),
+                  size: isTablet ? 44.0 : 54.sp,
+                ),
+              ).animate().scale(duration: 400.ms),
+
+              SizedBox(height: isTablet ? 18.0 : 24.h),
+
+              Text(
+                'Application Under Review',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: darkBackground,
+                  fontSize: isTablet ? 20.0 : 22.sp,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              SizedBox(height: isTablet ? 6.0 : 8.h),
+              Text(
+                'Your Bia Trike rider application is currently under verification.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: lightSecondaryText,
+                  fontSize: isTablet ? 13.0 : 13.sp,
+                  height: 1.4,
+                ),
+              ),
+
+              SizedBox(height: isTablet ? 20.0 : 28.h),
+
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildSummaryRow('Full Name', app.fullName),
+                    Divider(color: Colors.grey.shade200),
+                    _buildSummaryRow('Phone', app.phoneNumber),
+                    Divider(color: Colors.grey.shade200),
+                    _buildSummaryRow('City', app.cityOfOperation),
+                    Divider(color: Colors.grey.shade200),
+                    _buildSummaryRow('Model', app.trikeModel),
+                    Divider(color: Colors.grey.shade200),
+                    _buildSummaryRow('Plate No.', app.plateNumber),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: isTablet ? 20.0 : 28.h),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: isTablet ? 48.0 : null,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          context.push(RouteList.biaTrikeSuccess);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          padding: EdgeInsets.symmetric(vertical: isTablet ? 12.0 : 16.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
+                          ),
+                        ),
+                        child: Text(
+                          'View Digital Rider Pass',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: isTablet ? 14.0 : 14.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -824,269 +843,279 @@ class _BiaTrikeOnboardingScreenState
   }
 
   Widget _buildRiderFormView(ThemeData theme) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Rider Registration Form',
-              style: TextStyle(
-                color: darkBackground,
-                fontSize: 22.sp,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              'Fill in your details below to onboard your trike vehicle to the fleet.',
-              style: TextStyle(
-                color: lightSecondaryText,
-                fontSize: 13.sp,
-                height: 1.4,
-              ),
-            ),
-
-            SizedBox(height: 20.h),
-
-            Container(
-              padding: EdgeInsets.all(20.r),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24.r),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 24.0 : 24.w,
+        vertical: isTablet ? 12.0 : 12.h,
+      ),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 480 : double.infinity),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rider Registration Form',
+                  style: TextStyle(
+                    color: darkBackground,
+                    fontSize: isTablet ? 20.0 : 22.sp,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomTextFormField(
-                    controller: _fullNameCtrl,
-                    label: "Rider Full Name",
-                    hintText: "Enter your legal full name",
-                    validator: (val) {
-                      if (val == null || val.trim().length < 3) {
-                        return "Please enter your full name";
-                      }
-                      return null;
-                    },
+                ),
+                SizedBox(height: isTablet ? 4.0 : 4.h),
+                Text(
+                  'Fill in your details below to onboard your trike vehicle to the fleet.',
+                  style: TextStyle(
+                    color: lightSecondaryText,
+                    fontSize: isTablet ? 13.0 : 13.sp,
+                    height: 1.4,
                   ),
+                ),
 
-                  SizedBox(height: 16.h),
+                SizedBox(height: isTablet ? 16.0 : 20.h),
 
-                  Text(
-                    "Phone Number",
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: darkBackground,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  PhoneInputWidget(
-                    controller: _phoneCtrl,
-                    hintText: "8012345678",
-                    validator: (val) {
-                      if (val == null || val.trim().length < 10) {
-                        return "Enter a valid 10/11 digit phone number";
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  Text(
-                    "City of Operation",
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: darkBackground,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCity,
-                    dropdownColor: Colors.white,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: offWhiteBackground,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 14.h,
+                Container(
+                  padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                        borderSide: BorderSide.none,
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomTextFormField(
+                        controller: _fullNameCtrl,
+                        label: "Rider Full Name",
+                        hintText: "Enter your legal full name",
+                        validator: (val) {
+                          if (val == null || val.trim().length < 3) {
+                            return "Please enter your full name";
+                          }
+                          return null;
+                        },
                       ),
-                    ),
-                    items: _cities
-                        .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(
-                                c,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkBackground,
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedCity = val);
-                      }
-                    },
-                  ),
 
-                  SizedBox(height: 16.h),
+                      SizedBox(height: isTablet ? 14.0 : 16.h),
 
-                  Text(
-                    "Trike Model / Type",
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
-                      color: darkBackground,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  DropdownButtonFormField<String>(
-                    value: _selectedTrikeModel,
-                    dropdownColor: Colors.white,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: offWhiteBackground,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 14.h,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    items: _trikeModels
-                        .map((m) => DropdownMenuItem(
-                              value: m,
-                              child: Text(
-                                m,
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: darkBackground,
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedTrikeModel = val);
-                      }
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  CustomTextFormField(
-                    controller: _plateNumberCtrl,
-                    label: "Vehicle Plate Number",
-                    hintText: "e.g. KNC 482 XA",
-                    validator: (val) {
-                      if (val == null || val.trim().length < 5) {
-                        return "Please enter a valid plate number";
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 16.h),
-
-                  CustomTextFormField(
-                    controller: _licenseOrNinCtrl,
-                    label: "Driver's License / NIN Number",
-                    hintText: "Enter 11-digit NIN or License No.",
-                    keyboardType: TextInputType.text,
-                    validator: (val) {
-                      if (val == null || val.trim().length < 6) {
-                        return "Please enter NIN or Driver's License number";
-                      }
-                      return null;
-                    },
-                  ),
-
-                  SizedBox(height: 24.h),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52.h,
-                    child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : _handleSubmitRider,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.r),
+                      Text(
+                        "Phone Number",
+                        style: TextStyle(
+                          fontSize: isTablet ? 12.0 : 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: darkBackground,
                         ),
-                        elevation: 2,
                       ),
-                      child: _isSubmitting
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 20.r,
-                                  height: 20.r,
-                                  child: const CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                ),
-                                SizedBox(width: 10.w),
-                                Text(
-                                  "Submitting Application...",
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Submit Rider Application",
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: 18.sp,
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                      SizedBox(height: isTablet ? 6.0 : 6.h),
+                      PhoneInputWidget(
+                        controller: _phoneCtrl,
+                        hintText: "8012345678",
+                        validator: (val) {
+                          if (val == null || val.trim().length < 10) {
+                            return "Enter a valid 10/11 digit phone number";
+                          }
+                          return null;
+                        },
+                      ),
 
-            SizedBox(height: 30.h),
-          ],
+                      SizedBox(height: isTablet ? 14.0 : 16.h),
+
+                      Text(
+                        "City of Operation",
+                        style: TextStyle(
+                          fontSize: isTablet ? 12.0 : 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: darkBackground,
+                        ),
+                      ),
+                      SizedBox(height: isTablet ? 6.0 : 6.h),
+                      DropdownButtonFormField<String>(
+                        value: _selectedCity,
+                        dropdownColor: Colors.white,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: offWhiteBackground,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 14.0 : 16.w,
+                            vertical: isTablet ? 12.0 : 14.h,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        items: _cities
+                            .map((c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(
+                                    c,
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 14.0 : 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: darkBackground,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedCity = val);
+                          }
+                        },
+                      ),
+
+                      SizedBox(height: isTablet ? 14.0 : 16.h),
+
+                      Text(
+                        "Trike Model / Type",
+                        style: TextStyle(
+                          fontSize: isTablet ? 12.0 : 13.sp,
+                          fontWeight: FontWeight.w700,
+                          color: darkBackground,
+                        ),
+                      ),
+                      SizedBox(height: isTablet ? 6.0 : 6.h),
+                      DropdownButtonFormField<String>(
+                        value: _selectedTrikeModel,
+                        dropdownColor: Colors.white,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: offWhiteBackground,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 14.0 : 16.w,
+                            vertical: isTablet ? 12.0 : 14.h,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        items: _trikeModels
+                            .map((m) => DropdownMenuItem(
+                                  value: m,
+                                  child: Text(
+                                    m,
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 14.0 : 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: darkBackground,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedTrikeModel = val);
+                          }
+                        },
+                      ),
+
+                      SizedBox(height: isTablet ? 14.0 : 16.h),
+
+                      CustomTextFormField(
+                        controller: _plateNumberCtrl,
+                        label: "Vehicle Plate Number",
+                        hintText: "e.g. KNC 482 XA",
+                        validator: (val) {
+                          if (val == null || val.trim().length < 5) {
+                            return "Please enter a valid plate number";
+                          }
+                          return null;
+                        },
+                      ),
+
+                      SizedBox(height: isTablet ? 14.0 : 16.h),
+
+                      CustomTextFormField(
+                        controller: _licenseOrNinCtrl,
+                        label: "Driver's License / NIN Number",
+                        hintText: "Enter 11-digit NIN or License No.",
+                        keyboardType: TextInputType.text,
+                        validator: (val) {
+                          if (val == null || val.trim().length < 6) {
+                            return "Please enter NIN or Driver's License number";
+                          }
+                          return null;
+                        },
+                      ),
+
+                      SizedBox(height: isTablet ? 20.0 : 24.h),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: isTablet ? 48.0 : 52.h,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _handleSubmitRider,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: _isSubmitting
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: isTablet ? 18.0 : 20.r,
+                                      height: isTablet ? 18.0 : 20.r,
+                                      child: const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    ),
+                                    SizedBox(width: isTablet ? 8.0 : 10.w),
+                                    Text(
+                                      "Submitting Application...",
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 14.0 : 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Submit Rider Application",
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 14.0 : 15.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(width: isTablet ? 8.0 : 8.w),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: isTablet ? 18.0 : 18.sp,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: isTablet ? 20.0 : 30.h),
+              ],
+            ),
+          ),
         ),
       ),
     );

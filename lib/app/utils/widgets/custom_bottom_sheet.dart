@@ -149,6 +149,7 @@ class ConfirmationBottomSheet {
     final ValueNotifier<bool> useCashback = ValueNotifier<bool>(false);
     final Color primary = config.primaryColor ?? primaryColor;
     final Color bgColor = config.backgroundColor ?? offWhiteBackground;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     showModalBottomSheet(
       context: context,
@@ -165,12 +166,12 @@ class ConfirmationBottomSheet {
             ),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(r.sheetRadius)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 24.0 : r.sheetRadius)),
             ),
             padding: EdgeInsets.only(
-              left: r.horizontalPadding,
-              right: r.horizontalPadding,
-              top: r.verticalPadding,
+              left: isTablet ? 24.0 : r.horizontalPadding,
+              right: isTablet ? 24.0 : r.horizontalPadding,
+              top: isTablet ? 16.0 : r.verticalPadding,
               bottom: 0,
             ),
             child: SingleChildScrollView(
@@ -181,14 +182,14 @@ class ConfirmationBottomSheet {
                       // Drag Handle
                       if (config.showDragHandle)
                         Container(
-                          width: 40.w,
-                          height: 4.h,
+                          width: isTablet ? 40.0 : 40.w,
+                          height: isTablet ? 4.0 : 4.h,
                           decoration: BoxDecoration(
                             color: const Color(0xFFCBD5E1),
                             borderRadius: BorderRadius.circular(2.r),
                           ),
                         ),
-                      if (config.showDragHandle) SizedBox(height: 16.h),
+                      if (config.showDragHandle) SizedBox(height: isTablet ? 12.0 : 16.h),
 
                       // Title - Centered
                       Text(
@@ -197,33 +198,36 @@ class ConfirmationBottomSheet {
                             : config.title,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 18.sp,
+                          fontSize: isTablet ? 18.0 : 18.sp,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF0F172A),
                           letterSpacing: -0.5,
                         ),
                       ),
-                      SizedBox(height: 6.h),
+                      SizedBox(height: isTablet ? 4.0 : 6.h),
                       Text(
                         'Verify details before completing transaction',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 12.sp,
+                          fontSize: isTablet ? 12.0 : 12.sp,
                           color: const Color(0xFF64748B),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: isTablet ? 12.0 : 16.h),
 
                       // Premium Large Amount Display
                       ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                        constraints: BoxConstraints(maxWidth: isTablet ? 480.0 : r.maxContentWidth),
                         child: Container(
                           width: double.infinity,
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 16.0 : 16.w,
+                            vertical: isTablet ? 14.0 : 18.h,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(20.r),
+                            borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
                             border: Border.all(
                               color: const Color(0xFFF1F5F9),
                               width: 1.5,
@@ -241,20 +245,20 @@ class ConfirmationBottomSheet {
                               Text(
                                 'TOTAL TRANSACTION AMOUNT',
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: isTablet ? 10.0 : 10.sp,
                                   color: const Color(0xFF94A3B8),
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 1.2,
                                 ),
                               ),
-                              SizedBox(height: 8.h),
+                              SizedBox(height: isTablet ? 6.0 : 8.h),
                               FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
                                   '$currencySymbol${NumberFormat('#,##0.00').format(config.amount)}',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: 28.sp,
+                                    fontSize: isTablet ? 26.0 : 28.sp,
                                     fontWeight: FontWeight.w900,
                                     color: primary,
                                     letterSpacing: -0.8,
@@ -264,16 +268,16 @@ class ConfirmationBottomSheet {
                               if (config.showCashback &&
                                   config.cashbackAmount != null &&
                                   config.cashbackAmount!.isNotEmpty) ...[
-                                SizedBox(height: 8.h),
+                                SizedBox(height: isTablet ? 6.0 : 8.h),
                                 Container(
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w,
-                                    vertical: 4.h,
+                                    horizontal: isTablet ? 10.0 : 10.w,
+                                    vertical: isTablet ? 4.0 : 4.h,
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF10B981)
                                         .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10.r),
+                                    borderRadius: BorderRadius.circular(isTablet ? 8.0 : 10.r),
                                     border: Border.all(
                                       color: const Color(0xFF10B981)
                                           .withValues(alpha: 0.25),
@@ -285,15 +289,18 @@ class ConfirmationBottomSheet {
                                       Icon(
                                         Icons.card_giftcard_rounded,
                                         color: const Color(0xFF10B981),
-                                        size: 13.sp,
+                                        size: isTablet ? 13.0 : 13.sp,
                                       ),
-                                      SizedBox(width: 4.w),
-                                      Text(
-                                        'Earn ${config.cashbackAmount}',
-                                        style: TextStyle(
-                                          color: const Color(0xFF10B981),
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.bold,
+                                      SizedBox(width: isTablet ? 4.0 : 4.w),
+                                      Flexible(
+                                        child: Text(
+                                          'Earn ${config.cashbackAmount}',
+                                          style: TextStyle(
+                                            color: const Color(0xFF10B981),
+                                            fontSize: isTablet ? 11.0 : 11.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -304,7 +311,7 @@ class ConfirmationBottomSheet {
                           ),
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: isTablet ? 12.0 : 16.h),
 
                       // Visual Diagram (Sender -> Recipient)
                       Builder(builder: (ctx) {
@@ -324,13 +331,16 @@ class ConfirmationBottomSheet {
                         final logoPath = _detectProviderLogo(recipientName, config.details);
 
                         return ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                          constraints: BoxConstraints(maxWidth: isTablet ? 480.0 : r.maxContentWidth),
                           child: Container(
                             width: double.infinity,
-                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 16.0 : 20.w,
+                              vertical: isTablet ? 10.0 : 14.h,
+                            ),
                             decoration: BoxDecoration(
                               color: primary.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(20.r),
+                              borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -339,8 +349,8 @@ class ConfirmationBottomSheet {
                                 Column(
                                   children: [
                                     Container(
-                                      width: 48.r,
-                                      height: 48.r,
+                                      width: isTablet ? 40.0 : 48.r,
+                                      height: isTablet ? 40.0 : 48.r,
                                       decoration: BoxDecoration(
                                         color: primary,
                                         shape: BoxShape.circle,
@@ -356,11 +366,11 @@ class ConfirmationBottomSheet {
                                         child: _buildUserAvatar(),
                                       ),
                                     ),
-                                    SizedBox(height: 6.h),
+                                    SizedBox(height: isTablet ? 4.0 : 6.h),
                                     Text(
                                       'My Wallet',
                                       style: TextStyle(
-                                        fontSize: 12.sp,
+                                        fontSize: isTablet ? 11.0 : 12.sp,
                                         fontWeight: FontWeight.bold,
                                         color: const Color(0xFF0F172A),
                                       ),
@@ -376,9 +386,9 @@ class ConfirmationBottomSheet {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: List.generate(4, (index) {
                                           return Container(
-                                            margin: EdgeInsets.symmetric(horizontal: 2.w),
-                                            width: 5.w,
-                                            height: 5.w,
+                                            margin: EdgeInsets.symmetric(horizontal: isTablet ? 2.0 : 2.w),
+                                            width: isTablet ? 4.0 : 5.w,
+                                            height: isTablet ? 4.0 : 5.w,
                                             decoration: BoxDecoration(
                                               color: primary.withValues(alpha: (index + 1) * 0.25),
                                               shape: BoxShape.circle,
@@ -386,11 +396,11 @@ class ConfirmationBottomSheet {
                                           );
                                         }),
                                       ),
-                                      SizedBox(height: 4.h),
+                                      SizedBox(height: isTablet ? 3.0 : 4.h),
                                       Icon(
                                         Icons.arrow_forward_rounded,
                                         color: primary,
-                                        size: 16,
+                                        size: isTablet ? 14.0 : 16,
                                       ),
                                     ],
                                   ),
@@ -401,8 +411,8 @@ class ConfirmationBottomSheet {
                                   children: [
                                     if (logoPath != null)
                                       Container(
-                                        width: 48.r,
-                                        height: 48.r,
+                                        width: isTablet ? 40.0 : 48.r,
+                                        height: isTablet ? 40.0 : 48.r,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           border: Border.all(
@@ -419,8 +429,8 @@ class ConfirmationBottomSheet {
                                       )
                                     else
                                       Container(
-                                        width: 48.r,
-                                        height: 48.r,
+                                        width: isTablet ? 40.0 : 48.r,
+                                        height: isTablet ? 40.0 : 48.r,
                                         decoration: BoxDecoration(
                                           color: primaryGreenColor600.withValues(alpha: 0.1),
                                           shape: BoxShape.circle,
@@ -434,20 +444,20 @@ class ConfirmationBottomSheet {
                                             recipientName.isNotEmpty ? recipientName[0].toUpperCase() : 'U',
                                             style: TextStyle(
                                               color: primaryGreenColor600,
-                                              fontSize: 18.sp,
+                                              fontSize: isTablet ? 16.0 : 18.sp,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
                                       ),
-                                    SizedBox(height: 6.h),
+                                    SizedBox(height: isTablet ? 4.0 : 6.h),
                                     SizedBox(
-                                      width: 80.w,
+                                      width: isTablet ? 70.0 : 80.w,
                                       child: Text(
                                         recipientName.split(' ')[0],
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontSize: 12.sp,
+                                          fontSize: isTablet ? 11.0 : 12.sp,
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFF0F172A),
                                         ),
@@ -461,11 +471,11 @@ class ConfirmationBottomSheet {
                           ),
                         );
                       }),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: isTablet ? 12.0 : 16.h),
 
                       // Details Card
                       ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                        constraints: BoxConstraints(maxWidth: isTablet ? 480.0 : r.maxContentWidth),
                         child: _buildDetailsCard(
                           modalContext,
                           config: config,
@@ -475,12 +485,12 @@ class ConfirmationBottomSheet {
                           r: _ResponsiveHelper(modalContext),
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: isTablet ? 12.0 : 16.h),
 
                       // Wallet Balance Mini Card
                       if (config.showWalletBalance) ...[
                         ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                          constraints: BoxConstraints(maxWidth: isTablet ? 480.0 : r.maxContentWidth),
                           child: _buildWalletBalanceRow(
                             modalContext,
                             balance: config.walletBalance ?? NumberFormat('#,##0.00').format(_getWalletBalance()),
@@ -488,12 +498,12 @@ class ConfirmationBottomSheet {
                             primaryColor: primary,
                           ),
                         ),
-                        SizedBox(height: 24.h),
+                        SizedBox(height: isTablet ? 16.0 : 24.h),
                       ],
 
                       // Continue Button - Full width responsive
                       ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+                        constraints: BoxConstraints(maxWidth: isTablet ? 480.0 : r.maxContentWidth),
                         child: SizedBox(
                           width: double.infinity,
                           child: CustomButton(
@@ -667,6 +677,7 @@ class ConfirmationBottomSheet {
     String? logo,
     bool isHighlighted = false,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -675,13 +686,13 @@ class ConfirmationBottomSheet {
             label,
             style: TextStyle(
               color: const Color(0xFF64748B),
-              fontSize: 13.sp,
+              fontSize: isTablet ? 13.0 : 13.sp,
               fontWeight: FontWeight.w600,
             ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        SizedBox(width: 8.w),
+        SizedBox(width: isTablet ? 8.0 : 8.w),
         Flexible(
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -689,9 +700,9 @@ class ConfirmationBottomSheet {
             children: [
               if (logo != null)
                 Container(
-                  width: 18.w,
-                  height: 18.w,
-                  margin: EdgeInsets.only(right: 6.w),
+                  width: isTablet ? 18.0 : 18.w,
+                  height: isTablet ? 18.0 : 18.w,
+                  margin: EdgeInsets.only(right: isTablet ? 6.0 : 6.w),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
@@ -706,7 +717,7 @@ class ConfirmationBottomSheet {
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     color: isHighlighted ? primaryGreenColor600 : const Color(0xFF0F172A),
-                    fontSize: 13.sp,
+                    fontSize: isTablet ? 13.0 : 13.sp,
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -730,6 +741,7 @@ class ConfirmationBottomSheet {
     ValueChanged<bool>? onToggle,
     Color? primaryColor,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -737,7 +749,7 @@ class ConfirmationBottomSheet {
           title,
           style: TextStyle(
             color: isHighlighted ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-            fontSize: 13.sp,
+            fontSize: isTablet ? 13.0 : 13.sp,
             fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
           ),
         ),
@@ -748,7 +760,7 @@ class ConfirmationBottomSheet {
               color: isCashbackEarned 
                   ? primaryGreenColor600 
                   : (isHighlighted ? (primaryColor ?? const Color(0xFF0F172A)) : const Color(0xFF0F172A)),
-              fontSize: 14.sp,
+              fontSize: isTablet ? 14.0 : 14.sp,
               fontWeight: FontWeight.bold,
             ),
           )
@@ -761,19 +773,19 @@ class ConfirmationBottomSheet {
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 38.w,
-              height: 22.h,
+              width: isTablet ? 38.0 : 38.w,
+              height: isTablet ? 22.0 : 22.h,
               decoration: BoxDecoration(
                 color: isToggled ? (primaryColor ?? const Color(0xFF26B4DF)) : const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(11.h),
+                borderRadius: BorderRadius.circular(11),
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 200),
                 alignment: isToggled ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  width: 18.w,
-                  height: 18.w,
-                  margin: EdgeInsets.symmetric(horizontal: 2.w),
+                  width: isTablet ? 18.0 : 18.w,
+                  height: isTablet ? 18.0 : 18.w,
+                  margin: EdgeInsets.symmetric(horizontal: isTablet ? 2.0 : 2.w),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
@@ -792,21 +804,22 @@ class ConfirmationBottomSheet {
     required String currencySymbol,
     required Color primaryColor,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        vertical: 12.h,
-        horizontal: 16.w,
+        vertical: isTablet ? 10.0 : 12.h,
+        horizontal: isTablet ? 14.0 : 16.w,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8.r),
+            padding: EdgeInsets.all(isTablet ? 6.0 : 8.r),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.08),
               shape: BoxShape.circle,
@@ -814,10 +827,10 @@ class ConfirmationBottomSheet {
             child: Icon(
               Icons.account_balance_wallet_rounded,
               color: primaryColor,
-              size: 20,
+              size: isTablet ? 18.0 : 20,
             ),
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: isTablet ? 10.0 : 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -826,16 +839,16 @@ class ConfirmationBottomSheet {
                   'Wallet Balance',
                   style: TextStyle(
                     color: const Color(0xFF64748B),
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 11.0 : 11.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: isTablet ? 2.0 : 2.h),
                 Text(
                   '$currencySymbol$balance',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
+                    fontSize: isTablet ? 14.0 : 14.sp,
                     color: const Color(0xFF0F172A),
                   ),
                 ),
@@ -845,7 +858,7 @@ class ConfirmationBottomSheet {
           Icon(
             Icons.check_circle_rounded,
             color: primaryColor,
-            size: 20,
+            size: isTablet ? 18.0 : 20,
           ),
         ],
       ),

@@ -24,100 +24,112 @@ class AddMoney extends ConsumerStatefulWidget {
 
 class _AddMoneyState extends ConsumerState<AddMoney> {
   void _showFAQBottomSheet(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(28.r),
-              topRight: Radius.circular(28.r),
-            ),
-          ),
-          padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 30.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40.w,
-                  height: 4.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(10.r),
-                  ),
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 540 : double.infinity),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isTablet ? 24.0 : 28.r),
+                  topRight: Radius.circular(isTablet ? 24.0 : 28.r),
                 ),
               ),
-              SizedBox(height: 20.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: EdgeInsets.fromLTRB(
+                isTablet ? 24.0 : 24.w,
+                isTablet ? 16.0 : 20.h,
+                isTablet ? 24.0 : 24.w,
+                isTablet ? 24.0 : 30.h,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Frequently Asked Questions',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A),
+                  Center(
+                    child: Container(
+                      width: isTablet ? 40.0 : 40.w,
+                      height: isTablet ? 4.0 : 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: EdgeInsets.all(4.r),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
+                  SizedBox(height: isTablet ? 16.0 : 20.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Frequently Asked Questions',
+                        style: TextStyle(
+                          fontSize: isTablet ? 18.0 : 18.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F172A),
+                        ),
                       ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 18.sp,
-                        color: Colors.grey,
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: EdgeInsets.all(isTablet ? 4.0 : 4.r),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: isTablet ? 18.0 : 18.sp,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isTablet ? 16.0 : 24.h),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          _buildFAQItem(
+                            title: 'How do I fund my wallet via Bank Transfer?',
+                            content:
+                                'Copy your Bank Transfer Funding account details (the green card) and make a transfer from any banking app. The funds will reflect in your BIA wallet instantly.',
+                          ),
+                          _buildFAQItem(
+                            title: 'Why is Card/Account top-up disabled?',
+                            content:
+                                'We are currently upgrading our payment gateway interfaces to support more local cards. Card/Account deposits will be enabled shortly.',
+                          ),
+                          _buildFAQItem(
+                            title: 'Are there any fees for funding my account?',
+                            content:
+                                'BIA does not charge any deposit fees for bank transfers or standard wallet deposits. However, your sending bank may apply standard network charges.',
+                          ),
+                          _buildFAQItem(
+                            title: 'What is a Virtual Funding Account (VC)?',
+                            content:
+                                'A Virtual Account is a dedicated bank account number mapped directly to your BIA wallet. Any transfer sent to this account is instantly credited to your balance.',
+                          ),
+                          _buildFAQItem(
+                            title:
+                                'What should I do if my transfer hasn\'t reflected?',
+                            content:
+                                'Bank transfers are usually instant. If you experience delays, please wait 10-15 minutes. If it still hasn\'t reflected, please contact our support with the transaction receipt.',
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 24.h),
-              Flexible(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _buildFAQItem(
-                        title: 'How do I fund my wallet via Bank Transfer?',
-                        content:
-                            'Copy your Bank Transfer Funding account details (the green card) and make a transfer from any banking app. The funds will reflect in your BIA wallet instantly.',
-                      ),
-                      _buildFAQItem(
-                        title: 'Why is Card/Account top-up disabled?',
-                        content:
-                            'We are currently upgrading our payment gateway interfaces to support more local cards. Card/Account deposits will be enabled shortly.',
-                      ),
-                      _buildFAQItem(
-                        title: 'Are there any fees for funding my account?',
-                        content:
-                            'BIA does not charge any deposit fees for bank transfers or standard wallet deposits. However, your sending bank may apply standard network charges.',
-                      ),
-                      _buildFAQItem(
-                        title: 'What is a Virtual Funding Account (VC)?',
-                        content:
-                            'A Virtual Account is a dedicated bank account number mapped directly to your BIA wallet. Any transfer sent to this account is instantly credited to your balance.',
-                      ),
-                      _buildFAQItem(
-                        title:
-                            'What should I do if my transfer hasn\'t reflected?',
-                        content:
-                            'Bank transfers are usually instant. If you experience delays, please wait 10-15 minutes. If it still hasn\'t reflected, please contact our support with the transaction receipt.',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -125,15 +137,16 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
   }
 
   Widget _buildFAQItem({required String title, required String content}) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
-        childrenPadding: EdgeInsets.only(bottom: 12.h),
+        childrenPadding: EdgeInsets.only(bottom: isTablet ? 12.0 : 12.h),
         title: Text(
           title,
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: isTablet ? 14.0 : 14.sp,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF1E293B),
           ),
@@ -144,7 +157,7 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
           Text(
             content,
             style: TextStyle(
-              fontSize: 13.sp,
+              fontSize: isTablet ? 13.0 : 13.sp,
               color: Colors.grey.shade600,
               height: 1.5,
             ),
@@ -156,30 +169,35 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Scaffold(
       backgroundColor: offWhiteBackground,
       appBar: AppBar(
+        toolbarHeight: isTablet ? 60.0 : null,
         title: Text(
           'Fund Account',
           style: Theme.of(
             context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: isTablet ? 16.0 : 16.sp,
+          ),
         ),
         backgroundColor: offWhiteBackground,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: Icon(Icons.arrow_back_ios_new, size: isTablet ? 18.0 : 18.sp),
           color: lightText,
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16.w),
+            padding: EdgeInsets.only(right: isTablet ? 16.0 : 16.w),
             child: TextButton(
               onPressed: () => _showFAQBottomSheet(context),
               style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 8.0 : 0),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -187,8 +205,8 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
                 'FAQ',
                 style: TextStyle(
                   color: primaryColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w700,
+                  fontSize: isTablet ? 14.0 : 14.sp,
                 ),
               ),
             ),
