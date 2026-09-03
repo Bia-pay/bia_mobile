@@ -211,64 +211,59 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Split Layout for Tablet / Large screen form factor
     Widget buildBody() {
       if (isTablet) {
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildCompleteProfileBanner(),
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildCompleteProfileBanner(),
 
-                  // 1. Full-Width Hero Balance Card
-                  const BalanceCard()
-                      .animate()
-                      .fadeIn(duration: 350.ms)
-                      .slideY(begin: 0.06, end: 0, duration: 350.ms),
-                  const SizedBox(height: 10),
+              // 1. Full-Width Hero Balance Card
+              const BalanceCard()
+                  .animate()
+                  .fadeIn(duration: 350.ms)
+                  .slideY(begin: 0.06, end: 0, duration: 350.ms),
+              const SizedBox(height: 8),
 
-                  // 2. Virtual Account Copy Bar
-                  const VirtualAccountCard()
-                      .animate()
-                      .fadeIn(duration: 370.ms, delay: 30.ms)
-                      .slideY(begin: 0.06, end: 0, duration: 370.ms),
-                  const SizedBox(height: 16),
+              // 2. Virtual Account Copy Bar
+              const VirtualAccountCard()
+                  .animate()
+                  .fadeIn(duration: 370.ms, delay: 30.ms)
+                  .slideY(begin: 0.06, end: 0, duration: 370.ms),
+              const SizedBox(height: 12),
 
-                  // 3. Primary Actions Ribbon (Send TP, Bia Trike, Withdrawal, Split Bill)
-                  const ActionRibbon()
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: 50.ms)
-                      .slideY(begin: 0.06, end: 0, duration: 400.ms),
-                  const SizedBox(height: 16),
+              // 3. Primary Actions Ribbon (Send TP, Bia Trike, Withdrawal, Split Bill)
+              const ActionRibbon()
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 50.ms)
+                  .slideY(begin: 0.06, end: 0, duration: 400.ms),
+              const SizedBox(height: 12),
 
-                  // 4. Quick Utilities & Services Grid (4 Column Grid)
-                  const QuickActionsGrid()
-                      .animate()
-                      .fadeIn(duration: 500.ms, delay: 150.ms)
-                      .slideY(begin: 0.06, end: 0, duration: 500.ms),
-                  const SizedBox(height: 16),
+              // 4. Bia AI Voice Assistant Card
+              const BiaAiCard()
+                  .animate()
+                  .fadeIn(duration: 450.ms, delay: 100.ms)
+                  .slideY(begin: 0.06, end: 0, duration: 450.ms),
+              const SizedBox(height: 12),
 
-                  // 5. Bia AI Voice Assistant Card
-                  const BiaAiCard()
-                      .animate()
-                      .fadeIn(duration: 450.ms, delay: 100.ms)
-                      .slideY(begin: 0.06, end: 0, duration: 450.ms),
-                  const SizedBox(height: 16),
+              // 5. Quick Utilities & Services Grid (4 Column Grid)
+              const QuickActionsGrid()
+                  .animate()
+                  .fadeIn(duration: 500.ms, delay: 150.ms)
+                  .slideY(begin: 0.06, end: 0, duration: 500.ms),
+              const SizedBox(height: 12),
 
-                  // 6. Promotions & Savings Carousel Banner
-                  const PromoBannerCarousel()
-                      .animate()
-                      .fadeIn(duration: 550.ms, delay: 200.ms)
-                      .slideY(begin: 0.06, end: 0, duration: 550.ms),
+              // 6. Promotions & Savings Carousel Banner
+              const PromoBannerCarousel()
+                  .animate()
+                  .fadeIn(duration: 550.ms, delay: 200.ms)
+                  .slideY(begin: 0.06, end: 0, duration: 550.ms),
 
-                  const SizedBox(height: 100),
-                ],
-              ),
-            ),
+              const SizedBox(height: 80),
+            ],
           ),
         );
       }
@@ -386,7 +381,7 @@ class ActionRibbon extends StatelessWidget {
         : 14.h;
     return Container(
       padding: isTablet
-          ? const EdgeInsets.symmetric(vertical: 12, horizontal: 16)
+          ? const EdgeInsets.symmetric(vertical: 24, horizontal: 16)
           : EdgeInsets.symmetric(vertical: vPad, horizontal: 8.w),
       decoration: BoxDecoration(
         color: offWhite,
@@ -480,7 +475,7 @@ class BiaAiCard extends ConsumerWidget {
     final bool isSmall = screenHeight < 780;
     final bool isLarge = screenHeight > 900;
     final double cardHeight = isTablet
-        ? 74.0
+        ? 110.0
         : isXSmall
         ? 56.h
         : isSmall
@@ -528,8 +523,8 @@ class BiaAiCard extends ConsumerWidget {
                 right: -15.w,
                 bottom: -15.h,
                 child: Container(
-                  width: 80.r,
-                  height: 80.r,
+                  width: isTablet ? 100 : 80.r,
+                  height: isTablet ? 100 : 80.r,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
@@ -543,7 +538,7 @@ class BiaAiCard extends ConsumerWidget {
               ),
               Padding(
                 padding: isTablet
-                    ? const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
+                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 14)
                     : EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -557,16 +552,16 @@ class BiaAiCard extends ConsumerWidget {
                             'Bia AI Assistant',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w800,
-                              fontSize: isTablet ? 14 : 13.sp,
+                              fontSize: isTablet ? 16.0 : 13.sp,
                               color: lightText,
                             ),
                           ),
-                          SizedBox(height: isTablet ? 2 : 2.h),
+                          SizedBox(height: isTablet ? 4 : 2.h),
                           Text(
                             'Voice & text transactions in local dialect.',
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w400,
-                              fontSize: isTablet ? 11 : 9.sp,
+                              fontSize: isTablet ? 12.5 : 9.sp,
                               color: lightSecondaryText,
                             ),
                           ),
@@ -579,8 +574,8 @@ class BiaAiCard extends ConsumerWidget {
                           alignment: Alignment.center,
                           children: [
                             Container(
-                                  width: 44.r,
-                                  height: 44.r,
+                                  width: isTablet ? 54.0 : 44.r,
+                                  height: isTablet ? 54.0 : 44.r,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: primaryColor.withOpacity(0.08),
@@ -600,8 +595,8 @@ class BiaAiCard extends ConsumerWidget {
                                   duration: 1500.ms,
                                 ),
                             Container(
-                              width: 42.r,
-                              height: 42.r,
+                              width: isTablet ? 50.0 : 42.r,
+                              height: isTablet ? 50.0 : 42.r,
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: primaryColor,
@@ -609,7 +604,7 @@ class BiaAiCard extends ConsumerWidget {
                               child: Center(
                                 child: SvgPicture.asset(
                                   mic,
-                                  height: 25.h,
+                                  height: isTablet ? 28.0 : 25.h,
                                   colorFilter: const ColorFilter.mode(
                                     Colors.white,
                                     BlendMode.srcIn,
@@ -619,10 +614,10 @@ class BiaAiCard extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        SizedBox(width: 8.w),
+                        SizedBox(width: isTablet ? 12 : 8.w),
                         Icon(
                           Icons.arrow_forward_ios_rounded,
-                          size: 13.sp,
+                          size: isTablet ? 16 : 13.sp,
                           color: lightText.withOpacity(0.6),
                         ),
                       ],
@@ -829,28 +824,39 @@ class _BannerCard extends StatelessWidget {
     final double screenHeight = MediaQuery.of(context).size.height;
     final bool isXSmall = screenHeight < 680;
     final bool isSmall = screenHeight < 780;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
-    final double verticalPadding = isXSmall
+    final double verticalPadding = isTablet
+        ? 6.0
+        : isXSmall
         ? 2.h
         : isSmall
         ? 3.h
         : 4.h;
-    final double titleSize = isXSmall
+    final double titleSize = isTablet
+        ? 12.5
+        : isXSmall
         ? 10.sp
         : isSmall
         ? 11.sp
         : 11.5.sp;
-    final double subtitleSize = isXSmall
+    final double subtitleSize = isTablet
+        ? 9.5
+        : isXSmall
         ? 7.sp
         : isSmall
         ? 8.sp
         : 8.5.sp;
-    final double iconContainerSize = isXSmall
+    final double iconContainerSize = isTablet
+        ? 28.0
+        : isXSmall
         ? 20.r
         : isSmall
         ? 24.r
         : 28.r;
-    final double iconSize = isXSmall
+    final double iconSize = isTablet
+        ? 14.0
+        : isXSmall
         ? 10.sp
         : isSmall
         ? 11.sp
@@ -1007,7 +1013,7 @@ class BalanceCard extends ConsumerWidget {
     final bool isLarge = screenHeight > 900;
     final isTablet = MediaQuery.of(context).size.width > 600;
     final double cardHeight = isTablet
-        ? 110.0
+        ? 150.0
         : isXSmall
         ? 72.h
         : isSmall
@@ -1229,8 +1235,8 @@ class ActionButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            height: isTablet ? 46 : 46.r,
-            width: isTablet ? 46 : 46.r,
+            height: isTablet ? 60 : 46.r,
+            width: isTablet ? 60 : 46.r,
             decoration: BoxDecoration(
               color: secondaryColor,
               borderRadius: BorderRadius.circular(14.r),
@@ -1369,7 +1375,7 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
               'Quick Utilities',
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w800,
-                fontSize: 13.sp,
+                fontSize: isTablet ? 13.0 : 13.sp,
                 color: lightText,
               ),
             ),
@@ -1389,7 +1395,7 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
                 ? actions.length
                 : (isTablet ? actions.length : 4),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isTablet ? 7 : 4,
+              crossAxisCount: 4,
               mainAxisExtent: isTablet
                   ? 88.0
                   : (isXSmall
@@ -1586,7 +1592,7 @@ class QuickActionButton extends StatelessWidget {
                     ? lightSecondaryText.withOpacity(0.5)
                     : darkBackground,
                 fontWeight: FontWeight.w700,
-                fontSize: isTablet ? 12.0 : 10.sp,
+                fontSize: isTablet ? 10.5 : 10.sp,
               ),
             ),
           ],
@@ -1672,7 +1678,7 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
               Icon(
                 Icons.account_balance_rounded,
                 color: primaryColor,
-                size: isXSmall ? 13.sp : 14.sp,
+                size: isTablet ? 16.0 : (isXSmall ? 13.sp : 14.sp),
               ),
               SizedBox(width: 8.w),
               // Details
@@ -1742,7 +1748,7 @@ class _VirtualAccountCardState extends ConsumerState<VirtualAccountCard> {
                   child: Icon(
                     _copied ? Icons.check_circle_rounded : Icons.copy_rounded,
                     key: ValueKey<bool>(_copied),
-                    size: isXSmall ? 12.sp : 13.sp,
+                    size: isTablet ? 15.0 : (isXSmall ? 12.sp : 13.sp),
                     color: _copied ? successColor : primaryColor,
                   ),
                 ),

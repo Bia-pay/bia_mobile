@@ -46,6 +46,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
     final mediaQuery = MediaQuery.of(context);
     final isSmallScreen = mediaQuery.size.height < 600;
     final isVerySmallScreen = mediaQuery.size.width < 320;
+    final isTablet = mediaQuery.size.width > 600;
 
     final listToShow =
         (selectedTab == 'Favorites' && _hasFavorites) ? widget.favorites : widget.recents;
@@ -59,7 +60,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
           /// ── Header row ─────────────────────────────────────────────────
           Padding(
             padding: EdgeInsets.symmetric(
-              vertical: isSmallScreen ? 6.h : 8.h,
+              vertical: isTablet ? 4.0 : (isSmallScreen ? 6.h : 8.h),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -70,7 +71,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
                   children: [
                     _buildTab(context, 'Recent', isVerySmallScreen),
                     if (_hasFavorites) ...[
-                      SizedBox(width: isVerySmallScreen ? 6.w : 10.w),
+                      SizedBox(width: isTablet ? 8.0 : (isVerySmallScreen ? 6.w : 10.w)),
                       _buildTab(context, 'Favorites', isVerySmallScreen),
                     ],
                   ],
@@ -83,11 +84,11 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
                       onTap: widget.onSearchTap,
                       borderRadius: BorderRadius.circular(20.r),
                       child: Padding(
-                        padding: EdgeInsets.all(6.w),
+                        padding: EdgeInsets.all(isTablet ? 6.0 : 6.w),
                         child: Icon(
                           Icons.search,
                           color: primaryColor,
-                          size: isVerySmallScreen ? 18.sp : 20.sp,
+                          size: isTablet ? 18.0 : (isVerySmallScreen ? 18.sp : 20.sp),
                         ),
                       ),
                     ),
@@ -96,34 +97,34 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
             ),
           ),
 
-          SizedBox(height: isSmallScreen ? 4.h : 6.h),
+          SizedBox(height: isTablet ? 4.0 : (isSmallScreen ? 4.h : 6.h)),
 
           /// ── List ────────────────────────────────────────────────────────
           ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: 220.h,
-              minHeight: 50.h,
+              maxHeight: isTablet ? 260.0 : 220.h,
+              minHeight: isTablet ? 50.0 : 50.h,
             ),
             child: listToShow.isEmpty
                 ? Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.h),
+                      padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.history_rounded,
-                            size: 32.sp,
+                            size: isTablet ? 28.0 : 32.sp,
                             color: lightSecondaryText.withValues(alpha: 0.5),
                           ),
-                          SizedBox(height: 8.h),
+                          SizedBox(height: isTablet ? 6.0 : 8.h),
                           Text(
                             selectedTab == 'Favorites'
                                 ? 'No saved beneficiaries'
                                 : 'No recent transactions',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: lightSecondaryText,
-                              fontSize: isSmallScreen ? 12.sp : 13.sp,
+                              fontSize: isTablet ? 12.5 : (isSmallScreen ? 12.sp : 13.sp),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -136,7 +137,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
                     shrinkWrap: true,
                     itemCount: listToShow.length,
                     separatorBuilder: (_, __) =>
-                        SizedBox(height: isSmallScreen ? 6.h : 8.h),
+                        SizedBox(height: isTablet ? 6.0 : (isSmallScreen ? 6.h : 8.h)),
                     itemBuilder: (context, index) {
                       final item = listToShow[index];
                       final name = item['name'] ?? '';
@@ -169,14 +170,15 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
       BuildContext context, String label, bool isVerySmallScreen) {
     final isSelected = selectedTab == label;
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return GestureDetector(
       onTap: () => setState(() => selectedTab = label),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: EdgeInsets.symmetric(
-          horizontal: isVerySmallScreen ? 12.w : 16.w,
-          vertical: isVerySmallScreen ? 5.h : 7.h,
+          horizontal: isTablet ? 14.0 : (isVerySmallScreen ? 12.w : 16.w),
+          vertical: isTablet ? 6.0 : (isVerySmallScreen ? 5.h : 7.h),
         ),
         decoration: BoxDecoration(
           color: isSelected ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
@@ -186,7 +188,7 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            fontSize: isVerySmallScreen ? 12.sp : 14.sp,
+            fontSize: isTablet ? 13.0 : (isVerySmallScreen ? 12.sp : 14.sp),
             color: isSelected ? primaryColor : lightSecondaryText,
           ),
         ),
@@ -223,8 +225,10 @@ class _BeneficiaryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final avatarSize =
-        isVerySmallScreen ? 34.w : (isSmallScreen ? 38.w : 42.w);
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final avatarSize = isTablet
+        ? 36.0
+        : (isVerySmallScreen ? 34.w : (isSmallScreen ? 38.w : 42.w));
     final avatarRadius = avatarSize / 2;
 
     return Material(
@@ -234,8 +238,8 @@ class _BeneficiaryItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         child: Container(
           padding: EdgeInsets.symmetric(
-            vertical: isSmallScreen ? 8.h : 10.h,
-            horizontal: isVerySmallScreen ? 8.w : 12.w,
+            vertical: isTablet ? 8.0 : (isSmallScreen ? 8.h : 10.h),
+            horizontal: isTablet ? 12.0 : (isVerySmallScreen ? 8.w : 12.w),
           ),
           decoration: BoxDecoration(
             color: lightSurface,
@@ -258,12 +262,12 @@ class _BeneficiaryItem extends StatelessWidget {
                       style: TextStyle(
                         color: primaryColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: isVerySmallScreen ? 13.sp : 15.sp,
+                        fontSize: isTablet ? 13.0 : (isVerySmallScreen ? 13.sp : 15.sp),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: isVerySmallScreen ? 8.w : 10.w),
+                SizedBox(width: isTablet ? 10.0 : (isVerySmallScreen ? 8.w : 10.w)),
               ],
 
               /// Name + account
@@ -279,26 +283,28 @@ class _BeneficiaryItem extends StatelessWidget {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: lightText,
-                        fontSize: isVerySmallScreen
-                            ? 12.sp
-                            : (isSmallScreen ? 13.sp : 14.sp),
+                        fontSize: isTablet
+                            ? 13.0
+                            : (isVerySmallScreen
+                                ? 12.sp
+                                : (isSmallScreen ? 13.sp : 14.sp)),
                       ),
                     ),
-                    SizedBox(height: 2.h),
+                    SizedBox(height: 2),
                     Text(
                       account,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: lightSecondaryText,
-                        fontSize: isVerySmallScreen ? 10.sp : 12.sp,
+                        fontSize: isTablet ? 11.5 : (isVerySmallScreen ? 10.sp : 12.sp),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              SizedBox(width: 4.w),
+              SizedBox(width: 4),
 
               /// Logo / icon on the right
               if (showLogo)

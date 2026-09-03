@@ -249,90 +249,140 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final height = constraints.maxHeight;
+                  final isTablet = MediaQuery.of(context).size.width > 600;
                   final isSmall = height < 780;
                   final isTiny  = height < 640;
                   
-                  final double logoH = isTiny ? 20.h : (isSmall ? 25.h : 35.h);
-                  final double avatarR = isTiny ? 20.r : (isSmall ? 26.r : 35.r);
-                  final double keypadH = isTiny ? 260.h : (isSmall ? 300.h : 350.h);
-                  final double cardPaddingV = isTiny ? 8.h : (isSmall ? 12.h : 20.h);
-                  final double innerGap = isTiny ? 4.h : (isSmall ? 8.h : 16.h);
+                  final double logoH = isTablet ? 30.0 : (isTiny ? 20.h : (isSmall ? 25.h : 35.h));
+                  final double avatarR = isTablet ? 36.0 : (isTiny ? 20.r : (isSmall ? 26.r : 35.r));
+                  final double keypadH = isTablet ? 260.0 : (isTiny ? 260.h : (isSmall ? 300.h : 350.h));
+                  final double cardPaddingV = isTablet ? 20.0 : (isTiny ? 8.h : (isSmall ? 12.h : 20.h));
+                  final double innerGap = isTablet ? 12.0 : (isTiny ? 4.h : (isSmall ? 8.h : 16.h));
   
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Top Logo section
                       Padding(
-                        padding: EdgeInsets.only(top: isTiny ? 8.h : 20.h),
-                        child: Image.asset(appLogoFull, height: logoH,),
+                        padding: EdgeInsets.only(top: isTablet ? 16 : (isTiny ? 8.h : 20.h)),
+                        child: Image.asset(appLogoFull, height: logoH),
                       ),
                       
-                      // Middle Card section - using Flexible to prevent overflow
+                      // Middle Card section - centered box on tablet
                       Flexible(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: cardPaddingV),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(28.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accentColor.withOpacity(0.06),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                              border: Border.all(color: accentColor.withOpacity(0.08), width: 1),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: isTablet ? 420 : double.infinity,
                             ),
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  _buildAvatar(avatarR, effectivePictureUrl, effectiveFullname),
-                                  SizedBox(height: innerGap),
-                                  Text(_getGreeting(), style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
-                                  Text(effectiveFullname, textAlign: TextAlign.center, style: TextStyle(color: accentColor, fontSize: isTiny ? 16.sp : 22.sp, fontWeight: FontWeight.w900)),
-                                  SizedBox(height: innerGap / 2),
-                                  
-                                  if (_showPasswordField || !_biometricEnabled)
-                                    PinInputWidget(
-                                      title: "",
-                                      subtitle: _showPasswordField ? "Enter 6-digit Password" : "Protecting your account",
-                                      fieldType: InputFieldType.pin,
-                                      inputLength: 6,
-                                      showKeypad: _showPasswordField || !_biometricEnabled,
-                                      textColor: accentColor,
-                                      dotColor: accentColor,
-                                      keyColor: grey100,
-                                      keypadHeight: keypadH,
-                                      onPinComplete: (val) => _performLogin(phone!, val),
-                                      onBiometricAction: _biometricEnabled ? _authenticate : null,
-                                      biometricIcon: _biometricIcon,
-                                      onForgotPin: () => context.go(RouteList.forgotPassword),
+                            child: Padding(
+                              padding: isTablet
+                                  ? const EdgeInsets.symmetric(horizontal: 20, vertical: 12)
+                                  : EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+                              child: Container(
+                                width: double.infinity,
+                                padding: isTablet
+                                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
+                                    : EdgeInsets.symmetric(horizontal: 20.w, vertical: cardPaddingV),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: primaryColor.withOpacity(0.06),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 8),
                                     ),
-                                  
-                                  if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
-                                    SizedBox(height: innerGap * 1.5),
-                                    _buildBiometricPrompt(),
                                   ],
-                                ],
+                                  border: Border.all(color: lightBorderColor, width: 1),
+                                ),
+                                child: SingleChildScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _buildAvatar(avatarR, effectivePictureUrl, effectiveFullname),
+                                      SizedBox(height: innerGap),
+                                      Text(
+                                        _getGreeting(),
+                                        style: TextStyle(
+                                          color: lightSecondaryText,
+                                          fontSize: isTablet ? 12.0 : 10.sp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        effectiveFullname,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: lightText,
+                                          fontSize: isTablet ? 22.0 : (isTiny ? 16.sp : 22.sp),
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      SizedBox(height: innerGap / 2),
+                                      
+                                      if (_showPasswordField || !_biometricEnabled)
+                                        PinInputWidget(
+                                          title: "",
+                                          subtitle: _showPasswordField ? "Enter 6-digit Passcode" : "Protecting your account",
+                                          fieldType: InputFieldType.pin,
+                                          inputLength: 6,
+                                          showKeypad: _showPasswordField || !_biometricEnabled,
+                                          textColor: lightText,
+                                          dotColor: primaryColor,
+                                          keyColor: offWhite,
+                                          keypadHeight: keypadH,
+                                          onPinComplete: (val) => _performLogin(phone!, val),
+                                          onBiometricAction: _biometricEnabled ? _authenticate : null,
+                                          biometricIcon: _biometricIcon,
+                                          onForgotPin: () => context.go(RouteList.forgotPassword),
+                                        ),
+                                      
+                                      if (_hasBiometric && _biometricEnabled && !_showPasswordField) ...[
+                                        SizedBox(height: innerGap * 1.5),
+                                        _buildBiometricPrompt(),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                       
-                      // Bottom section
+                      // Bottom section - Sleek outlined pill button
                       Padding(
-                        padding: EdgeInsets.only(bottom: 8.h),
-                        child: TextButton(
+                        padding: EdgeInsets.only(bottom: isTablet ? 16 : 8.h),
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: primaryColor.withOpacity(0.25), width: 1.2),
+                            shape: const StadiumBorder(),
+                            padding: isTablet
+                                ? const EdgeInsets.symmetric(horizontal: 20, vertical: 10)
+                                : EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                            backgroundColor: Colors.white,
+                            elevation: 2,
+                            shadowColor: Colors.black.withOpacity(0.04),
+                          ),
                           onPressed: () {
                             ref.read(authControllerProvider.notifier).logout(context: context, isManual: true);
                           }, 
-                          child: Text("Switch Account", style: TextStyle(color: accentColor.withOpacity(0.6), fontSize: 12.sp, fontWeight: FontWeight.w700))
+                          icon: Icon(
+                            Icons.swap_horiz_rounded,
+                            size: isTablet ? 18 : 16.sp,
+                            color: primaryColor,
+                          ),
+                          label: Text(
+                            "Switch Account",
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontSize: isTablet ? 13.0 : 12.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -346,23 +396,70 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     );
   }
 
-  Widget _buildAvatar(double radius, String? imgUrl, String seed) {
+  Widget _buildAvatar(double radius, String? imgUrl, String name) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final double sz = isTablet ? 72.0 : radius * 2;
+    
+    // Generate initials (e.g. "SG" for "Salma Gambo")
+    String initials = "U";
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isNotEmpty && parts.first.isNotEmpty) {
+      initials = parts.first[0].toUpperCase();
+      if (parts.length > 1 && parts.last.isNotEmpty) {
+        initials += parts.last[0].toUpperCase();
+      }
+    }
+
+    bool isValidPhotoUrl = imgUrl != null &&
+        imgUrl.isNotEmpty &&
+        imgUrl.startsWith('http') &&
+        (imgUrl.endsWith('.png') ||
+         imgUrl.endsWith('.jpg') ||
+         imgUrl.endsWith('.jpeg') ||
+         imgUrl.endsWith('.webp') ||
+         imgUrl.contains('avatar'));
+
     return Container(
-      width: radius * 2,
-      height: radius * 2,
+      width: sz,
+      height: sz,
       decoration: BoxDecoration(
         shape: BoxShape.circle, 
-        color: accentColor.withOpacity(0.05),
-        border: Border.all(color: accentColor.withOpacity(0.1), width: 2),
+        gradient: brandGradient,
+        border: Border.all(color: Colors.white, width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ClipOval(
-        child: (imgUrl != null && imgUrl.isNotEmpty) 
+        child: isValidPhotoUrl
             ? Image.network(
                 imgUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Image.network(getDiceBearAvatar(seed), fit: BoxFit.cover),
+                errorBuilder: (_, __, ___) => Center(
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isTablet ? 22.0 : 18.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               )
-            : Image.network(getDiceBearAvatar(seed), fit: BoxFit.cover),
+            : Center(
+                child: Text(
+                  initials,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isTablet ? 22.0 : 18.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
       ),
     );
   }

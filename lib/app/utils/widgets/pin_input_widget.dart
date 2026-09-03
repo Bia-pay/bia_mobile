@@ -175,6 +175,7 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
     final isPinMode = widget.fieldType == InputFieldType.pin;
     final screenH = MediaQuery.of(context).size.height;
     final isSmallScreen = screenH < 800;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -184,15 +185,15 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
           SizedBox(height: 8.h),
         ],
         Text(_currentSubtitle, style: theme.textTheme.bodyMedium?.copyWith(color: (widget.textColor ?? grey).withOpacity(0.7))),
-        SizedBox(height: isSmallScreen ? 16.h : 32.h),
+        SizedBox(height: isTablet ? 16 : (isSmallScreen ? 16.h : 32.h)),
 
         isPinMode ? _buildPinDots() : _buildTextField(),
 
-        SizedBox(height: isSmallScreen ? 16.h : 32.h),
+        SizedBox(height: isTablet ? 16 : (isSmallScreen ? 16.h : 32.h)),
 
         if (widget.showKeypad)
           SizedBox(
-            height: widget.keypadHeight ?? 350.h,
+            height: widget.keypadHeight ?? (isTablet ? 260.0 : 350.h),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return Stack(
@@ -212,18 +213,18 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
                                     child: Icon(
                                       widget.biometricIcon ?? Icons.fingerprint,
                                       color: Colors.white,
-                                      size: 28.sp,
+                                      size: isTablet ? 22.0 : 28.sp,
                                     ),
                                     backgroundColor: primaryColor,
                                     onTap: widget.onBiometricAction!,
                                   )
                                 : ActionKey(
-                                    child: Icon(Icons.check, color: Colors.white, size: 24.sp),
+                                    child: Icon(Icons.check, color: Colors.white, size: isTablet ? 20.0 : 24.sp),
                                     backgroundColor: primaryColor,
                                     onTap: _handleInputCompletion,
                                   ),
                             rightAction: ActionKey(
-                              child: Icon(Icons.backspace, color:  primaryColor, size: 24.sp),
+                              child: Icon(Icons.backspace, color: primaryColor, size: isTablet ? 20.0 : 24.sp),
                               backgroundColor: (widget.textColor ?? primaryColor).withOpacity(0.1),
                               onTap: _removeDigit,
                             ),
@@ -247,7 +248,7 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
 
         if (widget.onForgotPin != null && !(_lockoutStatus?.isLocked ?? false))
           Padding(
-            padding: EdgeInsets.only(top: 6.h),
+            padding: EdgeInsets.only(top: isTablet ? 8 : 6.h),
             child: Align(
               alignment: Alignment.centerRight,
               child: TextButton(
@@ -257,6 +258,7 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: widget.textColor ?? primaryColor,
                     fontWeight: FontWeight.w600,
+                    fontSize: isTablet ? 12.0 : 12.sp,
                   ),
                 ),
               ),
@@ -267,19 +269,27 @@ class _PinInputWidgetState extends ConsumerState<PinInputWidget> {
   }
 
   Widget _buildPinDots() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(widget.inputLength, (index) {
         final filled = index < _input.length;
+        final double dotSize = isTablet ? 14.0 : 16.w;
+        final double marginH = isTablet ? 8.0 : 8.w;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          margin: EdgeInsets.symmetric(horizontal: 8.w),
-          width: 16.w,
-          height: 16.w,
+          margin: EdgeInsets.symmetric(horizontal: marginH),
+          width: dotSize,
+          height: dotSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: filled ? ( primaryColor) : Colors.transparent,
-            border: Border.all(color: filled ? (widget.dotColor ?? primaryColor) : (widget.dotColor ?? grey).withOpacity(0.3), width: 2),
+            color: filled ? primaryColor : Colors.transparent,
+            border: Border.all(
+              color: filled
+                  ? (widget.dotColor ?? primaryColor)
+                  : (widget.dotColor ?? grey).withOpacity(0.3),
+              width: 2,
+            ),
           ),
         );
       }),

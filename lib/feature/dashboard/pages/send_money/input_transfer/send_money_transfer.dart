@@ -198,88 +198,37 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isSmall = constraints.maxHeight < 650;
-            final isTablet = constraints.maxWidth >= 768;
+            final isTablet = MediaQuery.of(context).size.width > 600;
 
             final topBar = _buildTopBar(context, theme, isSmall);
             final selectorCard = _buildRecipientSelectorCard(context, theme, isSmall);
             const beneficiariesList = CardThree();
 
-            if (isTablet) {
-              return Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      topBar,
-                      SizedBox(height: 24.h),
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 10,
-                              child: SingleChildScrollView(child: selectorCard),
-                            ),
-                            SizedBox(width: 48.w),
-                            Expanded(
-                              flex: 9,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 20.w),
-                                    child: Text(
-                                      'Beneficiaries',
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: darkBackground,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 12.h),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                                      child: beneficiariesList,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
             return Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
+                constraints: BoxConstraints(maxWidth: isTablet ? 640 : 600),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     topBar,
-                    SizedBox(height: isSmall ? 8.h : 16.h),
+                    SizedBox(height: isTablet ? 16.0 : (isSmall ? 8.h : 16.h)),
                     selectorCard,
-                    SizedBox(height: isSmall ? 16.h : 24.h),
+                    SizedBox(height: isTablet ? 20.0 : (isSmall ? 16.h : 24.h)),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w),
                       child: Text(
                         'Beneficiaries',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: darkBackground,
+                          fontSize: isTablet ? 16.0 : 15.sp,
                         ),
                       ),
                     ),
-                    SizedBox(height: 12.h),
+                    SizedBox(height: isTablet ? 10.0 : 12.h),
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w),
                         child: beneficiariesList,
                       ),
                     ),
@@ -294,10 +243,11 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   }
 
   Widget _buildTopBar(BuildContext context, ThemeData theme, bool isSmall) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: 16.w,
-        vertical: isSmall ? 6.h : 12.h,
+        horizontal: isTablet ? 20.0 : 16.w,
+        vertical: isTablet ? 12.0 : (isSmall ? 6.h : 12.h),
       ),
       child: Row(
         children: [
@@ -305,7 +255,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.of(context).pop(),
             child: Container(
-              padding: EdgeInsets.all(10.w),
+              padding: EdgeInsets.all(isTablet ? 10.0 : 10.w),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
@@ -315,12 +265,12 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
               ),
               child: Icon(
                 Icons.arrow_back_ios_new,
-                size: 16.sp,
+                size: isTablet ? 16.0 : 16.sp,
                 color: darkBackground,
               ),
             ),
           ),
-          SizedBox(width: 14.w),
+          SizedBox(width: isTablet ? 14.0 : 14.w),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -329,12 +279,13 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: darkBackground,
+                  fontSize: isTablet ? 18.0 : 16.sp,
                 ),
               ),
               Text(
                 'BIA to BIA transfer',
                 style: TextStyle(
-                  fontSize: 11.sp,
+                  fontSize: isTablet ? 12.5 : 11.sp,
                   color: lightSecondaryText,
                   fontWeight: FontWeight.w500,
                 ),
@@ -347,11 +298,12 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
   }
 
   Widget _buildRecipientSelectorCard(BuildContext context, ThemeData theme, bool isSmall) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w),
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(isSmall ? 14.w : 18.w),
+        padding: EdgeInsets.all(isTablet ? 20.0 : (isSmall ? 14.w : 18.w)),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20.r),
@@ -371,10 +323,10 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: lightSecondaryText,
-                fontSize: 12.sp,
+                fontSize: isTablet ? 13.0 : 12.sp,
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: isTablet ? 8.0 : 8.h),
             Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
@@ -392,21 +344,21 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                     child: TextField(
                       controller: inputController,
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: isTablet ? 14.0 : 14.sp,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF0F172A),
                       ),
                       decoration: InputDecoration(
                         hintText: 'Enter account number or @tag',
                         hintStyle: TextStyle(
-                          fontSize: 14.sp,
+                          fontSize: isTablet ? 14.0 : 14.sp,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF94A3B8),
                         ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 14.h,
+                          horizontal: isTablet ? 16.0 : 16.w,
+                          vertical: isTablet ? 14.0 : 14.h,
                         ),
                       ),
                       textInputAction: TextInputAction.search,
