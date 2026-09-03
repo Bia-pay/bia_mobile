@@ -10,6 +10,8 @@ class CustomGridKeypad extends StatelessWidget {
   final Color? keyColor;
   final Color? textColor;
 
+  final bool showDecimal;
+
   const CustomGridKeypad({
     super.key,
     required this.onNumberPressed,
@@ -17,6 +19,7 @@ class CustomGridKeypad extends StatelessWidget {
     this.rightAction,
     this.keyColor,
     this.textColor,
+    this.showDecimal = false,
   });
 
   @override
@@ -60,23 +63,37 @@ class CustomGridKeypad extends StatelessWidget {
             style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: fontSize,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
+              color: textColor ?? const Color(0xFF0F172A),
             ),
           );
           onTap = () => onNumberPressed(number);
           bgColor = keyColor ?? const Color(0xFFF1F5F9);
         } else if (index == 9) {
-          if (leftAction == null) return const SizedBox();
-          child = leftAction!.child;
-          onTap = leftAction!.onTap;
-          bgColor = leftAction!.backgroundColor ?? const Color(0xFFF1F5F9);
+          if (showDecimal) {
+            child = Text(
+              "•",
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontSize: fontSize * 1.1,
+                fontWeight: FontWeight.w900,
+                color: textColor ?? const Color(0xFF0F172A),
+              ),
+            );
+            onTap = () => onNumberPressed(".");
+            bgColor = keyColor ?? const Color(0xFFF1F5F9);
+          } else if (leftAction != null) {
+            child = leftAction!.child;
+            onTap = leftAction!.onTap;
+            bgColor = leftAction!.backgroundColor ?? const Color(0xFFF1F5F9);
+          } else {
+            return const SizedBox();
+          }
         } else if (index == 10) {
           child = Text(
             "0",
             style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: fontSize,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF0F172A),
+              color: textColor ?? const Color(0xFF0F172A),
             ),
           );
           onTap = () => onNumberPressed("0");

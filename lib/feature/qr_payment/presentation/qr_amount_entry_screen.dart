@@ -75,18 +75,45 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
     }
   }
 
+  String _formatAmountString(String raw) {
+    if (raw.isEmpty || raw == "0") return "0";
+    if (raw.contains('.')) {
+      final parts = raw.split('.');
+      final whole = double.tryParse(parts[0]) ?? 0;
+      final wholeFormatted = NumberFormat('#,##0').format(whole);
+      final decimals = parts.length > 1 ? parts[1] : '';
+      return '$wholeFormatted.$decimals';
+    } else {
+      final parsed = double.tryParse(raw) ?? 0;
+      return NumberFormat('#,##0').format(parsed);
+    }
+  }
+
   void addDigit(String value) {
     setState(() {
       String current = amount.replaceAll('₦', '').replaceAll(',', '');
 
-      if (current == "0") {
-        current = value;
+      if (value == '.') {
+        if (!current.contains('.')) {
+          current = current.isEmpty ? '0.' : '$current.';
+        }
       } else {
-        current += value;
+        if (current.contains('.')) {
+          final parts = current.split('.');
+          if (parts.length > 1 && parts[1].length >= 2) {
+            return;
+          }
+          current += value;
+        } else {
+          if (current == "0") {
+            current = value;
+          } else {
+            current += value;
+          }
+        }
       }
 
-      final parsed = double.tryParse(current) ?? 0;
-      amount = '₦${NumberFormat('#,##0').format(parsed)}';
+      amount = current == "0" ? "0" : '₦${_formatAmountString(current)}';
       _checkAmountValidation();
     });
   }
@@ -101,8 +128,7 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
         current = "0";
       }
 
-      final parsed = double.tryParse(current) ?? 0;
-      amount = '₦${NumberFormat('#,##0').format(parsed)}';
+      amount = current == "0" ? "0" : '₦${_formatAmountString(current)}';
       _checkAmountValidation();
     });
   }
@@ -526,17 +552,50 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
   }
 
   Widget _buildKeypad(bool isTiny, bool isSmall, bool isLoading) {
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.bottomCenter,
-      child: SizedBox(
-        width: isSmall ? 320.w : 360.w,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: CustomGridKeypad(
-            onNumberPressed: addDigit,
-            leftAction: ActionKey(
-              child: isLoading 
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            width: isTablet ? 360.0 : (isSmall ? 320.w : 360.w),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 16.0 : 20.w),
+              child: CustomGridKeypad(
+                onNumberPressed: addDigit,
+                showDecimal: true,
+                rightAction: ActionKey(
+                  child: Icon(
+                    Icons.backspace_rounded,
+                    color: primaryColor,
+                    size: isTablet ? 22.0 : (isSmall ? 20.sp : 24.sp),
+                  ),
+                  backgroundColor: primaryColor.withValues(alpha: 0.1),
+                  onTap: removeDigit,
+                ),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: isTablet ? 12.0 : 10.h),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: isTablet ? 24.0 : 20.w),
+          child: SizedBox(
+            width: isTablet ? 360.0 : double.infinity,
+            height: isTablet ? 48.0 : 48.h,
+            child: ElevatedButton(
+              onPressed: isLoading ? () {} : _onContinue,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
+                ),
+                elevation: 0,
+              ),
+              child: isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -545,26 +604,27 @@ class _QrAmountEntryScreenState extends ConsumerState<QrAmountEntryScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Icon(
-                      Icons.arrow_forward_rounded,
-                      color: lightBackground,
-                      size: isSmall ? 20.sp : 24.sp,
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontSize: isTablet ? 15.0 : 15.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: isTablet ? 18.0 : 18.sp,
+                        ),
+                      ],
                     ),
-              backgroundColor: primaryColor,
-              onTap: isLoading ? () {} : _onContinue,
-            ),
-            rightAction: ActionKey(
-              child: Icon(
-                Icons.backspace_rounded,
-                color: primaryColor,
-                size: isSmall ? 20.sp : 24.sp,
-              ),
-              backgroundColor: primaryColor.withValues(alpha: 0.1),
-              onTap: removeDigit,
             ),
           ),
         ),
-      ),
+      ],
     ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.08, end: 0, duration: 500.ms);
   }
 

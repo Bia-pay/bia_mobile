@@ -419,15 +419,7 @@ class ActionRibbon extends StatelessWidget {
                 color: primaryColor,
                 size: isTablet ? 22 : 21.sp,
               ),
-              onTap: () => _runProtectedAction(
-                context,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const BiaTrikeOnboardingScreen(),
-                  ),
-                ),
-              ),
+              isSoon: true,
             ),
           ),
           Expanded(
@@ -1216,53 +1208,95 @@ class ActionButton extends StatelessWidget {
   final String label;
   final Widget icon;
   final VoidCallback? onTap;
+  final bool isSoon;
 
   const ActionButton({
     super.key,
     required this.label,
     required this.icon,
     this.onTap,
+    this.isSoon = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width > 600;
+    final double opacity = isSoon ? 0.45 : 1.0;
+
     return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            height: isTablet ? 60 : 46.r,
-            width: isTablet ? 60 : 46.r,
-            decoration: BoxDecoration(
-              color: secondaryColor,
-              borderRadius: BorderRadius.circular(14.r),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryColor.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+      onTap: isSoon
+          ? () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$label coming soon!'),
+                  behavior: SnackBarBehavior.floating,
                 ),
+              );
+            }
+          : onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Opacity(
+        opacity: opacity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  height: isTablet ? 60 : 46.r,
+                  width: isTablet ? 60 : 46.r,
+                  decoration: BoxDecoration(
+                    color: secondaryColor,
+                    borderRadius: BorderRadius.circular(14.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(child: icon),
+                ),
+                if (isSoon)
+                  Positioned(
+                    bottom: -2,
+                    right: -2,
+                    child: Container(
+                      height: isTablet ? 14 : 12.r,
+                      width: isTablet ? 14 : 12.r,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF64748B),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.lock_rounded,
+                          size: isTablet ? 8 : 7.r,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            child: Center(child: icon),
-          ),
-          SizedBox(height: isTablet ? 6 : 8.h),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: lightText,
-                fontWeight: FontWeight.w700,
-                fontSize: isTablet ? 11.5 : 11.sp,
+            SizedBox(height: isTablet ? 6 : 8.h),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: isSoon ? lightSecondaryText.withOpacity(0.5) : lightText,
+                  fontWeight: FontWeight.w700,
+                  fontSize: isTablet ? 11.5 : 11.sp,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -127,12 +127,45 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
 
   // ── Amount logic ──────────────────────────────────────────────────────────
 
+  String _formatAmountString(String raw) {
+    if (raw.isEmpty || raw == "0") return "0";
+    if (raw.contains('.')) {
+      final parts = raw.split('.');
+      final whole = double.tryParse(parts[0]) ?? 0;
+      final wholeFormatted = NumberFormat('#,##0').format(whole);
+      final decimals = parts.length > 1 ? parts[1] : '';
+      return '$wholeFormatted.$decimals';
+    } else {
+      final parsed = double.tryParse(raw) ?? 0;
+      return NumberFormat('#,##0').format(parsed);
+    }
+  }
+
   void addDigit(String value) {
     setState(() {
       String current = amount.replaceAll('₦', '').replaceAll(',', '');
-      current = (current == "0") ? value : current + value;
-      final parsed = double.tryParse(current) ?? 0;
-      amount = '₦${NumberFormat('#,##0').format(parsed)}';
+
+      if (value == '.') {
+        if (!current.contains('.')) {
+          current = current.isEmpty ? '0.' : '$current.';
+        }
+      } else {
+        if (current.contains('.')) {
+          final parts = current.split('.');
+          if (parts.length > 1 && parts[1].length >= 2) {
+            return;
+          }
+          current += value;
+        } else {
+          if (current == "0") {
+            current = value;
+          } else {
+            current += value;
+          }
+        }
+      }
+
+      amount = current == "0" ? "0" : '₦${_formatAmountString(current)}';
       widget.controller.text = amount;
       _checkAmountValidation();
     });
@@ -143,8 +176,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
       String current = amount.replaceAll('₦', '').replaceAll(',', '');
       if (current.isNotEmpty) current = current.substring(0, current.length - 1);
       if (current.isEmpty) current = "0";
-      final parsed = double.tryParse(current) ?? 0;
-      amount = '₦${NumberFormat('#,##0').format(parsed)}';
+      amount = current == "0" ? "0" : '₦${_formatAmountString(current)}';
       widget.controller.text = amount;
       _checkAmountValidation();
     });
@@ -607,15 +639,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
       padding: EdgeInsets.symmetric(horizontal: d.keypadHPad),
       child: CustomGridKeypad(
         onNumberPressed: addDigit,
-        leftAction: ActionKey(
-          child: Icon(
-            Icons.arrow_forward_rounded,
-            color: lightBackground,
-            size: d.keypadActionIconSize,
-          ),
-          backgroundColor: primaryColor,
-          onTap: _showConfirmBottomSheet,
-        ),
+        showDecimal: true,
         rightAction: ActionKey(
           child: Icon(
             Icons.backspace_rounded,
@@ -628,23 +652,71 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
       ),
     );
 
-    // On tablet we constrain the keypad width so keys don't become huge
+    final continueBtn = Padding(
+      padding: EdgeInsets.symmetric(horizontal: d.isTablet ? 0 : 20.w),
+      child: SizedBox(
+        width: d.isTablet ? d.keypadMaxWidth : double.infinity,
+        height: d.isTablet ? 48.0 : 48.h,
+        child: ElevatedButton(
+          onPressed: _showConfirmBottomSheet,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(d.isTablet ? 14.0 : 16.r),
+            ),
+            elevation: 0,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Continue',
+                style: TextStyle(
+                  fontSize: d.isTablet ? 15.0 : 15.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_rounded,
+                size: d.isTablet ? 18.0 : 18.sp,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
     if (d.isTablet) {
       return Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: d.keypadMaxWidth),
-          child: keypad,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              keypad,
+              const SizedBox(height: 12),
+              continueBtn,
+            ],
+          ),
         ),
       );
     }
 
-    // On phone we let FittedBox shrink it if the screen is tiny
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.bottomCenter,
       child: SizedBox(
         width: d.screenW,
-        child: keypad,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            keypad,
+            SizedBox(height: 10.h),
+            continueBtn,
+          ],
+        ),
       ),
     ).animate().fadeIn(duration: 500.ms, delay: 300.ms).slideY(begin: 0.08, end: 0, duration: 500.ms);
   }
