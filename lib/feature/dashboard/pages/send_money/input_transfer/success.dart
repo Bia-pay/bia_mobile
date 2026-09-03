@@ -286,12 +286,12 @@ class _SuccessScreenState extends State<SuccessScreen> {
             final screenHeight = constraints.maxHeight;
             final isSmallHeight = screenHeight < 720;
             final isNarrow = screenWidth < 360;
-
-            final badgeSize = isSmallHeight ? 60.r : 72.r;
-            final horizontalPadding = isNarrow ? 18.w : 24.w;
+            final isTablet = screenWidth > 600;
+            final badgeSize = isTablet ? 64.0 : (isSmallHeight ? 60.r : 72.r);
+            final horizontalPadding = isTablet ? 24.0 : (isNarrow ? 18.w : 24.w);
 
             // Pixel perfect Y position for notches and dashed line
-            final notchY = 166.h;
+            final notchY = isTablet ? 180.0 : (isSmallHeight ? 150.h : 166.h);
 
             return Stack(
               children: [
@@ -338,8 +338,8 @@ class _SuccessScreenState extends State<SuccessScreen> {
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          primaryThemeColor.withOpacity(0.08),
-                          primaryThemeColor.withOpacity(0),
+                          primaryThemeColor.withValues(alpha: 0.08),
+                          primaryThemeColor.withValues(alpha: 0),
                         ],
                       ),
                     ),
@@ -349,164 +349,172 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 // Scrollable viewport covering the entire body to ensure complete responsiveness
                 SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                    child: Column(
-                      children: [
-                        SizedBox(height: isSmallHeight ? 16.h : 32.h),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: isTablet ? 540 : double.infinity),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                        child: Column(
+                          children: [
+                            SizedBox(height: isTablet ? 24.0 : (isSmallHeight ? 16.h : 32.h)),
 
-                        // Floating Header Status Badge
-                        _buildHeaderBadge(badgeSize, primaryThemeColor, config['icon'] as IconData),
+                            // Floating Header Status Badge
+                            _buildHeaderBadge(badgeSize, primaryThemeColor, config['icon'] as IconData),
 
-                        SizedBox(height: 12.h),
+                            SizedBox(height: isTablet ? 10.0 : 12.h),
 
-                        // Status Title
-                        Text(
-                          config['title'],
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: isSmallHeight ? 15.sp : 17.sp,
-                            color: const Color(0xFF64748B),
-                            letterSpacing: 0.5,
-                          ),
-                        ).animate().fadeIn(duration: 400.ms),
+                            // Status Title
+                            Text(
+                              config['title'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: isTablet ? 16.0 : (isSmallHeight ? 15.sp : 17.sp),
+                                color: const Color(0xFF64748B),
+                                letterSpacing: 0.5,
+                              ),
+                            ).animate().fadeIn(duration: 400.ms),
 
-                        SizedBox(height: isSmallHeight ? 16.h : 24.h),
+                            SizedBox(height: isTablet ? 18.0 : (isSmallHeight ? 16.h : 24.h)),
 
-                        // Master Receipt Card (with side notches and dashed lines)
-                        ClipPath(
-                          clipper: TicketClipper(notchRadius: 10.r, notchY: notchY),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0F172A).withOpacity(0.04),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 12),
+                            // Master Receipt Card (with side notches and dashed lines)
+                            ClipPath(
+                              clipper: TicketClipper(notchRadius: isTablet ? 10.0 : 10.r, notchY: notchY),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                                      blurRadius: 24,
+                                      offset: const Offset(0, 12),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                // Top Receipt Header Section (exactly sized to notchY)
-                                Container(
-                                  height: notchY,
-                                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Large Amount Display
-                                      Text(
-                                        "₦${_formatAmountString(widget.amount)}",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: isSmallHeight ? 32.sp : 38.sp,
-                                          color: const Color(0xFF0F172A),
-                                          letterSpacing: -1,
-                                        ),
-                                      ).animate().fadeIn(delay: 100.ms, duration: 400.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), curve: Curves.easeOutBack),
-                                      
-                                      SizedBox(height: 16.h),
-                                      
-                                      // Flow line diagram
-                                      _buildTimelineFlow(primaryThemeColor),
-                                    ],
-                                  ),
-                                ),
+                                child: Column(
+                                  children: [
+                                    // Top Receipt Header Section (exactly sized to notchY)
+                                    Container(
+                                      height: notchY,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isTablet ? 20.0 : 20.w,
+                                        vertical: isTablet ? 12.0 : 16.h,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          // Large Amount Display
+                                          Text(
+                                            "₦${_formatAmountString(widget.amount)}",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: isTablet ? 34.0 : (isSmallHeight ? 32.sp : 38.sp),
+                                              color: const Color(0xFF0F172A),
+                                              letterSpacing: -1,
+                                            ),
+                                          ).animate().fadeIn(delay: 100.ms, duration: 400.ms).scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1), curve: Curves.easeOutBack),
+                                          
+                                          SizedBox(height: isTablet ? 10.0 : 16.h),
+                                          
+                                          // Flow line diagram
+                                          _buildTimelineFlow(primaryThemeColor),
+                                        ],
+                                      ),
+                                    ),
 
-                                // Mid Dashed perforated line aligned exactly at notchY
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 18.w),
-                                  child: Row(
-                                    children: List.generate(
-                                      24,
-                                      (index) => Expanded(
-                                        child: Container(
-                                          height: 1.2.h,
-                                          margin: EdgeInsets.symmetric(horizontal: 2.5.w),
-                                          color: const Color(0xFFCBD5E1),
+                                    // Mid Dashed perforated line aligned exactly at notchY
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 18.0 : 18.w),
+                                      child: Row(
+                                        children: List.generate(
+                                          24,
+                                          (index) => Expanded(
+                                            child: Container(
+                                              height: isTablet ? 1.2 : 1.2.h,
+                                              margin: EdgeInsets.symmetric(horizontal: isTablet ? 2.5 : 2.5.w),
+                                              color: const Color(0xFFCBD5E1),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
+
+                                    // Bottom Details section
+                                    Padding(
+                                      padding: EdgeInsets.all(isTablet ? 20.0 : 20.w),
+                                      child: Column(
+                                        children: [
+                                          if (_isDeposit)
+                                            _buildTicketRow("Funding Destination", "My Wallet", isSmallHeight)
+                                          else if (widget.serviceType?.toUpperCase() == 'ELECTRICITY_BILL' || widget.serviceType?.toUpperCase() == 'ELECTRICITY' || widget.channel?.toUpperCase() == 'ELECTRICITY') ...[
+                                             if (widget.recipientName != null && widget.recipientName!.isNotEmpty)
+                                               _buildTicketRow("Provider", widget.recipientName!, isSmallHeight),
+                                             _buildTicketRow("Meter Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                             if (widget.meterName != null && widget.meterName!.isNotEmpty)
+                                               _buildTicketRow("Meter Name", widget.meterName!, isSmallHeight),
+                                             if (widget.address != null && widget.address!.isNotEmpty)
+                                               _buildTicketRow("Address", widget.address!, isSmallHeight),
+                                             _buildTokenRow(
+                                               (widget.token != null && widget.token!.isNotEmpty)
+                                                   ? widget.token!
+                                                   : _getFallbackToken(widget.reference),
+                                               isSmallHeight,
+                                             ),
+                                             _buildTicketRow("Payment Channel", widget.channel ?? "Electricity", isSmallHeight),
+                                           ] else ...[
+                                             if (widget.recipientName != null && widget.recipientName!.isNotEmpty)
+                                               _buildTicketRow(
+                                                 widget.channel?.toLowerCase().contains("airtime") == true || widget.channel?.toLowerCase().contains("data") == true
+                                                     ? "Network"
+                                                     : "Recipient Name",
+                                                 widget.recipientName!,
+                                                 isSmallHeight,
+                                               ),
+                                             _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
+                                             _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
+                                           ],
+                                          _buildTicketRow("Transaction Date", _formattedDate, isSmallHeight),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-
-                                // Bottom Details section
-                                Padding(
-                                  padding: EdgeInsets.all(20.w),
-                                  child: Column(
-                                    children: [
-                                      if (_isDeposit)
-                                        _buildTicketRow("Funding Destination", "My Wallet", isSmallHeight)
-                                      else if (widget.serviceType?.toUpperCase() == 'ELECTRICITY_BILL' || widget.serviceType?.toUpperCase() == 'ELECTRICITY' || widget.channel?.toUpperCase() == 'ELECTRICITY') ...[
-                                         if (widget.recipientName != null && widget.recipientName!.isNotEmpty)
-                                           _buildTicketRow("Provider", widget.recipientName!, isSmallHeight),
-                                         _buildTicketRow("Meter Number", widget.recipientAccount ?? "-", isSmallHeight),
-                                         if (widget.meterName != null && widget.meterName!.isNotEmpty)
-                                           _buildTicketRow("Meter Name", widget.meterName!, isSmallHeight),
-                                         if (widget.address != null && widget.address!.isNotEmpty)
-                                           _buildTicketRow("Address", widget.address!, isSmallHeight),
-                                         _buildTokenRow(
-                                           (widget.token != null && widget.token!.isNotEmpty)
-                                               ? widget.token!
-                                               : _getFallbackToken(widget.reference),
-                                           isSmallHeight,
-                                         ),
-                                         _buildTicketRow("Payment Channel", widget.channel ?? "Electricity", isSmallHeight),
-                                       ] else ...[
-                                         if (widget.recipientName != null && widget.recipientName!.isNotEmpty)
-                                           _buildTicketRow(
-                                             widget.channel?.toLowerCase().contains("airtime") == true || widget.channel?.toLowerCase().contains("data") == true
-                                                 ? "Network"
-                                                 : "Recipient Name",
-                                             widget.recipientName!,
-                                             isSmallHeight,
-                                           ),
-                                         _buildTicketRow("Account Number", widget.recipientAccount ?? "-", isSmallHeight),
-                                         _buildTicketRow("Payment Channel", _isDeposit ? "Card Payment" : (widget.channel ?? "Bank Transfer"), isSmallHeight),
-                                       ],
-                                      _buildTicketRow("Transaction Date", _formattedDate, isSmallHeight),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.08, end: 0, curve: Curves.easeOutQuad),
-
-                        SizedBox(height: 24.h),
-
-                        // Action Buttons block
-                        if (config['showActions']) ...[
-                          _buildActionButtons(),
-                          SizedBox(height: 16.h),
-                        ],
-
-                        // Main Slate Confirmation Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => context.pushNamed(RouteList.bottomNavBar),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F172A), // Luxury dark slate
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-                              padding: EdgeInsets.symmetric(vertical: 18.h),
-                            ),
-                            child: Text(
-                              "Go to Dashboard",
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w800,
                               ),
-                            ),
-                          ),
-                        ).animate().fadeIn(delay: 350.ms),
+                            ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.08, end: 0, curve: Curves.easeOutQuad),
 
-                        SizedBox(height: 36.h),
-                      ],
+                            SizedBox(height: isTablet ? 20.0 : 24.h),
+
+                            // Action Buttons block
+                            if (config['showActions']) ...[
+                              _buildActionButtons(),
+                              SizedBox(height: isTablet ? 14.0 : 16.h),
+                            ],
+
+                            // Main Slate Confirmation Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () => context.pushNamed(RouteList.bottomNavBar),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F172A),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r)),
+                                  padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 18.h),
+                                ),
+                                child: Text(
+                                  "Go to Dashboard",
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 15.0 : 15.sp,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ).animate().fadeIn(delay: 350.ms),
+
+                            SizedBox(height: isTablet ? 28.0 : 36.h),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -580,28 +588,29 @@ class _SuccessScreenState extends State<SuccessScreen> {
             ? receiverNameVal.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
             : "RE");
 
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       children: [
         // Sender Account Bubble
         Column(
           children: [
             CircleAvatar(
-              radius: 20.r,
-              backgroundColor: primaryColor.withOpacity(0.08),
+              radius: isTablet ? 18.0 : 20.r,
+              backgroundColor: primaryColor.withValues(alpha: 0.08),
               child: Text(
                 _isDeposit ? "CRD" : "BIA",
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 11.sp,
+                  fontSize: isTablet ? 10.0 : 11.sp,
                   color: primaryColor,
                 ),
               ),
             ),
-            SizedBox(height: 6.h),
+            SizedBox(height: isTablet ? 4.0 : 6.h),
             Text(
               senderName,
               style: TextStyle(
-                fontSize: 11.sp,
+                fontSize: isTablet ? 11.0 : 11.sp,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF64748B),
               ),
@@ -612,7 +621,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
         // Line flow connecting
         Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.w),
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 8.0 : 8.w),
             child: Column(
               children: [
                 Row(
@@ -620,27 +629,30 @@ class _SuccessScreenState extends State<SuccessScreen> {
                     8,
                     (index) => Expanded(
                       child: Container(
-                        height: 2.h,
-                        margin: EdgeInsets.symmetric(horizontal: 1.2.w),
+                        height: isTablet ? 2.0 : 2.h,
+                        margin: EdgeInsets.symmetric(horizontal: isTablet ? 1.2 : 1.2.w),
                         decoration: BoxDecoration(
-                          color: themeColor.withOpacity(index == 3 || index == 4 ? 1 : 0.25),
+                          color: themeColor.withValues(alpha: index == 3 || index == 4 ? 1 : 0.25),
                           borderRadius: BorderRadius.circular(1.r),
                         ),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: 6.h),
+                SizedBox(height: isTablet ? 4.0 : 6.h),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 8.0 : 10.w,
+                    vertical: isTablet ? 3.0 : 4.h,
+                  ),
                   decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.08),
+                    color: themeColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
                     _isDeposit ? "Deposit" : (widget.channel ?? "Transfer"),
                     style: TextStyle(
-                      fontSize: 9.sp,
+                      fontSize: isTablet ? 9.0 : 9.sp,
                       fontWeight: FontWeight.w800,
                       color: themeColor,
                       letterSpacing: 0.5,
@@ -659,12 +671,12 @@ class _SuccessScreenState extends State<SuccessScreen> {
               final logoPath = _detectNetworkLogo(receiverNameVal);
               if (logoPath != null) {
                 return Container(
-                  width: 40.r,
-                  height: 40.r,
+                  width: isTablet ? 36.0 : 40.r,
+                  height: isTablet ? 36.0 : 40.r,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: themeColor.withOpacity(0.2),
+                      color: themeColor.withValues(alpha: 0.2),
                       width: 1.5,
                     ),
                   ),
@@ -677,23 +689,23 @@ class _SuccessScreenState extends State<SuccessScreen> {
                 );
               }
               return CircleAvatar(
-                radius: 20.r,
-                backgroundColor: themeColor.withOpacity(0.08),
+                radius: isTablet ? 18.0 : 20.r,
+                backgroundColor: themeColor.withValues(alpha: 0.08),
                 child: Text(
                   recipientInitials,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 10.0 : 11.sp,
                     color: themeColor,
                   ),
                 ),
               );
             }),
-            SizedBox(height: 6.h),
+            SizedBox(height: isTablet ? 4.0 : 6.h),
             Text(
               receiverNameVal.length > 12 ? "${receiverNameVal.substring(0, 10)}..." : receiverNameVal,
               style: TextStyle(
-                fontSize: 11.sp,
+                fontSize: isTablet ? 11.0 : 11.sp,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF64748B),
               ),
@@ -706,9 +718,10 @@ class _SuccessScreenState extends State<SuccessScreen> {
 
   Widget _buildTicketRow(String label, String value, bool isSmallHeight) {
     final logoPath = _detectNetworkLogo(value);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isSmallHeight ? 9.h : 12.h),
+      padding: EdgeInsets.symmetric(vertical: isTablet ? 8.0 : (isSmallHeight ? 9.h : 12.h)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -716,7 +729,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
             label,
             style: TextStyle(
               color: const Color(0xFF94A3B8),
-              fontSize: 13.sp,
+              fontSize: isTablet ? 13.0 : 13.sp,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -729,9 +742,9 @@ class _SuccessScreenState extends State<SuccessScreen> {
               children: [
                 if (logoPath != null) ...[
                   Container(
-                    width: 18.w,
-                    height: 18.w,
-                    margin: EdgeInsets.only(right: 6.w),
+                    width: isTablet ? 18.0 : 18.w,
+                    height: isTablet ? 18.0 : 18.w,
+                    margin: EdgeInsets.only(right: isTablet ? 6.0 : 6.w),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
@@ -747,7 +760,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
                     textAlign: TextAlign.right,
                     style: TextStyle(
                       color: const Color(0xFF1E293B),
-                      fontSize: 13.sp,
+                      fontSize: isTablet ? 13.0 : 13.sp,
                       fontWeight: FontWeight.w700,
                       height: 1.25,
                     ),
@@ -881,6 +894,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
   }
 
   Widget _buildActionButtons() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       children: [
         Expanded(
@@ -891,7 +905,7 @@ class _SuccessScreenState extends State<SuccessScreen> {
             isLoading: _isSharing,
           ),
         ),
-        SizedBox(width: 16.w),
+        SizedBox(width: isTablet ? 14.0 : 16.w),
         Expanded(
           child: _ActionButton(
             icon: Icons.download_rounded,
@@ -920,17 +934,19 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 18.r),
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h),
+          padding: EdgeInsets.symmetric(vertical: isTablet ? 14.0 : 16.h),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18.r),
+            borderRadius: BorderRadius.circular(isTablet ? 14.0 : 18.r),
             border: Border.all(
-              color: onTap == null ? const Color(0xFFE2E8F0) : primaryColor.withOpacity(0.25),
+              color: onTap == null ? const Color(0xFFE2E8F0) : primaryColor.withValues(alpha: 0.25),
               width: 1.2,
             ),
             color: onTap == null ? const Color(0xFFF8FAFC) : Colors.white,
@@ -947,15 +963,15 @@ class _ActionButton extends StatelessWidget {
                 Icon(
                   icon,
                   color: onTap == null ? const Color(0xFF94A3B8) : primaryColor,
-                  size: 16.sp,
+                  size: isTablet ? 18.0 : 16.sp,
                 ),
-              SizedBox(width: 8.w),
+              SizedBox(width: isTablet ? 8.0 : 8.w),
               Text(
                 label,
                 style: TextStyle(
                   color: onTap == null ? const Color(0xFF94A3B8) : primaryColor,
                   fontWeight: FontWeight.w800,
-                  fontSize: 14.sp,
+                  fontSize: isTablet ? 14.5 : 14.sp,
                 ),
               ),
             ],

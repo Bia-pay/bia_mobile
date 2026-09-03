@@ -69,18 +69,19 @@ class _AppSearchFieldState extends State<AppSearchField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
-    final h = widget.height ?? AppSearchField.defaultHeight.h;
+    final h = widget.height ?? (isTablet ? AppSearchField.defaultHeight : AppSearchField.defaultHeight.h);
     final fillColor =
     widget.isBackgroundTransparent ? Colors.transparent : lightgray;
     final textColor = theme.textTheme.bodyMedium?.color ?? Colors.black;
 
     return Container(
-      width: widget.width ?? AppSearchField.defaultWidth.w,
+      width: widget.width ?? (isTablet ? AppSearchField.defaultWidth : AppSearchField.defaultWidth.w),
       height: h,
       decoration: BoxDecoration(
         color: fillColor,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
       ),
       child: TextField(
         controller: _controller,
@@ -88,39 +89,39 @@ class _AppSearchFieldState extends State<AppSearchField> {
         onChanged: widget.onChanged,
         readOnly: widget.readOnly,
         style: theme.textTheme.bodyMedium?.copyWith(
-          fontSize: 14.sp,
+          fontSize: isTablet ? 14.0 : 14.sp,
           color: textColor,
         ),
         decoration: InputDecoration(
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20.r),
-            borderSide: BorderSide.none, // default
+            borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20.r),
-            borderSide: BorderSide(
-              color: Colors.transparent, // no border when not focused
+            borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
+            borderSide: const BorderSide(
+              color: Colors.transparent,
               width: 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20.r),
-            borderSide: BorderSide(
+            borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
+            borderSide: const BorderSide(
               color: primaryColor,
               width: 2,
             ),
           ),
           hintText: widget.hintText ?? 'Search',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
-            fontSize: 14.sp,
+            fontSize: isTablet ? 14.0 : 14.sp,
             color: lightSecondaryText,
           ),
           prefixIcon: Padding(
-            padding: EdgeInsets.only(left: 10.w, right: 6.w),
+            padding: EdgeInsets.only(left: isTablet ? 10.0 : 10.w, right: isTablet ? 6.0 : 6.w),
             child: Icon(
               Icons.search,
               color: widget.readOnly ? theme.disabledColor : primaryColor,
-              size: 22.sp,
+              size: isTablet ? 20.0 : 22.sp,
             ),
           ),
           suffixIcon: widget.withClearButton
@@ -134,12 +135,13 @@ class _AppSearchFieldState extends State<AppSearchField> {
             icon: Icon(
               Icons.clear,
               color: lightSecondaryText,
-              size: 20.sp,
+              size: isTablet ? 18.0 : 20.sp,
             ),
           )
               : null,
-          contentPadding: EdgeInsets.symmetric(vertical: 10.h),
-        ),      ),
+          contentPadding: EdgeInsets.symmetric(vertical: isTablet ? 10.0 : 10.h),
+        ),
+      ),
     );
   }
 }
@@ -154,9 +156,9 @@ class AppField extends StatefulWidget {
     this.hintText,
     this.withClearButton = false,
     this.readOnly = false,
-    this.maxLength, // ✅ NEW
-    this.inputFormatters, // ✅ NEW
-    this.keyboardType, // ✅ NEW
+    this.maxLength,
+    this.inputFormatters,
+    this.keyboardType,
   }) : isBackgroundTransparent = false;
 
   const AppField.transparent({
@@ -168,9 +170,9 @@ class AppField extends StatefulWidget {
     this.hintText,
     this.withClearButton = false,
     this.readOnly = false,
-    this.maxLength, // ✅ NEW
-    this.inputFormatters, // ✅ NEW
-    this.keyboardType, // ✅ NEW
+    this.maxLength,
+    this.inputFormatters,
+    this.keyboardType,
   }) : isBackgroundTransparent = true;
 
   static const double defaultHeight = 58;
@@ -185,9 +187,9 @@ class AppField extends StatefulWidget {
   final bool readOnly;
   final bool isBackgroundTransparent;
 
-  final int? maxLength; // ✅ NEW
-  final List<TextInputFormatter>? inputFormatters; // ✅ NEW
-  final TextInputType? keyboardType; // ✅ NEW
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextInputType? keyboardType;
 
   @override
   State<AppField> createState() => _AppFieldState();
@@ -219,18 +221,19 @@ class _AppFieldState extends State<AppField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
-    final h = widget.height ?? AppField.defaultHeight.h;
+    final h = widget.height ?? (isTablet ? 50.0 : AppField.defaultHeight.h);
     final fillColor =
     widget.isBackgroundTransparent ? Colors.transparent : lightgray;
     final textColor = theme.textTheme.bodyMedium?.color ?? Colors.black;
 
     return Container(
-      width: widget.width ?? AppField.defaultWidth.w,
+      width: widget.width ?? (isTablet ? AppField.defaultWidth : AppField.defaultWidth.w),
       height: h,
       decoration: BoxDecoration(
         color: fillColor,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 12.0 : 20.r),
       ),
       child: TextField(
         controller: _controller,
@@ -239,45 +242,44 @@ class _AppFieldState extends State<AppField> {
         readOnly: widget.readOnly,
         maxLines: 1,
 
-        // ✅ NEW
         maxLength: widget.maxLength,
         inputFormatters: widget.inputFormatters,
-        keyboardType: widget.keyboardType, // ✅ NEW
+        keyboardType: widget.keyboardType,
         buildCounter: (
             context, {
               required int currentLength,
               required bool isFocused,
               required int? maxLength,
             }) {
-          return null; // hides counter
+          return null;
         },
 
         style: theme.textTheme.bodyMedium?.copyWith(
-          fontSize: 14.sp,
+          fontSize: isTablet ? 14.0 : 14.sp,
           color: textColor,
         ),
         decoration: InputDecoration(
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 20.r),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
-            borderSide: BorderSide(
+            borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
+            borderSide: const BorderSide(
               color: borderColor,
               width: 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
-            borderSide: BorderSide(
+            borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
+            borderSide: const BorderSide(
               color: secondaryColor,
               width: 2,
             ),
           ),
           hintText: widget.hintText ?? 'Enter value',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(
-            fontSize: 13.sp,
+            fontSize: isTablet ? 13.5 : 13.sp,
             color: lightSecondaryText,
           ),
           suffixIcon: widget.withClearButton
@@ -291,12 +293,12 @@ class _AppFieldState extends State<AppField> {
             icon: Icon(
               Icons.clear,
               color: lightSecondaryText,
-              size: 20.sp,
+              size: isTablet ? 18.0 : 20.sp,
             ),
           )
               : null,
           contentPadding:
-          EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+          EdgeInsets.symmetric(horizontal: isTablet ? 14.0 : 16.w, vertical: isTablet ? 10.0 : 10.h),
         ),
       ),
     );

@@ -63,19 +63,19 @@ class _Dims {
   double get avatarFontSize => isTinyPhone ? 14 : (isTablet ? 20 : 16);
 
   // ── Typography ───────────────────────────────────────────────────────────
-  double get titleFontSize => isTablet ? 18 : 15;
-  double get recipientNameFontSize => isTinyPhone ? 13 : (isTablet ? 16 : 14);
-  double get recipientSubFontSize => isTinyPhone ? 10 : (isTablet ? 13 : 11);
+  double get titleFontSize => isTablet ? 16 : 15;
+  double get recipientNameFontSize => isTinyPhone ? 13 : (isTablet ? 15 : 14);
+  double get recipientSubFontSize => isTinyPhone ? 10 : (isTablet ? 12 : 11);
   double get amountFontSize {
     if (isTinyPhone) return 34;
     if (isSmallPhone) return 42;
-    if (isLargeTablet) return 64;
-    if (isTablet) return 56;
+    if (isLargeTablet) return 56;
+    if (isTablet) return 48;
     return 52;
   }
-  double get hintFontSize => isTinyPhone ? 11 : (isTablet ? 14 : 13);
-  double get warningFontSize => isTinyPhone ? 10 : (isTablet ? 13 : 12);
-  double get balanceFontSize => isTinyPhone ? 10 : (isTablet ? 13 : 11);
+  double get hintFontSize => isTinyPhone ? 11 : (isTablet ? 13 : 13);
+  double get warningFontSize => isTinyPhone ? 10 : (isTablet ? 12 : 12);
+  double get balanceFontSize => isTinyPhone ? 10 : (isTablet ? 12 : 11);
 
   // ── Icons ────────────────────────────────────────────────────────────────
   double get backIconSize => isTablet ? 20 : 16;
@@ -83,12 +83,10 @@ class _Dims {
   double get bankIconSize => isTinyPhone ? 10 : (isTablet ? 14 : 11);
   double get swapIconSize => isTablet ? 20 : 16;
   double get warningIconSize => isTinyPhone ? 12 : (isTablet ? 16 : 14);
-  double get keypadActionIconSize => isTablet ? 28 : (isSmallPhone ? 20 : 24);
+  double get keypadActionIconSize => isTablet ? 24 : (isSmallPhone ? 20 : 24);
 
   // ── Keypad container width ───────────────────────────────────────────────
-  // Phone: unconstrained (full width inside padding).
-  // Tablet: fixed column width so keys don't become huge.
-  double get keypadMaxWidth => isLargeTablet ? 420 : (isTablet ? 380 : double.infinity);
+  double get keypadMaxWidth => isTablet ? 360 : double.infinity;
 }
 
 class BankAmountPage extends ConsumerStatefulWidget {
@@ -253,9 +251,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final d = _Dims.of(constraints);
-              return d.isTablet
-                  ? _buildTabletLayout(theme, walletBalance, d)
-                  : _buildPhoneLayout(theme, walletBalance, d);
+              return _buildLayout(theme, walletBalance, d);
             },
           ),
         ),
@@ -263,106 +259,65 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
     );
   }
 
-  // ── Phone layout ──────────────────────────────────────────────────────────
+  // ── Single column responsive layout (matching design on phone & tablet) ───
 
-  Widget _buildPhoneLayout(ThemeData theme, double walletBalance, _Dims d) {
+  Widget _buildLayout(ThemeData theme, double walletBalance, _Dims d) {
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    return Column(
-      children: [
-        _buildTopBar(theme, walletBalance, d),
-        _buildRecipientCard(theme, d),
-        SizedBox(height: d.sectionGap),
-        _buildAmountDisplay(walletBalance, d),
-        SizedBox(height: d.sectionGap),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: CustomTextFormField(
-            controller: _narrationController,
-            label: 'Narration (Optional)',
-            hintText: 'What is this for?',
-            validator: (val) => null,
-          ),
-        ),
-        const Spacer(),
-        if (!keyboardOpen) ...[
-          _buildKeypad(d),
-          SizedBox(height: d.bottomPad),
-        ] else ...[
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: TextButton.icon(
-                onPressed: () => FocusScope.of(context).unfocus(),
-                icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
-                label: const Text('Done'),
-                style: TextButton.styleFrom(
-                  foregroundColor: primaryColor,
-                  backgroundColor: primaryColor.withValues(alpha: 0.08),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: d.bottomPad),
-        ],
-      ],
-    );
-  }
-
-  // ── Tablet layout (side-by-side) ──────────────────────────────────────────
-
-  Widget _buildTabletLayout(ThemeData theme, double walletBalance, _Dims d) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1100),
+        constraints: BoxConstraints(
+          maxWidth: d.isTablet ? 540 : double.infinity,
+        ),
         child: Column(
           children: [
             _buildTopBar(theme, walletBalance, d),
-            SizedBox(height: d.sectionGap),
             Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left: recipient + amount
-                  Expanded(
-                    flex: 10,
-                    child: Padding(
-                      padding: EdgeInsets.only(left: d.cardHMargin),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildRecipientCard(theme, d),
-                          SizedBox(height: d.sectionGap * 1.2),
-                          _buildAmountDisplay(walletBalance, d),
-                          SizedBox(height: d.sectionGap),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 40.w),
-                            child: CustomTextFormField(
-                              controller: _narrationController,
-                              label: 'Narration (Optional)',
-                              hintText: 'What is this for?',
-                              validator: (val) => null,
-                            ),
-                          ),
-                        ],
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  children: [
+                    SizedBox(height: d.isTablet ? 8.0 : 4.h),
+                    _buildRecipientCard(theme, d),
+                    SizedBox(height: d.isTablet ? 12.0 : d.sectionGap),
+                    _buildAmountDisplay(walletBalance, d),
+                    SizedBox(height: d.isTablet ? 12.0 : d.sectionGap),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: d.isTablet ? 20.0 : 24.w),
+                      child: CustomTextFormField(
+                        controller: _narrationController,
+                        label: 'Narration (Optional)',
+                        hintText: 'What is this for?',
+                        validator: (val) => null,
                       ),
                     ),
-                  ),
-                  SizedBox(width: d.sectionGap * 1.5),
-                  // Right: keypad
-                  Expanded(
-                    flex: 9,
-                    child: Padding(
-                      padding: EdgeInsets.only(right: d.cardHMargin),
-                      child: _buildKeypad(d),
-                    ),
-                  ),
-                ],
+                    SizedBox(height: d.isTablet ? 12.0 : 12.h),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: d.bottomPad),
+            if (!keyboardOpen) ...[
+              _buildKeypad(d),
+              SizedBox(height: d.bottomPad),
+            ] else ...[
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: d.isTablet ? 20.0 : 24.w),
+                  child: TextButton.icon(
+                    onPressed: () => FocusScope.of(context).unfocus(),
+                    icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
+                    label: const Text('Done'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: primaryColor,
+                      backgroundColor: primaryColor.withValues(alpha: 0.08),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: d.bottomPad),
+            ],
           ],
         ),
       ),

@@ -347,6 +347,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final isTablet = constraints.maxWidth > 600;
             final isSmallScreen = constraints.maxHeight < 600;
             final isLandscape = constraints.maxWidth > constraints.maxHeight;
 
@@ -358,38 +359,43 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight - bottomPadding - 100.h,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          topBar,
-                          SizedBox(height: isSmall ? 8.h : 16.h),
-                          SizedBox(height: isSmallScreen ? 12.h : 20.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24.0 : 20.w,
+                      vertical: isTablet ? 16.0 : 16.h,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isTablet ? 640 : double.infinity,
+                          minHeight: constraints.maxHeight - bottomPadding - (isTablet ? 90.0 : 100.h),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            topBar,
+                            SizedBox(height: isTablet ? 12.0 : (isSmall ? 8.h : 16.h)),
+                            SizedBox(height: isTablet ? 12.0 : (isSmallScreen ? 12.h : 20.h)),
 
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(isSmallScreen ? 12.w : 16.w),
-                            decoration: BoxDecoration(
-                              color: whiteBackground,
-                              borderRadius: BorderRadius.circular(15.r),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Recipient Account',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: lightText,
-                                    fontSize: isSmallScreen ? 14.sp : 16.sp,
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(isTablet ? 16.0 : (isSmallScreen ? 12.w : 16.w)),
+                              decoration: BoxDecoration(
+                                color: whiteBackground,
+                                borderRadius: BorderRadius.circular(isTablet ? 16.0 : 15.r),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Recipient Account',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: lightText,
+                                      fontSize: isTablet ? 15.0 : (isSmallScreen ? 14.sp : 16.sp),
+                                    ),
                                   ),
-                                ),
                                 SizedBox(height: isSmallScreen ? 10.h : 15.h),
 
                                 AppField.transparent(
@@ -447,24 +453,24 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                       }
                                     });
                                   },
-                                  borderRadius: BorderRadius.circular(10.r),
+                                  borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                                   child: Container(
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: 12.w,
-                                      vertical: isSmallScreen ? 10.h : 12.h,
+                                      horizontal: isTablet ? 12.0 : 12.w,
+                                      vertical: isTablet ? 12.0 : (isSmallScreen ? 10.h : 12.h),
                                     ),
                                     decoration: BoxDecoration(
                                       color: whiteBackground,
-                                      borderRadius: BorderRadius.circular(10.r),
+                                      borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                                       border: Border.all(color: isBankDropdownOpen ? primaryColor : lightBorderColor),
                                     ),
                                     child: Row(
                                       children: [
                                         selectedBank?.logoUrl != null && selectedBank!.logoUrl!.isNotEmpty
                                             ? Container(
-                                                width: isSmallScreen ? 20.r : 24.r,
-                                                height: isSmallScreen ? 20.r : 24.r,
+                                                width: isTablet ? 22.0 : (isSmallScreen ? 20.r : 24.r),
+                                                height: isTablet ? 22.0 : (isSmallScreen ? 20.r : 24.r),
                                                 decoration: const BoxDecoration(
                                                   shape: BoxShape.circle,
                                                 ),
@@ -475,7 +481,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                                     errorBuilder: (_, __, ___) => Icon(
                                                       Icons.account_balance,
                                                       color: primaryColor,
-                                                      size: isSmallScreen ? 20.sp : 24.sp,
+                                                      size: isTablet ? 20.0 : (isSmallScreen ? 20.sp : 24.sp),
                                                     ),
                                                   ),
                                                 ),
@@ -483,15 +489,15 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                             : Icon(
                                                 Icons.account_balance,
                                                 color: primaryColor,
-                                                size: isSmallScreen ? 20.sp : 24.sp,
+                                                size: isTablet ? 20.0 : (isSmallScreen ? 20.sp : 24.sp),
                                               ),
-                                        SizedBox(width: 10.w),
+                                        SizedBox(width: isTablet ? 10.0 : 10.w),
                                         Expanded(
                                           child: Text(
                                             selectedBank?.bankName ?? 'Select Bank',
                                             style: theme.textTheme.bodyMedium?.copyWith(
                                               color: selectedBank != null ? lightText : grey,
-                                              fontSize: isSmallScreen ? 13.sp : 14.sp,
+                                              fontSize: isTablet ? 14.0 : (isSmallScreen ? 13.sp : 14.sp),
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -499,7 +505,7 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                         Icon(
                                           isBankDropdownOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
                                           color: grey,
-                                          size: 24.sp,
+                                          size: isTablet ? 22.0 : 24.sp,
                                         ),
                                       ],
                                     ),
@@ -626,22 +632,22 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                 if (isVerified)
                                   InkWell(
                                     onTap: () => _goToAmountPage(context, verifiedName!, verifiedAccount!),
-                                    borderRadius: BorderRadius.circular(12.r),
+                                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                                     child: Container(
                                       width: double.infinity,
-                                      padding: EdgeInsets.all(isSmallScreen ? 12.w : 15.w),
+                                      padding: EdgeInsets.all(isTablet ? 14.0 : (isSmallScreen ? 12.w : 15.w)),
                                       decoration: BoxDecoration(
-                                        color: primaryColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        color: primaryColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                                         border: Border.all(
-                                          color: primaryColor.withOpacity(0.3),
+                                          color: primaryColor.withValues(alpha: 0.3),
                                         ),
                                       ),
                                       child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           CircleAvatar(
-                                            radius: isSmallScreen ? 16.r : 20.r,
+                                            radius: isTablet ? 20.0 : (isSmallScreen ? 16.r : 20.r),
                                             backgroundColor: primaryColor,
                                             child: Text(
                                               (verifiedName ?? '').isNotEmpty
@@ -649,12 +655,12 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                                   : '',
                                               style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: isSmallScreen ? 12.sp : 14.sp,
+                                                fontSize: isTablet ? 13.0 : (isSmallScreen ? 12.sp : 14.sp),
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
-                                          SizedBox(width: 10.w),
+                                          SizedBox(width: isTablet ? 12.0 : 10.w),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,30 +668,30 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                               children: [
                                                 Text(
                                                   verifiedName ?? '',
-                                                  maxLines: 1,
+                                                  maxLines: 2,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: theme.textTheme.bodyMedium?.copyWith(
                                                     fontWeight: FontWeight.w600,
-                                                    fontSize: isSmallScreen ? 13.sp : 14.sp,
+                                                    fontSize: isTablet ? 15.0 : (isSmallScreen ? 13.sp : 14.sp),
                                                   ),
                                                 ),
-                                                SizedBox(height: 2.h),
+                                                SizedBox(height: isTablet ? 2.0 : 2.h),
                                                 Text(
                                                   '$verifiedBankName • $verifiedAccount',
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: theme.textTheme.bodySmall?.copyWith(
-                                                    fontSize: 11.sp,
+                                                    fontSize: isTablet ? 12.0 : 11.sp,
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                          SizedBox(width: 6.w),
+                                          SizedBox(width: isTablet ? 8.0 : 6.w),
                                           Icon(
                                             Icons.check_circle,
                                             color: successColor,
-                                            size: isSmallScreen ? 18.sp : 20.sp,
+                                            size: isTablet ? 22.0 : (isSmallScreen ? 18.sp : 20.sp),
                                           ),
                                         ],
                                       ),
@@ -722,63 +728,66 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                                   },
                                 ),
                               ),
-                            ),
-
-                          SizedBox(height: 80.h),
+                            ),                          SizedBox(height: isTablet ? 24.0 : 80.h),
                         ],
                       ),
                     ),
                   ),
                 ),
+              ),
 
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.only(
-                    left: 20.w,
-                    right: 20.w,
-                    top: 12.h,
-                    bottom: bottomPadding + 12.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: offWhiteBackground,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: isSmallScreen ? 44.h : 48.h,
-                    child: ElevatedButton(
-                      onPressed: isVerified
-                          ? () => _goToAmountPage(context, verifiedName!, verifiedAccount!)
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        disabledBackgroundColor: primaryColor.withOpacity(0.3),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(
+                  left: isTablet ? 24.0 : 20.w,
+                  right: isTablet ? 24.0 : 20.w,
+                  top: isTablet ? 12.0 : 12.h,
+                  bottom: bottomPadding + (isTablet ? 12.0 : 12.h),
+                ),
+                decoration: BoxDecoration(
+                  color: offWhiteBackground,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: isTablet ? 640 : double.infinity),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: isTablet ? 48.0 : (isSmallScreen ? 44.h : 48.h),
+                      child: ElevatedButton(
+                        onPressed: isVerified
+                            ? () => _goToAmountPage(context, verifiedName!, verifiedAccount!)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          disabledBackgroundColor: primaryColor.withValues(alpha: 0.3),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: isTablet ? 12.0 : 12.h),
                         ),
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                      ),
-                      child: Text(
-                        'Continue',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 14.sp : 16.sp,
+                        child: Text(
+                          'Continue',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTablet ? 15.0 : (isSmallScreen ? 14.sp : 16.sp),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            );
+              ),
+            ]);
           },
         ),
       ),
@@ -807,22 +816,24 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
 
   Widget _buildSuggestedBanksRow() {
     if (suggestedBanks.isEmpty) return const SizedBox.shrink();
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(top: 8.h, bottom: 6.h),
+          padding: EdgeInsets.only(top: isTablet ? 8.0 : 8.h, bottom: isTablet ? 6.0 : 6.h),
           child: Text(
             'Suggested Banks',
             style: TextStyle(
-              fontSize: 12.sp,
+              fontSize: isTablet ? 12.0 : 12.sp,
               fontWeight: FontWeight.w600,
               color: grey,
             ),
           ),
         ),
         SizedBox(
-          height: 40.h,
+          height: isTablet ? 38.0 : 40.h,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: suggestedBanks.length,
@@ -840,11 +851,11 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                   }
                 },
                 child: Container(
-                  margin: EdgeInsets.only(right: 8.w),
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  margin: EdgeInsets.only(right: isTablet ? 8.0 : 8.w),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 10.0 : 10.w),
                   decoration: BoxDecoration(
                     color: isSelected ? primaryColor.withValues(alpha: 0.1) : whiteBackground,
-                    borderRadius: BorderRadius.circular(20.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 18.0 : 20.r),
                     border: Border.all(
                       color: isSelected ? primaryColor : lightBorderColor,
                     ),
@@ -856,22 +867,22 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
                         ClipOval(
                           child: Image.network(
                             bank.logoUrl!,
-                            width: 18.r,
-                            height: 18.r,
+                            width: isTablet ? 18.0 : 18.r,
+                            height: isTablet ? 18.0 : 18.r,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Icon(
                               Icons.account_balance,
                               color: isSelected ? primaryColor : grey,
-                              size: 14.sp,
+                              size: isTablet ? 14.0 : 14.sp,
                             ),
                           ),
                         ),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: isTablet ? 4.0 : 4.w),
                       ],
                       Text(
                         _getShortBankName(bank.bankName),
                         style: TextStyle(
-                          fontSize: 11.sp,
+                          fontSize: isTablet ? 11.0 : 11.sp,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                           color: isSelected ? primaryColor : lightText,
                         ),
@@ -969,10 +980,12 @@ class _SendMoneyToBankState extends ConsumerState<SendMoneyToBank> {
 
 }
 Widget _buildTopBar(BuildContext context, ThemeData theme, bool isSmall) {
+  final isTablet = MediaQuery.of(context).size.width > 600;
+
   return Padding(
     padding: EdgeInsets.symmetric(
-      horizontal: 16.w,
-      vertical: isSmall ? 6.h : 12.h,
+      horizontal: isTablet ? 16.0 : 16.w,
+      vertical: isTablet ? 10.0 : (isSmall ? 6.h : 12.h),
     ),
     child: Row(
       children: [
@@ -980,22 +993,22 @@ Widget _buildTopBar(BuildContext context, ThemeData theme, bool isSmall) {
           behavior: HitTestBehavior.opaque,
           onTap: () => Navigator.of(context).pop(),
           child: Container(
-            padding: EdgeInsets.all(10.w),
+            padding: EdgeInsets.all(isTablet ? 10.0 : 10.w),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
               border: Border.all(
                 color: lightBorderColor.withValues(alpha: 0.5),
               ),
             ),
             child: Icon(
               Icons.arrow_back_ios_new,
-              size: 16.sp,
+              size: isTablet ? 16.0 : 16.sp,
               color: darkBackground,
             ),
           ),
         ),
-        SizedBox(width: 14.w),
+        SizedBox(width: isTablet ? 14.0 : 14.w),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1004,12 +1017,13 @@ Widget _buildTopBar(BuildContext context, ThemeData theme, bool isSmall) {
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: darkBackground,
+                fontSize: isTablet ? 16.0 : null,
               ),
             ),
             Text(
               'BIA to Bank transfer',
               style: TextStyle(
-                fontSize: 11.sp,
+                fontSize: isTablet ? 12.0 : 11.sp,
                 color: lightSecondaryText,
                 fontWeight: FontWeight.w500,
               ),
