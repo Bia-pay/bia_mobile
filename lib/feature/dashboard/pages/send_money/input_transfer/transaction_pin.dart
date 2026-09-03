@@ -271,13 +271,15 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
     final isSmallScreen = screenHeight < 700;
     final isLargeScreen = screenHeight > 900;
 
-    final topSpacing = isSmallScreen ? 20.h : (isLargeScreen ? 60.h : 55.h);
-    final sectionSpacing = isSmallScreen ? 16.h : (isLargeScreen ? 30.h : 30.h);
-    final pinSpacing = isSmallScreen ? 24.h : (isLargeScreen ? 40.h : 30.h);
-    final keypadSpacing = isSmallScreen ? 30.h : (isLargeScreen ? 50.h : 60.h);
+    final topSpacing = isTablet ? 24.0 : (isSmallScreen ? 20.h : (isLargeScreen ? 60.h : 55.h));
+    final sectionSpacing = isTablet ? 20.0 : (isSmallScreen ? 16.h : (isLargeScreen ? 30.h : 30.h));
+    final pinSpacing = isTablet ? 24.0 : (isSmallScreen ? 24.h : (isLargeScreen ? 40.h : 30.h));
+    final keypadSpacing = isTablet ? 24.0 : (isSmallScreen ? 30.h : (isLargeScreen ? 50.h : 60.h));
 
     return Scaffold(
       backgroundColor: lightBackground,
@@ -285,152 +287,152 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
         backgroundColor: lightBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: isTablet ? 18.0 : 20.sp,
+          ),
           onPressed: () => context.pop(),
         ),
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24.w,
-                    vertical: isSmallScreen ? 20.h : 30.h,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(height: topSpacing),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 440 : 600),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24.0 : 24.w,
+                      vertical: isTablet ? 20.0 : (isSmallScreen ? 20.h : 30.h),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(height: topSpacing),
 
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: isSmallScreen ? 12.h : 15.h,
-                          horizontal: isSmallScreen ? 12.w : 15.w,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              accentColor.withOpacity(0.4),
-                              primaryColor,
-                              primaryColor.withOpacity(0.9),
-                            ],
+                        Container(
+                          padding: EdgeInsets.all(isTablet ? 14.0 : (isSmallScreen ? 12.h : 15.h)),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                accentColor.withValues(alpha: 0.4),
+                                primaryColor,
+                                primaryColor.withValues(alpha: 0.9),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(isTablet ? 14.0 : (isSmallScreen ? 8.r : 10.r)),
+                            ),
                           ),
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(isSmallScreen ? 8.r : 10.r),
+                          child: Icon(
+                            Icons.lock,
+                            color: Colors.white,
+                            size: isTablet ? 28.0 : (isSmallScreen ? 24.sp : 30.sp),
                           ),
                         ),
-                        child: Icon(
-                          Icons.lock,
-                          color: Colors.white,
-                          size: isSmallScreen ? 24.sp : 30.sp,
+
+                        SizedBox(height: sectionSpacing),
+
+                        Text(
+                          'Enter Transaction PIN',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTablet ? 20.0 : (isSmallScreen ? 16.sp : (isLargeScreen ? 24.sp : 20.sp)),
+                          ),
                         ),
-                      ),
 
-                      SizedBox(height: sectionSpacing),
+                        SizedBox(height: pinSpacing),
 
-                      Text(
-                        'Enter Transaction PIN',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isSmallScreen ? 16.sp : (isLargeScreen ? 24.sp : 20.sp),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(4, (index) {
+                            final filled = index < pin.length;
+                            final dotSize = isTablet ? 14.0 : (isSmallScreen ? 12.w : 14.w);
+
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              margin: EdgeInsets.symmetric(horizontal: isTablet ? 6.0 : 6.w),
+                              width: dotSize,
+                              height: dotSize,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: filled ? primaryColor : Colors.transparent,
+                                border: Border.all(
+                                  color: filled ? primaryColor : Colors.grey,
+                                  width: isTablet ? 2.0 : (isSmallScreen ? 1.5 : 2),
+                                ),
+                              ),
+                            );
+                          }),
                         ),
-                      ),
 
-                      SizedBox(height: pinSpacing),
+                        SizedBox(height: keypadSpacing),
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(4, (index) {
-                          final filled = index < pin.length;
-                          final dotSize = isSmallScreen ? 12.w : 14.w;
+                        SizedBox(
+                          width: isTablet ? 360.0 : double.infinity,
+                          child: CustomGridKeypad(
+                            onNumberPressed: addDigit,
+                            leftAction: (pin.isEmpty && _hasBiometric && _biometricEnabled)
+                                ? ActionKey(
+                                    child: Icon(
+                                      _biometricIcon,
+                                      color: Colors.white,
+                                      size: isTablet ? 24.0 : (isSmallScreen ? 24.sp : 28.sp),
+                                    ),
+                                    backgroundColor: primaryColor,
+                                    onTap: _authenticateWithBiometric,
+                                  )
+                                : ActionKey(
+                                    child: Icon(
+                                      Icons.check_rounded,
+                                      color: Colors.white,
+                                      size: isTablet ? 22.0 : (isSmallScreen ? 20.sp : 24.sp),
+                                    ),
+                                    backgroundColor: primaryColor,
+                                    onTap: () => _processTransaction(pin),
+                                  ),
+                            rightAction: ActionKey(
+                              child: Icon(
+                                Icons.backspace_rounded,
+                                color: primaryColor,
+                                size: isTablet ? 22.0 : (isSmallScreen ? 20.sp : 24.sp),
+                              ),
+                              backgroundColor: primaryColor.withValues(alpha: 0.1),
+                              onTap: removeDigit,
+                            ),
+                          ),
+                        ),
 
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            margin: EdgeInsets.symmetric(horizontal: 6.w),
-                            width: dotSize,
-                            height: dotSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: filled ? primaryColor : Colors.transparent,
-                              border: Border.all(
-                                color: filled ? primaryColor : Colors.grey,
-                                width: isSmallScreen ? 1.5 : 2,
+                        SizedBox(height: isTablet ? 20.0 : 16.h),
+
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () => _handleForgotPin(),
+                            child: Text(
+                              'Forget Pin?',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: lightText,
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 13.5 : (isSmallScreen ? 13.sp : 14.sp),
                               ),
                             ),
-                          );
-                        }),
-                      ),
-
-                      SizedBox(height: keypadSpacing),
-
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: CustomGridKeypad(
-                          onNumberPressed: addDigit,
-                          leftAction: (pin.isEmpty && _hasBiometric && _biometricEnabled)
-                              ? ActionKey(
-                                  child: Icon(
-                                    _biometricIcon,
-                                    color: Colors.white,
-                                    size: isSmallScreen ? 24.sp : 28.sp,
-                                  ),
-                                  backgroundColor: primaryColor,
-                                  onTap: _authenticateWithBiometric,
-                                )
-                              : ActionKey(
-                                  child: Icon(
-                                    Icons.check_rounded,
-                                    color: Colors.white,
-                                    size: isSmallScreen ? 20.sp : 24.sp,
-                                  ),
-                                  backgroundColor: primaryColor,
-                                  onTap: () => _processTransaction(pin),
-                                ),
-                          rightAction: ActionKey(
-                            child: Icon(
-                              Icons.backspace_rounded,
-                              color: primaryColor,
-                              size: isSmallScreen ? 20.sp : 24.sp,
-                            ),
-                            backgroundColor: primaryColor.withOpacity(0.1),
-                            onTap: removeDigit,
                           ),
                         ),
-                      ),
 
-                      SizedBox(height: 16.h),
-
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () => _handleForgotPin(),
-                          child: Text(
-                            'Forget Pin?',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: lightText,
-                              fontWeight: FontWeight.w600,
-                              fontSize: isSmallScreen ? 13.sp : 14.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 10.h : 20.h),
-                    ],
+                        SizedBox(height: isTablet ? 20.0 : (isSmallScreen ? 10.h : 20.h)),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
+                );
+              },
+            ),
+          ),
         ),
       ),
     );

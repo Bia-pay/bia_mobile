@@ -215,6 +215,7 @@ class _BiaTrikeOnboardingScreenState
   }
 
   void _showRoleSelectionBottomSheet() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -225,14 +226,14 @@ class _BiaTrikeOnboardingScreenState
             return Align(
               alignment: Alignment.bottomCenter,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
+                constraints: BoxConstraints(maxWidth: isTablet ? 540 : 600),
                 child: Container(
-                  padding: EdgeInsets.all(24.r),
+                  padding: EdgeInsets.all(isTablet ? 24.0 : 24.r),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32.r),
-                      topRight: Radius.circular(32.r),
+                      topLeft: Radius.circular(isTablet ? 28.0 : 32.r),
+                      topRight: Radius.circular(isTablet ? 28.0 : 32.r),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -248,15 +249,15 @@ class _BiaTrikeOnboardingScreenState
                     children: [
                       Center(
                         child: Container(
-                          width: 48.w,
-                          height: 5.h,
+                          width: isTablet ? 48.0 : 48.w,
+                          height: isTablet ? 5.0 : 5.h,
                           decoration: BoxDecoration(
                             color: Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(10.r),
                           ),
                         ),
                       ),
-                      SizedBox(height: 20.h),
+                      SizedBox(height: isTablet ? 16.0 : 20.h),
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -266,13 +267,14 @@ class _BiaTrikeOnboardingScreenState
                               'Welcome to Bia Trike 🛺',
                               style: TextStyle(
                                 color: darkBackground,
-                                fontSize: 18.sp,
+                                fontSize: isTablet ? 18.0 : 18.sp,
                                 fontWeight: FontWeight.w900,
                               ),
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          SizedBox(width: 8.w),
+                          SizedBox(width: isTablet ? 8.0 : 8.w),
                           GestureDetector(
                             onTap: () {
                               Navigator.pop(modalContext);
@@ -280,12 +282,13 @@ class _BiaTrikeOnboardingScreenState
                             },
                             child: Container(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 10.w, vertical: 4.h),
+                                  horizontal: isTablet ? 12.0 : 10.w, vertical: isTablet ? 6.0 : 4.h),
                               decoration: BoxDecoration(
                                 color: primaryColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(100.r),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     _selectedLanguage == 'hausa'
@@ -295,53 +298,53 @@ class _BiaTrikeOnboardingScreenState
                                             : '🇬🇧 English',
                                     style: TextStyle(
                                       color: primaryColor,
-                                      fontSize: 10.sp,
+                                      fontSize: isTablet ? 11.0 : 10.sp,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                  SizedBox(width: 4.w),
+                                  SizedBox(width: isTablet ? 4.0 : 4.w),
                                   Icon(Icons.keyboard_arrow_down_rounded,
-                                      color: primaryColor, size: 14.sp),
+                                      color: primaryColor, size: isTablet ? 14.0 : 14.sp),
                                 ],
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(height: isTablet ? 6.0 : 4.h),
                       Text(
                         'Select your language and tell us how you want to proceed:',
                         style: TextStyle(
                           color: lightSecondaryText,
-                          fontSize: 12.5.sp,
+                          fontSize: isTablet ? 13.0 : 12.5.sp,
                           height: 1.35,
                         ),
                       ),
 
-                      SizedBox(height: 20.h),
+                      SizedBox(height: isTablet ? 18.0 : 20.h),
 
                       Text(
                         'PREFERRED LANGUAGE',
                         style: TextStyle(
                           color: primaryColor,
-                          fontSize: 10.sp,
+                          fontSize: isTablet ? 11.0 : 10.sp,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 1.0,
                         ),
                       ),
-                      SizedBox(height: 8.h),
+                      SizedBox(height: isTablet ? 8.0 : 8.h),
                       Row(
                         children: [
                           Expanded(
                             child: _buildLangChip(
                                 'english', '🇬🇧 English', setModalState),
                           ),
-                          SizedBox(width: 8.w),
+                          SizedBox(width: isTablet ? 8.0 : 8.w),
                           Expanded(
                             child: _buildLangChip(
                                 'pidgin', '🇳🇬 Pidgin', setModalState),
                           ),
-                          SizedBox(width: 8.w),
+                          SizedBox(width: isTablet ? 8.0 : 8.w),
                           Expanded(
                             child: _buildLangChip(
                                 'hausa', '🌙 Hausa', setModalState),
@@ -349,18 +352,18 @@ class _BiaTrikeOnboardingScreenState
                         ],
                       ),
 
-                      SizedBox(height: 24.h),
+                      SizedBox(height: isTablet ? 20.0 : 24.h),
 
                       Text(
                         'CHOOSE YOUR SERVICE',
                         style: TextStyle(
                           color: primaryColor,
-                          fontSize: 10.sp,
+                          fontSize: isTablet ? 11.0 : 10.sp,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 1.0,
                         ),
                       ),
-                      SizedBox(height: 10.h),
+                      SizedBox(height: isTablet ? 10.0 : 10.h),
 
                       _buildModalRoleCard(
                         title: 'Book a Keke Ride',
@@ -379,7 +382,7 @@ class _BiaTrikeOnboardingScreenState
                         },
                       ),
 
-                      SizedBox(height: 12.h),
+                      SizedBox(height: isTablet ? 12.0 : 12.h),
 
                       _buildModalRoleCard(
                         title: 'Register as Trike Rider',
@@ -395,7 +398,7 @@ class _BiaTrikeOnboardingScreenState
                         },
                       ),
 
-                      SizedBox(height: 24.h),
+                      SizedBox(height: isTablet ? 20.0 : 24.h),
                     ],
                   ),
                 ),
@@ -410,13 +413,14 @@ class _BiaTrikeOnboardingScreenState
   Widget _buildLangChip(
       String code, String label, StateSetter setModalState) {
     final isSelected = _selectedLanguage == code;
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return GestureDetector(
       onTap: () {
         setModalState(() {});
         _saveLanguage(code);
       },
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
+        padding: EdgeInsets.symmetric(vertical: isTablet ? 10.0 : 10.h),
         decoration: BoxDecoration(
           color: isSelected
               ? primaryColor
@@ -431,7 +435,7 @@ class _BiaTrikeOnboardingScreenState
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected ? Colors.white : darkBackground,
-            fontSize: 12.sp,
+            fontSize: isTablet ? 12.5 : 12.sp,
             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
           ),
         ),
@@ -446,10 +450,11 @@ class _BiaTrikeOnboardingScreenState
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(16.r),
+        padding: EdgeInsets.all(isTablet ? 16.0 : 16.r),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20.r),
@@ -465,14 +470,14 @@ class _BiaTrikeOnboardingScreenState
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(12.r),
+              padding: EdgeInsets.all(isTablet ? 12.0 : 12.r),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color, size: 24.sp),
+              child: Icon(icon, color: color, size: isTablet ? 24.0 : 24.sp),
             ),
-            SizedBox(width: 14.w),
+            SizedBox(width: isTablet ? 14.0 : 14.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,16 +486,16 @@ class _BiaTrikeOnboardingScreenState
                     title,
                     style: TextStyle(
                       color: darkBackground,
-                      fontSize: 15.sp,
+                      fontSize: isTablet ? 15.0 : 15.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(height: 3.h),
+                  SizedBox(height: isTablet ? 3.0 : 3.h),
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: lightSecondaryText,
-                      fontSize: 11.5.sp,
+                      fontSize: isTablet ? 12.0 : 11.5.sp,
                       height: 1.3,
                     ),
                   ),
@@ -500,7 +505,7 @@ class _BiaTrikeOnboardingScreenState
             Icon(
               Icons.arrow_forward_ios_rounded,
               color: Colors.grey.shade400,
-              size: 16.sp,
+              size: isTablet ? 16.0 : 16.sp,
             ),
           ],
         ),

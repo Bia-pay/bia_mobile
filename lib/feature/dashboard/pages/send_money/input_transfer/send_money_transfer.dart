@@ -204,35 +204,67 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
             final selectorCard = _buildRecipientSelectorCard(context, theme, isSmall);
             const beneficiariesList = CardThree();
 
+            if (!isTablet) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  topBar,
+                  SizedBox(height: isSmall ? 8.h : 16.h),
+                  selectorCard,
+                  SizedBox(height: isSmall ? 16.h : 24.h),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Text(
+                      'Beneficiaries',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: darkBackground,
+                        fontSize: 15.sp,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: beneficiariesList,
+                    ),
+                  ),
+                ],
+              );
+            }
+
             return Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isTablet ? 640 : 600),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    topBar,
-                    SizedBox(height: isTablet ? 16.0 : (isSmall ? 8.h : 16.h)),
-                    selectorCard,
-                    SizedBox(height: isTablet ? 20.0 : (isSmall ? 16.h : 24.h)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w),
-                      child: Text(
-                        'Beneficiaries',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: darkBackground,
-                          fontSize: isTablet ? 16.0 : 15.sp,
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      topBar,
+                      const SizedBox(height: 16.0),
+                      selectorCard,
+                      const SizedBox(height: 20.0),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text(
+                          'Beneficiaries',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: darkBackground,
+                            fontSize: 16.0,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: isTablet ? 10.0 : 12.h),
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w),
+                      const SizedBox(height: 10.0),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
                         child: beneficiariesList,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 32.0),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -414,10 +446,10 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                           ? null
                           : () => _handleVerification(inputController.text),
                       child: Container(
-                        margin: EdgeInsets.only(right: 8.w),
+                        margin: EdgeInsets.only(right: isTablet ? 6.0 : 8.w),
                         padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 9.h,
+                          horizontal: isTablet ? 18.0 : 16.w,
+                          vertical: isTablet ? 10.0 : 9.h,
                         ),
                         decoration: BoxDecoration(
                           color: inputController.text.trim().isEmpty
@@ -431,7 +463,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                             color: inputController.text.trim().isEmpty
                                 ? const Color(0xFF94A3B8)
                                 : Colors.white,
-                            fontSize: 12.sp,
+                            fontSize: isTablet ? 13.0 : 12.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

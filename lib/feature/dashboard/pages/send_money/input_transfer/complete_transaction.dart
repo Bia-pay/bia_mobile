@@ -159,21 +159,26 @@ class _BiaToBiaCompleteTransactionBottomSheetState
   Widget build(BuildContext context) {
     final r = _ResponsiveHelper(context);
     final currencySymbol = Constants.nairaCurrencySymbol;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.9,
-      ),
-      decoration: BoxDecoration(
-        color: offWhiteBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(r.sheetRadius)),
-      ),
-      padding: EdgeInsets.only(
-        left: r.horizontalPadding,
-        right: r.horizontalPadding,
-        top: r.verticalPadding,
-        bottom: 0,
-      ),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isTablet ? 540 : double.infinity,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: offWhiteBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(isTablet ? 28.0 : r.sheetRadius)),
+          ),
+          padding: EdgeInsets.only(
+            left: isTablet ? 24.0 : r.horizontalPadding,
+            right: isTablet ? 24.0 : r.horizontalPadding,
+            top: isTablet ? 20.0 : r.verticalPadding,
+            bottom: 0,
+          ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -181,42 +186,42 @@ class _BiaToBiaCompleteTransactionBottomSheetState
           children: [
             // Drag Handle
             Container(
-              width: 40.w,
-              height: 4.h,
+              width: isTablet ? 40.0 : 40.w,
+              height: isTablet ? 4.0 : 4.h,
               decoration: BoxDecoration(
                 color: const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(2.r),
               ),
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: isTablet ? 16.0 : 16.h),
 
             Text(
               'Confirm Transfer',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18.sp,
+                fontSize: isTablet ? 20.0 : 18.sp,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF0F172A),
                 letterSpacing: -0.5,
               ),
             ),
-            SizedBox(height: 6.h),
+            SizedBox(height: isTablet ? 4.0 : 6.h),
             Text(
               'Verify details before completing transaction',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: isTablet ? 13.0 : 12.sp,
                 color: const Color(0xFF64748B),
                 fontWeight: FontWeight.w600,
               ),
             ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: isTablet ? 16.0 : 16.h),
 
             // Premium Large Amount Display
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 16.w, vertical: isTablet ? 16.0 : 18.h),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20.r),
@@ -237,20 +242,20 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                   Text(
                     'TOTAL SEND AMOUNT',
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: isTablet ? 11.0 : 10.sp,
                       color: const Color(0xFF94A3B8),
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
                     ),
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: isTablet ? 6.0 : 8.h),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       '$currencySymbol${NumberFormat('#,##0.00').format(_totalAmount)}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 28.sp,
+                        fontSize: isTablet ? 30.0 : 28.sp,
                         fontWeight: FontWeight.w900,
                         color: primaryColor,
                         letterSpacing: -0.8,
@@ -261,12 +266,12 @@ class _BiaToBiaCompleteTransactionBottomSheetState
               ),
             ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: isTablet ? 16.0 : 16.h),
 
             // Visual Transfer Diagram (Sender -> Recipient)
             Container(
               width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w, vertical: isTablet ? 14.0 : 14.h),
               decoration: BoxDecoration(
                 color: primaryColor.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(20.r),
@@ -278,8 +283,8 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                   Column(
                     children: [
                       Container(
-                        width: 48.r,
-                        height: 48.r,
+                        width: isTablet ? 44.0 : 48.r,
+                        height: isTablet ? 44.0 : 48.r,
                         decoration: BoxDecoration(
                           color: primaryColor,
                           shape: BoxShape.circle,
@@ -291,17 +296,17 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.account_balance_wallet_rounded,
                           color: Colors.white,
-                          size: 22,
+                          size: isTablet ? 20.0 : 22,
                         ),
                       ),
-                      SizedBox(height: 6.h),
+                      SizedBox(height: isTablet ? 4.0 : 6.h),
                       Text(
                         'My Wallet',
                         style: TextStyle(
-                          fontSize: 12.sp,
+                          fontSize: isTablet ? 12.0 : 12.sp,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF0F172A),
                         ),
@@ -317,9 +322,9 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(4, (index) {
                             return Container(
-                              margin: EdgeInsets.symmetric(horizontal: 2.w),
-                              width: 5.w,
-                              height: 5.w,
+                              margin: EdgeInsets.symmetric(horizontal: isTablet ? 3.0 : 2.w),
+                              width: isTablet ? 5.0 : 5.w,
+                              height: isTablet ? 5.0 : 5.w,
                               decoration: BoxDecoration(
                                 color: primaryColor.withValues(alpha: (index + 1) * 0.25),
                                 shape: BoxShape.circle,
@@ -327,11 +332,11 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                             );
                           }),
                         ),
-                        SizedBox(height: 4.h),
-                        const Icon(
+                        SizedBox(height: isTablet ? 4.0 : 4.h),
+                        Icon(
                           Icons.arrow_forward_rounded,
                           color: primaryColor,
-                          size: 16,
+                          size: isTablet ? 16.0 : 16,
                         ),
                       ],
                     ),
@@ -341,8 +346,8 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                   Column(
                     children: [
                       Container(
-                        width: 48.r,
-                        height: 48.r,
+                        width: isTablet ? 44.0 : 48.r,
+                        height: isTablet ? 44.0 : 48.r,
                         decoration: BoxDecoration(
                           color: primaryGreenColor600.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
@@ -356,20 +361,20 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                             widget.recipientName.isNotEmpty ? widget.recipientName[0].toUpperCase() : 'B',
                             style: TextStyle(
                               color: primaryGreenColor600,
-                              fontSize: 18.sp,
+                              fontSize: isTablet ? 16.0 : 18.sp,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(height: 6.h),
+                      SizedBox(height: isTablet ? 4.0 : 6.h),
                       SizedBox(
-                        width: 80.w,
+                        width: isTablet ? 90.0 : 80.w,
                         child: Text(
                           widget.recipientName.split(' ')[0],
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 12.sp,
+                            fontSize: isTablet ? 12.0 : 12.sp,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF0F172A),
                           ),
@@ -382,7 +387,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
               ),
             ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: isTablet ? 16.0 : 16.h),
 
             // Details Card
             ConstrainedBox(
@@ -533,8 +538,9 @@ class _BiaToBiaCompleteTransactionBottomSheetState
           ],
         ),
       ),
-    );
-  }
+    ),
+  ));
+}
 
   static Widget _buildDetailRow(
     BuildContext context, {
@@ -543,6 +549,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
     String? logo,
     bool isHighlighted = false,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -551,13 +558,13 @@ class _BiaToBiaCompleteTransactionBottomSheetState
             label,
             style: TextStyle(
               color: const Color(0xFF64748B),
-              fontSize: 13.sp,
+              fontSize: isTablet ? 13.0 : 13.sp,
               fontWeight: FontWeight.w600,
             ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        SizedBox(width: 8.w),
+        SizedBox(width: isTablet ? 8.0 : 8.w),
         Flexible(
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -565,9 +572,9 @@ class _BiaToBiaCompleteTransactionBottomSheetState
             children: [
               if (logo != null)
                 Container(
-                  width: 18.w,
-                  height: 18.w,
-                  margin: EdgeInsets.only(right: 6.w),
+                  width: isTablet ? 18.0 : 18.w,
+                  height: isTablet ? 18.0 : 18.w,
+                  margin: EdgeInsets.only(right: isTablet ? 6.0 : 6.w),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
@@ -582,7 +589,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     color: isHighlighted ? primaryGreenColor600 : const Color(0xFF0F172A),
-                    fontSize: 13.sp,
+                    fontSize: isTablet ? 13.0 : 13.sp,
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -605,6 +612,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
     bool isLoading = false,
     ValueChanged<bool>? onToggle,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -612,14 +620,14 @@ class _BiaToBiaCompleteTransactionBottomSheetState
           title,
           style: TextStyle(
             color: isHighlighted ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-            fontSize: 13.sp,
+            fontSize: isTablet ? 13.0 : 13.sp,
             fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w600,
           ),
         ),
         if (isLoading)
           SizedBox(
-            height: 12.h,
-            width: 12.w,
+            height: isTablet ? 14.0 : 12.h,
+            width: isTablet ? 14.0 : 12.w,
             child: PulsingLogoIndicator(logoPath: 'assets/svg/logo-b.png'),
           )
         else if (value.isNotEmpty)
@@ -627,7 +635,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
             value,
             style: TextStyle(
               color: isHighlighted ? primaryColor : const Color(0xFF0F172A),
-              fontSize: 14.sp,
+              fontSize: isTablet ? 14.0 : 14.sp,
               fontWeight: FontWeight.bold,
             ),
           )
@@ -640,19 +648,19 @@ class _BiaToBiaCompleteTransactionBottomSheetState
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 38.w,
-              height: 22.h,
+              width: isTablet ? 38.0 : 38.w,
+              height: isTablet ? 22.0 : 22.h,
               decoration: BoxDecoration(
                 color: isToggled ? primaryColor : const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(11.h),
+                borderRadius: BorderRadius.circular(11),
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 200),
                 alignment: isToggled ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  width: 18.w,
-                  height: 18.w,
-                  margin: EdgeInsets.symmetric(horizontal: 2.w),
+                  width: isTablet ? 18.0 : 18.w,
+                  height: isTablet ? 18.0 : 18.w,
+                  margin: EdgeInsets.symmetric(horizontal: isTablet ? 2.0 : 2.w),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,

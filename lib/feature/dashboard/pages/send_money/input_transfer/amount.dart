@@ -205,65 +205,20 @@ class _AmountPageState extends ConsumerState<AmountPage> {
               final screenH = constraints.maxHeight;
               final isSmall = screenH < 780;
               final isTiny = screenH < 600;
-              final isTablet = constraints.maxWidth >= 768;
+              final isTablet = MediaQuery.of(context).size.width > 600;
 
               final topBar = _buildTopBar(context, theme, walletBalance, isTiny);
               final recipientCard = _buildRecipientCard(context, theme, isTiny);
               final amountDisplay = _buildAmountDisplay(walletBalance, isTiny, isSmall);
               final keypad = _buildKeypad(isTiny, isSmall);
 
-              if (isTablet) {
-                return Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
-                    child: Column(
-                      children: [
-                        topBar,
-                        SizedBox(height: 24.h),
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                flex: 10,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    recipientCard,
-                                    SizedBox(height: 32.h),
-                                    amountDisplay,
-                                    SizedBox(height: 24.h),
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 40.w),
-                                      child: CustomTextFormField(
-                                        controller: _narrationController,
-                                        label: 'Narration (Optional)',
-                                        hintText: 'What is this for?',
-                                        validator: (val) => null,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 48.w),
-                              Expanded(
-                                flex: 9,
-                                child: keypad,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
               return Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
+                  constraints: BoxConstraints(maxWidth: isTablet ? 580 : 600),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
+                    padding: EdgeInsets.symmetric(
+                      vertical: isTablet ? 12.0 : (isTiny ? 6.h : (isSmall ? 8.h : 14.h)),
+                    ),
                     child: Column(
                       children: [
                         topBar,
@@ -274,11 +229,13 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 recipientCard,
-                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                                SizedBox(height: isTablet ? 16.0 : (isTiny ? 6.h : (isSmall ? 12.h : 18.h))),
                                 amountDisplay,
-                                SizedBox(height: isTiny ? 6.h : (isSmall ? 12.h : 18.h)),
+                                SizedBox(height: isTablet ? 16.0 : (isTiny ? 6.h : (isSmall ? 12.h : 18.h))),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isTablet ? 24.0 : 24.w,
+                                  ),
                                   child: CustomTextFormField(
                                     controller: _narrationController,
                                     label: 'Narration (Optional)',
@@ -296,7 +253,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 24.w),
+                              padding: EdgeInsets.symmetric(horizontal: isTablet ? 24.0 : 24.w),
                               child: TextButton.icon(
                                 onPressed: () => FocusScope.of(context).unfocus(),
                                 icon: const Icon(Icons.keyboard_hide_rounded, size: 18),
@@ -394,12 +351,13 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   }
 
   Widget _buildRecipientCard(BuildContext context, ThemeData theme, bool isTiny) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 20.0 : 20.w),
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: 14.w,
-          vertical: isTiny ? 10.h : 14.h,
+          horizontal: isTablet ? 16.0 : 14.w,
+          vertical: isTablet ? 12.0 : (isTiny ? 10.h : 14.h),
         ),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -411,8 +369,8 @@ class _AmountPageState extends ConsumerState<AmountPage> {
         child: Row(
           children: [
             Container(
-              width: isTiny ? 36.r : 42.r,
-              height: isTiny ? 36.r : 42.r,
+              width: isTablet ? 42.0 : (isTiny ? 36.r : 42.r),
+              height: isTablet ? 42.0 : (isTiny ? 36.r : 42.r),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: primaryColor.withValues(alpha: 0.1),
@@ -425,7 +383,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                 child: widget.recipientIconPath != null
                     ? SvgPicture.asset(
                         widget.recipientIconPath!,
-                        height: isTiny ? 20.h : 24.h,
+                        height: isTablet ? 22.0 : (isTiny ? 20.h : 24.h),
                         colorFilter: ColorFilter.mode(
                           primaryColor,
                           BlendMode.srcIn,
@@ -437,13 +395,13 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                             : 'B',
                         style: TextStyle(
                           color: primaryColor,
-                          fontSize: isTiny ? 14.sp : 16.sp,
+                          fontSize: isTablet ? 16.0 : (isTiny ? 14.sp : 16.sp),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: isTablet ? 12.0 : 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,16 +412,16 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: darkBackground,
-                      fontSize: isTiny ? 13.sp : 14.sp,
+                      fontSize: isTablet ? 14.0 : (isTiny ? 13.sp : 14.sp),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 2.h),
+                  SizedBox(height: 2),
                   Text(
                     widget.recipientAccount,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: lightSecondaryText,
-                      fontSize: isTiny ? 11.sp : 12.sp,
+                      fontSize: isTablet ? 12.0 : (isTiny ? 11.sp : 12.sp),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -474,14 +432,14 @@ class _AmountPageState extends ConsumerState<AmountPage> {
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
               child: Container(
-                padding: EdgeInsets.all(8.w),
+                padding: EdgeInsets.all(isTablet ? 8.0 : 8.w),
                 decoration: BoxDecoration(
                   color: lightBorderColor.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Icon(
                   Icons.swap_horiz_rounded,
-                  size: 16.sp,
+                  size: isTablet ? 16.0 : 16.sp,
                   color: lightSecondaryText,
                 ),
               ),
@@ -493,14 +451,17 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   }
 
   Widget _buildAmountDisplay(double walletBalance, bool isTiny, bool isSmall) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Column(
       children: [
         Text(
           amount == "0" ? "₦0" : amount,
           style: TextStyle(
-            fontSize: isTiny
-                ? 36.sp
-                : (isSmall ? 42.sp : 52.sp),
+            fontSize: isTablet
+                ? 44.0
+                : (isTiny
+                    ? 36.sp
+                    : (isSmall ? 42.sp : 52.sp)),
             fontWeight: FontWeight.w800,
             color: showInsufficientFundsWarning
                 ? errorColor
@@ -508,7 +469,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
             letterSpacing: -1,
           ),
         ),
-        SizedBox(height: 6.h),
+        SizedBox(height: isTablet ? 6.0 : 6.h),
         // Warnings
         if (showMinWarning)
           _buildWarningChip(
@@ -528,7 +489,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
           Text(
             "Enter amount to send",
             style: TextStyle(
-              fontSize: isTiny ? 11.sp : 13.sp,
+              fontSize: isTablet ? 13.0 : (isTiny ? 11.sp : 13.sp),
               color: lightSecondaryText,
               fontWeight: FontWeight.w500,
             ),
@@ -538,20 +499,21 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   }
 
   Widget _buildKeypad(bool isTiny, bool isSmall) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.bottomCenter,
       child: SizedBox(
-        width: 400.w,
+        width: isTablet ? 360.0 : 400.w,
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          padding: EdgeInsets.symmetric(horizontal: isTablet ? 16.0 : 20.w),
           child: CustomGridKeypad(
             onNumberPressed: addDigit,
             leftAction: ActionKey(
               child: Icon(
                 Icons.arrow_forward_rounded,
                 color: lightBackground,
-                size: isSmall ? 20.sp : 24.sp,
+                size: isTablet ? 22.0 : (isSmall ? 20.sp : 24.sp),
               ),
               backgroundColor: primaryColor,
               onTap: _showConfirmBottomSheet,
@@ -560,7 +522,7 @@ class _AmountPageState extends ConsumerState<AmountPage> {
               child: Icon(
                 Icons.backspace_rounded,
                 color: primaryColor,
-                size: isSmall ? 20.sp : 24.sp,
+                size: isTablet ? 22.0 : (isSmall ? 20.sp : 24.sp),
               ),
               backgroundColor: primaryColor.withValues(alpha: 0.1),
               onTap: removeDigit,

@@ -51,116 +51,127 @@ class _BeneficiaryTabSectionState extends ConsumerState<BeneficiaryTabSection> {
     final listToShow =
         (selectedTab == 'Favorites' && _hasFavorites) ? widget.favorites : widget.recents;
 
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final listContent = listToShow.isEmpty
+        ? Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.history_rounded,
+                    size: isTablet ? 28.0 : 32.sp,
+                    color: lightSecondaryText.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: isTablet ? 6.0 : 8.h),
+                  Text(
+                    selectedTab == 'Favorites'
+                        ? 'No saved beneficiaries'
+                        : 'No recent transactions',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: lightSecondaryText,
+                      fontSize: isTablet ? 12.5 : (isSmallScreen ? 12.sp : 13.sp),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          )
+        : ListView.separated(
+            physics: const BouncingScrollPhysics(),
+            shrinkWrap: isTablet,
+            itemCount: listToShow.length,
+            separatorBuilder: (_, __) =>
+                SizedBox(height: isTablet ? 6.0 : (isSmallScreen ? 6.h : 8.h)),
+            itemBuilder: (context, index) {
+              final item = listToShow[index];
+              final name = item['name'] ?? '';
+              final account = item['account'] ?? '';
+              final logoUrl = item['logoUrl'];
+
+              return _BeneficiaryItem(
+                name: name,
+                account: account,
+                logoUrl: logoUrl,
+                showAvatar: showProgress,
+                showLogo: widget.showLogo,
+                customLogo: widget.customLogo,
+                isSmallScreen: isSmallScreen,
+                isVerySmallScreen: isVerySmallScreen,
+                onTap: () =>
+                    widget.onSelectBeneficiary?.call(name, account),
+              );
+            },
+          );
+
+    final headerRow = Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: isTablet ? 4.0 : (isSmallScreen ? 6.h : 8.h),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          /// ── Header row ─────────────────────────────────────────────────
-          Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: isTablet ? 4.0 : (isSmallScreen ? 6.h : 8.h),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Tab buttons — show Favourites tab only when data exists
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTab(context, 'Recent', isVerySmallScreen),
-                    if (_hasFavorites) ...[
-                      SizedBox(width: isTablet ? 8.0 : (isVerySmallScreen ? 6.w : 10.w)),
-                      _buildTab(context, 'Favorites', isVerySmallScreen),
-                    ],
-                  ],
-                ),
-                // Search icon
-                if (widget.onSearchTap != null)
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: widget.onSearchTap,
-                      borderRadius: BorderRadius.circular(20.r),
-                      child: Padding(
-                        padding: EdgeInsets.all(isTablet ? 6.0 : 6.w),
-                        child: Icon(
-                          Icons.search,
-                          color: primaryColor,
-                          size: isTablet ? 18.0 : (isVerySmallScreen ? 18.sp : 20.sp),
-                        ),
-                      ),
-                    ),
-                  ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTab(context, 'Recent', isVerySmallScreen),
+              if (_hasFavorites) ...[
+                SizedBox(width: isTablet ? 8.0 : (isVerySmallScreen ? 6.w : 10.w)),
+                _buildTab(context, 'Favorites', isVerySmallScreen),
               ],
-            ),
+            ],
           ),
-
-          SizedBox(height: isTablet ? 4.0 : (isSmallScreen ? 4.h : 6.h)),
-
-          /// ── List ────────────────────────────────────────────────────────
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: isTablet ? 260.0 : 220.h,
-              minHeight: isTablet ? 50.0 : 50.h,
-            ),
-            child: listToShow.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.history_rounded,
-                            size: isTablet ? 28.0 : 32.sp,
-                            color: lightSecondaryText.withValues(alpha: 0.5),
-                          ),
-                          SizedBox(height: isTablet ? 6.0 : 8.h),
-                          Text(
-                            selectedTab == 'Favorites'
-                                ? 'No saved beneficiaries'
-                                : 'No recent transactions',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: lightSecondaryText,
-                              fontSize: isTablet ? 12.5 : (isSmallScreen ? 12.sp : 13.sp),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : ListView.separated(
-                    physics: const BouncingScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: listToShow.length,
-                    separatorBuilder: (_, __) =>
-                        SizedBox(height: isTablet ? 6.0 : (isSmallScreen ? 6.h : 8.h)),
-                    itemBuilder: (context, index) {
-                      final item = listToShow[index];
-                      final name = item['name'] ?? '';
-                      final account = item['account'] ?? '';
-                      final logoUrl = item['logoUrl'];
-
-                      return _BeneficiaryItem(
-                        name: name,
-                        account: account,
-                        logoUrl: logoUrl,
-                        showAvatar: showProgress,
-                        showLogo: widget.showLogo,
-                        customLogo: widget.customLogo,
-                        isSmallScreen: isSmallScreen,
-                        isVerySmallScreen: isVerySmallScreen,
-                        onTap: () =>
-                            widget.onSelectBeneficiary?.call(name, account),
-                      );
-                    },
+          if (widget.onSearchTap != null)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: widget.onSearchTap,
+                borderRadius: BorderRadius.circular(20.r),
+                child: Padding(
+                  padding: EdgeInsets.all(isTablet ? 6.0 : 6.w),
+                  child: Icon(
+                    Icons.search,
+                    color: primaryColor,
+                    size: isTablet ? 18.0 : (isVerySmallScreen ? 18.sp : 20.sp),
                   ),
-          ),
+                ),
+              ),
+            ),
         ],
       ),
+    );
+
+    if (isTablet) {
+      return SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            headerRow,
+            SizedBox(height: 4.0),
+            ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 260.0,
+                minHeight: 50.0,
+              ),
+              child: listContent,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        headerRow,
+        SizedBox(height: isSmallScreen ? 4.h : 6.h),
+        Expanded(
+          child: listContent,
+        ),
+      ],
     );
   }
 
