@@ -173,10 +173,20 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
   // ✅ VERIFY ACCOUNT (Before Transfer)
   Future<ResponseModel?> verifyAccount(BuildContext context, String account) async {
-    if (account.isEmpty || account.length != 10) {
+    String clean = account.trim().replaceAll('@', '');
+    if (clean.startsWith('+234')) {
+      clean = clean.substring(4);
+    } else if (clean.startsWith('234') && clean.length == 13) {
+      clean = clean.substring(3);
+    }
+    if (clean.startsWith('0') && clean.length == 11) {
+      clean = clean.substring(1);
+    }
+
+    if (clean.isEmpty) {
       ToastHelper.showToast(
         context: context,
-        message: "Enter a valid 10-digit account number",
+        message: "Enter a valid account number",
         icon: Icons.info,
         iconColor: errorColor,
         position: ToastPosition.top,
@@ -186,7 +196,7 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
     try {
       LoadingHelper.show('');
-      final Map<String, dynamic> body = {"account": account.trim()};
+      final Map<String, dynamic> body = {"account": clean};
       // debugPrint("➡️ Verifying account: $body");
       final ResponseModel response = await dashboardRepository.verifyAccount(body);
 

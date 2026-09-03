@@ -11,6 +11,7 @@ import 'package:bia/app/utils/router/route_constant.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../dashboardcontroller/dashboardcontroller.dart';
+import 'package:bia/feature/auth/modal/reponse/response_modal.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
   const QrScannerScreen({super.key});
@@ -170,21 +171,41 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     debugPrint("🔍 Verifying receiver: $account");
     final dashboardController = ref.read(dashboardControllerProvider.notifier);
 
-    final response = await dashboardController.verifyAccount(context, account);
+    String cleanAccount = account.trim().replaceAll('@', '');
+    if (cleanAccount.startsWith('+234')) {
+      cleanAccount = cleanAccount.substring(4);
+    } else if (cleanAccount.startsWith('234') && cleanAccount.length == 13) {
+      cleanAccount = cleanAccount.substring(3);
+    }
+    if (cleanAccount.startsWith('0') && cleanAccount.length == 11) {
+      cleanAccount = cleanAccount.substring(1);
+    }
+
+    ResponseModel? response;
+    // 1. Try account verification if length is 10 digits
+    if (cleanAccount.length == 10) {
+      response = await dashboardController.verifyAccount(context, cleanAccount);
+    }
+
+    // 2. Fallback to tag / phone verification if response is null or failed
+    if (response == null || !response.responseSuccessful) {
+      response = await dashboardController.verifyTag(context, cleanAccount);
+    }
+
     if (!mounted) return;
 
     if (response?.responseSuccessful == true) {
       final fullname = response?.responseBody?.user?.fullname ?? "Unknown";
-      debugPrint("✅ Receiver verified: $fullname");
+      final resolvedAccount = response?.responseBody?.user?.phone ??
+          response?.responseBody?.user?.tag ??
+          cleanAccount;
+      debugPrint("✅ Receiver verified: $fullname ($resolvedAccount)");
 
-      // Navigate to Payment Confirmation / Input
-      // If amount is present, go to amount page with pre-filled amount
-      // Both go to amountPage as it handles the confirmation sheet trigger
       if (_isCollectMode) {
         context
             .pushNamed(
               RouteList.qrAmountEntryScreen,
-              extra: {'account': account, 'isCollectMode': true},
+              extra: {'account': resolvedAccount, 'isCollectMode': true},
             )
             .then((_) {
               if (mounted) setState(() => isScanning = true);
@@ -194,7 +215,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
             .pushNamed(
               RouteList.amountPage,
               extra: {
-                'recipientAccount': account,
+                'recipientAccount': resolvedAccount,
                 'recipientName': fullname,
                 'amount': amount,
                 'narration': narration ?? "",
