@@ -1278,58 +1278,63 @@ class QuickActionsGrid extends ConsumerStatefulWidget {
 class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
   bool showMore = false;
 
-  static List<Map<String, dynamic>> getActions(BuildContext context) => [
-    {
-      'label': 'Airtime',
-      'icon': Icon(
-        Icons.phone_iphone_rounded,
-        color: primaryColor,
-        size: 20.sp,
-      ),
-      'color': secondaryColor,
-      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.airtime)),
-    },
-    {
-      'label': 'Data',
-      'icon': Icon(Icons.wifi_rounded, color: primaryColor, size: 20.sp),
-      'color': secondaryColor,
-      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.data)),
-    },
-    {
-      'label': 'Cable TV',
-      'icon': Icon(Icons.live_tv_rounded, color: primaryColor, size: 20.sp),
-      'color': secondaryColor,
-      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.cable)),
-    },
-    {
-      'label': 'Electricity',
-      'icon': Icon(Icons.bolt_rounded, color: primaryColor, size: 20.sp),
-      'color': secondaryColor,
-      'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.electricity)),
-    },
-    {
-      'label': 'Water Bill',
-      'icon': Icon(Icons.water_drop_rounded, color: primaryColor, size: 20.sp),
-      'color': secondaryColor,
-      'isSoon': true,
-    },
-    {
-      'label': 'Insurance',
-      'icon': Icon(
-        Icons.health_and_safety_rounded,
-        color: primaryColor,
-        size: 20.sp,
-      ),
-      'color': secondaryColor,
-      'isSoon': true,
-    },
-    {
-      'label': 'Education',
-      'icon': Icon(Icons.school_rounded, color: primaryColor, size: 20.sp),
-      'color': secondaryColor,
-      'isSoon': true,
-    },
-  ];
+  static List<Map<String, dynamic>> getActions(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final double iconSize = isTablet ? 22.0 : 20.sp;
+
+    return [
+      {
+        'label': 'Airtime',
+        'icon': Icon(
+          Icons.phone_iphone_rounded,
+          color: primaryColor,
+          size: iconSize,
+        ),
+        'color': secondaryColor,
+        'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.airtime)),
+      },
+      {
+        'label': 'Data',
+        'icon': Icon(Icons.wifi_rounded, color: primaryColor, size: iconSize),
+        'color': secondaryColor,
+        'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.data)),
+      },
+      {
+        'label': 'Cable TV',
+        'icon': Icon(Icons.live_tv_rounded, color: primaryColor, size: iconSize),
+        'color': secondaryColor,
+        'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.cable)),
+      },
+      {
+        'label': 'Electricity',
+        'icon': Icon(Icons.bolt_rounded, color: primaryColor, size: iconSize),
+        'color': secondaryColor,
+        'onTap': () => _runProtectedAction(context, () => context.pushNamed(RouteList.electricity)),
+      },
+      {
+        'label': 'Water Bill',
+        'icon': Icon(Icons.water_drop_rounded, color: primaryColor, size: iconSize),
+        'color': secondaryColor,
+        'isSoon': true,
+      },
+      {
+        'label': 'Insurance',
+        'icon': Icon(
+          Icons.health_and_safety_rounded,
+          color: primaryColor,
+          size: iconSize,
+        ),
+        'color': secondaryColor,
+        'isSoon': true,
+      },
+      {
+        'label': 'Education',
+        'icon': Icon(Icons.school_rounded, color: primaryColor, size: iconSize),
+        'color': secondaryColor,
+        'isSoon': true,
+      },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1397,7 +1402,7 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
               mainAxisExtent: isTablet
-                  ? 88.0
+                  ? 82.0
                   : (isXSmall
                         ? 68.h
                         : isSmall
@@ -1526,7 +1531,7 @@ class QuickActionButton extends StatelessWidget {
                   builder: (ctx) {
                     final h = MediaQuery.of(ctx).size.height;
                     final sz = isTablet
-                        ? 50.0
+                        ? 48.0
                         : (h < 680
                             ? 38.r
                             : h < 780
@@ -1540,7 +1545,7 @@ class QuickActionButton extends StatelessWidget {
                       width: sz,
                       decoration: BoxDecoration(
                         color: backgroundColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                         border: Border.all(color: Colors.white, width: 1.5),
                         boxShadow: [
                           BoxShadow(
@@ -1550,7 +1555,15 @@ class QuickActionButton extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Center(child: icon),
+                      child: Center(
+                        child: IconTheme(
+                          data: IconThemeData(
+                            size: isTablet ? 22.0 : 20.sp,
+                            color: primaryColor,
+                          ),
+                          child: icon,
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -1581,7 +1594,7 @@ class QuickActionButton extends StatelessWidget {
                   ),
               ],
             ),
-            SizedBox(height: isTablet ? 8 : 6.h),
+            SizedBox(height: isTablet ? 6.0 : 6.h),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -1592,7 +1605,7 @@ class QuickActionButton extends StatelessWidget {
                     ? lightSecondaryText.withOpacity(0.5)
                     : darkBackground,
                 fontWeight: FontWeight.w700,
-                fontSize: isTablet ? 10.5 : 10.sp,
+                fontSize: isTablet ? 11.0 : 10.sp,
               ),
             ),
           ],
