@@ -85,6 +85,7 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
     final isQrEnabled = servicesStatus.qr;
     final pages = _getPages(qrCompleted);
     
+    final isTablet = MediaQuery.of(context).size.width >= 600;
     final scaffold = Scaffold(
       backgroundColor: Colors.transparent,
       body: pages[_selectedIndex],
@@ -119,8 +120,8 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
         child: Opacity(
           opacity: isQrEnabled ? 1.0 : 0.4,
           child: Container(
-            height: 80.h,
-            width: 80.h,
+            height: isTablet ? 64.0 : 80.h,
+            width: isTablet ? 64.0 : 80.h,
             decoration: BoxDecoration(
               color: isQrEnabled ? primaryColor : Colors.grey,
               shape: BoxShape.circle,
@@ -132,10 +133,10 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
                 ),
               ],
             ),
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.all(isTablet ? 14.0 : 16.w),
             child: SvgPicture.asset(
               scanner,
-              height: 12.h,
+              height: isTablet ? 22.0 : 12.h,
               colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
             ),
           ),
@@ -143,30 +144,28 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
       ),
       floatingActionButtonLocation: const _CustomFABLocation(),
       bottomNavigationBar: SizedBox(
-        height: 120.h,
+        height: isTablet ? 90.0 : 120.h,
         child: Stack(
           alignment: Alignment.bottomCenter,
           children: [
             CustomPaint(
-              size: Size(MediaQuery.of(context).size.width, 120.h),
-              painter: BNBCustomPainter(),
+              size: Size(MediaQuery.of(context).size.width, isTablet ? 90.0 : 120.h),
+              painter: BNBCustomPainter(isTablet: isTablet),
             ),
  
             // Navigation Items
             Positioned(
-              bottom: 5.h,
+              bottom: isTablet ? 4.0 : 5.h,
               left: 0,
               right: 0,
               child: SizedBox(
-                height: 75.h,
+                height: isTablet ? 60.0 : 75.h,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildNavItem(Icons.home_outlined, 0),
-                   // _buildNavItem(Icons.location_on_outlined, 1),
-                    SizedBox(width: 15.w), // Spacer for center button
-                   // _buildNavItem(Icons.bar_chart_outlined, 3),
-                    _buildNavItem(Icons.grid_view_rounded, 4),
+                    _buildNavItem(Icons.home_outlined, 0, isTablet),
+                    SizedBox(width: isTablet ? 12.0 : 15.w),
+                    _buildNavItem(Icons.grid_view_rounded, 4, isTablet),
                   ],
                 ),
               ),
@@ -187,7 +186,7 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
     return scaffold;
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
+  Widget _buildNavItem(IconData icon, int index, bool isTablet) {
     final bool isSelected = _selectedIndex == index;
 
     return GestureDetector(
@@ -198,14 +197,14 @@ class _BottomNavBarState extends ConsumerState<BottomNavBar> {
         children: [
           Icon(
             icon,
-            size: 28.sp,
+            size: isTablet ? 24.0 : 28.sp,
             color: isSelected ? primaryColor : Colors.grey.withOpacity(0.7),
           ),
           if (isSelected)
             Container(
-              margin: EdgeInsets.only(top: 4.h),
-              height: 4.h,
-              width: 4.w,
+              margin: EdgeInsets.only(top: isTablet ? 3.0 : 4.h),
+              height: isTablet ? 4.0 : 4.h,
+              width: isTablet ? 4.0 : 4.w,
               decoration: const BoxDecoration(
                 color: primaryColor,
                 shape: BoxShape.circle,
@@ -223,12 +222,16 @@ class _CustomFABLocation extends FloatingActionButtonLocation {
   @override
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final double fabX = (scaffoldGeometry.scaffoldSize.width - scaffoldGeometry.floatingActionButtonSize.width) / 2.0;
-    final double fabY = scaffoldGeometry.scaffoldSize.height - 20.h - scaffoldGeometry.floatingActionButtonSize.height;
+    final isTablet = scaffoldGeometry.scaffoldSize.width >= 600;
+    final double fabY = scaffoldGeometry.scaffoldSize.height - (isTablet ? 16.0 : 20.h) - scaffoldGeometry.floatingActionButtonSize.height;
     return Offset(fabX, fabY);
   }
 }
 
 class BNBCustomPainter extends CustomPainter {
+  final bool isTablet;
+  BNBCustomPainter({this.isTablet = false});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -237,9 +240,9 @@ class BNBCustomPainter extends CustomPainter {
 
     final path = Path();
     
-    // Config for the bump
-    final double bumpWidth = 110.r;
-    final double bumpHeight = 45.r;
+    // Config for the bump - smaller on tablet since FAB is smaller
+    final double bumpWidth = isTablet ? 90.0 : 110.r;
+    final double bumpHeight = isTablet ? 36.0 : 45.r;
     final double centerX = size.width / 2;
     
     path.moveTo(0, bumpHeight); // Start below the bump height

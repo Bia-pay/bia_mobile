@@ -187,59 +187,67 @@ class _UPopupDialogState extends State<UPopupDialog> {
       alignment: Alignment.center,
       children: [
         Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isTablet ? 24 : 32.r)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isTablet ? 20.0 : 32.r)),
           backgroundColor: Colors.white,
           elevation: 0,
           child: Container(
-            width: isTablet ? 420 : null,
-            padding: EdgeInsets.all(isTablet ? 24 : 28.r),
+            width: isTablet ? 400.0 : null,
+            padding: EdgeInsets.all(isTablet ? 22.0 : 28.r),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 /// ICON HEADER
                 Container(
-                  width: isTablet ? 56 : 64.w,
-                  height: isTablet ? 56 : 64.w,
+                  width: isTablet ? 44.0 : 64.w,
+                  height: isTablet ? 44.0 : 64.w,
                   decoration: BoxDecoration(
                     color: mainColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                    child: widget.isLoading 
+                  child: widget.isLoading
                       ? CustomLoader(color: mainColor)
-                      : Icon(icon, color: mainColor, size: isTablet ? 28 : 32.sp),
+                      : Icon(icon, color: mainColor, size: isTablet ? 22.0 : 32.sp),
                 ),
-                SizedBox(height: isTablet ? 18 : 24.h),
+                SizedBox(height: isTablet ? 14.0 : 24.h),
 
-                /// CONTENT
+                /// TITLE
                 Text(
                   widget.title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: lightText,
-                    fontSize: isTablet ? 18 : 20.sp,
+                    fontSize: isTablet ? 16.0 : 20.sp,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),
                 ),
-                SizedBox(height: isTablet ? 10 : 12.h),
+                SizedBox(height: isTablet ? 6.0 : 12.h),
+
+                /// MESSAGE
                 Text(
                   widget.message,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: lightSecondaryText,
-                    fontSize: isTablet ? 14 : 14.sp,
+                    fontSize: isTablet ? 13.0 : 14.sp,
                     height: 1.5,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                
-                /// CUSTOM CONTENT (IF PROVIDED)
+
+                /// CUSTOM CONTENT (e.g. TextField)
                 if (widget.content != null) ...[
-                  SizedBox(height: 20.h),
-                  widget.content!,
+                  SizedBox(height: isTablet ? 12.0 : 20.h),
+                  // Wrap content in a MediaQuery override to suppress .sp inflation on tablet
+                  MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.noScaling,
+                    ),
+                    child: widget.content!,
+                  ),
                 ],
 
-                SizedBox(height: 32.h),
+                SizedBox(height: isTablet ? 18.0 : 32.h),
 
                 /// ACTIONS
                 if (!widget.isLoading)
@@ -257,19 +265,21 @@ class _UPopupDialogState extends State<UPopupDialog> {
                             backgroundColor: widget.type == UPopupType.error ? errorColor : primaryColor,
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(isTablet ? 12.0 : 16.r),
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: isTablet ? 12.0 : 16.h),
                           ),
                           child: Text(
                             widget.confirmLabel ?? "Continue",
-                            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w800),
+                            style: TextStyle(fontSize: isTablet ? 14.0 : 16.sp, fontWeight: FontWeight.w800),
                           ),
                         ),
                       ),
                       
-                      /// SECONDARY BUTTON (IF PROVIDED)
+                      /// SECONDARY BUTTON (Cancel)
                       if (widget.cancelLabel != null) ...[
-                        SizedBox(height: 8.h),
+                        SizedBox(height: isTablet ? 2.0 : 8.h),
                         SizedBox(
                           width: double.infinity,
                           child: TextButton(
@@ -279,11 +289,11 @@ class _UPopupDialogState extends State<UPopupDialog> {
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: lightSecondaryText,
-                              padding: EdgeInsets.symmetric(vertical: 12.h),
+                              padding: EdgeInsets.symmetric(vertical: isTablet ? 8.0 : 12.h),
                             ),
                             child: Text(
                               widget.cancelLabel!,
-                              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w700),
+                              style: TextStyle(fontSize: isTablet ? 13.0 : 14.sp, fontWeight: FontWeight.w700),
                             ),
                           ),
                         ),

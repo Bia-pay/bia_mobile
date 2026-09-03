@@ -87,7 +87,6 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter FAQs based on search query and category selection
     final filteredFaqs = _faqs.where((faq) {
       final matchesSearch = faq['question']!.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           faq['answer']!.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -95,287 +94,325 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       return matchesSearch && matchesCategory;
     }).toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Premium clean off-white background
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: lightText, size: 20.sp),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          "Help & Support",
-          style: TextStyle(
-            color: lightText,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final hPad = isTablet ? 36.0 : 20.w;
+
+    Widget scrollView = CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        // Header Description Section
+        SliverToBoxAdapter(
+          child: Container(
+            color: Colors.white,
+            padding: EdgeInsets.only(
+              left: hPad, right: hPad,
+              top: isTablet ? 14.0 : 16.h,
+              bottom: isTablet ? 6.0 : 8.h,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Hello, how can we help?",
+                  style: TextStyle(
+                    color: lightText,
+                    fontSize: isTablet ? 20.0 : 22.sp,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                SizedBox(height: isTablet ? 4.0 : 6.h),
+                Text(
+                  "Search our FAQs or get in touch with our active customer support channels.",
+                  style: TextStyle(
+                    color: lightSecondaryText,
+                    fontSize: isTablet ? 12.0 : 13.sp,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        centerTitle: true,
-      ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Header Description Section
-          SliverToBoxAdapter(
+
+        // Support Options Header
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: hPad, right: hPad,
+              top: isTablet ? 18.0 : 24.h,
+              bottom: isTablet ? 8.0 : 12.h,
+            ),
+            child: Text(
+              "STILL NEED HELP? CONTACT US",
+              style: TextStyle(
+                color: lightSecondaryText.withOpacity(0.7),
+                fontSize: isTablet ? 10.0 : 11.sp,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+        ),
+
+        // Support Channel List
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              _buildSupportTile(
+                icon: Icons.support_agent_rounded,
+                iconColor: primaryColor,
+                title: "Raise a Support Ticket",
+                subtitle: "View history & open new support tickets directly",
+                onTap: () => context.pushNamed(RouteList.supportTickets),
+                isTablet: isTablet,
+              ),
+              _buildSupportTile(
+                icon: Icons.chat_rounded,
+                iconColor: const Color(0xFF25D366),
+                title: "WhatsApp Chat Support",
+                subtitle: "Instant messaging support with our agents",
+                onTap: () => _launchUrl("https://wa.me/2348000000000"),
+                isTablet: isTablet,
+              ),
+              _buildSupportTile(
+                icon: Icons.mail_outline_rounded,
+                iconColor: Colors.redAccent,
+                title: "Email Support",
+                subtitle: "Send details and attachments to support@bia.com",
+                onTap: () => _launchUrl("mailto:support@bia.com?subject=BIA%20App%20Support%20Inquiry"),
+                isTablet: isTablet,
+              ),
+              _buildSupportTile(
+                icon: Icons.phone_in_talk_rounded,
+                iconColor: Colors.blueAccent,
+                title: "Call Customer Care",
+                subtitle: "Talk to a customer care representative",
+                onTap: () => _launchUrl("tel:02097070004"),
+                isTablet: isTablet,
+              ),
+            ]),
+          ),
+        ),
+
+        // FAQ Search Bar
+        SliverToBoxAdapter(
+          child: Container(
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(
+              horizontal: hPad,
+              vertical: isTablet ? 10.0 : 12.h,
+            ),
             child: Container(
-              color: Colors.white,
-              padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 16.h, bottom: 8.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Hello, how can we help?",
-                    style: TextStyle(
-                      color: lightText,
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 16.r),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) => setState(() => _searchQuery = val),
+                style: TextStyle(
+                  color: lightText,
+                  fontSize: isTablet ? 13.0 : 15.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Search topic, questions, keywords...",
+                  hintStyle: TextStyle(
+                    color: lightSecondaryText.withOpacity(0.6),
+                    fontSize: isTablet ? 13.0 : 14.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: lightSecondaryText.withOpacity(0.8),
+                    size: isTablet ? 18.0 : 22.sp,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear_rounded,
+                            color: lightSecondaryText,
+                            size: isTablet ? 17.0 : 20.sp,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 14.0 : 16.w,
+                    vertical: isTablet ? 11.0 : 14.h,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // Category Pills
+        SliverToBoxAdapter(
+          child: Container(
+            height: isTablet ? 46.0 : 64.h,
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: isTablet ? 8.0 : 12.h),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: hPad),
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final category = _categories[index];
+                final isSelected = _selectedCategory == category;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedCategory = category),
+                  child: Container(
+                    margin: EdgeInsets.only(right: isTablet ? 8.0 : 10.w),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 14.0 : 16.w,
+                      vertical: isTablet ? 5.0 : 8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected ? primaryColor : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : lightSecondaryText,
+                          fontSize: isTablet ? 11.0 : 13.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(height: 6.h),
+                );
+              },
+            ),
+          ),
+        ),
+
+        // FAQ Title Header
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: hPad, right: hPad,
+              top: isTablet ? 18.0 : 24.h,
+              bottom: isTablet ? 8.0 : 12.h,
+            ),
+            child: Text(
+              "FREQUENTLY ASKED QUESTIONS",
+              style: TextStyle(
+                color: lightSecondaryText.withOpacity(0.7),
+                fontSize: isTablet ? 10.0 : 11.sp,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ),
+        ),
+
+        // FAQ List
+        if (filteredFaqs.isEmpty)
+          SliverToBoxAdapter(
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 40.0 : 40.w,
+                vertical: isTablet ? 24.0 : 32.h,
+              ),
+              alignment: Alignment.center,
+              child: Column(
+                children: [
+                  Icon(Icons.search_off_rounded,
+                    color: lightSecondaryText.withOpacity(0.5),
+                    size: isTablet ? 36.0 : 48.sp,
+                  ),
+                  SizedBox(height: isTablet ? 10.0 : 12.h),
                   Text(
-                    "Search our FAQs or get in touch with our active customer support channels.",
+                    "No matching FAQs found",
+                    style: TextStyle(
+                      color: lightText,
+                      fontSize: isTablet ? 13.0 : 15.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: isTablet ? 4.0 : 6.h),
+                  Text(
+                    "Try searching for other terms or contact support directly.",
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       color: lightSecondaryText,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
+                      fontSize: isTablet ? 11.0 : 12.sp,
                       height: 1.4,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-
-          // Support Options Header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 24.h, bottom: 12.h),
-              child: Text(
-                "STILL NEED HELP? CONTACT US",
-                style: TextStyle(
-                  color: lightSecondaryText.withOpacity(0.7),
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
-                ),
-              ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final faq = filteredFaqs[index];
+                return _FaqTile(
+                  question: faq['question']!,
+                  answer: faq['answer']!,
+                  hPad: hPad,
+                  isTablet: isTablet,
+                );
+              },
+              childCount: filteredFaqs.length,
             ),
           ),
 
-          // Support Channel Grid/List
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildSupportTile(
-                  icon: Icons.support_agent_rounded,
-                  iconColor: primaryColor,
-                  title: "Raise a Support Ticket",
-                  subtitle: "View history & open new support tickets directly",
-                  onTap: () => context.pushNamed(RouteList.supportTickets),
-                ),
-                _buildSupportTile(
-                  icon: Icons.chat_rounded,
-                  iconColor: const Color(0xFF25D366), // WhatsApp Green
-                  title: "WhatsApp Chat Support",
-                  subtitle: "Instant messaging support with our agents",
-                  onTap: () => _launchUrl("https://wa.me/2348000000000"),
-                ),
-                _buildSupportTile(
-                  icon: Icons.mail_outline_rounded,
-                  iconColor: Colors.redAccent,
-                  title: "Email Support",
-                  subtitle: "Send details and attachments to support@bia.com",
-                  onTap: () => _launchUrl("mailto:support@bia.com?subject=BIA%20App%20Support%20Inquiry"),
-                ),
-                _buildSupportTile(
-                  icon: Icons.phone_in_talk_rounded,
-                  iconColor: Colors.blueAccent,
-                  title: "Call Customer Care",
-                  subtitle: "Talk to a customer care representative",
-                  onTap: () => _launchUrl("tel:02097070004"),
-                ),
-              ]),
-            ),
-          ),
+        SliverToBoxAdapter(
+          child: SizedBox(height: isTablet ? 28.0 : 40.h),
+        ),
+      ],
+    );
 
-          // FAQ Search Bar
-          SliverToBoxAdapter(
-            child: Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) {
-                    setState(() {
-                      _searchQuery = val;
-                    });
-                  },
-                  style: TextStyle(
-                    color: lightText,
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Search topic, questions, keywords...",
-                    hintStyle: TextStyle(
-                      color: lightSecondaryText.withOpacity(0.6),
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: lightSecondaryText.withOpacity(0.8),
-                      size: 22.sp,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear_rounded, color: lightSecondaryText, size: 20.sp),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-                  ),
-                ),
-              ),
-            ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: lightText, size: isTablet ? 18.0 : 20.sp),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          "Help & Support",
+          style: TextStyle(
+            color: lightText,
+            fontSize: isTablet ? 16.0 : 18.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
           ),
-
-          // Category Pills
-          SliverToBoxAdapter(
-            child: Container(
-              height: 64.h,
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  final isSelected = _selectedCategory == category;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedCategory = category;
-                      });
-                    },
-                    child: Container(
-                      margin: EdgeInsets.only(right: 10.w),
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                      decoration: BoxDecoration(
-                        color: isSelected ? primaryColor : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(100),
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: primaryColor.withOpacity(0.25),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                )
-                              ]
-                            : null,
-                      ),
-                      child: Center(
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : lightSecondaryText,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // FAQ Title Header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 24.h, bottom: 12.h),
-              child: Text(
-                "FREQUENTLY ASKED QUESTIONS",
-                style: TextStyle(
-                  color: lightSecondaryText.withOpacity(0.7),
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ),
-          ),
-
-          // FAQ List
-          if (filteredFaqs.isEmpty)
-            SliverToBoxAdapter(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 40.w, vertical: 32.h),
-                alignment: Alignment.center,
-                child: Column(
-                  children: [
-                    Icon(Icons.search_off_rounded, color: lightSecondaryText.withOpacity(0.5), size: 48.sp),
-                    SizedBox(height: 12.h),
-                    Text(
-                      "No matching FAQs found",
-                      style: TextStyle(
-                        color: lightText,
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 6.h),
-                    Text(
-                      "Try searching for other terms or contact support directly.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: lightSecondaryText,
-                        fontSize: 12.sp,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
+        ),
+        centerTitle: true,
+      ),
+      body: isTablet
+          ? Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: scrollView,
               ),
             )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final faq = filteredFaqs[index];
-                  return _FaqTile(
-                    question: faq['question']!,
-                    answer: faq['answer']!,
-                  );
-                },
-                childCount: filteredFaqs.length,
-              ),
-            ),
-
-          SliverToBoxAdapter(
-            child: SizedBox(height: 40.h),
-          ),
-        ],
-      ),
+          : scrollView,
     );
   }
 
@@ -385,12 +422,13 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool isTablet = false,
   }) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: EdgeInsets.only(bottom: isTablet ? 8.0 : 12.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -401,30 +439,33 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
       ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 14.0 : 16.w,
+          vertical: isTablet ? 4.0 : 8.h,
+        ),
         leading: Container(
-          padding: EdgeInsets.all(10.r),
+          padding: EdgeInsets.all(isTablet ? 8.0 : 10.r),
           decoration: BoxDecoration(
             color: iconColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14.r),
+            borderRadius: BorderRadius.circular(isTablet ? 10.0 : 14.r),
           ),
-          child: Icon(icon, color: iconColor, size: 24.sp),
+          child: Icon(icon, color: iconColor, size: isTablet ? 18.0 : 24.sp),
         ),
         title: Text(
           title,
           style: TextStyle(
             color: lightText,
-            fontSize: 15.sp,
+            fontSize: isTablet ? 13.0 : 15.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Padding(
-          padding: EdgeInsets.only(top: 4.h),
+          padding: EdgeInsets.only(top: isTablet ? 2.0 : 4.h),
           child: Text(
             subtitle,
             style: TextStyle(
               color: lightSecondaryText,
-              fontSize: 12.sp,
+              fontSize: isTablet ? 11.0 : 12.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -432,7 +473,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
         trailing: Icon(
           Icons.arrow_forward_ios_rounded,
           color: lightSecondaryText.withOpacity(0.5),
-          size: 14.sp,
+          size: isTablet ? 12.0 : 14.sp,
         ),
       ),
     );
@@ -442,10 +483,14 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
 class _FaqTile extends StatefulWidget {
   final String question;
   final String answer;
+  final double hPad;
+  final bool isTablet;
 
   const _FaqTile({
     required this.question,
     required this.answer,
+    this.hPad = 20,
+    this.isTablet = false,
   });
 
   @override
@@ -457,11 +502,13 @@ class _FaqTileState extends State<_FaqTile> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = widget.isTablet;
+    final hPad = widget.hPad;
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 6.h),
+      margin: EdgeInsets.symmetric(horizontal: hPad, vertical: isTablet ? 4.0 : 6.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.015),
@@ -471,17 +518,16 @@ class _FaqTileState extends State<_FaqTile> with SingleTickerProviderStateMixin 
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
         child: Column(
           children: [
             InkWell(
-              onTap: () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              },
+              onTap: () => setState(() => _isExpanded = !_isExpanded),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 16.0 : 20.w,
+                  vertical: isTablet ? 12.0 : 16.h,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -489,19 +535,19 @@ class _FaqTileState extends State<_FaqTile> with SingleTickerProviderStateMixin 
                         widget.question,
                         style: TextStyle(
                           color: lightText,
-                          fontSize: 14.sp,
+                          fontSize: isTablet ? 12.0 : 14.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    SizedBox(width: 8.w),
+                    SizedBox(width: isTablet ? 6.0 : 8.w),
                     AnimatedRotation(
                       turns: _isExpanded ? 0.5 : 0.0,
                       duration: const Duration(milliseconds: 200),
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
                         color: lightText.withOpacity(0.6),
-                        size: 24.sp,
+                        size: isTablet ? 20.0 : 24.sp,
                       ),
                     ),
                   ],
@@ -511,12 +557,16 @@ class _FaqTileState extends State<_FaqTile> with SingleTickerProviderStateMixin 
             AnimatedCrossFade(
               firstChild: const SizedBox.shrink(),
               secondChild: Padding(
-                padding: EdgeInsets.only(left: 20.w, right: 20.w, bottom: 20.h),
+                padding: EdgeInsets.only(
+                  left: isTablet ? 16.0 : 20.w,
+                  right: isTablet ? 16.0 : 20.w,
+                  bottom: isTablet ? 14.0 : 20.h,
+                ),
                 child: Text(
                   widget.answer,
                   style: TextStyle(
                     color: lightSecondaryText,
-                    fontSize: 13.sp,
+                    fontSize: isTablet ? 11.0 : 13.sp,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
                   ),

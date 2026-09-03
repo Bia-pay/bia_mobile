@@ -52,115 +52,140 @@ class LanguageSettingsScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: lightText),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          "Language Settings",
-          style: TextStyle(
-            color: lightText,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w800,
-          ),
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = MediaQuery.of(context).size.width >= 600;
+            return Text(
+              "Language Settings",
+              style: TextStyle(
+                color: lightText,
+                fontSize: isTablet ? 16.0 : 18.sp,
+                fontWeight: FontWeight.w800,
+              ),
+            );
+          },
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// SECTION 1: APP INTERFACE
-            _buildSectionHeader("App Interface Language"),
-            _buildLanguagePanel(
-              ref: ref,
-              currentValue: appLocale.languageCode,
-              options: [
-                _LangOption(code: 'en', label: 'English', desc: 'System default'),
-                _LangOption(code: 'ha', label: 'Hausa', desc: 'Harshen Hausa'),
-                _LangOption(code: 'pcm', label: 'Pidgin', desc: 'Nigerian Pidgin'),
-              ],
-              onChanged: (code) {
-                _handleConfirm(
-                  context,
-                  ref,
-                  title: "Change App Language",
-                  content: "Are you sure you want to change the app interface language?",
-                  onConfirm: () {
-                    ref.read(appLocaleProvider.notifier).setLocale(code);
-                    final aiLang = code == 'ha'
-                        ? 'hausa'
-                        : (code == 'pcm' ? 'pidgin' : 'english');
-                    ref.read(aiChatControllerProvider.notifier).updateLanguage(aiLang);
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isTablet = constraints.maxWidth >= 600;
+          final hPad = isTablet ? 36.0 : 20.w;
+          final vPad = isTablet ? 16.0 : 20.h;
+
+          final content = SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// SECTION 1: APP INTERFACE
+                _buildSectionHeader("App Interface Language", isTablet),
+                _buildLanguagePanel(
+                  ref: ref,
+                  currentValue: appLocale.languageCode,
+                  isTablet: isTablet,
+                  options: [
+                    _LangOption(code: 'en', label: 'English', desc: 'System default'),
+                    _LangOption(code: 'ha', label: 'Hausa', desc: 'Harshen Hausa'),
+                    _LangOption(code: 'pcm', label: 'Pidgin', desc: 'Nigerian Pidgin'),
+                  ],
+                  onChanged: (code) {
+                    _handleConfirm(
+                      context,
+                      ref,
+                      title: "Change App Language",
+                      content: "Are you sure you want to change the app interface language?",
+                      onConfirm: () {
+                        ref.read(appLocaleProvider.notifier).setLocale(code);
+                        final aiLang = code == 'ha'
+                            ? 'hausa'
+                            : (code == 'pcm' ? 'pidgin' : 'english');
+                        ref.read(aiChatControllerProvider.notifier).updateLanguage(aiLang);
+                      },
+                    );
                   },
-                );
-              },
-            ),
+                ),
 
-            SizedBox(height: 35.h),
+                SizedBox(height: isTablet ? 24.0 : 35.h),
 
-            /// SECTION 2: BIA AI PERSONALITY
-            _buildSectionHeader("BIA AI Voice & Personality"),
-            _buildLanguagePanel(
-              ref: ref,
-              currentValue: aiLanguage,
-              options: [
-                _LangOption(code: 'english', label: 'English', desc: 'Polite & Professional'),
-                _LangOption(code: 'pidgin', label: 'Pidgin', desc: 'Friendly & Casual'),
-                _LangOption(code: 'hausa', label: 'Hausa', desc: 'Traditional & Warm'),
+                /// SECTION 2: BIA AI PERSONALITY
+                _buildSectionHeader("BIA AI Voice & Personality", isTablet),
+                _buildLanguagePanel(
+                  ref: ref,
+                  currentValue: aiLanguage,
+                  isTablet: isTablet,
+                  options: [
+                    _LangOption(code: 'english', label: 'English', desc: 'Polite & Professional'),
+                    _LangOption(code: 'pidgin', label: 'Pidgin', desc: 'Friendly & Casual'),
+                    _LangOption(code: 'hausa', label: 'Hausa', desc: 'Traditional & Warm'),
+                  ],
+                  onChanged: (code) {
+                    _handleConfirm(
+                      context,
+                      ref,
+                      title: "Change BIA AI Voice",
+                      content: "Do you want BIA AI to speak in this language? This will reset your current chat session.",
+                      onConfirm: () => ref.read(aiChatControllerProvider.notifier).updateLanguage(code),
+                    );
+                  },
+                  isAI: true,
+                ),
+
+                SizedBox(height: isTablet ? 24.0 : 40.h),
+
+                /// INFO CARD
+                Container(
+                  padding: EdgeInsets.all(isTablet ? 14.0 : 20.r),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(isTablet ? 14.0 : 20.r),
+                    border: Border.all(color: primaryColor.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: primaryColor, size: isTablet ? 18.0 : 22.sp),
+                      SizedBox(width: isTablet ? 10.0 : 14.w),
+                      Expanded(
+                        child: Text(
+                          "Changing BIA AI's language will reset the current chat session to apply the new personality.",
+                          style: TextStyle(
+                            color: primaryColor.withOpacity(0.8),
+                            fontSize: isTablet ? 12.0 : 12.sp,
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
-              onChanged: (code) {
-                _handleConfirm(
-                  context,
-                  ref,
-                  title: "Change BIA AI Voice",
-                  content: "Do you want BIA AI to speak in this language? This will reset your current chat session.",
-                  onConfirm: () => ref.read(aiChatControllerProvider.notifier).updateLanguage(code),
-                );
-              },
-              isAI: true,
             ),
+          );
 
-            SizedBox(height: 40.h),
-            
-            /// INFO CARD
-            Container(
-              padding: EdgeInsets.all(20.r),
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: primaryColor.withOpacity(0.1)),
+          if (isTablet) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 620),
+                child: content,
               ),
-              child: Row(
-                children: [
-                   Icon(Icons.info_outline_rounded, color: primaryColor, size: 22.sp),
-                   SizedBox(width: 14.w),
-                   Expanded(
-                     child: Text(
-                       "Changing BIA AI's language will reset the current chat session to apply the new personality.",
-                       style: TextStyle(
-                         color: primaryColor.withOpacity(0.8),
-                         fontSize: 12.sp,
-                         fontWeight: FontWeight.w500,
-                         height: 1.4,
-                       ),
-                     ),
-                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            );
+          }
+          return content;
+        },
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, bool isTablet) {
     return Padding(
-      padding: EdgeInsets.only(left: 8.w, bottom: 12.h),
+      padding: EdgeInsets.only(left: isTablet ? 6.0 : 8.w, bottom: isTablet ? 8.0 : 12.h),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
           color: const Color(0xFF64748B),
-          fontSize: 11.sp,
+          fontSize: isTablet ? 10.0 : 11.sp,
           fontWeight: FontWeight.w900,
           letterSpacing: 1,
         ),
@@ -174,11 +199,18 @@ class LanguageSettingsScreen extends ConsumerWidget {
     required List<_LangOption> options,
     required Function(String) onChanged,
     bool isAI = false,
+    bool isTablet = false,
   }) {
+    final double tilePad = isTablet ? 13.0 : 18.r;
+    final double radioSize = isTablet ? 20.0 : 22.w;
+    final double labelSize = isTablet ? 13.0 : 15.sp;
+    final double descSize = isTablet ? 11.0 : 12.sp;
+    final double aiIconSize = isTablet ? 16.0 : 18.sp;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24.r),
+        borderRadius: BorderRadius.circular(isTablet ? 16.0 : 24.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -198,17 +230,17 @@ class LanguageSettingsScreen extends ConsumerWidget {
               InkWell(
                 onTap: () => onChanged(opt.code),
                 borderRadius: BorderRadius.vertical(
-                  top: index == 0 ? Radius.circular(24.r) : Radius.zero,
-                  bottom: isLast ? Radius.circular(24.r) : Radius.zero,
+                  top: index == 0 ? Radius.circular(isTablet ? 16.0 : 24.r) : Radius.zero,
+                  bottom: isLast ? Radius.circular(isTablet ? 16.0 : 24.r) : Radius.zero,
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(18.r),
+                  padding: EdgeInsets.all(tilePad),
                   child: Row(
                     children: [
                       /// SELECTOR INDICATOR
                       Container(
-                        width: 22.w,
-                        height: 22.w,
+                        width: radioSize,
+                        height: radioSize,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
@@ -218,10 +250,10 @@ class LanguageSettingsScreen extends ConsumerWidget {
                           color: isSelected ? primaryColor : Colors.transparent,
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check, color: Colors.white, size: 14)
+                            ? Icon(Icons.check, color: Colors.white, size: isTablet ? 12.0 : 14)
                             : null,
                       ),
-                      SizedBox(width: 16.w),
+                      SizedBox(width: isTablet ? 12.0 : 16.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +261,7 @@ class LanguageSettingsScreen extends ConsumerWidget {
                             Text(
                               opt.label,
                               style: TextStyle(
-                                fontSize: 15.sp,
+                                fontSize: labelSize,
                                 fontWeight: FontWeight.w700,
                                 color: lightText,
                               ),
@@ -237,7 +269,7 @@ class LanguageSettingsScreen extends ConsumerWidget {
                             Text(
                               opt.desc,
                               style: TextStyle(
-                                fontSize: 12.sp,
+                                fontSize: descSize,
                                 color: lightSecondaryText,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -249,7 +281,7 @@ class LanguageSettingsScreen extends ConsumerWidget {
                         Icon(
                           Icons.auto_awesome_rounded,
                           color: isSelected ? primaryColor : const Color(0xFFCBD5E1),
-                          size: 18.sp,
+                          size: aiIconSize,
                         ),
                     ],
                   ),
@@ -257,7 +289,7 @@ class LanguageSettingsScreen extends ConsumerWidget {
               ),
               if (!isLast)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 14.0 : 20.w),
                   child: const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ),
             ],

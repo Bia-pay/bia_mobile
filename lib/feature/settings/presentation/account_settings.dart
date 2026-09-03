@@ -238,6 +238,12 @@ class _UProfileState extends ConsumerState<UProfile> {
 
   void _showEditTagDialog() {
     final controller = TextEditingController(text: _user?.tag);
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final double fieldFontSize = isTablet ? 14.0 : 16.sp;
+    final double fieldPadH = isTablet ? 14.0 : 16.w;
+    final double fieldPadV = isTablet ? 11.0 : 16.h;
+    final double fieldRadius = isTablet ? 12.0 : 16.r;
+
     UPopup.show(
       context,
       type: UPopupType.info,
@@ -247,21 +253,21 @@ class _UProfileState extends ConsumerState<UProfile> {
       cancelLabel: "Cancel",
       content: TextField(
         controller: controller,
-        style: TextStyle(color: lightText, fontSize: 16.sp, fontWeight: FontWeight.w600),
+        style: TextStyle(color: lightText, fontSize: fieldFontSize, fontWeight: FontWeight.w600),
         decoration: InputDecoration(
           hintText: "BIA Tag",
-          hintStyle: TextStyle(color: lightSecondaryText),
+          hintStyle: TextStyle(color: lightSecondaryText, fontSize: fieldFontSize),
           prefixText: "@",
-          prefixStyle: TextStyle(color: primaryColor, fontSize: 16.sp, fontWeight: FontWeight.w700),
+          prefixStyle: TextStyle(color: primaryColor, fontSize: fieldFontSize, fontWeight: FontWeight.w700),
           filled: true,
           fillColor: offWhiteBackground,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          contentPadding: EdgeInsets.symmetric(horizontal: fieldPadH, vertical: fieldPadV),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(fieldRadius),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(fieldRadius),
             borderSide: BorderSide(color: primaryColor, width: 1.5),
           ),
         ),
@@ -307,77 +313,93 @@ class _UProfileState extends ConsumerState<UProfile> {
     final t = ref.watch(appLocaleProvider.notifier);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Ultra Premium Light Gray
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 30.h),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth >= 600;
+            final hPad = isTablet ? 40.0 : 20.w;
+            final content = SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPad),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: isTablet ? 24.0 : 30.h),
 
-                /// HEADER
-                Text(
-                  t.translate('hub_settings'),
-                  style: TextStyle(
-                    color: lightText,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                  ),
+                    /// HEADER
+                    Text(
+                      t.translate('hub_settings'),
+                      style: TextStyle(
+                        color: lightText,
+                        fontSize: isTablet ? 26.0 : 24.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    Text(
+                      t.translate('hub_desc'),
+                      style: TextStyle(
+                        color: lightSecondaryText,
+                        fontSize: isTablet ? 14.0 : 13.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 24.0 : 30.h),
+
+                    /// IDENTITY HUB CARD
+                    _buildPremiumProfile(isTablet),
+
+                    SizedBox(height: isTablet ? 28.0 : 35.h),
+
+                    /// PREFERENCES & SUPPORT SECTION
+                    _buildHubHeader(t.translate('prefs_support'), isTablet),
+                    _buildGroupedSection(preferencesItems, isTablet),
+
+                    SizedBox(height: isTablet ? 24.0 : 30.h),
+
+                    /// SECURITY SECTION
+                    _buildHubHeader(t.translate('security_login'), isTablet),
+                    _buildGroupedSection(securityItems, isTablet),
+
+                    SizedBox(height: isTablet ? 24.0 : 30.h),
+
+                    /// OTHERS SECTION
+                    _buildHubHeader(t.translate('more_options'), isTablet),
+                    _buildGroupedSection(othersItems, isTablet),
+
+                    SizedBox(height: isTablet ? 100.0 : 140.h),
+                  ],
                 ),
-                Text(
-                  t.translate('hub_desc'),
-                  style: TextStyle(
-                    color: lightSecondaryText,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+            );
+
+            if (isTablet) {
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 680),
+                  child: content,
                 ),
-
-                SizedBox(height: 30.h),
-
-                /// IDENTITY HUB CARD
-                _buildPremiumProfile(),
-
-                SizedBox(height: 35.h),
-
-                /// PREFERENCES & SUPPORT SECTION
-                _buildHubHeader(t.translate('prefs_support')),
-                _buildGroupedSection(preferencesItems),
-
-                SizedBox(height: 30.h),
-
-                /// SECURITY SECTION
-                _buildHubHeader(t.translate('security_login')),
-                _buildGroupedSection(securityItems),
-
-                SizedBox(height: 30.h),
-
-                /// OTHERS SECTION
-                _buildHubHeader(t.translate('more_options')),
-                _buildGroupedSection(othersItems),
-
-                SizedBox(height: 140.h),
-              ],
-            ),
-          ),
+              );
+            }
+            return content;
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHubHeader(String title) {
+  Widget _buildHubHeader(String title, bool isTablet) {
     return Padding(
-      padding: EdgeInsets.only(left: 8.w, bottom: 12.h),
+      padding: EdgeInsets.only(left: isTablet ? 6.0 : 8.w, bottom: isTablet ? 10.0 : 12.h),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
           color: const Color(0xFF64748B),
-          fontSize: 11.sp,
+          fontSize: isTablet ? 11.0 : 11.sp,
           fontWeight: FontWeight.w900,
           letterSpacing: 1,
         ),
@@ -385,16 +407,20 @@ class _UProfileState extends ConsumerState<UProfile> {
     );
   }
 
-  Widget _buildPremiumProfile() {
+  Widget _buildPremiumProfile(bool isTablet) {
     final user = _user;
+    final avatarSize = isTablet ? 52.0 : 58.w;
 
     return GestureDetector(
       onTap: () => context.pushNamed(RouteList.userSettings),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal:12.r, vertical: 10.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 14.0 : 12.r,
+          vertical: isTablet ? 10.0 : 10.h,
+        ),
         decoration: BoxDecoration(
           color: lightBackground,
-          borderRadius: BorderRadius.circular(28.r),
+          borderRadius: BorderRadius.circular(isTablet ? 20.0 : 28.r),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
@@ -407,21 +433,21 @@ class _UProfileState extends ConsumerState<UProfile> {
           children: [
             /// AVATAR WITH RING
             Container(
-              padding: EdgeInsets.all(3.r),
+              padding: EdgeInsets.all(isTablet ? 2.0 : 3.r),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: primaryColor.withOpacity(0.3), width: 2),
               ),
               child: ClipOval(
                 child: SizedBox(
-                  width: 58.w,
-                  height: 58.w,
+                  width: avatarSize,
+                  height: avatarSize,
                   child: _buildAvatarImage(user?.picture),
                 ),
               ),
             ),
 
-            SizedBox(width: 18.w),
+            SizedBox(width: isTablet ? 14.0 : 18.w),
 
             Expanded(
               child: Column(
@@ -431,21 +457,21 @@ class _UProfileState extends ConsumerState<UProfile> {
                     user?.fullname ?? "Account Hub",
                     style: TextStyle(
                       color: lightText,
-                      fontSize: 18.sp,
+                      fontSize: isTablet ? 15.0 : 18.sp,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
                     ),
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: isTablet ? 3.0 : 4.h),
                   Row(
                     children: [
-                      Icon(Icons.verified_user_rounded, color: successColor, size: 12.sp),
-                      SizedBox(width: 3.w),
+                      Icon(Icons.verified_user_rounded, color: successColor, size: isTablet ? 12.0 : 12.sp),
+                      SizedBox(width: isTablet ? 3.0 : 3.w),
                       Text(
                         ref.read(appLocaleProvider.notifier).translate('verified_account'),
                         style: TextStyle(
                           color: lightSecondaryText,
-                          fontSize: 11.sp,
+                          fontSize: isTablet ? 11.0 : 11.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -456,12 +482,12 @@ class _UProfileState extends ConsumerState<UProfile> {
             ),
 
             Container(
-              padding: EdgeInsets.all(8.r),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4F7FA),
+              padding: EdgeInsets.all(isTablet ? 6.0 : 8.r),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF4F7FA),
                 shape: BoxShape.circle,
               ),
-              child:  Icon(Icons.keyboard_arrow_right_rounded, color: primaryColor, size: 20.sp),
+              child: Icon(Icons.keyboard_arrow_right_rounded, color: primaryColor, size: isTablet ? 18.0 : 20.sp),
             ),
           ],
         ),
@@ -469,11 +495,11 @@ class _UProfileState extends ConsumerState<UProfile> {
     );
   }
 
-  Widget _buildGroupedSection(List<Map<String, dynamic>> items) {
+  Widget _buildGroupedSection(List<Map<String, dynamic>> items, bool isTablet) {
     return Container(
       decoration: BoxDecoration(
         color: lightBackground,
-        borderRadius: BorderRadius.circular(24.r),
+        borderRadius: BorderRadius.circular(isTablet ? 16.0 : 24.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -488,10 +514,10 @@ class _UProfileState extends ConsumerState<UProfile> {
           final isLast = index == items.length - 1;
           return Column(
             children: [
-              _buildModernTile(item),
+              _buildModernTile(item, isTablet),
               if (!isLast)
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 16.0 : 20.w),
                   child: const Divider(height: 1, color: lightBackground),
                 ),
             ],
@@ -501,18 +527,22 @@ class _UProfileState extends ConsumerState<UProfile> {
     );
   }
 
-  Widget _buildModernTile(Map<String, dynamic> item) {
+  Widget _buildModernTile(Map<String, dynamic> item, bool isTablet) {
     final t = ref.watch(appLocaleProvider.notifier);
     final String id = item['id'] ?? '';
     final String title = item['title'] ?? '';
     final bool hasDropdown = item['hasDropdown'] ?? false;
     final bool isLogout = id == 'logout';
     final bool isExpanded = _expandedTile == id;
+    final double iconBoxSize = isTablet ? 36.0 : 44.w;
+    final double iconSize = isTablet ? 17.0 : 20.sp;
+    final double tilePad = isTablet ? 14.0 : 18.r;
+    final double titleSize = isTablet ? 13.0 : 15.sp;
 
     return Column(
       children: [
         InkWell(
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 24.r),
           onTap: () {
             if (isLogout) {
               _confirmLogout(context);
@@ -523,30 +553,30 @@ class _UProfileState extends ConsumerState<UProfile> {
             }
           },
           child: Padding(
-            padding: EdgeInsets.all(18.r),
+            padding: EdgeInsets.all(tilePad),
             child: Row(
               children: [
                 Container(
-                  width: 44.w,
-                  height: 44.w,
+                  width: iconBoxSize,
+                  height: iconBoxSize,
                   decoration: BoxDecoration(
                     color: isLogout ? errorColor.withOpacity(0.08) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(14.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 10.0 : 14.r),
                   ),
                   child: Center(
                     child: Icon(
                       item['icon'],
-                      size: 20.sp,
+                      size: iconSize,
                       color: isLogout ? errorColor : primaryColor,
                     ),
                   ),
                 ),
-                SizedBox(width: 16.w),
+                SizedBox(width: isTablet ? 12.0 : 16.w),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 15.sp,
+                      fontSize: titleSize,
                       fontWeight: FontWeight.w700,
                       color: isLogout ? errorColor : lightText,
                       letterSpacing: -0.3,
@@ -557,10 +587,10 @@ class _UProfileState extends ConsumerState<UProfile> {
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8), size: 24),
+                    child: Icon(Icons.keyboard_arrow_down_rounded, color: const Color(0xFF94A3B8), size: isTablet ? 20.0 : 24),
                   )
                 else
-                  Icon(Icons.chevron_right_rounded, color: const Color(0xFF94A3B8).withOpacity(0.5), size: 22),
+                  Icon(Icons.chevron_right_rounded, color: const Color(0xFF94A3B8).withOpacity(0.5), size: isTablet ? 18.0 : 22),
               ],
             ),
           ),
@@ -573,29 +603,36 @@ class _UProfileState extends ConsumerState<UProfile> {
           child: isExpanded && dropdownContent[id] != null
               ? Container(
                   width: double.infinity,
-                  padding: EdgeInsets.only(left: 60.w, right: 18.w, bottom: 20.h),
+                  padding: EdgeInsets.only(
+                    left: isTablet ? 50.0 : 60.w,
+                    right: isTablet ? 14.0 : 18.w,
+                    bottom: isTablet ? 14.0 : 20.h,
+                  ),
                   child: Column(
                     children: dropdownContent[id]!.map((subItem) {
                       final subTitle = subItem['title']!;
                       final subIcon = subItem['icon'] as IconData;
 
                       return Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10.h),
+                        padding: EdgeInsets.symmetric(vertical: isTablet ? 8.0 : 10.h),
                         child: Row(
                           children: [
                             Container(
-                              width: 32.w,
-                              height: 32.w,
-                              decoration: BoxDecoration(color: const Color(0xFFF1F5F9).withValues(alpha: 0.6), shape: BoxShape.circle),
+                              width: isTablet ? 28.0 : 32.w,
+                              height: isTablet ? 28.0 : 32.w,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9).withValues(alpha: 0.6),
+                                shape: BoxShape.circle,
+                              ),
                               child: Center(
                                 child: Icon(
                                   subIcon,
-                                  size: 14.sp,
+                                  size: isTablet ? 13.0 : 14.sp,
                                   color: primaryColor,
                                 ),
                               ),
                             ),
-                            SizedBox(width: 14.w),
+                            SizedBox(width: isTablet ? 12.0 : 14.w),
                             Expanded(
                               child: GestureDetector(
                                 onTap: () {
@@ -610,11 +647,14 @@ class _UProfileState extends ConsumerState<UProfile> {
                                   } else if (subTitle == t.translate('help_center')) {
                                     context.pushNamed(RouteList.helpCenter);
                                   }
-                                  // Add other sub-item routes here as needed
                                 },
                                 child: Text(
                                   subTitle,
-                                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: const Color(0xFF475569)),
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 12.0 : 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF475569),
+                                  ),
                                 ),
                               ),
                             ),
