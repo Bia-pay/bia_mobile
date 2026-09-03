@@ -55,9 +55,9 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final ticketAsync = ref.watch(ticketDetailsProvider(widget.ticketId));
-    final theme = Theme.of(context);
     final userIdStr = Hive.box('authBox').get('userId', defaultValue: '')?.toString() ?? '';
     final currentUserId = int.tryParse(userIdStr) ?? 0;
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
     // Scroll to bottom when details finish loading initially
     ref.listen<AsyncValue<SupportTicket?>>(ticketDetailsProvider(widget.ticketId), (prev, next) {
@@ -67,13 +67,14 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Slate background for chat
+      backgroundColor: const Color(0xFFF1F5F9),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
         shadowColor: Colors.black.withOpacity(0.05),
+        toolbarHeight: isTablet ? 64.0 : kToolbarHeight,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: lightText, size: 20.sp),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: lightText, size: isTablet ? 18.0 : 20.sp),
           onPressed: () => context.pop(),
         ),
         title: ticketAsync.when(
@@ -82,6 +83,7 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
           data: (ticket) => ticket == null
               ? const SizedBox.shrink()
               : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
@@ -90,17 +92,17 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: lightText,
-                        fontSize: 16.sp,
+                        fontSize: isTablet ? 14.0 : 16.sp,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.5,
                       ),
                     ),
-                    SizedBox(height: 2.h),
+                    SizedBox(height: isTablet ? 1.0 : 2.h),
                     Text(
                       "#TCK-${ticket.id} • ${ticket.status.toUpperCase()}",
                       style: TextStyle(
                         color: ticket.status.toLowerCase() == 'open' ? primaryColor : successColor,
-                        fontSize: 10.sp,
+                        fontSize: isTablet ? 10.0 : 10.sp,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -123,30 +125,33 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
 
           final messages = ticket.messages;
 
-          return Column(
+          Widget mainContent = Column(
             children: [
               // Subject Description banner
               Container(
                 width: double.infinity,
                 color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 24.0 : 16.w,
+                  vertical: isTablet ? 10.0 : 12.h,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Issue Description",
                       style: TextStyle(
-                        fontSize: 11.sp,
+                        fontSize: isTablet ? 10.0 : 11.sp,
                         fontWeight: FontWeight.w800,
                         color: lightSecondaryText,
                         letterSpacing: 0.5,
                       ),
                     ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: isTablet ? 3.0 : 4.h),
                     Text(
                       ticket.description,
                       style: TextStyle(
-                        fontSize: 13.sp,
+                        fontSize: isTablet ? 12.0 : 13.sp,
                         color: lightText,
                         height: 1.3,
                       ),
@@ -160,34 +165,39 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
                 child: ListView.builder(
                   controller: _scrollController,
                   physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 24.0 : 16.w,
+                    vertical: isTablet ? 14.0 : 16.h,
+                  ),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
-                    final isMe = message.senderId == currentUserId && message.senderType.toUpperCase() == 'USER';
+                    final isMe = message.senderId == currentUserId &&
+                        message.senderType.toUpperCase() == 'USER';
 
-                    return _buildMessageBubble(message, isMe);
+                    return _buildMessageBubble(message, isMe, isTablet);
                   },
                 ),
               ),
 
               // Input Send Bar (only active if status is open)
               if (ticket.status.toLowerCase() == 'open')
-                _buildInputBar()
+                _buildInputBar(isTablet)
               else
                 Container(
                   color: Colors.white,
                   width: double.infinity,
-                  padding: EdgeInsets.all(16.r),
+                  padding: EdgeInsets.all(isTablet ? 14.0 : 16.r),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_rounded, color: successColor, size: 18.sp),
-                      SizedBox(width: 8.w),
+                      Icon(Icons.check_circle_rounded,
+                          color: successColor, size: isTablet ? 16.0 : 18.sp),
+                      SizedBox(width: isTablet ? 6.0 : 8.w),
                       Text(
                         "This ticket has been resolved and closed.",
                         style: TextStyle(
-                          fontSize: 13.sp,
+                          fontSize: isTablet ? 12.0 : 13.sp,
                           fontWeight: FontWeight.bold,
                           color: successColor,
                         ),
@@ -197,27 +207,37 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
                 ),
             ],
           );
+
+          if (isTablet) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: mainContent,
+              ),
+            );
+          }
+          return mainContent;
         },
       ),
     );
   }
 
-  Widget _buildMessageBubble(SupportMessage message, bool isMe) {
+  Widget _buildMessageBubble(SupportMessage message, bool isMe, bool isTablet) {
     final timeStr = DateFormat('hh:mm a').format(message.createdAt);
-    final theme = Theme.of(context);
+    final double maxBubbleWidth = isTablet ? 440.0 : MediaQuery.of(context).size.width * 0.75;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        margin: EdgeInsets.only(bottom: isTablet ? 8.0 : 12.h),
+        constraints: BoxConstraints(maxWidth: maxBubbleWidth),
         decoration: BoxDecoration(
           color: isMe ? primaryColor : Colors.white,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16.r),
-            topRight: Radius.circular(16.r),
-            bottomLeft: isMe ? Radius.circular(16.r) : Radius.zero,
-            bottomRight: isMe ? Radius.zero : Radius.circular(16.r),
+            topLeft: Radius.circular(isTablet ? 12.0 : 16.r),
+            topRight: Radius.circular(isTablet ? 12.0 : 16.r),
+            bottomLeft: isMe ? Radius.circular(isTablet ? 12.0 : 16.r) : Radius.zero,
+            bottomRight: isMe ? Radius.zero : Radius.circular(isTablet ? 12.0 : 16.r),
           ),
           boxShadow: [
             BoxShadow(
@@ -227,7 +247,10 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
             ),
           ],
         ),
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 12.0 : 14.w,
+          vertical: isTablet ? 8.0 : 10.h,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -236,31 +259,31 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
               Text(
                 message.senderName,
                 style: TextStyle(
-                  fontSize: 10.sp,
+                  fontSize: isTablet ? 9.0 : 10.sp,
                   fontWeight: FontWeight.w900,
                   color: primaryColor,
                 ),
               ),
-              SizedBox(height: 3.h),
+              SizedBox(height: isTablet ? 2.0 : 3.h),
             ],
             // Message body text
             Text(
               message.message,
               style: TextStyle(
-                fontSize: 13.5.sp,
+                fontSize: isTablet ? 12.0 : 13.5.sp,
                 fontWeight: FontWeight.w500,
                 color: isMe ? Colors.white : lightText,
                 height: 1.3,
               ),
             ),
-            SizedBox(height: 4.h),
+            SizedBox(height: isTablet ? 3.0 : 4.h),
             // Time sent
             Align(
               alignment: Alignment.bottomRight,
               child: Text(
                 timeStr,
                 style: TextStyle(
-                  fontSize: 9.sp,
+                  fontSize: isTablet ? 9.0 : 9.sp,
                   color: isMe ? Colors.white.withOpacity(0.7) : lightSecondaryText.withOpacity(0.7),
                 ),
               ),
@@ -271,14 +294,14 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(bool isTablet) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
-        left: 12.w,
-        right: 12.w,
-        top: 8.h,
-        bottom: MediaQuery.of(context).padding.bottom + 8.h,
+        left: isTablet ? 16.0 : 12.w,
+        right: isTablet ? 16.0 : 12.w,
+        top: isTablet ? 6.0 : 8.h,
+        bottom: MediaQuery.of(context).padding.bottom + (isTablet ? 8.0 : 8.h),
       ),
       child: Row(
         children: [
@@ -286,27 +309,34 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
             child: Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(24.r),
+                borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 14.0 : 16.w),
               child: TextField(
                 controller: _messageController,
-                style: TextStyle(color: lightText, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: lightText,
+                  fontSize: isTablet ? 13.0 : 14.sp,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: InputDecoration(
                   hintText: "Type a message...",
-                  hintStyle: TextStyle(color: lightSecondaryText.withOpacity(0.5)),
+                  hintStyle: TextStyle(
+                    color: lightSecondaryText.withOpacity(0.5),
+                    fontSize: isTablet ? 13.0 : 14.sp,
+                  ),
                   border: InputBorder.none,
                 ),
                 onSubmitted: (_) => _send(),
               ),
             ),
           ),
-          SizedBox(width: 8.w),
+          SizedBox(width: isTablet ? 6.0 : 8.w),
           GestureDetector(
             onTap: _send,
             child: Container(
-              width: 42.r,
-              height: 42.r,
+              width: isTablet ? 36.0 : 42.r,
+              height: isTablet ? 36.0 : 42.r,
               decoration: const BoxDecoration(
                 color: primaryColor,
                 shape: BoxShape.circle,
@@ -315,7 +345,7 @@ class _TicketDetailsPageState extends ConsumerState<TicketDetailsPage> {
                 child: Icon(
                   Icons.send_rounded,
                   color: Colors.white,
-                  size: 18.sp,
+                  size: isTablet ? 16.0 : 18.sp,
                 ),
               ),
             ),

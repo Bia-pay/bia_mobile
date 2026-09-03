@@ -579,24 +579,28 @@ class _AmountPageState extends ConsumerState<AmountPage> {
     Color color,
     bool isTiny,
   ) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
-      margin: EdgeInsets.only(top: 4.h),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      margin: EdgeInsets.only(top: isTablet ? 6.0 : 4.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 14.0 : 12.w,
+        vertical: isTablet ? 6.0 : 6.h,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 12.0 : 20.r),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: isTiny ? 12.sp : 14.sp),
-          SizedBox(width: 6.w),
+          Icon(icon, color: color, size: isTablet ? 14.0 : (isTiny ? 12.sp : 14.sp)),
+          SizedBox(width: isTablet ? 6.0 : 6.w),
           Flexible(
             child: Text(
               text,
               style: TextStyle(
                 color: color,
-                fontSize: isTiny ? 10.sp : 12.sp,
+                fontSize: isTablet ? 12.0 : (isTiny ? 10.sp : 12.sp),
                 fontWeight: FontWeight.w600,
               ),
             ),

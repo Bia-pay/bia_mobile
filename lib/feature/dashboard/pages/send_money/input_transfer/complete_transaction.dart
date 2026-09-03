@@ -491,7 +491,7 @@ class _BiaToBiaCompleteTransactionBottomSheetState
 
             // Wallet Balance Mini Card
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+              constraints: BoxConstraints(maxWidth: isTablet ? 500 : r.maxContentWidth),
               child: _buildWalletBalanceRow(
                 context,
                 balance: NumberFormat('#,##0.00').format(_getWalletBalance()),
@@ -499,11 +499,11 @@ class _BiaToBiaCompleteTransactionBottomSheetState
               ),
             ),
 
-            SizedBox(height: 24.h),
+            SizedBox(height: isTablet ? 18.0 : 24.h),
 
             // Continue Button
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: r.maxContentWidth),
+              constraints: BoxConstraints(maxWidth: isTablet ? 500 : r.maxContentWidth),
               child: SizedBox(
                 width: double.infinity,
                 child: CustomButton(
@@ -678,32 +678,33 @@ class _BiaToBiaCompleteTransactionBottomSheetState
     required String balance,
     required String currencySymbol,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        vertical: 12.h,
-        horizontal: 16.w,
+        vertical: isTablet ? 10.0 : 12.h,
+        horizontal: isTablet ? 14.0 : 16.w,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8.r),
+            padding: EdgeInsets.all(isTablet ? 6.0 : 8.r),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_balance_wallet_rounded,
               color: primaryColor,
-              size: 20,
+              size: isTablet ? 18.0 : 20,
             ),
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: isTablet ? 10.0 : 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -712,26 +713,26 @@ class _BiaToBiaCompleteTransactionBottomSheetState
                   'Wallet Balance',
                   style: TextStyle(
                     color: const Color(0xFF64748B),
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 11.0 : 11.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 2.h),
+                SizedBox(height: isTablet ? 2.0 : 2.h),
                 Text(
                   '$currencySymbol$balance',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
+                    fontSize: isTablet ? 14.0 : 14.sp,
                     color: const Color(0xFF0F172A),
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(
+          Icon(
             Icons.check_circle_rounded,
             color: primaryColor,
-            size: 20,
+            size: isTablet ? 18.0 : 20,
           ),
         ],
       ),

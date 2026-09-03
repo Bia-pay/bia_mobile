@@ -419,11 +419,11 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                         _clearVerification();
                       },
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        padding: EdgeInsets.symmetric(horizontal: isTablet ? 8.0 : 8.w),
                         child: Icon(
                           Icons.clear_rounded,
                           color: const Color(0xFF94A3B8),
-                          size: 20.sp,
+                          size: isTablet ? 18.0 : 20.sp,
                         ),
                       ),
                     ),
@@ -503,12 +503,12 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
 
             /// Verified User Card
             if (isVerified) ...[
-              SizedBox(height: 16.h),
+              SizedBox(height: isTablet ? 12.0 : 16.h),
               Container(
-                padding: EdgeInsets.all(14.r),
+                padding: EdgeInsets.all(isTablet ? 12.0 : 14.r),
                 decoration: BoxDecoration(
                   color: primaryColor.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                   border: Border.all(
                     color: primaryColor.withValues(alpha: 0.15),
                   ),
@@ -516,8 +516,8 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                 child: Row(
                   children: [
                     Container(
-                      width: 44.r,
-                      height: 44.r,
+                      width: isTablet ? 40.0 : 44.r,
+                      height: isTablet ? 40.0 : 44.r,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: primaryColor.withValues(alpha: 0.1),
@@ -536,50 +536,55 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                                       : 'B',
                                   style: TextStyle(
                                     color: primaryColor,
-                                    fontSize: 18.sp,
+                                    fontSize: isTablet ? 16.0 : 18.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                       ),
                     ),
-                    SizedBox(width: 14.w),
+                    SizedBox(width: isTablet ? 12.0 : 14.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             verifiedName ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: darkBackground,
-                              fontSize: 15.sp,
+                              fontSize: isTablet ? 14.0 : 15.sp,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          SizedBox(height: 3.h),
+                          SizedBox(height: isTablet ? 2.0 : 3.h),
                           Text(
                             verifiedTag != null
                                 ? '@$verifiedTag'
                                 : (verifiedPhone ?? ''),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: lightSecondaryText,
-                              fontSize: 12.sp,
+                              fontSize: isTablet ? 12.0 : 12.sp,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    SizedBox(width: isTablet ? 8.0 : 0),
                     GestureDetector(
                       onTap: () => _goToAmountPage(context),
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 18.w,
-                          vertical: 10.h,
+                          horizontal: isTablet ? 16.0 : 18.w,
+                          vertical: isTablet ? 8.0 : 10.h,
                         ),
                         decoration: BoxDecoration(
                           gradient: brandGradient,
-                          borderRadius: BorderRadius.circular(12.r),
+                          borderRadius: BorderRadius.circular(isTablet ? 10.0 : 12.r),
                           boxShadow: [
                             BoxShadow(
                               color: primaryColor.withValues(alpha: 0.25),
@@ -592,7 +597,7 @@ class _SendMoneyTransferState extends ConsumerState<SendMoneyTransfer> {
                           'Send',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 13.sp,
+                            fontSize: isTablet ? 12.0 : 13.sp,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

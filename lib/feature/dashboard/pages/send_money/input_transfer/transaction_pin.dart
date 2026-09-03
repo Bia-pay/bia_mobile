@@ -270,16 +270,12 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
-    final isSmallScreen = screenHeight < 700;
-    final isLargeScreen = screenHeight > 900;
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
-    final topSpacing = isTablet ? 24.0 : (isSmallScreen ? 20.h : (isLargeScreen ? 60.h : 55.h));
-    final sectionSpacing = isTablet ? 20.0 : (isSmallScreen ? 16.h : (isLargeScreen ? 30.h : 30.h));
-    final pinSpacing = isTablet ? 24.0 : (isSmallScreen ? 24.h : (isLargeScreen ? 40.h : 30.h));
-    final keypadSpacing = isTablet ? 24.0 : (isSmallScreen ? 30.h : (isLargeScreen ? 50.h : 60.h));
+    final topSpacing = isTablet ? 30.0 : 40.h;
+    final sectionSpacing = isTablet ? 16.0 : 20.h;
+    final pinSpacing = isTablet ? 16.0 : 24.h;
+    final keypadSpacing = isTablet ? 20.0 : 30.h;
 
     return Scaffold(
       backgroundColor: lightBackground,
@@ -297,140 +293,132 @@ class _TransactionPinState extends ConsumerState<TransactionPin> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 440 : 600),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 24.0 : 24.w,
-                      vertical: isTablet ? 20.0 : (isSmallScreen ? 20.h : 30.h),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(height: topSpacing),
+            constraints: BoxConstraints(maxWidth: isTablet ? 330 : double.infinity),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 0 : 24.w,
+                  vertical: isTablet ? 10.0 : 20.h,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: topSpacing),
 
-                        Container(
-                          padding: EdgeInsets.all(isTablet ? 14.0 : (isSmallScreen ? 12.h : 15.h)),
+                    Container(
+                      padding: EdgeInsets.all(isTablet ? 12.0 : 14.h),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            accentColor.withValues(alpha: 0.4),
+                            primaryColor,
+                            primaryColor.withValues(alpha: 0.9),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(isTablet ? 12.0 : 10.r),
+                      ),
+                      child: Icon(
+                        Icons.lock,
+                        color: Colors.white,
+                        size: isTablet ? 24.0 : 28.sp,
+                      ),
+                    ),
+
+                    SizedBox(height: sectionSpacing),
+
+                    Text(
+                      'Enter Transaction PIN',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isTablet ? 18.0 : 20.sp,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+
+                    SizedBox(height: pinSpacing),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(4, (index) {
+                        final filled = index < pin.length;
+                        final dotSize = isTablet ? 12.0 : 14.w;
+
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          margin: EdgeInsets.symmetric(horizontal: isTablet ? 5.0 : 6.w),
+                          width: dotSize,
+                          height: dotSize,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                accentColor.withValues(alpha: 0.4),
-                                primaryColor,
-                                primaryColor.withValues(alpha: 0.9),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(isTablet ? 14.0 : (isSmallScreen ? 8.r : 10.r)),
+                            shape: BoxShape.circle,
+                            color: filled ? primaryColor : Colors.transparent,
+                            border: Border.all(
+                              color: filled ? primaryColor : Colors.grey.shade400,
+                              width: isTablet ? 1.5 : 2,
                             ),
                           ),
-                          child: Icon(
-                            Icons.lock,
-                            color: Colors.white,
-                            size: isTablet ? 28.0 : (isSmallScreen ? 24.sp : 30.sp),
-                          ),
-                        ),
-
-                        SizedBox(height: sectionSpacing),
-
-                        Text(
-                          'Enter Transaction PIN',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            fontSize: isTablet ? 20.0 : (isSmallScreen ? 16.sp : (isLargeScreen ? 24.sp : 20.sp)),
-                          ),
-                        ),
-
-                        SizedBox(height: pinSpacing),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(4, (index) {
-                            final filled = index < pin.length;
-                            final dotSize = isTablet ? 14.0 : (isSmallScreen ? 12.w : 14.w);
-
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              margin: EdgeInsets.symmetric(horizontal: isTablet ? 6.0 : 6.w),
-                              width: dotSize,
-                              height: dotSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: filled ? primaryColor : Colors.transparent,
-                                border: Border.all(
-                                  color: filled ? primaryColor : Colors.grey,
-                                  width: isTablet ? 2.0 : (isSmallScreen ? 1.5 : 2),
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-
-                        SizedBox(height: keypadSpacing),
-
-                        SizedBox(
-                          width: isTablet ? 360.0 : double.infinity,
-                          child: CustomGridKeypad(
-                            onNumberPressed: addDigit,
-                            leftAction: (pin.isEmpty && _hasBiometric && _biometricEnabled)
-                                ? ActionKey(
-                                    child: Icon(
-                                      _biometricIcon,
-                                      color: Colors.white,
-                                      size: isTablet ? 24.0 : (isSmallScreen ? 24.sp : 28.sp),
-                                    ),
-                                    backgroundColor: primaryColor,
-                                    onTap: _authenticateWithBiometric,
-                                  )
-                                : ActionKey(
-                                    child: Icon(
-                                      Icons.check_rounded,
-                                      color: Colors.white,
-                                      size: isTablet ? 22.0 : (isSmallScreen ? 20.sp : 24.sp),
-                                    ),
-                                    backgroundColor: primaryColor,
-                                    onTap: () => _processTransaction(pin),
-                                  ),
-                            rightAction: ActionKey(
-                              child: Icon(
-                                Icons.backspace_rounded,
-                                color: primaryColor,
-                                size: isTablet ? 22.0 : (isSmallScreen ? 20.sp : 24.sp),
-                              ),
-                              backgroundColor: primaryColor.withValues(alpha: 0.1),
-                              onTap: removeDigit,
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: isTablet ? 20.0 : 16.h),
-
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: () => _handleForgotPin(),
-                            child: Text(
-                              'Forget Pin?',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: lightText,
-                                fontWeight: FontWeight.w600,
-                                fontSize: isTablet ? 13.5 : (isSmallScreen ? 13.sp : 14.sp),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: isTablet ? 20.0 : (isSmallScreen ? 10.h : 20.h)),
-                      ],
+                        );
+                      }),
                     ),
-                  ),
-                );
-              },
+
+                    SizedBox(height: keypadSpacing),
+
+                    CustomGridKeypad(
+                      onNumberPressed: addDigit,
+                      leftAction: (pin.isEmpty && _hasBiometric && _biometricEnabled)
+                          ? ActionKey(
+                              child: Icon(
+                                _biometricIcon,
+                                color: Colors.white,
+                                size: isTablet ? 22.0 : 24.sp,
+                              ),
+                              backgroundColor: primaryColor,
+                              onTap: _authenticateWithBiometric,
+                            )
+                          : ActionKey(
+                              child: Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: isTablet ? 20.0 : 22.sp,
+                              ),
+                              backgroundColor: primaryColor,
+                              onTap: () => _processTransaction(pin),
+                            ),
+                      rightAction: ActionKey(
+                        child: Icon(
+                          Icons.backspace_rounded,
+                          color: primaryColor,
+                          size: isTablet ? 20.0 : 22.sp,
+                        ),
+                        backgroundColor: primaryColor.withValues(alpha: 0.1),
+                        onTap: removeDigit,
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 14.0 : 16.h),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () => _handleForgotPin(),
+                        child: Text(
+                          'Forget Pin?',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF334155),
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTablet ? 12.0 : 13.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 10.0 : 20.h),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

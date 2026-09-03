@@ -22,14 +22,14 @@ class CustomGridKeypad extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
-    final isTablet = MediaQuery.of(context).size.width > 600;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
 
-    final horizontalPadding = isTablet ? 12.0 : 32.w;
-    final mainSpacing = isTablet ? 8.0 : 16.h;
-    final crossSpacing = isTablet ? 12.0 : 24.w;
-    final fontSize = isTablet ? 20.0 : 24.sp;
-    final aspectRatio = isTablet ? 1.25 : 1.0;
+    final horizontalPadding = isTablet ? 8.0 : 32.w;
+    final mainSpacing = isTablet ? 12.0 : 16.h;
+    final crossSpacing = isTablet ? 16.0 : 24.w;
+    final fontSize = isTablet ? 22.0 : 24.sp;
+    final aspectRatio = 1.0;
 
     final List<String> numbers = [
       "1", "2", "3",
@@ -37,7 +37,7 @@ class CustomGridKeypad extends StatelessWidget {
       "7", "8", "9",
     ];
 
-    return GridView.builder(
+    Widget grid = GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -64,7 +64,7 @@ class CustomGridKeypad extends StatelessWidget {
             ),
           );
           onTap = () => onNumberPressed(number);
-          bgColor = const Color(0xFFF1F5F9);
+          bgColor = keyColor ?? const Color(0xFFF1F5F9);
         } else if (index == 9) {
           if (leftAction == null) return const SizedBox();
           child = leftAction!.child;
@@ -80,7 +80,7 @@ class CustomGridKeypad extends StatelessWidget {
             ),
           );
           onTap = () => onNumberPressed("0");
-          bgColor = const Color(0xFFF1F5F9);
+          bgColor = keyColor ?? const Color(0xFFF1F5F9);
         } else {
           if (rightAction == null) return const SizedBox();
           child = rightAction!.child;
@@ -113,6 +113,17 @@ class CustomGridKeypad extends StatelessWidget {
         );
       },
     );
+
+    if (isTablet) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 330),
+          child: grid,
+        ),
+      );
+    }
+
+    return grid;
   }
 }
 
