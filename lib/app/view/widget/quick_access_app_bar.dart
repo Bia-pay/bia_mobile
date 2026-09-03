@@ -31,6 +31,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return AppBar(
       backgroundColor: backgroundColor ?? lightBackground,
@@ -38,8 +39,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
-      toolbarHeight: height.h,
-      leadingWidth: showBackButton ? 56.w : 0,
+      toolbarHeight: isTablet ? height : height.h,
+      leadingWidth: showBackButton ? (isTablet ? 56.0 : 56.w) : 0,
       leading: showBackButton
           ? IconButton(
         onPressed: onBackPressed ?? () {
@@ -49,14 +50,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         },
         icon: const Icon(Icons.arrow_back_ios),
         color: titleColor ?? Colors.black87,
-        iconSize: 20.sp,
+        iconSize: isTablet ? 20.0 : 20.sp,
       )
           : null,
       title: Text(
         title,
         style: theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
-          fontSize: 18.sp,
+          fontSize: isTablet ? 18.0 : 18.sp,
           color: titleColor ?? Colors.black87,
         ),
       ),
@@ -65,5 +66,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(height.h);
+  Size get preferredSize => Size.fromHeight(height);
 }

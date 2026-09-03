@@ -176,11 +176,11 @@ class _AirtimeState extends ConsumerState<Airtime> {
           },
           actions: [
             Padding(
-              padding: EdgeInsets.only(right: padding),
+              padding: EdgeInsets.only(right: isTablet ? 16.0 : padding),
               child: SvgPicture.asset(
                 bell,
-                width: isTablet ? 28.w : 24.w,
-                height: isTablet ? 28.h : 24.h,
+                width: isTablet ? 22.0 : 24.w,
+                height: isTablet ? 22.0 : 24.h,
               ),
             ),
           ],
@@ -213,25 +213,30 @@ class _AirtimeState extends ConsumerState<Airtime> {
   }
 
   Widget _buildTabletLayout() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 5,
-          child: Column(
-            children: [
-              const CardTwo(),
-              SizedBox(height: 20.h),
-              const CardOne(),
-            ],
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 780),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 6,
+              child: Column(
+                children: [
+                  const CardTwo(),
+                  SizedBox(height: 16.h),
+                  const CardOne(),
+                ],
+              ),
+            ),
+            SizedBox(width: 16.w),
+            const Expanded(
+              flex: 5,
+              child: CardThree(),
+            ),
+          ],
         ),
-        SizedBox(width: 24.w),
-        const Expanded(
-          flex: 4,
-          child: CardThree(),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -320,23 +325,13 @@ class _CardTwoState extends ConsumerState<CardTwo> {
     
     _detectNetwork(finalPhone);
     ref.read(airtimeFormProvider.notifier).setPhoneNumber(finalPhone);
-
-    // if (finalPhone.length == 11) {
-    //   _verifyPhoneNumber(finalPhone);
-    // }
   }
-
-  // Future<void> _verifyPhoneNumber(String phone) async {
-  //   if (phone.length != 11) return;
-  //   setState(() => _isVerifying = true);
-  //   await ref.read(dashboardControllerProvider.notifier).verifyPhone(context, phone);
-  //   if (mounted) setState(() => _isVerifying = false);
-  // }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isSmall = ResponsiveConfig.isSmallScreen(context);
+    final isTablet = ResponsiveConfig.isTablet(context);
     final formState = ref.watch(airtimeFormProvider);
 
     // Sync state if changed externally (e.g. from beneficiary tab)
@@ -348,8 +343,10 @@ class _CardTwoState extends ConsumerState<CardTwo> {
       });
     }
 
+    final logoSize = isTablet ? 48.0 : (isSmall ? 52.w : 58.w);
+
     return Container(
-      padding: EdgeInsets.all(isSmall ? 16.w : 20.w),
+      padding: EdgeInsets.all(isTablet ? 16.0 : (isSmall ? 16.w : 20.w)),
       decoration: BoxDecoration(
         color: lightBackground,
         borderRadius: BorderRadius.circular(20.r),
@@ -368,11 +365,11 @@ class _CardTwoState extends ConsumerState<CardTwo> {
             'Select Network',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
+              fontSize: isTablet ? 14.5 : 15.sp,
               color: const Color(0xFF1E293B),
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 10.0 : 12.h),
 
           // Horizontal brand badges selector
           Row(
@@ -398,8 +395,8 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                       children: [
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
-                          width: isSmall ? 52.w : 58.w,
-                          height: isSmall ? 52.w : 58.w,
+                          width: logoSize,
+                          height: logoSize,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
@@ -426,27 +423,27 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                             bottom: 0,
                             right: 0,
                             child: Container(
-                              padding: EdgeInsets.all(3.r),
+                              padding: EdgeInsets.all(isTablet ? 2.5 : 3.r),
                               decoration: BoxDecoration(
                                 color: provider['color'] as Color,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.check,
                                 color: Colors.white,
-                                size: 10,
+                                size: isTablet ? 10.0 : 10,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    SizedBox(height: 6.h),
+                    SizedBox(height: isTablet ? 4.0 : 6.h),
                     Text(
                       provider['name'],
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         color: isSelected ? provider['color'] as Color : const Color(0xFF64748B),
-                        fontSize: 11.sp,
+                        fontSize: isTablet ? 11.0 : 11.sp,
                       ),
                     ),
                   ],
@@ -455,23 +452,26 @@ class _CardTwoState extends ConsumerState<CardTwo> {
             }).toList(),
           ),
           
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 16.0 : 20.h),
           Text(
             'Phone Number',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
+              fontSize: isTablet ? 14.5 : 15.sp,
               color: const Color(0xFF1E293B),
             ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: isTablet ? 6.0 : 8.h),
 
           // High-end responsive phone field
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 12.0 : 14.w,
+              vertical: isTablet ? 2.0 : 2.h,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14.r),
+              borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
               border: Border.all(
                 color: _phoneController.text.length == 11 ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
                 width: 1.5,
@@ -489,17 +489,14 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                       setState(() => _selectedContactName = null);
                       _detectNetwork(value);
                       ref.read(airtimeFormProvider.notifier).setPhoneNumber(value);
-                      // if (value.length == 11) {
-                      //   _verifyPhoneNumber(value);
-                      // }
                     },
                     onContactSelected: _onContactSelected,
                   ),
                 ),
                 if (_isVerifying)
                   SizedBox(
-                    width: 18.w,
-                    height: 18.w,
+                    width: isTablet ? 18.0 : 18.w,
+                    height: isTablet ? 18.0 : 18.w,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: primaryColor,
@@ -509,12 +506,12 @@ class _CardTwoState extends ConsumerState<CardTwo> {
             ),
           ),
 
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 10.0 : 12.h),
           Row(
             children: [
               SizedBox(
-                width: 24.w,
-                height: 24.h,
+                width: isTablet ? 20.0 : 24.w,
+                height: isTablet ? 20.0 : 24.h,
                 child: Checkbox(
                   value: _saveAsBeneficiary,
                   onChanged: (v) {
@@ -526,24 +523,29 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                   activeColor: primaryColor,
                 ),
               ),
-              SizedBox(width: 8.w),
-              Text(
-                'Save as beneficiary',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14.sp,
-                  color: const Color(0xFF475569),
+              SizedBox(width: isTablet ? 8.0 : 8.w),
+              Expanded(
+                child: Text(
+                  'Save as beneficiary',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isTablet ? 13.5 : 14.sp,
+                    color: const Color(0xFF475569),
+                  ),
                 ),
               ),
             ],
           ),
           if (_saveAsBeneficiary) ...[
-            SizedBox(height: 10.h),
+            SizedBox(height: isTablet ? 8.0 : 10.h),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 12.0 : 14.w,
+                vertical: isTablet ? 2.0 : 2.h,
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14.r),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
                 border: Border.all(
                   color: _nameController.text.isNotEmpty ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
                   width: 1.5,
@@ -553,7 +555,7 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                 controller: _nameController,
                 style: TextStyle(
                   color: const Color(0xFF1E293B),
-                  fontSize: 15.sp,
+                  fontSize: isTablet ? 14.0 : 15.sp,
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: const InputDecoration(
@@ -579,7 +581,7 @@ class _CardTwoState extends ConsumerState<CardTwo> {
               padding: EdgeInsets.only(top: 8.h, left: 4.w),
               child: Row(
                 children: [
-                  Icon(Icons.person, size: 14.sp, color: primaryColor),
+                  Icon(Icons.person, size: isTablet ? 14.0 : 14.sp, color: primaryColor),
                   SizedBox(width: 4.w),
                   Text(
                     _selectedContactName!,
@@ -631,7 +633,8 @@ class _CardOneState extends ConsumerState<CardOne> {
     final theme = Theme.of(context);
     final formState = ref.watch(airtimeFormProvider);
     final isSmall = ResponsiveConfig.isSmallScreen(context);
-    final crossAxisCount = ResponsiveConfig.getGridCrossAxisCount(context);
+    final isTablet = ResponsiveConfig.isTablet(context);
+    final crossAxisCount = isTablet ? 4 : ResponsiveConfig.getGridCrossAxisCount(context);
 
     // Sync amount if changed externally
     if (formState.amount != selectedAmount && formState.amount != null) {
@@ -640,7 +643,7 @@ class _CardOneState extends ConsumerState<CardOne> {
     }
 
     return Container(
-      padding: EdgeInsets.all(isSmall ? 16.w : 20.w),
+      padding: EdgeInsets.all(isTablet ? 16.0 : (isSmall ? 16.w : 20.w)),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.r),
@@ -659,21 +662,21 @@ class _CardOneState extends ConsumerState<CardOne> {
             'Recharge Amount',
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
+              fontSize: isTablet ? 14.5 : 15.sp,
               color: const Color(0xFF1E293B),
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 10.0 : 12.h),
 
           // Amount Field with integrated Pay button
           Row(
             children: [
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 12.0 : 14.w),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
                     border: Border.all(
                       color: selectedAmount != null && selectedAmount! >= 50 ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
                       width: 1.5,
@@ -684,12 +687,12 @@ class _CardOneState extends ConsumerState<CardOne> {
                       Text(
                         '₦',
                         style: TextStyle(
-                          fontSize: 18.sp,
+                          fontSize: isTablet ? 16.0 : 18.sp,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1E293B),
                         ),
                       ),
-                      SizedBox(width: 6.w),
+                      SizedBox(width: isTablet ? 6.0 : 6.w),
                       Expanded(
                         child: CustomTextField(
                           controller: _amountController,
@@ -714,7 +717,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                   ),
                 ),
               ),
-              SizedBox(width: 12.w),
+              SizedBox(width: isTablet ? 10.0 : 12.w),
               CustomButton(
                 buttonName: 'PAY',
                 buttonColor: formState.isValid ? primaryColor : const Color(0xFFCBD5E1),
@@ -730,7 +733,7 @@ class _CardOneState extends ConsumerState<CardOne> {
               padding: EdgeInsets.only(top: 8.h, left: 4.w),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: errorColor, size: 14.sp),
+                  Icon(Icons.error_outline, color: errorColor, size: isTablet ? 14.0 : 14.sp),
                   SizedBox(width: 6.w),
                   Text(
                     "Minimum purchase is ₦50",
@@ -747,7 +750,7 @@ class _CardOneState extends ConsumerState<CardOne> {
               padding: EdgeInsets.only(top: 8.h, left: 4.w),
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber_rounded, color: errorColor, size: 14.sp),
+                  Icon(Icons.warning_amber_rounded, color: errorColor, size: isTablet ? 14.0 : 14.sp),
                   SizedBox(width: 6.w),
                   Expanded(
                     child: Text(
@@ -762,16 +765,16 @@ class _CardOneState extends ConsumerState<CardOne> {
               ),
             ),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 14.0 : 20.h),
           Text(
             'Quick Selection',
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: const Color(0xFF64748B),
-              fontSize: 12.sp,
+              fontSize: isTablet ? 12.0 : 12.sp,
             ),
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: isTablet ? 8.0 : 10.h),
 
           // Clean wrapping grid quick amounts
           LayoutBuilder(
@@ -781,7 +784,7 @@ class _CardOneState extends ConsumerState<CardOne> {
 
               return Wrap(
                 spacing: spacing,
-                runSpacing: 8.h,
+                runSpacing: isTablet ? 8.0 : 8.h,
                 children: amounts.map((amount) {
                   final isSelected = selectedAmount == amount;
 
@@ -800,7 +803,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       width: itemWidth,
-                      height: 38.h,
+                      height: isTablet ? 38.0 : 38.h,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: isSelected ? primaryColor : const Color(0xFFF8FAFC),
@@ -817,12 +820,15 @@ class _CardOneState extends ConsumerState<CardOne> {
                           )
                         ] : null,
                       ),
-                      child: Text(
-                        '₦$amount',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.sp,
-                          color: isSelected ? Colors.white : const Color(0xFF334155),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '₦$amount',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isTablet ? 12.5 : 12.sp,
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
+                          ),
                         ),
                       ),
                     ),
@@ -946,8 +952,8 @@ class CardThree extends ConsumerWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmall ? 16.w : (isTablet ? 24.w : 20.w),
-        vertical: isSmall ? 16.h : (isTablet ? 24.h : 20.h),
+        horizontal: isTablet ? 16.0 : (isSmall ? 16.w : 20.w),
+        vertical: isTablet ? 16.0 : (isSmall ? 16.h : 20.h),
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -967,16 +973,16 @@ class CardThree extends ConsumerWidget {
             'Select Beneficiary',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
+              fontSize: isTablet ? 14.5 : 15.sp,
               color: const Color(0xFF1E293B),
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 10.0 : 12.h),
 
           ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: isSmall ? 140.h : 165.h,
-              maxHeight: isTablet ? 400.h : 260.h,
+              minHeight: isTablet ? 180.0 : (isSmall ? 140.h : 165.h),
+              maxHeight: isTablet ? 480.0 : 260.h,
             ),
             child: beneficiariesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),

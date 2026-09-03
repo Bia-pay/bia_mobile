@@ -296,7 +296,11 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
           actions: [
             Padding(
               padding: EdgeInsets.only(right: 18.w),
-              child: SvgPicture.asset(bell),
+              child: SvgPicture.asset(
+                bell,
+                width: MediaQuery.of(context).size.width > 600 ? 22.0 : 24.w,
+                height: MediaQuery.of(context).size.width > 600 ? 22.0 : 24.h,
+              ),
             ),
           ],
         ),

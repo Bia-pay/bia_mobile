@@ -82,18 +82,19 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = widget.isTablet || MediaQuery.of(context).size.width > 600;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null && widget.label!.isNotEmpty)
           Padding(
-            padding: EdgeInsets.only(bottom: 5.h),
+            padding: EdgeInsets.only(bottom: isTablet ? 4.0 : 5.h),
             child: Text(
               widget.label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                fontSize: widget.isTablet ? 13 : 13.spMin,
+                fontSize: isTablet ? 13.0 : 13.spMin,
               ),
             ),
           ),
@@ -112,31 +113,31 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           decoration: InputDecoration(
             counterText: "",
             prefixIcon: widget.icons != null
-                ? Icon(widget.icons, color: Colors.grey, size: widget.isTablet ? 18 : 18.sp)
+                ? Icon(widget.icons, color: Colors.grey, size: isTablet ? 18.0 : 18.sp)
                 : widget.images != null
                 ? Padding(
-                    padding: EdgeInsets.all(8.w),
+                    padding: EdgeInsets.all(isTablet ? 8.0 : 8.w),
                     child: Image.asset(
                       widget.images!,
-                      width: 14.w,
-                      height: 14.w,
+                      width: isTablet ? 14.0 : 14.w,
+                      height: isTablet ? 14.0 : 14.w,
                       fit: BoxFit.contain,
                     ),
                   )
                 : null,
             suffixIcon: widget.suffixIcon,
             hintText: widget.hintText,
-            isDense: widget.isTablet,
+            isDense: true,
             hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: widget.hintColor ?? Colors.grey[400],
               fontWeight: FontWeight.w400,
-              fontSize: widget.isTablet ? 12.5 : 13.sp,
+              fontSize: isTablet ? 12.5 : 13.sp,
             ),
             errorText: _errorText,
             filled: true,
             fillColor: Colors.grey.shade100,
-            contentPadding: widget.isTablet
-                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 9)
+            contentPadding: isTablet
+                ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
                 : EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -159,7 +160,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             ),
           ),
           style: TextStyle(
-            fontSize: widget.isTablet ? 14 : 14.sp,
+            fontSize: isTablet ? 14.0 : 14.sp,
             fontWeight: FontWeight.w500,
           ),
         ),

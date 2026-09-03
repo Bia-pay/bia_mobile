@@ -363,7 +363,12 @@ class _DataState extends ConsumerState<Data> with SingleTickerProviderStateMixin
               actions: [
                 Padding(
                   padding: EdgeInsets.only(right: 18.w),
-                  child: SvgPicture.asset(bell, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
+                  child: SvgPicture.asset(
+                    bell,
+                    width: MediaQuery.of(context).size.width > 600 ? 22.0 : 24.w,
+                    height: MediaQuery.of(context).size.width > 600 ? 22.0 : 24.h,
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  ),
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(

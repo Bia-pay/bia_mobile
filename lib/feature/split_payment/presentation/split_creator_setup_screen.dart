@@ -386,6 +386,7 @@ class _SplitCreatorSetupScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return DefaultTabController(
       length: 2,
@@ -401,36 +402,57 @@ class _SplitCreatorSetupScreenState
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: darkBackground,
+              fontSize: isTablet ? 18.0 : null,
             ),
           ),
-          bottom: _generatedResponse == null
-              ? TabBar(
-                  labelColor: primaryColor,
-                  unselectedLabelColor: lightSecondaryText,
-                  indicatorColor: primaryColor,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13.sp,
-                  ),
-                  tabs: const [
-                    Tab(text: "Create New"),
-                    Tab(text: "Track History"),
-                  ],
-                )
-              : null,
           elevation: 0,
           backgroundColor: Colors.transparent,
         ),
         body: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
+              constraints: BoxConstraints(maxWidth: isTablet ? 540 : 600),
               child: _generatedResponse == null
-                  ? TabBarView(
+                  ? Column(
                       children: [
-                        _buildSetupForm(theme),
-                        _buildTrackHistoryView(theme),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 16.0 : 16.w,
+                            vertical: isTablet ? 6.0 : 4.h,
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
+                              border: Border.all(
+                                color: lightBorderColor.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: TabBar(
+                              labelColor: primaryColor,
+                              unselectedLabelColor: lightSecondaryText,
+                              indicatorColor: primaryColor,
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              dividerColor: Colors.transparent,
+                              labelStyle: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: isTablet ? 14.0 : 13.sp,
+                              ),
+                              tabs: const [
+                                Tab(text: "Create New"),
+                                Tab(text: "Track History"),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildSetupForm(theme),
+                              _buildTrackHistoryView(theme),
+                            ],
+                          ),
+                        ),
                       ],
                     )
                   : _buildQrPresenter(theme),
@@ -442,6 +464,7 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildTrackHistoryView(ThemeData theme) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final statsState = ref.watch(splitStatsProvider);
     final paymentsState = ref.watch(userSplitPaymentsProvider);
 
@@ -455,7 +478,10 @@ class _SplitCreatorSetupScreenState
       color: primaryColor,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16.0 : 20.w,
+          vertical: isTablet ? 12.0 : 16.h,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -469,7 +495,7 @@ class _SplitCreatorSetupScreenState
               },
             ),
 
-            SizedBox(height: 28.h),
+            SizedBox(height: isTablet ? 20.0 : 28.h),
 
             // ── Filter + Label ────────────────────────────────────────────
             Row(
@@ -482,13 +508,14 @@ class _SplitCreatorSetupScreenState
                     fontWeight: FontWeight.w800,
                     color: darkBackground,
                     letterSpacing: -0.2,
+                    fontSize: isTablet ? 14.0 : null,
                   ),
                 ),
                 _buildFilterToggle(),
               ],
             ),
 
-            SizedBox(height: 14.h),
+            SizedBox(height: isTablet ? 10.0 : 14.h),
 
             // ── History List ──────────────────────────────────────────────
             paymentsState.when(
@@ -500,10 +527,10 @@ class _SplitCreatorSetupScreenState
               ),
               error: (_, __) => Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Text(
                     'Failed to load split bills',
-                    style: TextStyle(color: errorColor, fontSize: 13.sp),
+                    style: TextStyle(color: errorColor, fontSize: isTablet ? 13.0 : 13.sp),
                   ),
                 ),
               ),
@@ -514,12 +541,12 @@ class _SplitCreatorSetupScreenState
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: list.length,
-                  separatorBuilder: (_, __) => SizedBox(height: 10.h),
+                  separatorBuilder: (_, __) => SizedBox(height: isTablet ? 10.0 : 10.h),
                   itemBuilder: (_, i) => _buildHistoryItem(theme, list[i]),
                 );
               },
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: isTablet ? 16.0 : 20.h),
           ],
         ),
       ),
@@ -527,16 +554,18 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildStatsShimmer() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
-      height: 130.h,
+      height: isTablet ? 120.0 : 130.h,
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
       ),
     );
   }
 
   Widget _buildStatsCards(ThemeData theme, SplitDashboardStats stats) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -545,7 +574,7 @@ class _SplitCreatorSetupScreenState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF1A1F3A).withValues(alpha: 0.25),
@@ -558,23 +587,28 @@ class _SplitCreatorSetupScreenState
         children: [
           // ── Incoming row ─────────────────────────────────────────────
           Padding(
-            padding: EdgeInsets.fromLTRB(18.w, 18.h, 18.w, 12.h),
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 16.0 : 18.w,
+              isTablet ? 14.0 : 18.h,
+              isTablet ? 16.0 : 18.w,
+              isTablet ? 10.0 : 12.h,
+            ),
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(7.r),
+                  padding: EdgeInsets.all(isTablet ? 6.0 : 7.r),
                   decoration: BoxDecoration(
                     color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                   ),
-                  child: Icon(Icons.south_rounded, color: const Color(0xFF9D97FF), size: 14.sp),
+                  child: Icon(Icons.south_rounded, color: const Color(0xFF9D97FF), size: isTablet ? 14.0 : 14.sp),
                 ),
-                SizedBox(width: 8.w),
+                SizedBox(width: isTablet ? 8.0 : 8.w),
                 Text(
                   'Incoming · To Pay',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 11.5 : 11.sp,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.4,
                   ),
@@ -583,7 +617,12 @@ class _SplitCreatorSetupScreenState
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 16.h),
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 16.0 : 18.w,
+              0,
+              isTablet ? 16.0 : 18.w,
+              isTablet ? 14.0 : 16.h,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -595,7 +634,7 @@ class _SplitCreatorSetupScreenState
                     accentBg: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: isTablet ? 10.0 : 10.w),
                 Expanded(
                   child: _buildStatChip(
                     label: 'Paid',
@@ -612,28 +651,33 @@ class _SplitCreatorSetupScreenState
           Divider(
             height: 1,
             color: Colors.white.withValues(alpha: 0.08),
-            indent: 18.w,
-            endIndent: 18.w,
+            indent: isTablet ? 16.0 : 18.w,
+            endIndent: isTablet ? 16.0 : 18.w,
           ),
           // ── Outgoing row ─────────────────────────────────────────────
           Padding(
-            padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 12.h),
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 16.0 : 18.w,
+              isTablet ? 10.0 : 12.h,
+              isTablet ? 16.0 : 18.w,
+              isTablet ? 10.0 : 12.h,
+            ),
             child: Row(
               children: [
                 Container(
-                  padding: EdgeInsets.all(7.r),
+                  padding: EdgeInsets.all(isTablet ? 6.0 : 7.r),
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                   ),
-                  child: Icon(Icons.north_rounded, color: const Color(0xFF34D399), size: 14.sp),
+                  child: Icon(Icons.north_rounded, color: const Color(0xFF34D399), size: isTablet ? 14.0 : 14.sp),
                 ),
-                SizedBox(width: 8.w),
+                SizedBox(width: isTablet ? 8.0 : 8.w),
                 Text(
                   'Outgoing · To Collect',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 11.5 : 11.sp,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.4,
                   ),
@@ -642,7 +686,12 @@ class _SplitCreatorSetupScreenState
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(18.w, 0, 18.w, 18.h),
+            padding: EdgeInsets.fromLTRB(
+              isTablet ? 16.0 : 18.w,
+              0,
+              isTablet ? 16.0 : 18.w,
+              isTablet ? 14.0 : 18.h,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -654,7 +703,7 @@ class _SplitCreatorSetupScreenState
                     accentBg: const Color(0xFFF59E0B).withValues(alpha: 0.12),
                   ),
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: isTablet ? 10.0 : 10.w),
                 Expanded(
                   child: _buildStatChip(
                     label: 'Collected',
@@ -679,11 +728,15 @@ class _SplitCreatorSetupScreenState
     required Color chipColor,
     required Color accentBg,
   }) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 10.0 : 12.w,
+        vertical: isTablet ? 8.0 : 10.h,
+      ),
       decoration: BoxDecoration(
         color: accentBg,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -692,31 +745,38 @@ class _SplitCreatorSetupScreenState
             label,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.55),
-              fontSize: 10.sp,
+              fontSize: isTablet ? 10.0 : 10.sp,
               fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 4.h),
-          Text(
-            '₦${NumberFormat('#,##0.00').format(amount)}',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w800,
+          SizedBox(height: isTablet ? 4.0 : 4.h),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '₦${NumberFormat('#,##0.00').format(amount)}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 13.5 : 14.sp,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-          SizedBox(height: 3.h),
+          SizedBox(height: isTablet ? 3.0 : 3.h),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 6.0 : 6.w,
+              vertical: isTablet ? 2.0 : 2.h,
+            ),
             decoration: BoxDecoration(
               color: chipColor.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6.r),
+              borderRadius: BorderRadius.circular(isTablet ? 6.0 : 6.r),
             ),
             child: Text(
               '$count split${count == 1 ? '' : 's'}',
               style: TextStyle(
                 color: chipColor,
-                fontSize: 9.sp,
+                fontSize: isTablet ? 9.0 : 9.sp,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -727,12 +787,13 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildFilterToggle() {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
       ),
-      padding: EdgeInsets.all(3.r),
+      padding: EdgeInsets.all(isTablet ? 3.0 : 3.r),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -745,6 +806,7 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildFilterChip(String type, String label) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final isSelected = _selectedType == type;
     return GestureDetector(
       onTap: () {
@@ -754,10 +816,13 @@ class _SplitCreatorSetupScreenState
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 10.0 : 12.w,
+          vertical: isTablet ? 5.0 : 5.h,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 16.r),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -773,7 +838,7 @@ class _SplitCreatorSetupScreenState
           style: TextStyle(
             color: isSelected ? Colors.white : lightSecondaryText,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            fontSize: 11.sp,
+            fontSize: isTablet ? 11.0 : 11.sp,
           ),
         ),
       ),
@@ -781,6 +846,7 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildHistoryItem(ThemeData theme, UserSplitPaymentItem item) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final isIncoming = item.isPendingPayment;
 
     // ── status resolution ───────────────────────────────────────────────
@@ -823,7 +889,7 @@ class _SplitCreatorSetupScreenState
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 16.r),
           border: Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
@@ -834,14 +900,14 @@ class _SplitCreatorSetupScreenState
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 16.r),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Left accent bar ───────────────────────────────────
                 Container(
-                  width: 4.w,
+                  width: isTablet ? 4.0 : 4.w,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -856,24 +922,27 @@ class _SplitCreatorSetupScreenState
                 // ── Content ───────────────────────────────────────────
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 12.0 : 14.w,
+                      vertical: isTablet ? 10.0 : 12.h,
+                    ),
                     child: Row(
                       children: [
                         // Avatar
                         Container(
-                          width: 40.r,
-                          height: 40.r,
+                          width: isTablet ? 38.0 : 40.r,
+                          height: isTablet ? 38.0 : 40.r,
                           decoration: BoxDecoration(
                             color: directionColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12.r),
+                            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                           ),
                           child: Icon(
                             isIncoming ? Icons.south_west_rounded : Icons.north_east_rounded,
                             color: directionColor,
-                            size: 18.sp,
+                            size: isTablet ? 18.0 : 18.sp,
                           ),
                         ),
-                        SizedBox(width: 12.w),
+                        SizedBox(width: isTablet ? 10.0 : 12.w),
                         // Text block
                         Expanded(
                           child: Column(
@@ -884,36 +953,36 @@ class _SplitCreatorSetupScreenState
                                 item.title?.isNotEmpty == true ? item.title! : 'Split Bill',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  fontSize: 14.sp,
+                                  fontSize: isTablet ? 13.5 : 14.sp,
                                   color: darkBackground,
                                   letterSpacing: -0.2,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 3.h),
+                              SizedBox(height: isTablet ? 2.0 : 3.h),
                               Text(
                                 isIncoming
                                     ? 'From ${item.creatorName}'
                                     : 'You created',
                                 style: TextStyle(
-                                  fontSize: 11.sp,
+                                  fontSize: isTablet ? 11.5 : 11.sp,
                                   color: lightSecondaryText,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              SizedBox(height: 2.h),
+                              SizedBox(height: isTablet ? 2.0 : 2.h),
                               Text(
                                 _formatDateTime(item.createdAt),
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: isTablet ? 10.0 : 10.sp,
                                   color: lightSecondaryText.withValues(alpha: 0.6),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(width: 8.w),
+                        SizedBox(width: isTablet ? 8.0 : 8.w),
                         // Right — amount + badge
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -923,28 +992,31 @@ class _SplitCreatorSetupScreenState
                               '₦${NumberFormat('#,##0.00').format(isIncoming ? item.assignedAmount : item.totalAmount)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: 14.sp,
+                                fontSize: isTablet ? 13.5 : 14.sp,
                                 color: darkBackground,
                                 letterSpacing: -0.3,
                               ),
                             ),
-                            SizedBox(height: 6.h),
+                            SizedBox(height: isTablet ? 4.0 : 6.h),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isTablet ? 8.0 : 8.w,
+                                vertical: isTablet ? 3.0 : 3.h,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusBg,
-                                borderRadius: BorderRadius.circular(8.r),
+                                borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(statusIcon, color: statusFg, size: 9.sp),
-                                  SizedBox(width: 3.w),
+                                  Icon(statusIcon, color: statusFg, size: isTablet ? 9.0 : 9.sp),
+                                  SizedBox(width: isTablet ? 3.0 : 3.w),
                                   Text(
                                     statusText,
                                     style: TextStyle(
                                       color: statusFg,
-                                      fontSize: 9.sp,
+                                      fontSize: isTablet ? 9.0 : 9.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -953,11 +1025,11 @@ class _SplitCreatorSetupScreenState
                             ),
                           ],
                         ),
-                        SizedBox(width: 4.w),
+                        SizedBox(width: isTablet ? 4.0 : 4.w),
                         Icon(
                           Icons.chevron_right_rounded,
                           color: Colors.grey.shade300,
-                          size: 18.sp,
+                          size: isTablet ? 18.0 : 18.sp,
                         ),
                       ],
                     ),
@@ -1038,18 +1110,22 @@ class _SplitCreatorSetupScreenState
   }
 
   Widget _buildSetupForm(ThemeData theme) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 20.0 : 20.w,
+        vertical: isTablet ? 10.0 : 10.h,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Basic Info
           Container(
-            padding: EdgeInsets.all(18.r),
+            padding: EdgeInsets.all(isTablet ? 16.0 : 18.r),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(isTablet ? 16.0 : 16.r),
               border: Border.all(
                 color: lightBorderColor.withValues(alpha: 0.5),
               ),
@@ -1062,7 +1138,7 @@ class _SplitCreatorSetupScreenState
                   hintText: "e.g., Friday Dinner",
                   validator: (val) => null,
                 ),
-                SizedBox(height: 14.h),
+                SizedBox(height: isTablet ? 14.0 : 14.h),
                 CustomTextFormField(
                   controller: _descController,
                   label: "Description (Optional)",
@@ -1073,14 +1149,14 @@ class _SplitCreatorSetupScreenState
             ),
           ).animate().fadeIn(duration: 400.ms),
 
-          SizedBox(height: 18.h),
+          SizedBox(height: isTablet ? 16.0 : 18.h),
 
           // Add Participant Card
           Container(
-            padding: EdgeInsets.all(18.r),
+            padding: EdgeInsets.all(isTablet ? 16.0 : 18.r),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(isTablet ? 16.0 : 16.r),
               border: Border.all(
                 color: lightBorderColor.withValues(alpha: 0.5),
               ),
@@ -1092,45 +1168,55 @@ class _SplitCreatorSetupScreenState
                   "Add Participants",
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    fontSize: isTablet ? 14.0 : null,
                   ),
                 ),
-                SizedBox(height: 8.h),
+                SizedBox(height: isTablet ? 8.0 : 8.h),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _participantSearchController,
+                        style: TextStyle(
+                          fontSize: isTablet ? 14.0 : 13.sp,
+                        ),
                         decoration: InputDecoration(
                           hintText: "BIA Tag, Phone, or Account",
+                          hintStyle: TextStyle(
+                            fontSize: isTablet ? 13.0 : 13.sp,
+                            color: lightSecondaryText,
+                          ),
                           filled: true,
                           fillColor: offWhiteBackground,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 14.w,
-                            vertical: 12.h,
-                          ),
+                          contentPadding: isTablet
+                              ? const EdgeInsets.symmetric(horizontal: 14, vertical: 12)
+                              : EdgeInsets.symmetric(
+                                  horizontal: 14.w,
+                                  vertical: 12.h,
+                                ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12.r),
+                            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                             borderSide: BorderSide.none,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 10.w),
+                    SizedBox(width: isTablet ? 10.0 : 10.w),
                     GestureDetector(
                       onTap: _isSearching ? null : _verifyAndAddParticipant,
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 12.h,
+                          horizontal: isTablet ? 20.0 : 16.w,
+                          vertical: isTablet ? 12.0 : 12.h,
                         ),
                         decoration: BoxDecoration(
                           color: primaryColor,
-                          borderRadius: BorderRadius.circular(12.r),
+                          borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                         ),
                         child: _isSearching
                             ? SizedBox(
-                                width: 20.w,
-                                height: 20.w,
+                                width: isTablet ? 20.0 : 20.w,
+                                height: isTablet ? 20.0 : 20.w,
                                 child: const CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
@@ -1143,7 +1229,7 @@ class _SplitCreatorSetupScreenState
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13.sp,
+                                  fontSize: isTablet ? 14.0 : 13.sp,
                                 ),
                               ),
                       ),
@@ -1154,7 +1240,7 @@ class _SplitCreatorSetupScreenState
             ),
           ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
-          SizedBox(height: 18.h),
+          SizedBox(height: isTablet ? 16.0 : 18.h),
 
           // Participant List
           if (_addedParticipants.isNotEmpty) ...[
@@ -1163,21 +1249,22 @@ class _SplitCreatorSetupScreenState
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: darkBackground,
+                fontSize: isTablet ? 14.0 : null,
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: isTablet ? 8.0 : 8.h),
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _addedParticipants.length,
-              separatorBuilder: (context, index) => SizedBox(height: 10.h),
+              separatorBuilder: (context, index) => SizedBox(height: isTablet ? 10.0 : 10.h),
               itemBuilder: (context, index) {
                 final participant = _addedParticipants[index];
                 return Container(
-                  padding: EdgeInsets.all(14.r),
+                  padding: EdgeInsets.all(isTablet ? 12.0 : 14.r),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(14.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 14.0 : 14.r),
                     border: Border.all(
                       color: lightBorderColor.withValues(alpha: 0.5),
                     ),
@@ -1185,8 +1272,8 @@ class _SplitCreatorSetupScreenState
                   child: Row(
                     children: [
                       Container(
-                        width: 38.r,
-                        height: 38.r,
+                        width: isTablet ? 38.0 : 38.r,
+                        height: isTablet ? 38.0 : 38.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: primaryColor.withValues(alpha: 0.1),
@@ -1194,14 +1281,15 @@ class _SplitCreatorSetupScreenState
                         child: Center(
                           child: Text(
                             participant['fullname'][0].toString().toUpperCase(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: primaryColor,
                               fontWeight: FontWeight.bold,
+                              fontSize: isTablet ? 14.0 : null,
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(width: 12.w),
+                      SizedBox(width: isTablet ? 12.0 : 12.w),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1210,7 +1298,7 @@ class _SplitCreatorSetupScreenState
                               participant['fullname'],
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                fontSize: 13.sp,
+                                fontSize: isTablet ? 13.0 : 13.sp,
                                 color: darkBackground,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -1219,28 +1307,32 @@ class _SplitCreatorSetupScreenState
                               participant['identifier'],
                               style: TextStyle(
                                 color: lightSecondaryText,
-                                fontSize: 11.sp,
+                                fontSize: isTablet ? 11.0 : 11.sp,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(width: 12.w),
-                      // Amount Input
                       SizedBox(
-                        width: 100.w,
+                        width: isTablet ? 90.0 : 90.w,
                         child: TextField(
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.end,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          style: TextStyle(
+                            fontSize: isTablet ? 13.0 : 13.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                           decoration: InputDecoration(
-                            hintText: "₦0",
                             prefixText: "₦",
-                            border: UnderlineInputBorder(
-                              borderSide: BorderSide(color: lightBorderColor),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(color: primaryColor),
+                            isDense: true,
+                            contentPadding: isTablet
+                                ? const EdgeInsets.symmetric(horizontal: 8, vertical: 8)
+                                : EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                    vertical: 8.h,
+                                  ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
                             ),
                           ),
                           onChanged: (val) {
@@ -1267,23 +1359,27 @@ class _SplitCreatorSetupScreenState
                 );
               },
             ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
-            SizedBox(height: 18.h),
+            SizedBox(height: isTablet ? 16.0 : 18.h),
           ],
 
           // Expiration Pill
           Container(
-            padding: EdgeInsets.all(16.r),
+            padding: EdgeInsets.all(isTablet ? 14.0 : 16.r),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(14.r),
+              borderRadius: BorderRadius.circular(isTablet ? 14.0 : 14.r),
               border: Border.all(
                 color: lightBorderColor.withValues(alpha: 0.5),
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.access_time_rounded, color: primaryColor),
-                SizedBox(width: 12.w),
+                Icon(
+                  Icons.access_time_rounded,
+                  color: primaryColor,
+                  size: isTablet ? 20.0 : 20.sp,
+                ),
+                SizedBox(width: isTablet ? 12.0 : 12.w),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1292,10 +1388,11 @@ class _SplitCreatorSetupScreenState
                         "Expiration Time",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 13.sp,
+                          fontSize: isTablet ? 13.5 : 13.sp,
                           color: darkBackground,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         _selectedExpiration == null
                             ? "No expiration limit (Optional)"
@@ -1305,7 +1402,7 @@ class _SplitCreatorSetupScreenState
                                   .substring(0, 16),
                         style: TextStyle(
                           color: lightSecondaryText,
-                          fontSize: 11.sp,
+                          fontSize: isTablet ? 11.5 : 11.sp,
                         ),
                       ),
                     ],
@@ -1315,9 +1412,10 @@ class _SplitCreatorSetupScreenState
                   onPressed: _selectExpirationTime,
                   child: Text(
                     _selectedExpiration == null ? "Set" : "Change",
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: primaryColor,
                       fontWeight: FontWeight.bold,
+                      fontSize: isTablet ? 13.0 : 13.sp,
                     ),
                   ),
                 ),
@@ -1325,7 +1423,7 @@ class _SplitCreatorSetupScreenState
             ),
           ).animate().fadeIn(duration: 400.ms, delay: 200.ms),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: isTablet ? 18.0 : 24.h),
 
           // Total Bar
           Row(
@@ -1335,7 +1433,7 @@ class _SplitCreatorSetupScreenState
                 "Total Bill amount:",
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 14.sp,
+                  fontSize: isTablet ? 14.0 : 14.sp,
                   color: lightSecondaryText,
                 ),
               ),
@@ -1343,7 +1441,7 @@ class _SplitCreatorSetupScreenState
                 "₦${NumberFormat('#,##0.00').format(_totalAmount)}",
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
-                  fontSize: 18.sp,
+                  fontSize: isTablet ? 20.0 : 18.sp,
                   color: darkBackground,
                 ),
               ),

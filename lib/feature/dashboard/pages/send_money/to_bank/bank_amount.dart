@@ -282,11 +282,14 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
                 const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: CustomTextFormField(
-                    controller: _narrationController,
-                    label: 'Narration (Optional)',
-                    hintText: 'What is this for?',
-                    validator: (val) => null,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: CustomTextFormField(
+                      controller: _narrationController,
+                      label: 'Narration (Optional)',
+                      hintText: 'What is this for?',
+                      validator: (val) => null,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -360,7 +363,10 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
 
   Widget _buildTopBar(ThemeData theme, double walletBalance, _Dims d) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: d.topBarH, vertical: d.topBarV),
+      padding: EdgeInsets.symmetric(
+        horizontal: d.isTablet ? 8.0 : d.topBarH,
+        vertical: d.topBarV,
+      ),
       child: Row(
         children: [
           // Back button
@@ -368,7 +374,7 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: EdgeInsets.all(d.isTablet ? 12 : 10),
+              padding: EdgeInsets.all(d.isTablet ? 10 : 10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12.r),
@@ -383,22 +389,25 @@ class _BankAmountPageState extends ConsumerState<BankAmountPage> {
               ),
             ),
           ),
-          const Spacer(),
+          SizedBox(width: d.isTablet ? 12.0 : 12.w),
           // Title
-          Text(
-            widget.title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: d.titleFontSize,
-              color: darkBackground,
+          Expanded(
+            child: Text(
+              widget.title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: d.titleFontSize,
+                color: darkBackground,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
+          SizedBox(width: d.isTablet ? 8.0 : 8.w),
           // Balance pill
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: d.isTablet ? 16 : 12,
-              vertical: d.isTablet ? 8 : 6,
+              horizontal: d.isTablet ? 10 : 12,
+              vertical: d.isTablet ? 6 : 6,
             ),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.08),

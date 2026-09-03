@@ -230,11 +230,14 @@ class _AmountPageState extends ConsumerState<AmountPage> {
                           const SizedBox(height: 16),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: CustomTextFormField(
-                              controller: _narrationController,
-                              label: 'Narration (Optional)',
-                              hintText: 'What is this for?',
-                              validator: (val) => null,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 420),
+                              child: CustomTextFormField(
+                                controller: _narrationController,
+                                label: 'Narration (Optional)',
+                                hintText: 'What is this for?',
+                                validator: (val) => null,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -312,10 +315,11 @@ class _AmountPageState extends ConsumerState<AmountPage> {
   }
 
   Widget _buildTopBar(BuildContext context, ThemeData theme, double walletBalance, bool isTiny) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: 16.w,
-        vertical: isTiny ? 6.h : 12.h,
+        horizontal: isTablet ? 8.0 : 16.w,
+        vertical: isTablet ? 10.0 : (isTiny ? 6.h : 12.h),
       ),
       child: Row(
         children: [
@@ -323,53 +327,57 @@ class _AmountPageState extends ConsumerState<AmountPage> {
             behavior: HitTestBehavior.opaque,
             onTap: () => Navigator.pop(context),
             child: Container(
-              padding: EdgeInsets.all(10.w),
+              padding: EdgeInsets.all(isTablet ? 10.0 : 10.w),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                 border: Border.all(
                   color: lightBorderColor.withValues(alpha: 0.5),
                 ),
               ),
               child: Icon(
                 Icons.arrow_back_ios_new,
-                size: 16.sp,
+                size: isTablet ? 16.0 : 16.sp,
                 color: darkBackground,
               ),
             ),
           ),
-          const Spacer(),
-          Text(
-            widget.title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: darkBackground,
+          SizedBox(width: isTablet ? 12.0 : 12.w),
+          Expanded(
+            child: Text(
+              widget.title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: darkBackground,
+                fontSize: isTablet ? 16.0 : null,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
+          SizedBox(width: isTablet ? 8.0 : 8.w),
           // Balance pill
           Container(
             padding: EdgeInsets.symmetric(
-              horizontal: 12.w,
-              vertical: 6.h,
+              horizontal: isTablet ? 10.0 : 12.w,
+              vertical: isTablet ? 6.0 : 6.h,
             ),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20.r),
+              borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.account_balance_wallet_outlined,
-                  size: 14.sp,
+                  size: isTablet ? 14.0 : 14.sp,
                   color: primaryColor,
                 ),
-                SizedBox(width: 4.w),
+                SizedBox(width: isTablet ? 4.0 : 4.w),
                 Text(
                   _formatBalance(walletBalance),
                   style: TextStyle(
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 12.0 : 11.sp,
                     fontWeight: FontWeight.w700,
                     color: primaryColor,
                   ),

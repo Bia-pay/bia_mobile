@@ -57,6 +57,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final baseBorder = OutlineInputBorder(
       borderSide: BorderSide.none,
     );
@@ -79,7 +80,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
        // filled: true,
        // fillColor: widget.fillColor ?? Colors.grey.shade100,
         prefixIcon: widget.prefixIcon != null
-            ? Icon(widget.prefixIcon, size: 20.sp, color: Colors.grey.shade600)
+            ? Icon(widget.prefixIcon, size: isTablet ? 18.0 : 20.sp, color: Colors.grey.shade600)
             : null,
         suffixIcon: widget.isPassword
             ? GestureDetector(
@@ -87,7 +88,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           child: Icon(
             _obscureText ? Icons.visibility_off : Icons.visibility,
             color: Colors.grey.shade600,
-            size: 20.sp,
+            size: isTablet ? 18.0 : 20.sp,
           ),
         )
             : widget.suffixIcon != null
@@ -95,7 +96,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           onTap: widget.onSuffixTap,
           child: Icon(
             widget.suffixIcon,
-            size: 20.sp,
+            size: isTablet ? 18.0 : 20.sp,
             color: Colors.grey.shade600,
           ),
         )
@@ -109,9 +110,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
         focusedErrorBorder: baseBorder.copyWith(
           borderSide: BorderSide.none,
         ),
-        contentPadding: EdgeInsets.symmetric( vertical: 12.h),
+        contentPadding: EdgeInsets.symmetric(vertical: isTablet ? 8.0 : 12.h),
       ),
-      style: TextStyle(fontSize: 14.sp),
+      style: TextStyle(fontSize: isTablet ? 15.0 : 14.sp),
     );
   }
 }

@@ -199,23 +199,25 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Widget build(BuildContext context) {
     final aiState = ref.watch(aiChatControllerProvider);
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     ref.listen(aiChatControllerProvider, (_, __) => _scrollToBottom());
 
     return Scaffold(
       backgroundColor: accentColor, // Deep rich navy background
       appBar: AppBar(
+        toolbarHeight: isTablet ? 64.0 : kToolbarHeight,
         backgroundColor: Colors.transparent, // Glassmorphic
         elevation: 0,
         leading: IconButton(
-          icon:  Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new, color: Colors.white, size: isTablet ? 20.0 : null),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           children: [
             Container(
-              width: 36.w,
-              height: 36.w,
+              width: isTablet ? 38.0 : 36.w,
+              height: isTablet ? 38.0 : 36.w,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF26B4DF), Color(0xFF1E90B2)],
@@ -231,19 +233,23 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ],
               ),
-              child: Icon(Icons.auto_awesome,
-                  color: Colors.white, size: 18.sp),
+              child: Icon(
+                Icons.auto_awesome,
+                color: Colors.white,
+                size: isTablet ? 18.0 : 18.sp,
+              ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: isTablet ? 10.0 : 12.w),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'BIA AI',
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 16.sp,
+                    fontSize: isTablet ? 16.0 : 16.sp,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -251,7 +257,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   aiState.isProcessing ? 'Typing...' : 'Your Banking Assistant',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 11.sp,
+                    fontSize: isTablet ? 12.0 : 11.sp,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -261,7 +267,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: Icon(Icons.record_voice_over, color: Colors.white, size: 20.sp),
+            icon: Icon(Icons.record_voice_over, color: Colors.white, size: isTablet ? 20.0 : 20.sp),
             tooltip: 'Select Voice',
             onSelected: (voiceId) {
               ref.read(aiChatControllerProvider.notifier).setVoice(voiceId);
@@ -281,134 +287,145 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollCtrl,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                  itemCount:
-                      aiState.messages.length + (aiState.isProcessing ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (aiState.isProcessing &&
-                        index == aiState.messages.length) {
-                      return const TypingIndicator();
-                    }
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 640.0 : double.infinity),
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTablet ? 16.0 : 16.w,
+                          vertical: isTablet ? 12.0 : 12.h,
+                        ),
+                        itemCount:
+                            aiState.messages.length + (aiState.isProcessing ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (aiState.isProcessing &&
+                              index == aiState.messages.length) {
+                            return const TypingIndicator();
+                          }
 
-                    final msg = aiState.messages[index];
+                          final msg = aiState.messages[index];
 
-                    if (msg.role == MessageRole.assistant &&
-                        msg.type == MessageType.confirmCard &&
-                        msg.payload != null) {
-                      return _buildConfirmCard(msg, aiState);
-                    }
+                          if (msg.role == MessageRole.assistant &&
+                              msg.type == MessageType.confirmCard &&
+                              msg.payload != null) {
+                            return _buildConfirmCard(msg, aiState);
+                          }
 
-                    if (msg.role == MessageRole.assistant &&
-                        msg.type == MessageType.suggestionChips &&
-                        msg.payload != null) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ChatBubble(message: msg),
-                          _buildSuggestionChips(msg.payload!),
+                          if (msg.role == MessageRole.assistant &&
+                              msg.type == MessageType.suggestionChips &&
+                              msg.payload != null) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ChatBubble(message: msg),
+                                _buildSuggestionChips(msg.payload!),
+                              ],
+                            );
+                          }
+
+                          return ChatBubble(message: msg);
+                        },
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(
+                        left: isTablet ? 16.0 : 16.w,
+                        right: isTablet ? 16.0 : 16.w,
+                        bottom: isTablet ? 16.0 : 16.h,
+                        top: isTablet ? 8.0 : 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(isTablet ? 24.0 : 30.r),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
                         ],
-                      );
-                    }
-
-                    return ChatBubble(message: msg);
-                  },
-                ),
-              ),
-              Container(
-                margin: EdgeInsets.only(
-                  left: 16.w,
-                  right: 16.w,
-                  bottom: 16.h,
-                  top: 8.h,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(30.r),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(isTablet ? 24.0 : 30.r),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isTablet ? 12.0 : 8.w,
+                              vertical: isTablet ? 8.0 : 8.h,
+                            ),
+                            child: Row(
+                              children: [
+                                SizedBox(width: isTablet ? 12.0 : 12.w),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _textCtrl,
+                                    focusNode: _focusNode,
+                                    textCapitalization: TextCapitalization.sentences,
+                                    minLines: 1,
+                                    maxLines: 4,
+                                    onSubmitted: (_) => _send(),
+                                    decoration: InputDecoration(
+                                      hintText: _isListening
+                                          ? 'Listening...'
+                                          : 'Type your message...',
+                                      hintStyle: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.4),
+                                        fontSize: isTablet ? 14.5 : 14.sp,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                      filled: false,
+                                      contentPadding: EdgeInsets.zero,
+                                      border: InputBorder.none,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 14.5 : 14.sp,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    cursorColor: primaryColor,
+                                  ),
+                                ),
+                                SizedBox(width: isTablet ? 8.0 : 8.w),
+                                _buildSendOrMicButton(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30.r),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 8.h,
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: TextField(
-                              controller: _textCtrl,
-                              focusNode: _focusNode,
-                              textCapitalization: TextCapitalization.sentences,
-                              minLines: 1,
-                              maxLines: 4,
-                              onSubmitted: (_) => _send(),
-                              decoration: InputDecoration(
-                                hintText: _isListening
-                                    ? 'Listening...'
-                                    : 'Type your message...',
-                                hintStyle: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                                filled: false,
-                                contentPadding: EdgeInsets.zero,
-                                border: InputBorder.none,
-                              ),
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              cursorColor: primaryColor,
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          _buildSendOrMicButton(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildSendOrMicButton() {
     final hasText = _textCtrl.text.trim().isNotEmpty;
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final btnSize = isTablet ? 40.0 : 44.w;
 
     if (hasText && !_isListening) {
       return GestureDetector(
         onTap: _send,
         child: Container(
-          width: 44.w,
-          height: 44.w,
+          width: btnSize,
+          height: btnSize,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF26B4DF), Color(0xFF1E90B2)],
@@ -427,7 +444,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           child: Icon(
             Icons.send_rounded,
             color: Colors.white,
-            size: 20.sp,
+            size: isTablet ? 18.0 : 20.sp,
           ),
         ),
       );
@@ -436,8 +453,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         onTap: _toggleListening,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          width: 44.w,
-          height: 44.w,
+          width: btnSize,
+          height: btnSize,
           decoration: BoxDecoration(
             color: _isListening ? Colors.redAccent : Colors.white.withValues(alpha: 0.1),
             shape: BoxShape.circle,
@@ -458,7 +475,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           child: Icon(
             _isListening ? Icons.mic : Icons.mic_none,
             color: Colors.white,
-            size: 20.sp,
+            size: isTablet ? 18.0 : 20.sp,
           ),
         ),
       );

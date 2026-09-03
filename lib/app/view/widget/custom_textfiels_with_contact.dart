@@ -34,11 +34,11 @@ class CustomTextFieldWithContacts extends StatelessWidget {
     final isLandscape = size.width > size.height;
 
     // Responsive dimensions
-    final iconSize = isSmall ? 20.sp : (isTablet ? 28.sp : 24.sp);
-    final fontSize = isSmall ? 14.sp : (isTablet ? 18.sp : 16.sp);
-    final hintFontSize = isSmall ? 12.sp : (isTablet ? 16.sp : 14.sp);
-    final fieldHeight = isSmall ? 44.h : (isTablet ? 56.h : 48.h);
-    final horizontalPadding = isSmall ? 8.w : (isTablet ? 16.w : 12.w);
+    final iconSize = isTablet ? 22.0 : (isSmall ? 20.sp : 24.sp);
+    final fontSize = isTablet ? 15.0 : (isSmall ? 14.sp : 16.sp);
+    final hintFontSize = isTablet ? 13.5 : (isSmall ? 12.sp : 14.sp);
+    final fieldHeight = isTablet ? 44.0 : (isSmall ? 44.h : 48.h);
+    final horizontalPadding = isTablet ? 10.0 : (isSmall ? 8.w : 12.w);
 
     return SizedBox(
       height: fieldHeight,

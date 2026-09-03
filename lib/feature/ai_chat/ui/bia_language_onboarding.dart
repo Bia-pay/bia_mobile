@@ -165,6 +165,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
   @override
   Widget build(BuildContext context) {
     final activeColor = _getActiveColor();
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Ultra clean, light background
@@ -197,161 +198,180 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
 
           // ── Main Interaction Content ─────────────────────────────────────────
           SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: SlideTransition(
-                position: _slideAnim,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 15.h),
-                      
-                      // ── Custom Setup Appbar ──────────────────────────────────────────
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: isTablet ? 540 : 600),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: isTablet ? 24.0 : 24.w),
+                      child: Column(
                         children: [
+                          SizedBox(height: isTablet ? 12.0 : 15.h),
+                          
+                          // ── Custom Setup Appbar ──────────────────────────────────────────
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: isTablet ? 36.0 : 32.r,
+                                    height: isTablet ? 36.0 : 32.r,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.04),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                      border: Border.all(
+                                        color: Colors.black.withValues(alpha: 0.06),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.auto_awesome_rounded,
+                                        color: activeColor,
+                                        size: isTablet ? 18.0 : 15.sp,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: isTablet ? 10.0 : 10.w),
+                                  Text(
+                                    'BIA AI',
+                                    style: TextStyle(
+                                      color: const Color(0xFF0F172A).withValues(alpha: 0.7), // Slate-900
+                                      fontSize: isTablet ? 13.0 : 10.sp,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
                               Container(
-                                width: 32.r,
-                                height: 32.r,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 12.0 : 10.w,
+                                  vertical: isTablet ? 5.0 : 4.h,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.8),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.04),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                                  borderRadius: BorderRadius.circular(isTablet ? 14.0 : 12.r),
                                   border: Border.all(
                                     color: Colors.black.withValues(alpha: 0.06),
-                                    width: 1,
+                                    width: 0.8,
                                   ),
                                 ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.auto_awesome_rounded,
-                                    color: activeColor,
-                                    size: 15.sp,
+                                child: Text(
+                                  'Setup',
+                                  style: TextStyle(
+                                    color: const Color(0xFF475569), // Slate-600
+                                    fontSize: isTablet ? 12.0 : 10.sp,
+                                    fontWeight: FontWeight.w800,
                                   ),
-                                ),
-                              ),
-                              SizedBox(width: 10.w),
-                              Text(
-                                'BIA AI',
-                                style: TextStyle(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.6), // Slate-900
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.5,
                                 ),
                               ),
                             ],
                           ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Text(
-                              'Setup',
-                              style: TextStyle(
-                                color: const Color(0xFF475569), // Slate-600
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w800,
-                              ),
+
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SingleChildScrollView(
+                                  physics: const BouncingScrollPhysics(),
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                    child: IntrinsicHeight(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          SizedBox(height: isTablet ? 20.0 : 25.h),
+
+                                          // ── Glowing Interactive Core AI Orb ──────────────────────────────
+                                          _BiaCoreOrb(
+                                            orbCtrl: _orbCtrl,
+                                            themeColor: activeColor,
+                                            isSelected: _selected != null,
+                                          ),
+
+                                          SizedBox(height: isTablet ? 20.0 : 25.h),
+
+                                          // ── Header Text ──────────────────────────────────────────────────
+                                          Text(
+                                            'Select Your AI Voice Profile',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: const Color(0xFF0F172A), // Slate-900
+                                              fontSize: isTablet ? 24.0 : 24.sp,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -0.5,
+                                              height: 1.2,
+                                            ),
+                                          ),
+                                          SizedBox(height: isTablet ? 8.0 : 8.h),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16.0 : 12.w),
+                                            child: Text(
+                                              'Choose how your intelligent BIA assistant sounds and expresses personality when replying to you.',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: const Color(0xFF475569), // Slate-600
+                                                fontSize: isTablet ? 14.0 : 13.sp,
+                                                fontWeight: FontWeight.w500,
+                                                height: 1.45,
+                                              ),
+                                            ),
+                                          ),
+
+                                          SizedBox(height: isTablet ? 24.0 : 30.h),
+
+                                          // ── Staggered Language Cards ─────────────────────────────────────
+                                          ...List.generate(_langs.length, (index) {
+                                            final lang = _langs[index];
+                                            final isSelected = _selected == lang.code;
+                                            return TweenAnimationBuilder<double>(
+                                              duration: Duration(milliseconds: 500 + (index * 120)),
+                                              curve: Curves.easeOutCubic,
+                                              tween: Tween<double>(begin: 0.0, end: 1.0),
+                                              builder: (context, val, child) {
+                                                return Opacity(
+                                                  opacity: val,
+                                                  child: Transform.translate(
+                                                    offset: Offset(0, 30 * (1.0 - val)),
+                                                    child: child,
+                                                  ),
+                                                );
+                                              },
+                                              child: _buildLangCard(lang, isSelected),
+                                            );
+                                          }),
+
+                                          // ── Voice Preview Speech Bubble ──────────────────────────────────
+                                          _buildSpeechBubble(activeColor),
+                                          
+                                          const Spacer(),
+                                          SizedBox(height: isTablet ? 20.0 : 20.h),
+
+                                          // ── Continue Floating CTA ─────────────────────────────────────────
+                                          _buildCTAButton(activeColor),
+                                          SizedBox(height: isTablet ? 12.0 : 10.h),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
                       ),
-
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(height: 25.h),
-
-                              // ── Glowing Interactive Core AI Orb ──────────────────────────────
-                              _BiaCoreOrb(
-                                orbCtrl: _orbCtrl,
-                                themeColor: activeColor,
-                                isSelected: _selected != null,
-                              ),
-
-                              SizedBox(height: 25.h),
-
-                              // ── Header Text ──────────────────────────────────────────────────
-                              Text(
-                                'Select Your AI Voice Profile',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: const Color(0xFF0F172A), // Slate-900
-                                  fontSize: 24.sp,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.5,
-                                  height: 1.2,
-                                ),
-                              ),
-                              SizedBox(height: 8.h),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 12.w),
-                                child: Text(
-                                  'Choose how your intelligent BIA assistant sounds and expresses personality when replying to you.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: const Color(0xFF475569), // Slate-600
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.45,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: 30.h),
-
-                              // ── Staggered Language Cards ─────────────────────────────────────
-                              ...List.generate(_langs.length, (index) {
-                                final lang = _langs[index];
-                                final isSelected = _selected == lang.code;
-                                return TweenAnimationBuilder<double>(
-                                  duration: Duration(milliseconds: 500 + (index * 120)),
-                                  curve: Curves.easeOutCubic,
-                                  tween: Tween<double>(begin: 0.0, end: 1.0),
-                                  builder: (context, val, child) {
-                                    return Opacity(
-                                      opacity: val,
-                                      child: Transform.translate(
-                                        offset: Offset(0, 30 * (1.0 - val)),
-                                        child: child,
-                                      ),
-                                    );
-                                  },
-                                  child: _buildLangCard(lang, isSelected),
-                                );
-                              }),
-
-                              // ── Voice Preview Speech Bubble ──────────────────────────────────
-                              _buildSpeechBubble(activeColor),
-                              
-                              SizedBox(height: 20.h),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // ── Continue Floating CTA ─────────────────────────────────────────
-                      _buildCTAButton(activeColor),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -364,14 +384,15 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
 
   // ── Language Option Card Builder ──────────────────────────────────────────
   Widget _buildLangCard(_LangOption lang, bool isSelected) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return AnimatedScale(
-      scale: isSelected ? 1.03 : 1.0,
+      scale: isSelected ? 1.02 : 1.0,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutBack,
       child: Container(
-        margin: EdgeInsets.only(bottom: 14.h),
+        margin: EdgeInsets.only(bottom: isTablet ? 14.0 : 14.h),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(22.r),
+          borderRadius: BorderRadius.circular(isTablet ? 20.0 : 22.r),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Material(
@@ -387,12 +408,15 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
-                  padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 16.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 20.0 : 18.w,
+                    vertical: isTablet ? 16.0 : 16.h,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? lang.lightBgColor.withValues(alpha: 0.95)
                         : Colors.white.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(22.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 20.0 : 22.r),
                     border: Border.all(
                       color: isSelected
                           ? lang.accentColor.withValues(alpha: 0.6)
@@ -415,7 +439,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                       // Emoji core
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        padding: EdgeInsets.all(10.r),
+                        padding: EdgeInsets.all(isTablet ? 10.0 : 10.r),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? lang.accentColor.withValues(alpha: 0.15)
@@ -424,10 +448,10 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                         ),
                         child: Text(
                           lang.emoji,
-                          style: TextStyle(fontSize: 24.sp),
+                          style: TextStyle(fontSize: isTablet ? 24.0 : 24.sp),
                         ),
                       ),
-                      SizedBox(width: 14.w),
+                      SizedBox(width: isTablet ? 14.0 : 14.w),
 
                       // Text description
                       Expanded(
@@ -440,19 +464,22 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                                   lang.label,
                                   style: TextStyle(
                                     color: const Color(0xFF0F172A), // Slate-900
-                                    fontSize: 15.sp,
+                                    fontSize: isTablet ? 16.0 : 15.sp,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                SizedBox(width: 8.w),
+                                SizedBox(width: isTablet ? 8.0 : 8.w),
                                 // Badge
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isTablet ? 8.0 : 6.w,
+                                    vertical: isTablet ? 3.0 : 2.h,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? lang.badgeColor.withValues(alpha: 0.1)
                                         : Colors.black.withValues(alpha: 0.04),
-                                    borderRadius: BorderRadius.circular(6.r),
+                                    borderRadius: BorderRadius.circular(isTablet ? 6.0 : 6.r),
                                     border: Border.all(
                                       color: isSelected
                                           ? lang.badgeColor.withValues(alpha: 0.2)
@@ -464,7 +491,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                                     lang.badge,
                                     style: TextStyle(
                                       color: isSelected ? lang.badgeColor : const Color(0xFF64748B),
-                                      fontSize: 7.sp,
+                                      fontSize: isTablet ? 9.5 : 7.sp,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: 0.5,
                                     ),
@@ -472,12 +499,12 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                                 ),
                               ],
                             ),
-                            SizedBox(height: 3.h),
+                            SizedBox(height: isTablet ? 4.0 : 3.h),
                             Text(
                               lang.desc,
                               style: TextStyle(
                                 color: const Color(0xFF475569), // Slate-600
-                                fontSize: 11.sp,
+                                fontSize: isTablet ? 12.5 : 11.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -488,8 +515,8 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                       // Selection Ring
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        width: 22.r,
-                        height: 22.r,
+                        width: isTablet ? 24.0 : 22.r,
+                        height: isTablet ? 24.0 : 22.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isSelected ? lang.accentColor : Colors.transparent,
@@ -501,7 +528,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                           ),
                         ),
                         child: isSelected
-                            ? Icon(Icons.check_rounded, color: Colors.white, size: 13.sp)
+                            ? Icon(Icons.check_rounded, color: Colors.white, size: isTablet ? 14.0 : 13.sp)
                             : null,
                       ),
                     ],
@@ -519,17 +546,24 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
   Widget _buildSpeechBubble(Color activeColor) {
     if (_selected == null) return const SizedBox.shrink();
     final option = _langs.firstWhere((e) => e.code == _selected);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
       child: Container(
-        margin: EdgeInsets.only(top: 15.h, bottom: 5.h),
+        margin: EdgeInsets.only(
+          top: isTablet ? 12.0 : 15.h,
+          bottom: isTablet ? 8.0 : 5.h,
+        ),
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 20.0 : 20.w,
+          vertical: isTablet ? 16.0 : 16.h,
+        ),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
           border: Border.all(
             color: activeColor.withValues(alpha: 0.25),
             width: 1.0,
@@ -551,19 +585,19 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                   waveCtrl: _waveCtrl,
                   activeColor: activeColor,
                 ),
-                SizedBox(width: 8.w),
+                SizedBox(width: isTablet ? 10.0 : 8.w),
                 Text(
                   'VOICE PREVIEW ACTIVE',
                   style: TextStyle(
                     color: activeColor,
-                    fontSize: 8.5.sp,
+                    fontSize: isTablet ? 10.0 : 8.5.sp,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.0,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: isTablet ? 8.0 : 8.h),
             TweenAnimationBuilder<double>(
               key: ValueKey(option.code),
               duration: const Duration(milliseconds: 650),
@@ -578,7 +612,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                       option.subtitle,
                       style: TextStyle(
                         color: const Color(0xFF0F172A), // Slate-900
-                        fontSize: 14.sp,
+                        fontSize: isTablet ? 14.5 : 14.sp,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic,
                         height: 1.35,
@@ -597,18 +631,18 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
   // ── Glowing Shimmer CTA Button ────────────────────────────────────────────
   Widget _buildCTAButton(Color activeColor) {
     final showBtn = _selected != null;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
       child: showBtn
           ? Container(
-              margin: EdgeInsets.only(bottom: 20.h),
               width: double.infinity,
-              height: 54.h,
+              height: isTablet ? 52.0 : 54.h,
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(27.r),
+                  borderRadius: BorderRadius.circular(isTablet ? 26.0 : 27.r),
                   boxShadow: [
                     BoxShadow(
                       color: activeColor.withValues(alpha: 0.25),
@@ -618,7 +652,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(27.r),
+                  borderRadius: BorderRadius.circular(isTablet ? 26.0 : 27.r),
                   child: Stack(
                     children: [
                       // Gradient body
@@ -679,19 +713,19 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         SizedBox(
-                                          width: 18.r,
-                                          height: 18.r,
+                                          width: isTablet ? 18.0 : 18.r,
+                                          height: isTablet ? 18.0 : 18.r,
                                           child: const CircularProgressIndicator(
                                             color: Colors.white,
                                             strokeWidth: 2.5,
                                           ),
                                         ),
-                                        SizedBox(width: 10.w),
+                                        SizedBox(width: isTablet ? 10.0 : 10.w),
                                         Text(
                                           'Setting up your assistant...',
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 14.sp,
+                                            fontSize: isTablet ? 15.0 : 14.sp,
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
@@ -704,16 +738,16 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                                           'Initialize BIA Companion',
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 15.sp,
+                                            fontSize: isTablet ? 15.5 : 15.sp,
                                             fontWeight: FontWeight.w800,
                                             letterSpacing: 0.4,
                                           ),
                                         ),
-                                        SizedBox(width: 8.w),
+                                        SizedBox(width: isTablet ? 8.0 : 8.w),
                                         Icon(
                                           Icons.arrow_forward_rounded,
                                           color: Colors.white,
-                                          size: 16.sp,
+                                          size: isTablet ? 18.0 : 16.sp,
                                         ),
                                       ],
                                     ),
@@ -726,7 +760,7 @@ class _BiaLanguageOnboardingState extends ConsumerState<BiaLanguageOnboarding>
                 ),
               ),
             )
-          : SizedBox(height: 20.h),
+          : const SizedBox.shrink(),
     );
   }
 }
@@ -751,7 +785,7 @@ class _FluidMeshPainter extends CustomPainter {
     // Blob 1: Dynamically changes size and glows in the active soft theme color
     final double bx1 = size.width * 0.15 + (40 * math.cos(angle));
     final double by1 = size.height * 0.15 + (35 * math.sin(angle));
-    final double radius1 = 200.r + (20 * math.sin(angle * 2));
+    final double radius1 = 200.0 + (20 * math.sin(angle * 2));
     final rect1 = Rect.fromCircle(center: Offset(bx1, by1), radius: radius1);
 
     paint.shader = RadialGradient(
@@ -767,7 +801,7 @@ class _FluidMeshPainter extends CustomPainter {
     // Blob 2: Pastel soft blue orbit contrast
     final double bx2 = size.width * 0.85 + (50 * math.sin(angle));
     final double by2 = size.height * 0.75 + (45 * math.cos(angle));
-    final double radius2 = 240.r + (25 * math.cos(angle * 1.5));
+    final double radius2 = 240.0 + (25 * math.cos(angle * 1.5));
     final rect2 = Rect.fromCircle(center: Offset(bx2, by2), radius: radius2);
 
     paint.shader = RadialGradient(
@@ -783,7 +817,7 @@ class _FluidMeshPainter extends CustomPainter {
     // Blob 3: Warm yellow/amber soft accent ambient orb
     final double bx3 = size.width * 0.5 + (35 * math.cos(angle + math.pi));
     final double by3 = size.height * 0.5 + (25 * math.sin(angle + math.pi));
-    final double radius3 = 160.r;
+    final double radius3 = 160.0;
     final rect3 = Rect.fromCircle(center: Offset(bx3, by3), radius: radius3);
 
     paint.shader = RadialGradient(
@@ -816,9 +850,12 @@ class _BiaCoreOrb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+    final orbSize = isTablet ? 150.0 : 140.r;
+
     return SizedBox(
-      width: 140.r,
-      height: 140.r,
+      width: orbSize,
+      height: orbSize,
       child: AnimatedBuilder(
         animation: orbCtrl,
         builder: (context, child) {
@@ -833,8 +870,8 @@ class _BiaCoreOrb extends StatelessWidget {
               Transform.scale(
                 scale: pulseVal,
                 child: Container(
-                  width: 110.r,
-                  height: 110.r,
+                  width: isTablet ? 120.0 : 110.r,
+                  height: isTablet ? 120.0 : 110.r,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     boxShadow: [
@@ -852,7 +889,7 @@ class _BiaCoreOrb extends StatelessWidget {
               Transform.rotate(
                 angle: rotationVal1,
                 child: CustomPaint(
-                  size: Size(130.r, 130.r),
+                  size: Size(isTablet ? 140.0 : 130.r, isTablet ? 140.0 : 130.r),
                   painter: _OrbRingPainter(
                     color: themeColor.withValues(alpha: 0.35),
                     strokeWidth: 1.5,
@@ -865,7 +902,7 @@ class _BiaCoreOrb extends StatelessWidget {
               Transform.rotate(
                 angle: rotationVal2,
                 child: CustomPaint(
-                  size: Size(106.r, 106.r),
+                  size: Size(isTablet ? 116.0 : 106.r, isTablet ? 116.0 : 106.r),
                   painter: _OrbRingPainter(
                     color: themeColor.withValues(alpha: 0.5),
                     strokeWidth: 2.0,
@@ -876,8 +913,8 @@ class _BiaCoreOrb extends StatelessWidget {
 
               // Central Solid Core Sphere (Frosted White theme)
               Container(
-                width: 70.r,
-                height: 70.r,
+                width: isTablet ? 75.0 : 70.r,
+                height: isTablet ? 75.0 : 70.r,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white,
@@ -896,7 +933,7 @@ class _BiaCoreOrb extends StatelessWidget {
                 child: Icon(
                   Icons.auto_awesome_rounded,
                   color: themeColor,
-                  size: 26.sp,
+                  size: isTablet ? 30.0 : 26.sp,
                 ),
               ),
             ],

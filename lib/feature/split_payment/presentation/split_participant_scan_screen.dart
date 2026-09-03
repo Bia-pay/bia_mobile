@@ -112,6 +112,7 @@ class _SplitParticipantScanScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scanState = ref.watch(scanSplitProvider);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: offWhiteBackground,
@@ -125,6 +126,7 @@ class _SplitParticipantScanScreenState
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: darkBackground,
+            fontSize: isTablet ? 18.0 : null,
           ),
         ),
         elevation: 0,
@@ -133,7 +135,7 @@ class _SplitParticipantScanScreenState
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
+            constraints: BoxConstraints(maxWidth: isTablet ? 500 : 600),
             child: scanState.when(
               loading: () => const Center(
                 child: CircularProgressIndicator(
@@ -141,7 +143,7 @@ class _SplitParticipantScanScreenState
                 ),
               ),
               error: (err, stack) => Padding(
-                padding: EdgeInsets.all(24.r),
+                padding: EdgeInsets.all(isTablet ? 20.0 : 24.r),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -150,30 +152,31 @@ class _SplitParticipantScanScreenState
                       color: errorColor,
                       size: 64,
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: isTablet ? 16.0 : 16.h),
                     Text(
                       "Split Request Unavailable",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: darkBackground,
+                        fontSize: isTablet ? 16.0 : null,
                       ),
                     ),
-                    SizedBox(height: 8.h),
+                    SizedBox(height: isTablet ? 8.0 : 8.h),
                     Text(
                       err.toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: lightSecondaryText,
-                        fontSize: 13.sp,
+                        fontSize: isTablet ? 13.0 : 13.sp,
                       ),
                     ),
-                    SizedBox(height: 24.h),
+                    SizedBox(height: isTablet ? 20.0 : 24.h),
                     ElevatedButton(
                       onPressed: () => context.pop(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
+                          borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                         ),
                       ),
                       child: const Text(
@@ -200,17 +203,21 @@ class _SplitParticipantScanScreenState
   }
 
   Widget _buildScanDetailView(ThemeData theme, ScanSplitResponse details) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final bool hasPaid = details.paymentStatus == 'PAID';
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 20.0 : 24.w,
+        vertical: isTablet ? 16.0 : 16.h,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(),
           // BIA Split Header Icon
           Container(
-            padding: EdgeInsets.all(20.r),
+            padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
@@ -218,11 +225,11 @@ class _SplitParticipantScanScreenState
             child: Icon(
               Icons.call_split_rounded,
               color: primaryColor,
-              size: 48.sp,
+              size: isTablet ? 36.0 : 48.sp,
             ),
           ).animate().scale(duration: 400.ms),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: isTablet ? 16.0 : 24.h),
 
           // Title & Description
           Text(
@@ -230,26 +237,30 @@ class _SplitParticipantScanScreenState
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: darkBackground,
+              fontSize: isTablet ? 20.0 : null,
             ),
             textAlign: TextAlign.center,
           ),
           if (details.description != null &&
               details.description!.isNotEmpty) ...[
-            SizedBox(height: 8.h),
+            SizedBox(height: isTablet ? 6.0 : 8.h),
             Text(
               details.description!,
-              style: TextStyle(color: lightSecondaryText, fontSize: 13.sp),
+              style: TextStyle(
+                color: lightSecondaryText,
+                fontSize: isTablet ? 13.0 : 13.sp,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
 
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 8.0 : 12.h),
 
           Text(
             "Created by ${details.creatorName}",
             style: TextStyle(
               color: primaryColor,
-              fontSize: 12.sp,
+              fontSize: isTablet ? 12.5 : 12.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -259,10 +270,10 @@ class _SplitParticipantScanScreenState
           // Payment Card (Your Share)
           Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(24.r),
+                padding: EdgeInsets.all(isTablet ? 20.0 : 24.r),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.r),
+                  borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
                   border: Border.all(
                     color: lightBorderColor.withValues(alpha: 0.5),
                   ),
@@ -279,46 +290,49 @@ class _SplitParticipantScanScreenState
                     Text(
                       "YOUR ASSIGNED SHARE",
                       style: TextStyle(
-                        fontSize: 11.sp,
+                        fontSize: isTablet ? 12.0 : 11.sp,
                         fontWeight: FontWeight.w700,
                         color: lightSecondaryText,
                         letterSpacing: 1.5,
                       ),
                     ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      "₦${NumberFormat('#,##0.00').format(details.assignedAmount)}",
-                      style: TextStyle(
-                        fontSize: 32.sp,
-                        fontWeight: FontWeight.w800,
-                        color: darkBackground,
+                    SizedBox(height: isTablet ? 10.0 : 12.h),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "₦${NumberFormat('#,##0.00').format(details.assignedAmount)}",
+                        style: TextStyle(
+                          fontSize: isTablet ? 32.0 : 32.sp,
+                          fontWeight: FontWeight.w800,
+                          color: darkBackground,
+                        ),
                       ),
                     ),
                     if (hasPaid) ...[
-                      SizedBox(height: 12.h),
+                      SizedBox(height: isTablet ? 10.0 : 12.h),
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 14.w,
-                          vertical: 6.h,
+                          horizontal: isTablet ? 14.0 : 14.w,
+                          vertical: isTablet ? 6.0 : 6.h,
                         ),
                         decoration: BoxDecoration(
                           color: successColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20.r),
+                          borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.check_circle,
                               color: successColor,
-                              size: 16,
+                              size: isTablet ? 16.0 : 16,
                             ),
-                            SizedBox(width: 6.w),
+                            SizedBox(width: isTablet ? 6.0 : 6.w),
                             Text(
                               "Paid",
                               style: TextStyle(
                                 color: successColor,
-                                fontSize: 12.sp,
+                                fontSize: isTablet ? 12.0 : 12.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -339,7 +353,7 @@ class _SplitParticipantScanScreenState
           if (!hasPaid) ...[
             SizedBox(
               width: double.infinity,
-              height: 55.h,
+              height: isTablet ? 50.0 : 55.h,
               child: ElevatedButton(
                 onPressed: () {
                   setState(() {
@@ -350,14 +364,14 @@ class _SplitParticipantScanScreenState
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                   ),
                 ),
                 child: Text(
                   "Pay Now",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
+                    fontSize: isTablet ? 15.0 : 14.sp,
                   ),
                 ),
               ),
@@ -365,13 +379,13 @@ class _SplitParticipantScanScreenState
           ] else ...[
             SizedBox(
               width: double.infinity,
-              height: 55.h,
+              height: isTablet ? 50.0 : 55.h,
               child: OutlinedButton(
                 onPressed: () => context.pop(),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: primaryColor, width: 1.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
                   ),
                 ),
                 child: Text(
@@ -379,57 +393,64 @@ class _SplitParticipantScanScreenState
                   style: TextStyle(
                     color: primaryColor,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14.sp,
+                    fontSize: isTablet ? 15.0 : 14.sp,
                   ),
                 ),
               ),
             ),
           ],
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 16.0 : 20.h),
         ],
       ),
     );
   }
 
   Widget _buildPinEntryView(ThemeData theme, ScanSplitResponse details) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 20.0 : 24.w,
+        vertical: isTablet ? 16.0 : 20.h,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 12.0 : 20.h),
 
           // Secure padlock icon
           Container(
-            padding: EdgeInsets.all(14.r),
+            padding: EdgeInsets.all(isTablet ? 12.0 : 14.r),
             decoration: BoxDecoration(
               color: primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.lock_outline_rounded,
               color: primaryColor,
-              size: 28,
+              size: isTablet ? 24.0 : 28,
             ),
           ),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 14.0 : 20.h),
 
           Text(
             'Enter Transaction PIN',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 16.sp,
+              fontSize: isTablet ? 16.0 : 16.sp,
             ),
           ),
-          SizedBox(height: 6.h),
+          SizedBox(height: isTablet ? 6.0 : 6.h),
           Text(
             'Confirm payment of ₦${NumberFormat('#,##0.00').format(details.assignedAmount)} to Split Bill',
-            style: TextStyle(color: lightSecondaryText, fontSize: 12.sp),
+            style: TextStyle(
+              color: lightSecondaryText,
+              fontSize: isTablet ? 12.0 : 12.sp,
+            ),
             textAlign: TextAlign.center,
           ),
 
-          SizedBox(height: 30.h),
+          SizedBox(height: isTablet ? 20.0 : 30.h),
 
           // PIN Dots
           Row(
@@ -438,9 +459,9 @@ class _SplitParticipantScanScreenState
               final filled = index < _pin.length;
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                margin: EdgeInsets.symmetric(horizontal: 8.w),
-                width: 12.r,
-                height: 12.r,
+                margin: EdgeInsets.symmetric(horizontal: isTablet ? 8.0 : 8.w),
+                width: isTablet ? 12.0 : 12.r,
+                height: isTablet ? 12.0 : 12.r,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: filled ? primaryColor : Colors.transparent,
@@ -456,25 +477,28 @@ class _SplitParticipantScanScreenState
           const Spacer(),
 
           // Keyboard
-          CustomGridKeypad(
-            onNumberPressed: _addDigit,
-            leftAction: ActionKey(
-              child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-              backgroundColor: primaryColor,
-              onTap: () {
-                setState(() {
-                  _showPinView = false;
-                  _pin = "";
-                });
-              },
-            ),
-            rightAction: ActionKey(
-              child: const Icon(Icons.backspace_rounded, color: primaryColor),
-              backgroundColor: primaryColor.withValues(alpha: 0.1),
-              onTap: _removeDigit,
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: isTablet ? 360.0 : double.infinity),
+            child: CustomGridKeypad(
+              onNumberPressed: _addDigit,
+              leftAction: ActionKey(
+                child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                backgroundColor: primaryColor,
+                onTap: () {
+                  setState(() {
+                    _showPinView = false;
+                    _pin = "";
+                  });
+                },
+              ),
+              rightAction: ActionKey(
+                child: const Icon(Icons.backspace_rounded, color: primaryColor),
+                backgroundColor: primaryColor.withValues(alpha: 0.1),
+                onTap: _removeDigit,
+              ),
             ),
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: isTablet ? 10.0 : 10.h),
         ],
       ),
     );
