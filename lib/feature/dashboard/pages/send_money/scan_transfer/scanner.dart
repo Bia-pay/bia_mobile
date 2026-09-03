@@ -270,7 +270,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final frameSize = screenWidth * 0.65; // Dynamic frame size
+    final isTablet = screenWidth >= 600;
+    final frameSize = isTablet ? 340.0 : (screenWidth * 0.65);
 
     return Scaffold(
       backgroundColor: darkBackground,
@@ -280,12 +281,15 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
           MobileScanner(controller: controller, onDetect: _onDetect),
 
           // 2. Immersive Overlay
-          _buildOverlay(frameSize),
+          _buildOverlay(frameSize, isTablet),
 
           // 3. Top Controls
           SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 24.0 : 16.w,
+                vertical: isTablet ? 12.0 : 10.h,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -293,7 +297,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                     _isCollectMode ? "Collect from Customer" : "Scan to Pay",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18.sp,
+                      fontSize: isTablet ? 18.0 : 18.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -303,6 +307,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                       setState(() => flashOn = !flashOn);
                       controller.toggleTorch();
                     },
+                    isTablet,
                   ),
                 ],
               ),
@@ -311,7 +316,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
 
           // 4. Bottom Actions
           Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 100.h,
+            bottom: isTablet ? 120.0 : (MediaQuery.of(context).padding.bottom + 100.h),
             left: 0,
             right: 0,
             child: Column(
@@ -320,14 +325,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                   "Align QR code within the frame to scan",
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.7),
-                    fontSize: 14.sp,
+                    fontSize: isTablet ? 14.0 : 14.sp,
                   ),
                 ),
-                SizedBox(height: 20.h),
+                SizedBox(height: isTablet ? 16.0 : 20.h),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(30.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 24.0 : 30.r),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -339,14 +344,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                         }),
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: 30.w,
-                            vertical: 12.h,
+                            horizontal: isTablet ? 28.0 : 30.w,
+                            vertical: isTablet ? 10.0 : 12.h,
                           ),
                           decoration: BoxDecoration(
                             color: !_isCollectMode
                                 ? primaryColor
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(30.r),
+                            borderRadius: BorderRadius.circular(isTablet ? 24.0 : 30.r),
                           ),
                           child: Text(
                             'Pay',
@@ -355,6 +360,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                                   ? Colors.white
                                   : Colors.white70,
                               fontWeight: FontWeight.bold,
+                              fontSize: isTablet ? 14.0 : 14.sp,
                             ),
                           ),
                         ),
@@ -366,14 +372,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                         }),
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: 30.w,
-                            vertical: 12.h,
+                            horizontal: isTablet ? 28.0 : 30.w,
+                            vertical: isTablet ? 10.0 : 12.h,
                           ),
                           decoration: BoxDecoration(
                             color: _isCollectMode
                                 ? primaryColor
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(30.r),
+                            borderRadius: BorderRadius.circular(isTablet ? 24.0 : 30.r),
                           ),
                           child: Text(
                             'Collect',
@@ -382,6 +388,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                                   ? Colors.white
                                   : Colors.white70,
                               fontWeight: FontWeight.bold,
+                              fontSize: isTablet ? 14.0 : 14.sp,
                             ),
                           ),
                         ),
@@ -389,7 +396,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                     ],
                   ),
                 ),
-                SizedBox(height: 20.h),
+                SizedBox(height: isTablet ? 20.0 : 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -397,18 +404,21 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                       Icons.photo_library_rounded,
                       "Gallery",
                       _pickFromGallery,
+                      isTablet,
                     ),
-                    SizedBox(width: 30.w),
+                    SizedBox(width: isTablet ? 36.0 : 30.w),
                     _buildBottomAction(
                       Icons.qr_code_2_rounded,
                       "Receive",
                       () => context.pushNamed(RouteList.qrScreen),
+                      isTablet,
                     ),
-                    SizedBox(width: 30.w),
+                    SizedBox(width: isTablet ? 36.0 : 30.w),
                     _buildBottomAction(
                       Icons.splitscreen_rounded,
                       "Split Bill",
                       () => context.pushNamed(RouteList.splitCreatorSetup),
+                      isTablet,
                     ),
                   ],
                 ),
@@ -418,15 +428,15 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                   'authBox',
                 ).get('qr_payments_enabled', defaultValue: false))
                   Padding(
-                    padding: EdgeInsets.only(top: 20.h),
+                    padding: EdgeInsets.only(top: isTablet ? 16.0 : 20.h),
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 8.h,
+                        horizontal: isTablet ? 16.0 : 16.w,
+                        vertical: isTablet ? 8.0 : 8.h,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20.r),
+                        borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -434,14 +444,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                           Icon(
                             Icons.security,
                             color: successColor,
-                            size: 16.sp,
+                            size: isTablet ? 16.0 : 16.sp,
                           ),
-                          SizedBox(width: 8.w),
+                          SizedBox(width: isTablet ? 8.0 : 8.w),
                           Text(
                             "Secure QR Payment Active",
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12.sp,
+                              fontSize: isTablet ? 12.0 : 12.sp,
                             ),
                           ),
                         ],
@@ -456,7 +466,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     );
   }
 
-  Widget _buildOverlay(double frameSize) {
+  Widget _buildOverlay(double frameSize, bool isTablet) {
     return Stack(
       children: [
         // Darken outside
@@ -474,13 +484,13 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                 ),
               ),
               Align(
-                alignment: const Alignment(0, -0.4),
+                alignment: Alignment(0, isTablet ? -0.2 : -0.4),
                 child: Container(
                   height: frameSize,
                   width: frameSize,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(40.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 28.0 : 40.r),
                   ),
                 ),
               ),
@@ -490,7 +500,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
 
         // Scan Frame
         Align(
-          alignment: const Alignment(0, -0.4),
+          alignment: Alignment(0, isTablet ? -0.2 : -0.4),
           child: Container(
             height: frameSize,
             width: frameSize,
@@ -499,7 +509,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                 color: Colors.white.withOpacity(0.5),
                 width: 1,
               ),
-              borderRadius: BorderRadius.circular(40.r),
+              borderRadius: BorderRadius.circular(isTablet ? 28.0 : 40.r),
             ),
             child: Stack(
               children: [
@@ -507,7 +517,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                 _ScanningLine(frameSize: frameSize),
 
                 // Corners
-                ..._buildCorners(),
+                ..._buildCorners(isTablet),
               ],
             ),
           ),
@@ -516,81 +526,81 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
     );
   }
 
-  List<Widget> _buildCorners() {
+  List<Widget> _buildCorners(bool isTablet) {
     return [
       // Top Left
-      Positioned(top: 0, left: 0, child: _corner(top: true, left: true)),
+      Positioned(top: 0, left: 0, child: _corner(top: true, left: true, isTablet: isTablet)),
       // Top Right
-      Positioned(top: 0, right: 0, child: _corner(top: true, left: false)),
+      Positioned(top: 0, right: 0, child: _corner(top: true, left: false, isTablet: isTablet)),
       // Bottom Left
-      Positioned(bottom: 0, left: 0, child: _corner(top: false, left: true)),
+      Positioned(bottom: 0, left: 0, child: _corner(top: false, left: true, isTablet: isTablet)),
       // Bottom Right
-      Positioned(bottom: 0, right: 0, child: _corner(top: false, left: false)),
+      Positioned(bottom: 0, right: 0, child: _corner(top: false, left: false, isTablet: isTablet)),
     ];
   }
 
-  Widget _corner({required bool top, required bool left}) {
+  Widget _corner({required bool top, required bool left, required bool isTablet}) {
     return Container(
-      width: 40.r,
-      height: 40.r,
+      width: isTablet ? 32.0 : 40.r,
+      height: isTablet ? 32.0 : 40.r,
       decoration: BoxDecoration(
         border: Border(
           top: top
-              ? BorderSide(color: Colors.white, width: 4.w)
+              ? BorderSide(color: Colors.white, width: isTablet ? 3.5 : 4.w)
               : BorderSide.none,
           bottom: !top
-              ? BorderSide(color: Colors.white, width: 4.w)
+              ? BorderSide(color: Colors.white, width: isTablet ? 3.5 : 4.w)
               : BorderSide.none,
           left: left
-              ? BorderSide(color: Colors.white, width: 4.w)
+              ? BorderSide(color: Colors.white, width: isTablet ? 3.5 : 4.w)
               : BorderSide.none,
           right: !left
-              ? BorderSide(color: Colors.white, width: 4.w)
+              ? BorderSide(color: Colors.white, width: isTablet ? 3.5 : 4.w)
               : BorderSide.none,
         ),
         borderRadius: BorderRadius.only(
-          topLeft: top && left ? Radius.circular(20.r) : Radius.zero,
-          topRight: top && !left ? Radius.circular(20.r) : Radius.zero,
-          bottomLeft: !top && left ? Radius.circular(20.r) : Radius.zero,
-          bottomRight: !top && !left ? Radius.circular(20.r) : Radius.zero,
+          topLeft: top && left ? Radius.circular(isTablet ? 16.0 : 20.r) : Radius.zero,
+          topRight: top && !left ? Radius.circular(isTablet ? 16.0 : 20.r) : Radius.zero,
+          bottomLeft: !top && left ? Radius.circular(isTablet ? 16.0 : 20.r) : Radius.zero,
+          bottomRight: !top && !left ? Radius.circular(isTablet ? 16.0 : 20.r) : Radius.zero,
         ),
       ),
     );
   }
 
-  Widget _buildCircularButton(IconData icon, VoidCallback onTap) {
+  Widget _buildCircularButton(IconData icon, VoidCallback onTap, bool isTablet) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.all(10.r),
+        padding: EdgeInsets.all(isTablet ? 10.0 : 10.r),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.5),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: Colors.white, size: 20.sp),
+        child: Icon(icon, color: Colors.white, size: isTablet ? 20.0 : 20.sp),
       ),
     );
   }
 
-  Widget _buildBottomAction(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildBottomAction(IconData icon, String label, VoidCallback onTap, bool isTablet) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(16.r),
+            padding: EdgeInsets.all(isTablet ? 14.0 : 16.r),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: Colors.white, size: 28.sp),
+            child: Icon(icon, color: Colors.white, size: isTablet ? 24.0 : 28.sp),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: isTablet ? 6.0 : 8.h),
           Text(
             label,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 12.sp,
+              fontSize: isTablet ? 12.0 : 12.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
