@@ -98,12 +98,12 @@ class _ElectricityState extends State<Electricity> {
                           SizedBox(height: isTablet ? 24.h : 20.h),
                           Container(
                             padding: EdgeInsets.symmetric(
-                              vertical: isTablet ? 24.h : 17.h,
-                              horizontal: isTablet ? 20.w : 10.w,
+                              vertical: isTablet ? 14.0 : 17.h,
+                              horizontal: isTablet ? 16.0 : 10.w,
                             ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.all(
-                                Radius.circular(isTablet ? 20.r : 15.r),
+                                Radius.circular(isTablet ? 16.0 : 15.r),
                               ),
                             ),
                             child: Column(
@@ -114,26 +114,26 @@ class _ElectricityState extends State<Electricity> {
                                   'Electricity Service',
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: isTablet ? 18.sp : 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isTablet ? 15.0 : 16.sp,
                                       ),
                                 ),
-                                SizedBox(height: isTablet ? 16.h : 10.h),
+                                SizedBox(height: isTablet ? 10.0 : 10.h),
                                 ...dataPlans
                                     .map(
                                       (tx) => Container(
                                         padding: EdgeInsets.symmetric(
-                                          vertical: isTablet ? 12.h : 8.h,
-                                          horizontal: isTablet ? 24.w : 18.w,
+                                          vertical: isTablet ? 10.0 : 8.h,
+                                          horizontal: isTablet ? 14.0 : 18.w,
                                         ),
                                         margin: EdgeInsets.symmetric(
-                                          vertical: isTablet ? 8.h : 6.h,
-                                          horizontal: isTablet ? 10.w : 7.w,
+                                          vertical: isTablet ? 6.0 : 6.h,
+                                          horizontal: isTablet ? 4.0 : 7.w,
                                         ),
-                                        height: isTablet ? 85.h : 70.h,
                                         decoration: BoxDecoration(
+                                          color: Colors.white,
                                           borderRadius: BorderRadius.circular(
-                                            isTablet ? 12.r : 8.r,
+                                            isTablet ? 10.0 : 8.r,
                                           ),
                                         ),
                                         child: Row(
@@ -141,21 +141,21 @@ class _ElectricityState extends State<Electricity> {
                                               CrossAxisAlignment.center,
                                           children: [
                                             Container(
-                                              height: isTablet ? 45.h : 35.h,
-                                              width: isTablet ? 45.w : 35.w,
+                                              height: isTablet ? 40.0 : 35.h,
+                                              width: isTablet ? 40.0 : 35.w,
                                               alignment: Alignment.center,
                                               decoration: BoxDecoration(
                                                 borderRadius:
                                                     BorderRadius.circular(100),
-                                                border: Border.all(),
+                                                border: Border.all(color: Colors.grey.shade300),
                                               ),
                                               child: Image.asset(
                                                 'assets/svg/bank.png',
-                                                height: isTablet ? 28.h : 20.h,
+                                                height: isTablet ? 22.0 : 20.h,
                                               ),
                                             ),
                                             SizedBox(
-                                              width: isTablet ? 20.w : 15.w,
+                                              width: isTablet ? 14.0 : 15.w,
                                             ),
                                             Expanded(
                                               child: Column(
@@ -171,12 +171,13 @@ class _ElectricityState extends State<Electricity> {
                                                         .bodyMedium
                                                         ?.copyWith(
                                                           fontSize: isTablet
-                                                              ? 17.sp
+                                                              ? 14.0
                                                               : 15.sp,
                                                           fontWeight:
                                                               FontWeight.w600,
                                                         ),
                                                   ),
+                                                  SizedBox(height: isTablet ? 2.0 : 2.h),
                                                   Text(
                                                     tx.dateTime,
                                                     style: Theme.of(context)
@@ -184,7 +185,7 @@ class _ElectricityState extends State<Electricity> {
                                                         .bodySmall
                                                         ?.copyWith(
                                                           fontSize: isTablet
-                                                              ? 13.sp
+                                                              ? 12.0
                                                               : 11.sp,
                                                         ),
                                                   ),
@@ -193,7 +194,7 @@ class _ElectricityState extends State<Electricity> {
                                             ),
                                             Icon(
                                               Icons.arrow_forward_ios_outlined,
-                                              size: isTablet ? 16.sp : 12.sp,
+                                              size: isTablet ? 14.0 : 12.sp,
                                             ),
                                           ],
                                         ),
@@ -203,7 +204,7 @@ class _ElectricityState extends State<Electricity> {
                               ],
                             ),
                           ),
-                          SizedBox(height: isTablet ? 32.h : 25.h),
+                          SizedBox(height: isTablet ? 20.0 : 25.h),
                         ],
                       ),
                     ),
@@ -391,26 +392,26 @@ class _CardOneState extends ConsumerState<CardOne> {
         final cardPadding = isDesktop
             ? EdgeInsets.symmetric(vertical: 22.h, horizontal: 48.w)
             : (isTablet
-                  ? EdgeInsets.symmetric(vertical: 14.h, horizontal: 32.w)
+                  ? const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0)
                   : EdgeInsets.symmetric(vertical: 7.h, horizontal: 25.w));
 
-        final fontSize = isDesktop ? 18.sp : (isTablet ? 16.sp : 14.sp);
-        final titleFontSize = isDesktop ? 20.sp : (isTablet ? 18.sp : 16.sp);
-        final inputHeight = isDesktop ? 70.h : (isTablet ? 60.h : 50.h);
-        final buttonHeight = isDesktop ? 65.h : (isTablet ? 60.h : 55.h);
+        final fontSize = isDesktop ? 16.0 : (isTablet ? 14.0 : 14.sp);
+        final titleFontSize = isDesktop ? 18.0 : (isTablet ? 15.0 : 16.sp);
+        final inputHeight = isDesktop ? 54.0 : (isTablet ? 48.0 : 50.h);
+        final buttonHeight = isDesktop ? 54.0 : (isTablet ? 48.0 : 55.h);
         final theme = Theme.of(context);
 
         return Container(
           padding: cardPadding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.all(
-              Radius.circular(isTablet ? 20.r : 15.r),
+              Radius.circular(isTablet ? 16.0 : 15.r),
             ),
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: isTablet ? 2.w : 1.w,
-              vertical: isTablet ? 10.h : 5.h,
+              horizontal: isTablet ? 2.0 : 1.w,
+              vertical: isTablet ? 6.0 : 5.h,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -422,18 +423,19 @@ class _CardOneState extends ConsumerState<CardOne> {
                   textAlign: TextAlign.start,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: titleFontSize,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: isTablet ? 16.h : 10.h),
+                SizedBox(height: isTablet ? 10.0 : 10.h),
                 Container(
                   height: inputHeight,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 16.w : 12.w,
+                    horizontal: isTablet ? 14.0 : 12.w,
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(width: 0.4),
                     borderRadius: BorderRadius.all(
-                      Radius.circular(isTablet ? 14.r : 10.r),
+                      Radius.circular(isTablet ? 12.0 : 10.r),
                     ),
                   ),
                   child: Row(
@@ -446,13 +448,11 @@ class _CardOneState extends ConsumerState<CardOne> {
                           controller: _meterController,
                           inputFormatters: [
                             FilteringTextInputFormatter
-                                .digitsOnly, // 👈 numbers only
+                                .digitsOnly,
                           ],
-
-                          //fontSize: fontSize,
                           onChanged: (value) {
                             _onMeterChanged(value);
-                            setState(() {}); // 👈 ADD THIS
+                            setState(() {});
                           },
                         ),
                       ),
@@ -463,8 +463,8 @@ class _CardOneState extends ConsumerState<CardOne> {
                             : null,
                         child: _isVerifying
                             ? SizedBox(
-                                height: 20.h,
-                                width: 20.w,
+                                height: isTablet ? 18.0 : 20.h,
+                                width: isTablet ? 18.0 : 20.w,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: primaryColor,
@@ -477,7 +477,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                                       ? primaryColor
                                       : Colors.grey,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: isTablet ? 16.sp : 14.sp,
+                                  fontSize: isTablet ? 14.0 : 14.sp,
                                 ),
                               ),
                       ),
@@ -491,26 +491,26 @@ class _CardOneState extends ConsumerState<CardOne> {
                     child: Text(
                       'Min Amount: ₦$_minPurchaseAmount',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: isTablet ? 14.sp : 12.sp,
+                        fontSize: isTablet ? 12.5 : 12.sp,
                         color: Colors.grey.shade600,
                       ),
                     ),
                   ),
                 if (_isVerifying)
                   Padding(
-                    padding: EdgeInsets.only(top: isTablet ? 12.h : 8.h),
+                    padding: EdgeInsets.only(top: isTablet ? 8.0 : 8.h),
                     child: Row(
                       children: [
                         SizedBox(
-                          width: isTablet ? 18.w : 14.w,
-                          height: isTablet ? 18.h : 14.h,
-                          child:   PulsingLogoIndicator(
-                            logoPath: 'assets/svg/logo-b.png', // 🔥 your logo
+                          width: isTablet ? 16.0 : 14.w,
+                          height: isTablet ? 16.0 : 14.h,
+                          child: PulsingLogoIndicator(
+                            logoPath: 'assets/svg/logo-b.png',
                             size: 40,
                             pulseColor: primaryColor,
                           ),
                         ),
-                        SizedBox(width: isTablet ? 12.w : 10.w),
+                        SizedBox(width: isTablet ? 8.0 : 10.w),
                         Text(
                           "Verifying meter...",
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -522,7 +522,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                   ),
                 if (_customerName != null)
                   Padding(
-                    padding: EdgeInsets.only(top: isTablet ? 14.h : 10.h),
+                    padding: EdgeInsets.only(top: isTablet ? 10.0 : 10.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -530,7 +530,7 @@ class _CardOneState extends ConsumerState<CardOne> {
                           _customerName!,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            fontSize: isTablet ? 17.sp : 15.sp,
+                            fontSize: isTablet ? 14.5 : 15.sp,
                             color: _customerName == "Invalid meter"
                                 ? errorColor
                                 : successColor,
@@ -540,20 +540,19 @@ class _CardOneState extends ConsumerState<CardOne> {
                           Text(
                             _address!,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              fontSize: isTablet ? 14.sp : 12.sp,
+                              fontSize: isTablet ? 12.0 : 12.sp,
                             ),
                           ),
-
                       ],
                     ),
                   ),
 
-                SizedBox(height: isTablet ? 14.h : 10.h),
+                SizedBox(height: isTablet ? 10.0 : 10.h),
                 Row(
                   children: [
                     SizedBox(
-                      width: 24.w,
-                      height: 24.h,
+                      width: isTablet ? 20.0 : 24.w,
+                      height: isTablet ? 20.0 : 24.h,
                       child: Checkbox(
                         value: _saveAsBeneficiary,
                         onChanged: (v) {
@@ -564,35 +563,35 @@ class _CardOneState extends ConsumerState<CardOne> {
                         activeColor: primaryColor,
                       ),
                     ),
-                    SizedBox(width: 8.w),
+                    SizedBox(width: isTablet ? 8.0 : 8.w),
                     Text(
                       'Save as beneficiary',
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        fontSize: 14.sp,
+                        fontSize: isTablet ? 13.5 : 14.sp,
                         color: const Color(0xFF475569),
                       ),
                     ),
                   ],
                 ),
                 if (_saveAsBeneficiary) ...[
-                  SizedBox(height: 10.h),
+                  SizedBox(height: isTablet ? 8.0 : 10.h),
                   Container(
                     height: inputHeight,
                     padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 16.w : 12.w,
+                      horizontal: isTablet ? 14.0 : 12.w,
                     ),
                     decoration: BoxDecoration(
                       border: Border.all(width: 0.4),
                       borderRadius: BorderRadius.all(
-                        Radius.circular(isTablet ? 14.r : 10.r),
+                        Radius.circular(isTablet ? 12.0 : 10.r),
                       ),
                     ),
                     child: TextFormField(
                       controller: _nameController,
                       style: TextStyle(
                         color: const Color(0xFF1E293B),
-                        fontSize: 14.sp,
+                        fontSize: isTablet ? 13.5 : 14.sp,
                         fontWeight: FontWeight.w600,
                       ),
                       decoration: const InputDecoration(
@@ -611,24 +610,25 @@ class _CardOneState extends ConsumerState<CardOne> {
                     ),
                   ),
                 ],
-                SizedBox(height: isTablet ? 28.h : 20.h),
+                SizedBox(height: isTablet ? 18.0 : 20.h),
                 Text(
                   'Amount',
                   textAlign: TextAlign.start,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: titleFontSize,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: isTablet ? 16.h : 10.h),
+                SizedBox(height: isTablet ? 10.0 : 10.h),
                 Container(
                   height: inputHeight,
                   padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 16.w : 12.w,
+                    horizontal: isTablet ? 14.0 : 12.w,
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(width: 0.4),
                     borderRadius: BorderRadius.all(
-                      Radius.circular(isTablet ? 14.r : 10.r),
+                      Radius.circular(isTablet ? 12.0 : 10.r),
                     ),
                   ),
                   child: Row(
@@ -642,17 +642,17 @@ class _CardOneState extends ConsumerState<CardOne> {
                           onChanged: (value) {
                             final amount = int.tryParse(value) ?? 0;
                             _validateAmount(amount);
-                            setState(() {}); // 👈 ADD THIS
+                            setState(() {});
                           },
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: isTablet ? 16.h : 12.h),
+                SizedBox(height: isTablet ? 12.0 : 12.h),
                 Wrap(
-                  spacing: 10.w,
-                  runSpacing: 10.h,
+                  spacing: isTablet ? 8.0 : 10.w,
+                  runSpacing: isTablet ? 8.0 : 10.h,
                   children: [200, 500, 1000, 2000, 3000, 5000, 10000, 20000].map((presetAmount) {
                     double minAmount = 0;
                     if (_minPurchaseAmount != null && _minPurchaseAmount!.isNotEmpty) {
@@ -669,21 +669,24 @@ class _CardOneState extends ConsumerState<CardOne> {
                             }
                           : null,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTablet ? 12.0 : 16.w,
+                          vertical: isTablet ? 6.0 : 8.h,
+                        ),
                         decoration: BoxDecoration(
                           color: isEnabled ? Colors.white : Colors.grey.shade200,
                           border: Border.all(
                             color: isEnabled ? primaryColor : Colors.grey.shade300,
                             width: 1,
                           ),
-                          borderRadius: BorderRadius.circular(8.r),
+                          borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
                         ),
                         child: Text(
                           '₦$presetAmount',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: isEnabled ? primaryColor : Colors.grey.shade500,
                             fontWeight: FontWeight.w600,
-                            fontSize: isTablet ? 14.sp : 12.sp,
+                            fontSize: isTablet ? 13.0 : 12.sp,
                           ),
                         ),
                       ),
@@ -945,16 +948,16 @@ class _CardTwoState extends ConsumerState<CardTwo> {
         final cardPadding = isDesktop
             ? EdgeInsets.symmetric(horizontal: 48.w, vertical: 28.h)
             : (isTablet
-                  ? EdgeInsets.symmetric(horizontal: 32.w, vertical: 24.h)
+                  ? const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0)
                   : EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h));
 
-        final fontSize = isDesktop ? 18.sp : (isTablet ? 16.sp : 14.sp);
-        final titleFontSize = isDesktop ? 20.sp : (isTablet ? 18.sp : 16.sp);
+        final fontSize = isDesktop ? 16.0 : (isTablet ? 13.5 : 14.sp);
+        final titleFontSize = isDesktop ? 18.0 : (isTablet ? 15.0 : 16.sp);
 
         return Container(
           padding: cardPadding,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(isTablet ? 20.r : 15.r),
+            borderRadius: BorderRadius.circular(isTablet ? 16.0 : 15.r),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -965,9 +968,10 @@ class _CardTwoState extends ConsumerState<CardTwo> {
                 textAlign: TextAlign.start,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: titleFontSize,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: isTablet ? 16.h : 10.h),
+              SizedBox(height: isTablet ? 10.0 : 10.h),
               NetworkDropdown(
                 fontSize: fontSize,
                 onChanged: (provider) {
@@ -1004,7 +1008,8 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = widget.fontSize ?? 14.sp;
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final fontSize = widget.fontSize ?? (isTablet ? 13.5 : 14.sp);
     final theme = Theme.of(context);
 
     return Consumer(
@@ -1048,15 +1053,15 @@ class _NetworkDropdownState extends ConsumerState<NetworkDropdown> {
                 return Container(
                   decoration: BoxDecoration(
                     color: lightBackground,
-                    borderRadius: BorderRadius.circular(isTablet ? 14.r : 10.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 10.r),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 16.w : 12.w),
+                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 14.0 : 12.w),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<Map<String, dynamic>>(
                       isExpanded: true,
                       value: _selectedProvider,
-                      menuMaxHeight: isTablet ? 400.h : 300.h,
-                      borderRadius: BorderRadius.circular(isTablet ? 14.r : 10.r),
+                      menuMaxHeight: isTablet ? 320.0 : 300.h,
+                      borderRadius: BorderRadius.circular(isTablet ? 12.0 : 10.r),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: fontSize,
                       ),
@@ -1103,26 +1108,27 @@ class _ElectricityBeneficiarySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final beneficiariesAsync = ref.watch(billBeneficiariesProvider('ELECTRICITY'));
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.people_outline_rounded, color: primaryColor, size: 15.sp),
-            SizedBox(width: 6.w),
+            Icon(Icons.people_outline_rounded, color: primaryColor, size: isTablet ? 18.0 : 15.sp),
+            SizedBox(width: isTablet ? 6.0 : 6.w),
             Text(
               'Select Beneficiary',
               style: TextStyle(
                 color: const Color(0xFF0F172A),
-                fontSize: 14.sp,
+                fontSize: isTablet ? 15.0 : 14.sp,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
               ),
             ),
           ],
         ),
-        SizedBox(height: 12.h),
+        SizedBox(height: isTablet ? 10.0 : 12.h),
         ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: 260.h,

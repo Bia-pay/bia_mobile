@@ -356,13 +356,18 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                                       ),
                                     ],
                                   )
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildFormCard(width),
-                                      SizedBox(height: 24.h),
-                                      _buildPackagesSection(width),
-                                    ],
+                                : Center(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: isTablet ? 680.0 : double.infinity),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          _buildFormCard(width),
+                                          SizedBox(height: isTablet ? 16.0 : 24.h),
+                                          _buildPackagesSection(width),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                           ),
                         );
@@ -376,16 +381,17 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
   Widget _buildFormCard(double screenWidth) {
     final isShowmax = _selectedProvider?['name']?.toString().toLowerCase() == 'showmax';
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.all(isTablet ? 20.0 : 24.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 16.r,
+            blurRadius: isTablet ? 12.0 : 16.r,
             offset: const Offset(0, 8),
           ),
         ],
@@ -397,11 +403,11 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
             "Select Provider",
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
+              fontSize: isTablet ? 15.0 : 15.sp,
               color: darkBackground,
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 10.0 : 12.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: _providers.map((provider) {
@@ -425,14 +431,14 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
-                  width: 68.w,
-                  height: 68.h,
+                  width: isTablet ? 52.0 : 68.w,
+                  height: isTablet ? 52.0 : 68.h,
                   decoration: BoxDecoration(
                     color: isSelected ? Colors.white : Colors.grey[50],
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isSelected ? brandColor : Colors.grey[200]!,
-                      width: 2.5.w,
+                      width: isTablet ? 2.0 : 2.5.w,
                     ),
                     boxShadow: isSelected
                         ? [
@@ -449,7 +455,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                     alignment: Alignment.center,
                     children: [
                       Padding(
-                        padding: EdgeInsets.all(10.w),
+                        padding: EdgeInsets.all(isTablet ? 8.0 : 10.w),
                         child: Image.asset(
                           logo,
                           fit: BoxFit.contain,
@@ -460,7 +466,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                           right: 0,
                           bottom: 0,
                           child: Container(
-                            padding: EdgeInsets.all(3.w),
+                            padding: EdgeInsets.all(isTablet ? 2.5 : 3.w),
                             decoration: BoxDecoration(
                               color: brandColor,
                               shape: BoxShape.circle,
@@ -468,7 +474,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                             child: Icon(
                               Icons.check,
                               color: Colors.white,
-                              size: 10.sp,
+                              size: isTablet ? 9.0 : 10.sp,
                             ),
                           ),
                         ),
@@ -478,20 +484,20 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
               );
             }).toList(),
           ),
-          SizedBox(height: 24.h),
+          SizedBox(height: isTablet ? 18.0 : 24.h),
           Text(
             isShowmax ? "Showmax Account Email" : "Smartcard Number",
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 15.sp,
+              fontSize: isTablet ? 15.0 : 15.sp,
               color: darkBackground,
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: isTablet ? 10.0 : 12.h),
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(isTablet ? 12.0 : 16.r),
               border: Border.all(color: Colors.grey[200]!),
             ),
             child: TextField(
@@ -499,25 +505,29 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
               keyboardType: isShowmax ? TextInputType.emailAddress : TextInputType.number,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                fontSize: 16.sp,
+                fontSize: isTablet ? 14.5 : 16.sp,
               ),
               decoration: InputDecoration(
                 hintText: isShowmax
                     ? "Enter your Showmax account email"
                     : "Enter smartcard number (10-13 digits)",
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: isTablet ? 13.5 : 14.sp),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 14.0 : 16.w,
+                  vertical: isTablet ? 12.0 : 16.h,
+                ),
                 prefixIcon: Icon(
                   isShowmax ? Icons.alternate_email : Icons.tv,
                   color: primaryColor,
+                  size: isTablet ? 20.0 : null,
                 ),
                 suffixIcon: _isVerifying
                     ? Padding(
-                        padding: EdgeInsets.all(12.w),
+                        padding: EdgeInsets.all(isTablet ? 10.0 : 12.w),
                         child: SizedBox(
-                          width: 20.w,
-                          height: 20.h,
+                          width: isTablet ? 18.0 : 20.w,
+                          height: isTablet ? 18.0 : 20.h,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
@@ -525,7 +535,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                         ),
                       )
                     : _customerName != null
-                        ? const Icon(Icons.check_circle, color: successColor)
+                        ? Icon(Icons.check_circle, color: successColor, size: isTablet ? 20.0 : null)
                         : null,
               ),
               onChanged: _onSmartcardChanged,
@@ -534,17 +544,17 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
           if (_customerName != null)
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              margin: EdgeInsets.only(top: 16.h),
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              margin: EdgeInsets.only(top: isTablet ? 12.0 : 16.h),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 14.0 : 16.w, vertical: isTablet ? 10.0 : 14.h),
               decoration: BoxDecoration(
                 color: successColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 16.r),
                 border: Border.all(color: successColor.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified, color: successColor),
-                  SizedBox(width: 12.w),
+                  Icon(Icons.verified, color: successColor, size: isTablet ? 20.0 : null),
+                  SizedBox(width: isTablet ? 10.0 : 12.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,7 +562,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                         Text(
                           "Verified Customer",
                           style: TextStyle(
-                            fontSize: 12.sp,
+                            fontSize: isTablet ? 11.5 : 12.sp,
                             color: successColor,
                             fontWeight: FontWeight.w600,
                           ),
@@ -561,7 +571,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                         Text(
                           _customerName!,
                           style: TextStyle(
-                            fontSize: 15.sp,
+                            fontSize: isTablet ? 14.0 : 15.sp,
                             color: darkBackground,
                             fontWeight: FontWeight.bold,
                           ),
@@ -577,21 +587,21 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
               padding: EdgeInsets.only(top: 8.h, left: 4.w),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: errorColor, size: 16),
+                  Icon(Icons.error_outline, color: errorColor, size: isTablet ? 16.0 : 16),
                   SizedBox(width: 8.w),
                   Text(
                     _verificationError!,
-                    style: TextStyle(color: errorColor, fontSize: 13.sp),
+                    style: TextStyle(color: errorColor, fontSize: isTablet ? 12.5 : 13.sp),
                   ),
                 ],
               ),
             ),
-          SizedBox(height: 16.h),
+          SizedBox(height: isTablet ? 12.0 : 16.h),
           Row(
             children: [
               SizedBox(
-                width: 24.w,
-                height: 24.h,
+                width: isTablet ? 20.0 : 24.w,
+                height: isTablet ? 20.0 : 24.h,
                 child: Checkbox(
                   value: _saveAsBeneficiary,
                   onChanged: (v) {
@@ -602,24 +612,24 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                   activeColor: primaryColor,
                 ),
               ),
-              SizedBox(width: 8.w),
+              SizedBox(width: isTablet ? 8.0 : 8.w),
               Text(
                 'Save as beneficiary',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
-                  fontSize: 14.sp,
+                  fontSize: isTablet ? 13.5 : 14.sp,
                   color: const Color(0xFF475569),
                 ),
               ),
             ],
           ),
           if (_saveAsBeneficiary) ...[
-            SizedBox(height: 10.h),
+            SizedBox(height: isTablet ? 8.0 : 10.h),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.h),
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 12.0 : 14.w, vertical: 2.h),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14.r),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
                 border: Border.all(
                   color: _nameController.text.isNotEmpty ? primaryColor.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
                   width: 1.5,
@@ -629,7 +639,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                 controller: _nameController,
                 style: TextStyle(
                   color: const Color(0xFF1E293B),
-                  fontSize: 14.sp,
+                  fontSize: isTablet ? 13.5 : 14.sp,
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: const InputDecoration(
@@ -648,7 +658,7 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
               ),
             ),
           ],
-          SizedBox(height: 20.h),
+          SizedBox(height: isTablet ? 14.0 : 20.h),
           _CableBeneficiarySection(
             onSelect: (name, account) {
               _smartcardController.text = account;
@@ -663,13 +673,14 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
   Widget _buildPackagesSection(double screenWidth) {
     final theme = Theme.of(context);
     final plans = _extractedPlans;
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     if (_isLoading) {
       return Container(
-        height: 350.h,
+        height: isTablet ? 280.0 : 350.h,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
         ),
         child: Center(
           child: PulsingLogoIndicator(
@@ -683,21 +694,21 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
 
     if (plans.isEmpty) {
       return Container(
-        height: 300.h,
-        padding: EdgeInsets.all(24.w),
+        height: isTablet ? 240.0 : 300.h,
+        padding: EdgeInsets.all(isTablet ? 20.0 : 24.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.layers_clear_outlined, size: 48.w, color: Colors.grey[300]),
-              SizedBox(height: 12.h),
+              Icon(Icons.layers_clear_outlined, size: isTablet ? 40.0 : 48.w, color: Colors.grey[300]),
+              SizedBox(height: isTablet ? 10.0 : 12.h),
               Text(
                 'No packages found for this provider.',
-                style: TextStyle(color: Colors.grey[500], fontSize: 14.sp),
+                style: TextStyle(color: Colors.grey[500], fontSize: isTablet ? 13.5 : 14.sp),
               ),
             ],
           ),
@@ -708,14 +719,14 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
     final tabs = _buildTabs();
 
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.all(isTablet ? 20.0 : 24.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(isTablet ? 16.0 : 20.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 16.r,
+            blurRadius: isTablet ? 12.0 : 16.r,
             offset: const Offset(0, 8),
           ),
         ],
@@ -730,32 +741,35 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                 "Choose Subscription Package",
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16.sp,
+                  fontSize: isTablet ? 15.0 : 16.sp,
                   color: darkBackground,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: isTablet ? 12.0 : 16.h),
           // Search & Filter Box
           Container(
             decoration: BoxDecoration(
               color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(isTablet ? 10.0 : 12.r),
               border: Border.all(color: Colors.grey[200]!),
             ),
             child: TextField(
               controller: _searchController,
-              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14.sp),
+              style: theme.textTheme.bodyMedium?.copyWith(fontSize: isTablet ? 13.5 : 14.sp),
               decoration: InputDecoration(
                 hintText: "Search package (e.g. yanga, compact, basic)",
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13.sp),
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: isTablet ? 13.0 : 13.sp),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-                prefixIcon: const Icon(Icons.search, size: 20),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 12.0 : 14.w,
+                  vertical: isTablet ? 10.0 : 12.h,
+                ),
+                prefixIcon: Icon(Icons.search, size: isTablet ? 18.0 : 20),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 16),
+                        icon: Icon(Icons.clear, size: isTablet ? 16.0 : 16),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -777,13 +791,13 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
             indicatorColor: primaryColor,
             indicatorSize: TabBarIndicatorSize.tab,
             labelStyle: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 14.sp,
+              fontSize: isTablet ? 13.0 : 14.sp,
               fontWeight: FontWeight.w600,
             ),
-            unselectedLabelStyle: theme.textTheme.bodyMedium?.copyWith(fontSize: 14.sp),
+            unselectedLabelStyle: theme.textTheme.bodyMedium?.copyWith(fontSize: isTablet ? 13.0 : 14.sp),
             tabs: tabs.map((e) => Tab(text: e)).toList(),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: isTablet ? 12.0 : 16.h),
           SizedBox(
             height: _getGridHeight(screenWidth, plans.length),
             child: TabBarView(
@@ -816,18 +830,18 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                       'No matching packages available',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[400],
-                        fontSize: 14.sp,
+                        fontSize: isTablet ? 13.0 : 14.sp,
                       ),
                     ),
                   );
                 }
 
                 return MasonryGridView.count(
-                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  padding: EdgeInsets.symmetric(vertical: isTablet ? 6.0 : 8.h),
                   physics: const BouncingScrollPhysics(),
                   crossAxisCount: _getCrossAxisCount(screenWidth),
-                  mainAxisSpacing: 16.h,
-                  crossAxisSpacing: 16.w,
+                  mainAxisSpacing: isTablet ? 10.0 : 16.h,
+                  crossAxisSpacing: isTablet ? 10.0 : 16.w,
                   itemCount: displayPlans.length,
                   itemBuilder: (context, index) {
                     final plan = displayPlans[index];
@@ -863,10 +877,10 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                         duration: const Duration(milliseconds: 200),
                         height: cardHeight,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16.r),
+                          borderRadius: BorderRadius.circular(isTablet ? 12.0 : 16.r),
                           border: Border.all(
                             color: isSelected ? primaryColor : Colors.transparent,
-                            width: 2.5.w,
+                            width: isTablet ? 2.0 : 2.5.w,
                           ),
                           image: DecorationImage(
                             image: AssetImage(CablePlanConfig.getPlanImage(plan)),
@@ -878,9 +892,9 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                           ),
                         ),
                         child: Container(
-                          padding: EdgeInsets.all(16.w),
+                          padding: EdgeInsets.all(isTablet ? 10.0 : 16.w),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16.r),
+                            borderRadius: BorderRadius.circular(isTablet ? 12.0 : 16.r),
                             gradient: LinearGradient(
                               colors: [
                                 darkBackground.withValues(alpha: 0.7),
@@ -895,16 +909,19 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                             children: [
                               if (index == 0 && tab == 'Hot Offers')
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isTablet ? 6.0 : 8.w,
+                                    vertical: isTablet ? 2.0 : 2.h,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: redAccent,
-                                    borderRadius: BorderRadius.circular(10.r),
+                                    borderRadius: BorderRadius.circular(isTablet ? 8.0 : 10.r),
                                   ),
                                   child: Text(
                                     'Hot',
                                     style: theme.textTheme.bodyMedium?.copyWith(
                                       color: lightBackground,
-                                      fontSize: 9.sp,
+                                      fontSize: isTablet ? 8.5 : 9.sp,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -914,29 +931,29 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                                 plan['name']?.toString() ?? 'Unknown Plan',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: lightBackground,
-                                  fontSize: 14.sp,
+                                  fontSize: isTablet ? 12.5 : 14.sp,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 4.h),
+                              SizedBox(height: isTablet ? 2.0 : 4.h),
                               Text(
                                 '₦${_formatPrice(plan['variation_amount'])}',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: primaryColor,
-                                  fontSize: 15.sp,
+                                  fontSize: isTablet ? 13.5 : 15.sp,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              SizedBox(height: 4.h),
+                              SizedBox(height: isTablet ? 2.0 : 4.h),
                               Text(
                                 CablePlanConfig.getPlanDescription(variationCode),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: lightBackground70,
-                                  fontSize: 10.sp,
+                                  fontSize: isTablet ? 9.5 : 10.sp,
                                 ),
                               ),
                             ],
@@ -950,10 +967,10 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
             ),
           ),
           if (_selectedVariationCode != null) ...[
-            SizedBox(height: 24.h),
+            SizedBox(height: isTablet ? 16.0 : 24.h),
             SizedBox(
               width: double.infinity,
-              height: 52.h,
+              height: isTablet ? 48.0 : 52.h,
               child: ElevatedButton(
                 onPressed: () async {
                   if (_smartcardNumber.isEmpty) {
@@ -1075,13 +1092,13 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
                   ),
                 ),
                 child: Text(
                   "Proceed to Subscription",
                   style: TextStyle(
-                    fontSize: 16.sp,
+                    fontSize: isTablet ? 15.0 : 16.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -1095,24 +1112,19 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
   }
 
   int _getCrossAxisCount(double width) {
-    if (width >= 1400) return 3;
-    if (width >= 1100) return 2;
-    if (width >= 800) return 3;
-    if (width >= 600) return 2;
+    if (width >= 1400) return 4;
+    if (width >= 1100) return 4;
+    if (width >= 600) return 3;
     return 2;
   }
 
   double _getCardHeight(double width, bool isEven) {
+    if (width >= 600) {
+      final baseHeight = 150.0;
+      return isEven ? baseHeight : baseHeight + 15.0;
+    }
     double baseHeight;
-    if (width >= 1400) {
-      baseHeight = 240.h;
-    } else if (width >= 1100) {
-      baseHeight = 220.h;
-    } else if (width >= 800) {
-      baseHeight = 200.h;
-    } else if (width >= 600) {
-      baseHeight = 190.h;
-    } else if (width >= 400) {
+    if (width >= 400) {
       baseHeight = 180.h;
     } else {
       baseHeight = 175.h;
@@ -1121,13 +1133,23 @@ class _CableTvState extends ConsumerState<CableTv> with TickerProviderStateMixin
   }
 
   double _getGridHeight(double width, int itemCount) {
+    final isTablet = width >= 600;
     final crossAxisCount = _getCrossAxisCount(width);
     final rows = (itemCount / crossAxisCount).ceil();
-    final cardHeight = _getCardHeight(width, false) + 16.h;
-    final totalHeight = rows * cardHeight + 24.h;
+    final cardHeight = _getCardHeight(width, false) + (isTablet ? 10.0 : 16.h);
+    final totalHeight = rows * cardHeight + (isTablet ? 16.0 : 24.h);
 
-    final maxHeight = width >= 1400 ? 550.h : (width >= 1100 ? 500.h : 450.h);
+    final maxHeight = isTablet ? 480.0 : (width >= 1400 ? 550.h : (width >= 1100 ? 500.h : 450.h));
     return totalHeight > maxHeight ? maxHeight : totalHeight;
+  }
+
+  Widget _buildBeneficiarySection() {
+    return _CableBeneficiarySection(
+      onSelect: (name, account) {
+        _smartcardController.text = account;
+        _onSmartcardChanged(account);
+      },
+    );
   }
 }
 
@@ -1139,26 +1161,27 @@ class _CableBeneficiarySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final beneficiariesAsync = ref.watch(billBeneficiariesProvider('CABLE_TV'));
+    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.people_outline_rounded, color: primaryColor, size: 15.sp),
-            SizedBox(width: 6.w),
+            Icon(Icons.people_outline_rounded, color: primaryColor, size: isTablet ? 18.0 : 15.sp),
+            SizedBox(width: isTablet ? 6.0 : 6.w),
             Text(
               'Select Beneficiary',
               style: TextStyle(
                 color: const Color(0xFF0F172A),
-                fontSize: 13.sp,
+                fontSize: isTablet ? 15.0 : 13.sp,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
               ),
             ),
           ],
         ),
-        SizedBox(height: 12.h),
+        SizedBox(height: isTablet ? 10.0 : 12.h),
         ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: 260.h,
