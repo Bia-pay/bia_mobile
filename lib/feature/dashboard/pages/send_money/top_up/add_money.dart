@@ -196,170 +196,182 @@ class _AddMoneyState extends ConsumerState<AddMoney> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// 💳 Modern Premium Balance Card
-                const ModernBankDetailsCard(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isTablet = constraints.maxWidth > 600;
 
-                SizedBox(height: 32.h),
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isTablet ? 640 : double.infinity),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 24.0 : 24.w,
+                      vertical: isTablet ? 20.0 : 20.h,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// 💳 Modern Premium Balance Card
+                        const ModernBankDetailsCard(),
 
-                Text(
-                  'Other Funding Methods',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: lightText,
-                    fontSize: 16.sp,
-                  ),
-                ),
+                        SizedBox(height: isTablet ? 24.0 : 32.h),
 
-                SizedBox(height: 16.h),
-
-                /// 🏦 Funding Options List
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: topUp.length,
-                  itemBuilder: (context, index) {
-                    final tx = topUp[index];
-
-                    IconData iconData;
-                    if (tx.name.contains("Card")) {
-                      iconData = Icons.credit_card_rounded;
-                    } else if (tx.name.contains("Cash")) {
-                      iconData = Icons.storefront_rounded;
-                    } else if (tx.name.contains("USSD")) {
-                      iconData = Icons.dialpad_rounded;
-                    } else {
-                      iconData = Icons.call_received_rounded;
-                    }
-
-                    bool isComingSoon =
-                        tx.name.contains("Cash") ||
-                        tx.name.contains("USSD") ||
-                        tx.name.contains("Card/Account");
-
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: 12.h),
-                      child: GestureDetector(
-                        onTap: () {
-                          if (isComingSoon) {
-                            UPopup.show(
-                              context,
-                              type: UPopupType.info,
-                              title: "Coming Soon",
-                              message:
-                                  "This feature will be available shortly!",
-                              confirmLabel: "OK",
-                            );
-                          } else if (tx.name.contains("Card")) {
-                            context.pushNamed(RouteList.depositScreen);
-                          } else if (tx.name.contains("Receive")) {
-                            context.pushNamed(RouteList.qrScreen);
-                          }
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 16.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: lightBorderColor.withOpacity(0.5),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                height: 48.h,
-                                width: 48.w,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(12.r),
-                                ),
-                                child: Icon(
-                                  iconData,
-                                  color: primaryColor,
-                                  size: 24.sp,
-                                ),
-                              ),
-                              SizedBox(width: 16.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      tx.name,
-                                      style: TextStyle(
-                                        color: lightText,
-                                        fontSize: 15.sp,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4.h),
-                                    Text(
-                                      tx.dateTime,
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: lightSecondaryText,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              isComingSoon
-                                  ? Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8.w,
-                                        vertical: 4.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: primaryColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(
-                                          12.r,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "Coming Soon",
-                                        style: TextStyle(
-                                          color: primaryColor,
-                                          fontSize: 10.sp,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 16.sp,
-                                      color: lightSecondaryText.withOpacity(
-                                        0.5,
-                                      ),
-                                    ),
-                            ],
+                        Text(
+                          'Other Funding Methods',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: lightText,
+                            fontSize: isTablet ? 16.0 : 16.sp,
                           ),
                         ),
-                      ),
-                    );
-                  },
+
+                        SizedBox(height: isTablet ? 14.0 : 16.h),
+
+                        /// 🏦 Funding Options List
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: topUp.length,
+                          itemBuilder: (context, index) {
+                            final tx = topUp[index];
+
+                            IconData iconData;
+                            if (tx.name.contains("Card")) {
+                              iconData = Icons.credit_card_rounded;
+                            } else if (tx.name.contains("Cash")) {
+                              iconData = Icons.storefront_rounded;
+                            } else if (tx.name.contains("USSD")) {
+                              iconData = Icons.dialpad_rounded;
+                            } else {
+                              iconData = Icons.call_received_rounded;
+                            }
+
+                            bool isComingSoon =
+                                tx.name.contains("Cash") ||
+                                tx.name.contains("USSD") ||
+                                tx.name.contains("Card/Account");
+
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: isTablet ? 12.0 : 12.h),
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (isComingSoon) {
+                                    UPopup.show(
+                                      context,
+                                      type: UPopupType.info,
+                                      title: "Coming Soon",
+                                      message:
+                                          "This feature will be available shortly!",
+                                      confirmLabel: "OK",
+                                    );
+                                  } else if (tx.name.contains("Card")) {
+                                    context.pushNamed(RouteList.depositScreen);
+                                  } else if (tx.name.contains("Receive")) {
+                                    context.pushNamed(RouteList.qrScreen);
+                                  }
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: isTablet ? 16.0 : 16.w,
+                                    vertical: isTablet ? 14.0 : 16.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(isTablet ? 16.0 : 16.r),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.03),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                    border: Border.all(
+                                      color: lightBorderColor.withValues(alpha: 0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        height: isTablet ? 48.0 : 48.h,
+                                        width: isTablet ? 48.0 : 48.w,
+                                        decoration: BoxDecoration(
+                                          color: primaryColor.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
+                                        ),
+                                        child: Icon(
+                                          iconData,
+                                          color: primaryColor,
+                                          size: isTablet ? 24.0 : 24.sp,
+                                        ),
+                                      ),
+                                      SizedBox(width: isTablet ? 14.0 : 16.w),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              tx.name,
+                                              style: TextStyle(
+                                                color: lightText,
+                                                fontSize: isTablet ? 15.0 : 15.sp,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            SizedBox(height: isTablet ? 2.0 : 4.h),
+                                            Text(
+                                              tx.dateTime,
+                                              style: TextStyle(
+                                                fontSize: isTablet ? 12.0 : 12.sp,
+                                                color: lightSecondaryText,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      isComingSoon
+                                          ? Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: isTablet ? 8.0 : 8.w,
+                                                vertical: isTablet ? 4.0 : 4.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: primaryColor.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(
+                                                  isTablet ? 12.0 : 12.r,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                "Coming Soon",
+                                                style: TextStyle(
+                                                  color: primaryColor,
+                                                  fontSize: isTablet ? 10.0 : 10.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            )
+                                          : Icon(
+                                              Icons.arrow_forward_ios_rounded,
+                                              size: isTablet ? 16.0 : 16.sp,
+                                              color: lightSecondaryText.withValues(alpha: 0.5),
+                                            ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -396,6 +408,7 @@ class ModernBankDetailsCard extends ConsumerWidget {
         userProfile?.fullname ??
         box.get('fullname', defaultValue: 'Bia User').toString();
 
+    final isTablet = MediaQuery.of(context).size.width > 600;
     final vc = accountAsync.value;
 
     return Column(
@@ -403,18 +416,18 @@ class ModernBankDetailsCard extends ConsumerWidget {
         // 💳 Card 1: BIA WALLET CARD
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(isTablet ? 20.0 : 20.w),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
+            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
+            border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha: 0.12),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -429,23 +442,23 @@ class ModernBankDetailsCard extends ConsumerWidget {
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(6.r),
+                        padding: EdgeInsets.all(isTablet ? 6.0 : 6.r),
                         decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.15),
+                          color: primaryColor.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.wallet_rounded,
                           color: primaryColor,
-                          size: 14.sp,
+                          size: isTablet ? 14.0 : 14.sp,
                         ),
                       ),
-                      SizedBox(width: 8.w),
+                      SizedBox(width: isTablet ? 8.0 : 8.w),
                       Text(
                         'BIA WALLET',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 10.sp,
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: isTablet ? 10.0 : 10.sp,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.5,
                         ),
@@ -466,14 +479,14 @@ class ModernBankDetailsCard extends ConsumerWidget {
                       },
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 4.h,
+                          horizontal: isTablet ? 10.0 : 10.w,
+                          vertical: isTablet ? 4.0 : 4.h,
                         ),
                         decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20.r),
+                          color: primaryColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20.0),
                           border: Border.all(
-                            color: primaryColor.withOpacity(0.3),
+                            color: primaryColor.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -484,15 +497,15 @@ class ModernBankDetailsCard extends ConsumerWidget {
                               '@$biaTag',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 11.sp,
+                                fontSize: isTablet ? 11.0 : 11.sp,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(width: 4.w),
+                            SizedBox(width: isTablet ? 4.0 : 4.w),
                             Icon(
                               Icons.copy_rounded,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 10.sp,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              size: isTablet ? 10.0 : 10.sp,
                             ),
                           ],
                         ),
@@ -500,22 +513,22 @@ class ModernBankDetailsCard extends ConsumerWidget {
                     ),
                 ],
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: isTablet ? 16.0 : 20.h),
               Text(
                 'Account Number',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 11.sp,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: isTablet ? 11.0 : 11.sp,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: isTablet ? 4.0 : 4.h),
               Row(
                 children: [
                   Text(
                     biaPhone.isEmpty ? 'No Account' : biaPhone,
                     style: TextStyle(
-                      fontSize: 24.sp,
+                      fontSize: isTablet ? 22.0 : 24.sp,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: 1.5,
@@ -535,26 +548,26 @@ class ModernBankDetailsCard extends ConsumerWidget {
                         );
                       },
                       child: Container(
-                        padding: EdgeInsets.all(8.w),
+                        padding: EdgeInsets.all(isTablet ? 8.0 : 8.w),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.copy_rounded,
                           color: Colors.white,
-                          size: 16.sp,
+                          size: isTablet ? 16.0 : 16.sp,
                         ),
                       ),
                     ),
                 ],
               ),
-              SizedBox(height: 12.h),
+              SizedBox(height: isTablet ? 10.0 : 12.h),
               Text(
                 biaName,
                 style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.white.withOpacity(0.8),
+                  fontSize: isTablet ? 12.0 : 12.sp,
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -562,23 +575,23 @@ class ModernBankDetailsCard extends ConsumerWidget {
           ),
         ),
 
-        SizedBox(height: 16.h),
+        SizedBox(height: isTablet ? 14.0 : 16.h),
 
         // 💳 Card 2: VIRTUAL BANK DEPOSIT CARD
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(isTablet ? 20.0 : 20.w),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF0F766E), Color(0xFF115E59)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: Colors.teal.withOpacity(0.25), width: 1),
+            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 20.r),
+            border: Border.all(color: Colors.teal.withValues(alpha: 0.25), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -593,23 +606,23 @@ class ModernBankDetailsCard extends ConsumerWidget {
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(6.r),
+                        padding: EdgeInsets.all(isTablet ? 6.0 : 6.r),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.account_balance_rounded,
                           color: Colors.white,
-                          size: 14.sp,
+                          size: isTablet ? 14.0 : 14.sp,
                         ),
                       ),
-                      SizedBox(width: 8.w),
+                      SizedBox(width: isTablet ? 8.0 : 8.w),
                       Text(
                         'BANK TRANSFER DEPOSIT',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 10.sp,
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: isTablet ? 10.0 : 10.sp,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.5,
                         ),
@@ -619,14 +632,14 @@ class ModernBankDetailsCard extends ConsumerWidget {
                   if (vc != null)
                     Container(
                       padding: EdgeInsets.symmetric(
-                        horizontal: 10.w,
-                        vertical: 4.h,
+                        horizontal: isTablet ? 10.0 : 10.w,
+                        vertical: isTablet ? 4.0 : 4.h,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20.r),
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20.0),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -634,23 +647,23 @@ class ModernBankDetailsCard extends ConsumerWidget {
                         vc.provider,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 11.sp,
+                          fontSize: isTablet ? 11.0 : 11.sp,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                 ],
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: isTablet ? 16.0 : 20.h),
               Text(
                 'Funding Account Number',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 11.sp,
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: isTablet ? 11.0 : 11.sp,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: isTablet ? 4.0 : 4.h),
               if (accountAsync.isLoading)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 8.h),
@@ -671,8 +684,8 @@ class ModernBankDetailsCard extends ConsumerWidget {
                   child: Text(
                     'No virtual bank account available',
                     style: TextStyle(
-                      fontSize: 13.sp,
-                      color: Colors.white.withOpacity(0.6),
+                      fontSize: isTablet ? 13.0 : 13.sp,
+                      color: Colors.white.withValues(alpha: 0.6),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -683,7 +696,7 @@ class ModernBankDetailsCard extends ConsumerWidget {
                     Text(
                       vc.virtualAccountNo,
                       style: TextStyle(
-                        fontSize: 24.sp,
+                        fontSize: isTablet ? 22.0 : 24.sp,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: 1.5,
@@ -706,26 +719,26 @@ class ModernBankDetailsCard extends ConsumerWidget {
                         );
                       },
                       child: Container(
-                        padding: EdgeInsets.all(8.w),
+                        padding: EdgeInsets.all(isTablet ? 8.0 : 8.w),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.copy_rounded,
                           color: Colors.white,
-                          size: 16.sp,
+                          size: isTablet ? 16.0 : 16.sp,
                         ),
                       ),
                     ),
                   ],
                 ),
-              SizedBox(height: 12.h),
+              SizedBox(height: isTablet ? 10.0 : 12.h),
               Text(
                 vc?.virtualAccountName ?? biaName,
                 style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.white.withOpacity(0.8),
+                  fontSize: isTablet ? 12.0 : 12.sp,
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -733,7 +746,7 @@ class ModernBankDetailsCard extends ConsumerWidget {
           ),
         ),
 
-        SizedBox(height: 24.h),
+        SizedBox(height: isTablet ? 20.0 : 24.h),
 
         // Action Buttons Row
         Row(
@@ -748,32 +761,32 @@ class ModernBankDetailsCard extends ConsumerWidget {
                 },
                 icon: Icon(
                   Icons.share_rounded,
-                  size: 16.sp,
+                  size: isTablet ? 16.0 : 16.sp,
                   color: primaryColor,
                 ),
                 label: Text(
                   'Share Details',
                   style: TextStyle(
                     color: primaryColor,
-                    fontSize: 13.sp,
+                    fontSize: isTablet ? 13.0 : 13.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   elevation: 0,
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  padding: EdgeInsets.symmetric(vertical: isTablet ? 12.0 : 12.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                     side: BorderSide(
-                      color: primaryColor.withOpacity(0.15),
+                      color: primaryColor.withValues(alpha: 0.15),
                       width: 1,
                     ),
                   ),
                 ),
               ),
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: isTablet ? 12.0 : 12.w),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () {
@@ -788,23 +801,23 @@ class ModernBankDetailsCard extends ConsumerWidget {
                 },
                 icon: Icon(
                   Icons.lock_clock_rounded,
-                  size: 16.sp,
+                  size: isTablet ? 16.0 : 16.sp,
                   color: Colors.white70,
                 ),
                 label: Text(
                   'Coming Soon',
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 12.sp,
+                    fontSize: isTablet ? 12.0 : 12.sp,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade700,
+                  backgroundColor: const Color(0xFF64748B),
                   elevation: 0,
-                  padding: EdgeInsets.symmetric(vertical: 12.h),
+                  padding: EdgeInsets.symmetric(vertical: isTablet ? 12.0 : 12.h),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
+                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                   ),
                 ),
               ),

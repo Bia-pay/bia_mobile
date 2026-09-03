@@ -163,11 +163,12 @@ class _BankCompleteTransactionBottomSheetState
     final currencySymbol = Constants.nairaCurrencySymbol;
     final isTablet = MediaQuery.of(context).size.width > 600;
 
-    return Center(
+    return Align(
+      alignment: Alignment.bottomCenter,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: isTablet ? 540 : double.infinity,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
         child: Container(
           decoration: BoxDecoration(
