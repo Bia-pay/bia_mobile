@@ -274,15 +274,20 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         centerTitle: true,
+        toolbarHeight: isTablet ? 50.0 : kToolbarHeight,
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: Icon(Icons.arrow_back_rounded, size: 20.sp, color: const Color(0xFF1E293B)),
+          icon: Icon(
+            Icons.arrow_back_rounded, 
+            size: isTablet ? 18.0 : 20.sp, 
+            color: const Color(0xFF1E293B)
+          ),
         ),
         title: Text(
           'Transactions',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            fontSize: 16.sp,
+            fontSize: isTablet ? 17.0 : 16.sp,
             color: const Color(0xFF1E293B),
           ),
         ),
@@ -290,7 +295,7 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 1200.w),
+            constraints: BoxConstraints(maxWidth: isTablet ? 650 : double.infinity),
             child: RefreshIndicator(
           color: primaryColor,
           onRefresh: _handleRefresh,
@@ -330,15 +335,16 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                         _selectedDatePreset = null;
                                       }),
                                       child: Container(
-                                        padding: EdgeInsets.all(6.w),
+                                        width: isTablet ? 36.0 : 34.w,
+                                        height: isTablet ? 36.0 : 34.w,
                                         margin: EdgeInsets.only(right: 8.w),
                                         decoration: BoxDecoration(
-                                          color: Colors.red.withOpacity(0.1),
+                                          color: Colors.red.withOpacity(0.08),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           Icons.close_rounded,
-                                          size: 16.sp,
+                                          size: isTablet ? 16.0 : 16.sp,
                                           color: Colors.red,
                                         ),
                                       ),
@@ -357,31 +363,34 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                         child: Text(
                                           choice,
                                           style: TextStyle(
-                                            fontSize: 13.sp,
+                                            fontSize: isTablet ? 13.0 : 13.sp,
                                             color: const Color(0xFF1E293B),
                                           ),
                                         ),
                                       );
                                     }).toList(),
                                     child: Container(
-                                      padding: EdgeInsets.all(8.w),
+                                      width: isTablet ? 36.0 : 34.w,
+                                      height: isTablet ? 36.0 : 34.w,
                                       decoration: BoxDecoration(
                                         color: _selectedDateRange != null 
                                             ? primaryColor.withOpacity(0.1) 
                                             : Colors.white,
-                                        borderRadius: BorderRadius.circular(10.r),
+                                        borderRadius: BorderRadius.circular(isTablet ? 10.0 : 10.r),
                                         border: Border.all(
                                           color: _selectedDateRange != null 
                                               ? primaryColor 
                                               : const Color(0xFFE2E8F0),
                                         ),
                                       ),
-                                      child: Icon(
-                                        Icons.calendar_month_rounded,
-                                        size: 20.sp,
-                                        color: _selectedDateRange != null 
-                                            ? primaryColor 
-                                            : const Color(0xFF64748B),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.calendar_month_rounded,
+                                          size: isTablet ? 18.0 : 18.sp,
+                                          color: _selectedDateRange != null 
+                                              ? primaryColor 
+                                              : const Color(0xFF64748B),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -393,11 +402,11 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
 
                           // ── Filter Chips ──
                           SizedBox(
-                            height: 32.h,
+                            height: isTablet ? 42.0 : 36.h,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: _filters.length,
-                              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                              separatorBuilder: (_, __) => SizedBox(width: isTablet ? 10.0 : 8.w),
                               itemBuilder: (context, i) {
                                 final filter = _filters[i];
                                 final isSelected = _selectedFilter == filter;
@@ -406,12 +415,12 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: 14.w,
-                                      vertical: 6.h,
+                                      horizontal: isTablet ? 18.0 : 14.w,
+                                      vertical: isTablet ? 8.0 : 6.h,
                                     ),
                                     decoration: BoxDecoration(
                                       color: isSelected ? primaryColor : Colors.white,
-                                      borderRadius: BorderRadius.circular(20.r),
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
                                         color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
                                       ),
@@ -425,12 +434,14 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                             ]
                                           : [],
                                     ),
-                                    child: Text(
-                                      filter,
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                    child: Center(
+                                      child: Text(
+                                        filter,
+                                        style: TextStyle(
+                                          fontSize: isTablet ? 13.5 : 12.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -510,18 +521,12 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                   else
                     SliverPadding(
                       padding: EdgeInsets.fromLTRB(
-                        isTablet ? 24.w : 16.w, 
+                        isTablet ? 20.0 : 16.w, 
                         8.h, 
-                        isTablet ? 24.w : 16.w, 
-                        20.h
+                        isTablet ? 20.0 : 16.w, 
+                        20.h,
                       ),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          mainAxisExtent: 70.h,
-                          crossAxisSpacing: 12.w,
-                          mainAxisSpacing: 0, 
-                        ),
+                      sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final tx = transactions[index];
@@ -543,7 +548,12 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                   if (transactions.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 30.h),
+                        padding: EdgeInsets.fromLTRB(
+                          isTablet ? 20.0 : 16.w, 
+                          8.h, 
+                          isTablet ? 20.0 : 16.w, 
+                          30.h
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -558,16 +568,19 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
                                   : null,
                             ),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isTablet ? 14.0 : 16.w, 
+                                vertical: isTablet ? 8.0 : 8.h
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(12.r),
+                                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
                                 border: Border.all(color: lightBorderColor),
                               ),
                               child: Text(
                                 'Page ${ref.watch(allTransactionsProvider(userId).notifier).currentPage}',
                                 style: TextStyle(
-                                  fontSize: 12.sp,
+                                  fontSize: isTablet ? 13.0 : 12.sp,
                                   fontWeight: FontWeight.w700,
                                   color: lightSecondaryText,
                                 ),
@@ -606,15 +619,20 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
     VoidCallback? onPressed,
   }) {
     final bool isDisabled = onPressed == null;
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(12.r),
+      borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 14.0 : 12.w, 
+          vertical: isTablet ? 8.0 : 8.h
+        ),
         decoration: BoxDecoration(
           color: isDisabled ? Colors.transparent : Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(isTablet ? 12.0 : 12.r),
           border: Border.all(
             color: isDisabled ? const Color(0xFFE2E8F0).withOpacity(0.5) : const Color(0xFFE2E8F0),
           ),
@@ -622,18 +640,18 @@ class _TransactionHistoryState extends ConsumerState<TransactionHistory> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isRight) Icon(icon, size: 18.sp, color: isDisabled ? const Color(0xFF94A3B8) : primaryColor),
-            if (!isRight) SizedBox(width: 4.w),
+            if (!isRight) Icon(icon, size: isTablet ? 18.0 : 18.sp, color: isDisabled ? const Color(0xFF94A3B8) : primaryColor),
+            if (!isRight) SizedBox(width: isTablet ? 4.0 : 4.w),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: isTablet ? 13.0 : 12.sp,
                 fontWeight: FontWeight.w600,
                 color: isDisabled ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
               ),
             ),
-            if (isRight) SizedBox(width: 4.w),
-            if (isRight) Icon(icon, size: 18.sp, color: isDisabled ? const Color(0xFF94A3B8) : primaryColor),
+            if (isRight) SizedBox(width: isTablet ? 4.0 : 4.w),
+            if (isRight) Icon(icon, size: isTablet ? 18.0 : 18.sp, color: isDisabled ? const Color(0xFF94A3B8) : primaryColor),
           ],
         ),
       ),

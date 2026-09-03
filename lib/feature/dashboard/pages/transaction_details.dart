@@ -15,6 +15,31 @@ import 'package:hive/hive.dart';
 
 import '../widgets/branded_receipt.dart';
 
+class _Dims {
+  final bool isTablet;
+  const _Dims(this.isTablet);
+
+  double get cardMaxWidth => isTablet ? 500.0 : double.infinity;
+  double get padH => isTablet ? 20.0 : 20.w;
+  double get padV => isTablet ? 16.0 : 16.h;
+  double get cardPad => isTablet ? 24.0 : 24.w;
+  double get cardRadius => isTablet ? 16.0 : 16.r;
+
+  double get serviceTitleFont => isTablet ? 14.0 : 14.sp;
+  double get amountFont => isTablet ? 30.0 : 28.sp;
+  double get statusFont => isTablet ? 12.0 : 12.sp;
+  double get sectionHeaderFont => isTablet ? 15.0 : 14.sp;
+  double get rowLabelFont => isTablet ? 12.5 : 12.sp;
+  double get rowValueFont => isTablet ? 12.5 : 12.sp;
+  double get btnFont => isTablet ? 14.0 : 14.sp;
+  double get btnHeight => isTablet ? 48.0 : 50.h;
+
+  double get timelineCircle => isTablet ? 30.0 : 28.w;
+  double get timelineIcon => isTablet ? 15.0 : 14.sp;
+  double get timelineTitleFont => isTablet ? 10.5 : 10.sp;
+  double get timelineTimeFont => isTablet ? 9.0 : 8.sp;
+}
+
 class TransactionDetailsScreen extends StatefulWidget {
   final TransactionItem transaction;
 
@@ -66,6 +91,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     final isFailed = status == "FAILED";
     final isPending = status == "PENDING";
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final d = _Dims(isTablet);
 
     final Color statusColor = isPending
         ? pendingColor
@@ -78,15 +105,16 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFFF5F5F5),
+        toolbarHeight: isTablet ? 50.0 : kToolbarHeight,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF2D2D2D)),
+          icon: Icon(Icons.arrow_back_ios_new, color: const Color(0xFF2D2D2D), size: isTablet ? 16.0 : 18.sp),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         title: Text(
           'Transaction Details',
           style: TextStyle(
-            fontSize: 16.sp,
+            fontSize: isTablet ? 17.0 : 16.sp,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF2D2D2D),
           ),
@@ -96,9 +124,10 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         children: [
           // Hidden Receipt for capture
           Positioned(
-            left: -1000,
+            left: -5000,
+            top: 0,
             child: SizedBox(
-              width: 380.w,
+              width: 380,
               child: RepaintBoundary(
                 key: _receiptKey,
                 child: BrandedReceipt(transaction: transaction),
@@ -107,80 +136,93 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           ),
           
           SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(24.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          _getServiceTitle(transaction),
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: const Color(0xFF666666),
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          '₦${NumberFormat('#,##0.00').format(transaction.amount)}',
-                          style: TextStyle(
-                            fontSize: 28.sp,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2D2D2D),
-                          ),
-                        ),
-                        SizedBox(height: 12.h),
-                        _buildStatusBadge(status, statusColor),
-                        SizedBox(height: 32.h),
-
-                        if (transaction.isBankTransfer) ...[
-                          _buildTimeline(transaction, status, statusColor),
-                          SizedBox(height: 32.h),
-                        ],
-
-                        _buildAmountBreakdown(transaction),
-                        SizedBox(height: 32.h),
-
-                        _buildTransactionDetails(transaction, status),
-                      ],
-                    ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: d.cardMaxWidth),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: d.padH,
+                    vertical: d.padV,
                   ),
-                  
-                  SizedBox(height: 24.h),
-
-                  // Action Buttons
-                  Row(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _buildActionButton(
-                          'Report Issue',
-                          Colors.white,
-                          const Color(0xFF2D2D2D),
-                          () {},
-                          hasBorder: true,
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(d.cardPad),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(d.cardRadius),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              _getServiceTitle(transaction),
+                              style: TextStyle(
+                                fontSize: d.serviceTitleFont,
+                                color: const Color(0xFF666666),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '₦${NumberFormat('#,##0.00').format(transaction.amount)}',
+                                style: TextStyle(
+                                  fontSize: d.amountFont,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF2D2D2D),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: isTablet ? 12.0 : 12.h),
+                            _buildStatusBadge(status, statusColor, d),
+                            SizedBox(height: isTablet ? 24.0 : 32.h),
+
+                            if (transaction.isBankTransfer) ...[
+                              _buildTimeline(transaction, status, statusColor, d),
+                              SizedBox(height: isTablet ? 24.0 : 32.h),
+                            ],
+
+                            _buildAmountBreakdown(transaction, d),
+                            SizedBox(height: isTablet ? 24.0 : 32.h),
+
+                            _buildTransactionDetails(transaction, status, d),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: _buildActionButton(
-                          'Share Receipt',
-                          primaryColor,
-                          Colors.white,
-                          _handleShare,
-                          isLoading: _isProcessing,
-                        ),
+                      
+                      SizedBox(height: isTablet ? 20.0 : 24.h),
+
+                      // Action Buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildActionButton(
+                              'Report Issue',
+                              Colors.white,
+                              const Color(0xFF2D2D2D),
+                              () {},
+                              d: d,
+                              hasBorder: true,
+                            ),
+                          ),
+                          SizedBox(width: isTablet ? 12.0 : 12.w),
+                          Expanded(
+                            child: _buildActionButton(
+                              'Share Receipt',
+                              primaryColor,
+                              Colors.white,
+                              _handleShare,
+                              d: d,
+                              isLoading: _isProcessing,
+                            ),
+                          ),
+                        ],
                       ),
+                      SizedBox(height: isTablet ? 24.0 : 32.h),
                     ],
                   ),
-                  SizedBox(height: 32.h),
-                ],
+                ),
               ),
             ),
           ),
@@ -189,17 +231,20 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status, Color color) {
+  Widget _buildStatusBadge(String status, Color color, _Dims d) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: d.isTablet ? 16.0 : 12.w,
+        vertical: d.isTablet ? 6.0 : 4.h,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         status,
         style: TextStyle(
-          fontSize: 12.sp,
+          fontSize: d.statusFont,
           fontWeight: FontWeight.w600,
           color: color,
         ),
@@ -207,18 +252,18 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildTimeline(TransactionItem tx, String status, Color statusColor) {
+  Widget _buildTimeline(TransactionItem tx, String status, Color statusColor, _Dims d) {
     final creationTime = tx.createdAt ?? DateTime.now();
     final isDone = status == "SUCCESSFUL" || status == "SUCCESS";
     final isFailed = status == "FAILED";
     final isPending = status == "PENDING";
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
+      padding: EdgeInsets.symmetric(vertical: d.isTablet ? 12.0 : 16.h),
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: SizedBox(
-          width: 320.w,
+          width: d.isTablet ? 320.0 : 320.w,
           child: Row(
             children: [
               _buildHorizontalStep(
@@ -227,10 +272,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 Icons.send_rounded,
                 isCompleted: true,
                 activeColor: successColor,
+                d: d,
               ),
               _buildHorizontalLine(
                 isCompleted: !isPending, 
                 activeColor: isFailed ? errorColor : successColor,
+                d: d,
               ),
               _buildHorizontalStep(
                 'Processing',
@@ -238,10 +285,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 Icons.sync_rounded,
                 isCompleted: !isPending,
                 activeColor: isFailed ? errorColor : (isPending ? pendingColor : successColor),
+                d: d,
               ),
               _buildHorizontalLine(
                 isCompleted: isDone || isFailed, 
                 activeColor: isFailed ? errorColor : successColor,
+                d: d,
               ),
               _buildHorizontalStep(
                 isFailed ? 'Failed' : 'Received',
@@ -249,6 +298,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                 isFailed ? Icons.error_rounded : Icons.check_circle_rounded,
                 isCompleted: isDone || isFailed,
                 activeColor: isFailed ? errorColor : successColor,
+                d: d,
               ),
             ],
           ),
@@ -257,7 +307,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildHorizontalStep(String title, String time, IconData icon, {bool isCompleted = false, Color activeColor = successColor}) {
+  Widget _buildHorizontalStep(
+    String title,
+    String time,
+    IconData icon, {
+    bool isCompleted = false,
+    Color activeColor = successColor,
+    required _Dims d,
+  }) {
     Color dotColor = const Color(0xFFE2E8F0);
     Color iconColor = const Color(0xFF94A3B8);
     
@@ -269,8 +326,8 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     return Column(
       children: [
         Container(
-          width: 28.w,
-          height: 28.w,
+          width: d.timelineCircle,
+          height: d.timelineCircle,
           decoration: BoxDecoration(
             color: dotColor,
             shape: BoxShape.circle,
@@ -284,15 +341,15 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
           ),
           child: Icon(
             icon,
-            size: 14.sp,
+            size: d.timelineIcon,
             color: iconColor,
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: d.isTablet ? 6.0 : 8.h),
         Text(
           title,
           style: TextStyle(
-            fontSize: 10.sp,
+            fontSize: d.timelineTitleFont,
             fontWeight: FontWeight.w600,
             color: isCompleted ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
           ),
@@ -300,7 +357,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         Text(
           time,
           style: TextStyle(
-            fontSize: 8.sp,
+            fontSize: d.timelineTimeFont,
             color: const Color(0xFF94A3B8),
           ),
         ),
@@ -308,12 +365,16 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildHorizontalLine({bool isCompleted = false, Color activeColor = successColor}) {
+  Widget _buildHorizontalLine({
+    bool isCompleted = false,
+    Color activeColor = successColor,
+    required _Dims d,
+  }) {
     return Expanded(
       child: Padding(
-        padding: EdgeInsets.only(bottom: 24.h), // Align with the icons
+        padding: EdgeInsets.only(bottom: d.isTablet ? 22.0 : 24.h),
         child: Container(
-          height: 2.h,
+          height: 2,
           decoration: BoxDecoration(
             color: isCompleted ? activeColor : const Color(0xFFE2E8F0),
             borderRadius: BorderRadius.circular(1),
@@ -323,57 +384,43 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildAmountBreakdown(TransactionItem tx) {
+  Widget _buildAmountBreakdown(TransactionItem tx, _Dims d) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Amount Breakdown',
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: d.sectionHeaderFont,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2D2D2D),
           ),
         ),
-        SizedBox(height: 16.h),
-        _buildAmountRow('Transaction Amount', tx.amount),
-        _buildAmountRow('Transaction Fee', tx.fee),
+        SizedBox(height: d.isTablet ? 14.0 : 16.h),
+        _buildAmountRow('Transaction Amount', tx.amount, d),
+        _buildAmountRow('Transaction Fee', tx.fee, d),
       ],
     );
   }
 
-  Widget _buildDashedDivider() {
-    return Row(
-      children: List.generate(20, (index) {
-        return Expanded(
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 2.w),
-            height: 1,
-            color: Color(0xFFE2E8F0),
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildAmountRow(String label, double amount) {
+  Widget _buildAmountRow(String label, double amount, _Dims d) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.only(bottom: d.isTablet ? 12.0 : 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 12.sp,
+              fontSize: d.rowLabelFont,
               color: const Color(0xFF999999),
             ),
           ),
           Text(
             '₦${NumberFormat('#,##0.00').format(amount)}',
             style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
+              fontSize: d.rowValueFont,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF2D2D2D),
             ),
           ),
@@ -382,7 +429,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildTransactionDetails(TransactionItem tx, String status) {
+  Widget _buildTransactionDetails(TransactionItem tx, String status, _Dims d) {
     final serviceType = tx.serviceType?.toUpperCase() ?? '';
     final isTransfer = serviceType == 'TRANSFER';
     final isUtility = serviceType == 'AIRTIME' || serviceType == 'DATA' || serviceType == 'CABLE' || serviceType == 'CABLE_TV' || serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL';
@@ -396,77 +443,77 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
         Text(
           'Transaction Details',
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: d.sectionHeaderFont,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF2D2D2D),
           ),
         ),
-        SizedBox(height: 16.h),
+        SizedBox(height: d.isTablet ? 14.0 : 16.h),
         
         // --- Dynamic Fields based on Service Type ---
         if (isTransfer) ...[
           if (tx.isBankTransfer) ...[
-             _buildDetailRow('Recipient Name', metadata['recipientName'] ?? tx.receiverName ?? "N/A"),
-             _buildDetailRow('Account Number', metadata['recipientAccount'] ?? "N/A"),
-             _buildDetailRow('Bank Name', tx.provider ?? "External Bank"),
+             _buildDetailRow('Recipient Name', metadata['recipientName'] ?? tx.receiverName ?? "N/A", d),
+             _buildDetailRow('Account Number', metadata['recipientAccount'] ?? "N/A", d),
+             _buildDetailRow('Bank Name', tx.provider ?? "External Bank", d),
           ] else ...[
-             _buildDetailRow(tx.isCredit ? 'Sender Name' : 'Recipient Name', tx.isCredit ? tx.senderName ?? "N/A" : tx.receiverName ?? "N/A"),
+             _buildDetailRow(tx.isCredit ? 'Sender Name' : 'Recipient Name', tx.isCredit ? tx.senderName ?? "N/A" : tx.receiverName ?? "N/A", d),
              if (!tx.isCredit && metadata['receiverPhone'] != null)
-                _buildDetailRow('Recipient Phone', metadata['receiverPhone'].toString()),
+                _buildDetailRow('Recipient Phone', metadata['receiverPhone'].toString(), d),
              if (tx.isCredit && metadata['senderPhone'] != null)
-                _buildDetailRow('Sender Phone', metadata['senderPhone'].toString()),
+                _buildDetailRow('Sender Phone', metadata['senderPhone'].toString(), d),
           ],
         ] else if (serviceType == 'CABLE' || serviceType == 'CABLE_TV') ...[
           if (info != null) ...[
-             _buildDetailRow('Card Number', info['cardNumber'] ?? info['accountNumber'] ?? "N/A"),
-             if (info['package'] != null) _buildDetailRow('Package', info['package']),
-             _buildDetailRow('Provider', info['provider'] ?? tx.provider ?? "N/A"),
+             _buildDetailRow('Card Number', info['cardNumber'] ?? info['accountNumber'] ?? "N/A", d),
+             if (info['package'] != null) _buildDetailRow('Package', info['package'], d),
+             _buildDetailRow('Provider', info['provider'] ?? tx.provider ?? "N/A", d),
           ] else ...[
-             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!, d),
           ]
         ] else if (serviceType == 'ELECTRICITY' || serviceType == 'ELECTRICITY_BILL') ...[
           if (info != null) ...[
-             _buildDetailRow('Meter Number', info['meterNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A"),
+             _buildDetailRow('Meter Number', info['meterNumber']?.toString() ?? info['accountNumber']?.toString() ?? "N/A", d),
              ...(() {
                 final localName = Hive.isBoxOpen('authBox') ? Hive.box('authBox').get('fullname') : null;
                 final cName = info['Customer_Name'] ?? info['customerName'] ?? info['customer_name'] ?? info['name'] ?? info['CustomerName'] ?? info['Customer_name'];
                 final addr = info['Address'] ?? info['address'] ?? info['customerAddress'] ?? info['meterAddress'];
                 return [
                   if (localName != null && localName.toString().trim().isNotEmpty)
-                    _buildDetailRow('Account Name', localName.toString()),
+                    _buildDetailRow('Account Name', localName.toString(), d),
                   if (cName != null && cName.toString().trim().isNotEmpty)
-                    _buildDetailRow('Meter Name', cName.toString()),
+                    _buildDetailRow('Meter Name', cName.toString(), d),
                   if (addr != null && addr.toString().trim().isNotEmpty)
-                    _buildDetailRow('Address', addr.toString()),
+                    _buildDetailRow('Address', addr.toString(), d),
                 ];
              })(),
              if (info['token'] != null && info['token'].toString().isNotEmpty) 
-                _buildDetailRow('Token', info['token'].toString(), isCopyable: true),
-             _buildDetailRow('Provider', info['provider']?.toString() ?? tx.provider ?? "N/A"),
+                _buildDetailRow('Token', info['token'].toString(), d, isCopyable: true),
+             _buildDetailRow('Provider', info['provider']?.toString() ?? tx.provider ?? "N/A", d),
           ] else ...[
-             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!, d),
           ]
         ] else if (isUtility) ...[
           if (info != null) ...[
-             _buildDetailRow('Beneficiary', info['phone'] ?? info['meterNumber'] ?? info['accountNumber'] ?? "N/A"),
-             _buildDetailRow('Provider', info['network'] ?? tx.provider ?? "N/A"),
+             _buildDetailRow('Beneficiary', info['phone'] ?? info['meterNumber'] ?? info['accountNumber'] ?? "N/A", d),
+             _buildDetailRow('Provider', info['network'] ?? tx.provider ?? "N/A", d),
           ] else ...[
-             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+             if (tx.provider != null) _buildDetailRow('Provider', tx.provider!, d),
           ]
         ] else ...[
-          _buildDetailRow('Service', _getServiceTitle(tx)),
-          if (tx.provider != null) _buildDetailRow('Provider', tx.provider!),
+          _buildDetailRow('Service', _getServiceTitle(tx), d),
+          if (tx.provider != null) _buildDetailRow('Provider', tx.provider!, d),
         ],
 
-        _buildDetailRow('Transaction No.', tx.reference ?? "N/A"),
-        _buildDetailRow('Transaction Date', DateFormat('MMM dd, yyyy hh:mm a').format(tx.createdAt ?? DateTime.now())),
+        _buildDetailRow('Transaction No.', tx.reference ?? "N/A", d, isCopyable: true),
+        _buildDetailRow('Transaction Date', DateFormat('MMM dd, yyyy hh:mm a').format(tx.createdAt ?? DateTime.now()), d),
       ],
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isCopyable = false}) {
+  Widget _buildDetailRow(String label, String value, _Dims d, {bool isCopyable = false}) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.only(bottom: d.isTablet ? 12.0 : 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,11 +523,12 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 12.sp,
+                fontSize: d.rowLabelFont,
                 color: const Color(0xFF999999),
               ),
             ),
           ),
+          SizedBox(width: d.isTablet ? 12.0 : 8.w),
           Expanded(
             flex: 3,
             child: Row(
@@ -492,14 +540,14 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                     value,
                     textAlign: TextAlign.right,
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: d.rowValueFont,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF2D2D2D),
                     ),
                   ),
                 ),
                 if (isCopyable) ...[
-                  SizedBox(width: 6.w),
+                  SizedBox(width: d.isTablet ? 6.0 : 6.w),
                   GestureDetector(
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: value));
@@ -511,7 +559,7 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
                         ),
                       );
                     },
-                    child: Icon(Icons.copy_rounded, size: 14.sp, color: primaryColor),
+                    child: Icon(Icons.copy_rounded, size: d.isTablet ? 15.0 : 14.sp, color: primaryColor),
                   ),
                 ],
               ],
@@ -522,27 +570,35 @@ class _TransactionDetailsScreenState extends State<TransactionDetailsScreen> {
     );
   }
 
-  Widget _buildActionButton(String text, Color bgColor, Color textColor, VoidCallback onTap, {bool hasBorder = false, bool isLoading = false}) {
+  Widget _buildActionButton(
+    String text,
+    Color bgColor,
+    Color textColor,
+    VoidCallback onTap, {
+    required _Dims d,
+    bool hasBorder = false,
+    bool isLoading = false,
+  }) {
     return InkWell(
       onTap: isLoading ? null : onTap,
       child: Container(
-        height: 50.h,
+        height: d.btnHeight,
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(12),
           border: hasBorder ? Border.all(color: const Color(0xFFE0E0E0)) : null,
         ),
         child: Center(
           child: isLoading
               ? SizedBox(
-                  height: 20.h,
-                  width: 20.h,
+                  height: d.isTablet ? 20.0 : 20.h,
+                  width: d.isTablet ? 20.0 : 20.h,
                   child: CustomLoader(size: 20, color: textColor),
                 )
               : Text(
                   text,
                   style: TextStyle(
-                    fontSize: 14.sp,
+                    fontSize: d.btnFont,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),

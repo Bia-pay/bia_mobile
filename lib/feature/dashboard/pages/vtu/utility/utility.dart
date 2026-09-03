@@ -64,14 +64,11 @@ class _ElectricityState extends State<Electricity> {
           ],
         ),
         body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isTablet = constraints.maxWidth >= 600;
-              final isDesktop = constraints.maxWidth >= 1200;
-              final horizontalPadding = isDesktop
-                  ? 120.w
-                  : (isTablet ? 30.w : 8.w);
-              final maxContentWidth = isDesktop ? 800.w : double.infinity;
+          child: Builder(
+            builder: (context) {
+              final isTablet = MediaQuery.of(context).size.width >= 600;
+              final horizontalPadding = isTablet ? 20.0 : 8.w;
+              final maxContentWidth = isTablet ? 600.0 : double.infinity;
   
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -384,22 +381,17 @@ class _CardOneState extends ConsumerState<CardOne> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isTablet = constraints.maxWidth >= 600;
-        final isDesktop = constraints.maxWidth >= 1200;
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
-        final cardPadding = isDesktop
-            ? EdgeInsets.symmetric(vertical: 22.h, horizontal: 48.w)
-            : (isTablet
-                  ? const EdgeInsets.symmetric(vertical: 14.0, horizontal: 24.0)
-                  : EdgeInsets.symmetric(vertical: 7.h, horizontal: 25.w));
+    final cardPadding = isTablet
+        ? const EdgeInsets.symmetric(vertical: 14.0, horizontal: 20.0)
+        : EdgeInsets.symmetric(vertical: 7.h, horizontal: 25.w);
 
-        final fontSize = isDesktop ? 16.0 : (isTablet ? 14.0 : 14.sp);
-        final titleFontSize = isDesktop ? 18.0 : (isTablet ? 15.0 : 16.sp);
-        final inputHeight = isDesktop ? 54.0 : (isTablet ? 48.0 : 50.h);
-        final buttonHeight = isDesktop ? 54.0 : (isTablet ? 48.0 : 55.h);
-        final theme = Theme.of(context);
+    final fontSize = isTablet ? 14.0 : 14.sp;
+    final titleFontSize = isTablet ? 15.0 : 16.sp;
+    final inputHeight = isTablet ? 48.0 : 50.h;
+    final buttonHeight = isTablet ? 50.0 : 55.h;
+    final theme = Theme.of(context);
 
         return Container(
           padding: cardPadding,
@@ -918,8 +910,6 @@ class _CardOneState extends ConsumerState<CardOne> {
             ),
           ),
         );
-      },
-    );
   }
 }
 
@@ -939,23 +929,17 @@ class _CardTwoState extends ConsumerState<CardTwo> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isTablet = constraints.maxWidth >= 600;
-        final isDesktop = constraints.maxWidth >= 1200;
+    final cardPadding = isTablet
+        ? const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0)
+        : EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h);
 
-        final cardPadding = isDesktop
-            ? EdgeInsets.symmetric(horizontal: 48.w, vertical: 28.h)
-            : (isTablet
-                  ? const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0)
-                  : EdgeInsets.symmetric(horizontal: 20.w, vertical: 19.h));
+    final fontSize = isTablet ? 13.5 : 14.sp;
+    final titleFontSize = isTablet ? 15.0 : 16.sp;
 
-        final fontSize = isDesktop ? 16.0 : (isTablet ? 13.5 : 14.sp);
-        final titleFontSize = isDesktop ? 18.0 : (isTablet ? 15.0 : 16.sp);
-
-        return Container(
-          padding: cardPadding,
+    return Container(
+      padding: cardPadding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(isTablet ? 16.0 : 15.r),
           ),
@@ -982,8 +966,6 @@ class _CardTwoState extends ConsumerState<CardTwo> {
             ],
           ),
         );
-      },
-    );
   }
 }
 

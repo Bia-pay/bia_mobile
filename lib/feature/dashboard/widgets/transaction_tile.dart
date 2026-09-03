@@ -20,33 +20,46 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isTablet = MediaQuery.of(context).size.width >= 600;
+
     final status = tx.status?.toUpperCase();
     final isPending = status == 'PENDING';
     final isFailed = status == 'FAILED';
     final isCredit = tx.isCredit;
 
-    final Color displayColor = isPending
+    final Color statusColor = isPending
         ? pendingColor
         : isFailed
             ? errorColor
-            : successColor; // Green for success (both credit & debit)
+            : successColor; // Green for SUCCESS / SUCCESSFUL
 
-    final Color statusLabelColor = isPending
+    final Color amountColor = isPending
         ? pendingColor
         : isFailed
             ? errorColor
             : isCredit
-                ? successColor // Credits stay Green
-                : errorColor;  // Debits stay Red to show difference
+                ? successColor // Green for Credit
+                : const Color(0xFF1E293B); // Dark Slate for Debit
 
-    final List<String> serviceTitles = ['AIRTIME', 'DATA', 'CABLE', 'CABLE_TV', 'ELECTRICITY', 'ELECTRICITY_BILL', 'TOPUP'];
+    final List<String> serviceTitles = [
+      'AIRTIME',
+      'DATA',
+      'CABLE',
+      'CABLE_TV',
+      'ELECTRICITY',
+      'ELECTRICITY_BILL',
+      'TOPUP'
+    ];
     final normalizedService = tx.serviceType?.toUpperCase();
 
     final String titleText = serviceTitles.contains(normalizedService)
-        ? (normalizedService == 'CABLE' || normalizedService == 'CABLE_TV' ? 'Cable TV' : 
-           normalizedService == 'TOPUP' ? 'Top Up' : 
-           (normalizedService?.startsWith('ELECTRICITY') == true) ? 'Electricity' :
-           normalizedService![0] + normalizedService.substring(1).toLowerCase())
+        ? (normalizedService == 'CABLE' || normalizedService == 'CABLE_TV'
+            ? 'Cable TV'
+            : normalizedService == 'TOPUP'
+                ? 'Top Up'
+                : (normalizedService?.startsWith('ELECTRICITY') == true)
+                    ? 'Electricity'
+                    : normalizedService![0] + normalizedService.substring(1).toLowerCase())
         : isCredit
             ? (tx.senderName ?? tx.provider ?? 'Transfer')
             : (tx.receiverName ?? tx.provider ?? 'Transfer');
@@ -57,42 +70,50 @@ class TransactionTile extends StatelessWidget {
 
     final IconData iconData = _iconForType(tx.serviceType, isCredit);
 
+    final double iconBoxSize = isTablet ? 42.0 : 38.w;
+    final double iconSize = isTablet ? 20.0 : 17.sp;
+    final double titleFontSize = isTablet ? 15.0 : 12.sp;
+    final double dateFontSize = isTablet ? 11.5 : 9.5.sp;
+    final double amountFontSize = isTablet ? 15.0 : 12.sp;
+    final double statusFontSize = isTablet ? 10.0 : 8.sp;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.only(bottom: 8.h),
+        margin: EdgeInsets.only(bottom: isTablet ? 10.0 : 8.h),
         padding: EdgeInsets.symmetric(
-          vertical: 9.h,
-          horizontal: 12.w,
+          vertical: isTablet ? 12.0 : 9.h,
+          horizontal: isTablet ? 16.0 : 12.w,
         ),
         decoration: BoxDecoration(
           color: lightBackground,
-          borderRadius: BorderRadius.circular(14.r),
+          borderRadius: BorderRadius.circular(isTablet ? 16.0 : 14.r),
+          border: Border.all(color: Colors.grey.shade100, width: 0.8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              height: 38.w,
-              width: 38.w,
+              height: iconBoxSize,
+              width: iconBoxSize,
               decoration: BoxDecoration(
-                color: displayColor.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(10.r),
+                color: statusColor.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 10.r),
               ),
               child: Icon(
                 iconData,
-                color: displayColor,
-                size: 17.sp,
+                color: statusColor,
+                size: iconSize,
               ),
             ),
 
-            SizedBox(width: 10.w),
+            SizedBox(width: isTablet ? 14.0 : 10.w),
 
             Expanded(
               child: Column(
@@ -104,16 +125,18 @@ class TransactionTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                      fontSize: titleFontSize,
                       color: const Color(0xFF1E293B),
                     ),
                   ),
-                  SizedBox(height: 2.h),
+                  SizedBox(height: isTablet ? 3.0 : 2.h),
                   Text(
                     formatTransactionDate(tx.createdAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 9.sp,
+                      fontSize: dateFontSize,
                       color: const Color(0xFF94A3B8),
                     ),
                   ),
@@ -121,7 +144,7 @@ class TransactionTile extends StatelessWidget {
               ),
             ),
 
-            SizedBox(width: 8.w),
+            SizedBox(width: isTablet ? 12.0 : 8.w),
 
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -131,26 +154,26 @@ class TransactionTile extends StatelessWidget {
                   amountLabel,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    fontSize: 12.sp,
-                    color: displayColor,
+                    fontSize: amountFontSize,
+                    color: amountColor,
                   ),
                 ),
-                SizedBox(height: 3.h),
+                SizedBox(height: isTablet ? 4.0 : 3.h),
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: 6.w,
-                    vertical: 1.5.h,
+                    horizontal: isTablet ? 8.0 : 6.w,
+                    vertical: isTablet ? 2.5 : 1.5.h,
                   ),
                   decoration: BoxDecoration(
-                    color: statusLabelColor.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(20.r),
+                    color: statusColor.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     statusLabel,
                     style: TextStyle(
-                      fontSize: 8.sp,
-                      fontWeight: FontWeight.w600,
-                      color: statusLabelColor,
+                      fontSize: statusFontSize,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
                     ),
                   ),
                 ),
