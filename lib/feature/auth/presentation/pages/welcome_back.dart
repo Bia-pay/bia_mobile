@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:bia/core/__core.dart';
 import 'package:bia/core/easy_loading_config.dart';
@@ -56,7 +55,7 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     _initializeSettings();
   }
 
-  void _showErrorModal(String title, String message, {bool isNetworkError = false, VoidCallback? onRetry}) {
+  void _showErrorModal(String title, String message, {VoidCallback? onRetry}) {
     if (onRetry != null) {
       UPopup.confirm(context, title: title, message: message, confirmLabel: 'Retry', cancelLabel: 'OK', onConfirm: onRetry);
     } else {
@@ -64,20 +63,8 @@ class _WelcomeBackScreenState extends ConsumerState<WelcomeBackScreen> {
     }
   }
 
-  Future<bool> _checkConnectivity() async {
-    try {
-      final results = await Future.wait([
-        InternetAddress.lookup('google.com').timeout(const Duration(seconds: 5)),
-        InternetAddress.lookup('cloudflare.com').timeout(const Duration(seconds: 5)),
-      ], eagerError: true).catchError((_) => <List<InternetAddress>>[]);
-      return results.isNotEmpty && results.any((r) => r.isNotEmpty);
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<void> _initializeSettings() async {
-    final authBox = Hive.box("authBox");
+    final authBox = Hive.isBoxOpen("authBox") ? Hive.box("authBox") : await Hive.openBox("authBox");
     final biometricService = BiometricService();
 
     final loadedUserId = authBox.get("userId")?.toString() ?? '';

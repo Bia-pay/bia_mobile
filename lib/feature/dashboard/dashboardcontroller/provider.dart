@@ -12,6 +12,9 @@ import '../model/cashback_rule_model.dart';
 import '../../auth/modal/reponse/response_modal.dart';
 
 final userIdProvider = StateProvider<String>((ref) {
+  if (!Hive.isBoxOpen('authBox')) {
+    return '';
+  }
   final box = Hive.box('authBox');
   final userId = box.get('userId')?.toString() ?? '';
   final phone = box.get('phone')?.toString() ?? '';
@@ -24,6 +27,7 @@ class UserProfileNotifier extends StateNotifier<UserResponse?> {
   }
 
   void _init() {
+    if (!Hive.isBoxOpen('authBox')) return;
     final box = Hive.box('authBox');
     final savedUserJson = box.get('saved_user_profile');
     if (savedUserJson != null) {
@@ -35,7 +39,7 @@ class UserProfileNotifier extends StateNotifier<UserResponse?> {
 
   void updateProfile(UserResponse? user) {
     state = user;
-    if (user != null) {
+    if (user != null && Hive.isBoxOpen('authBox')) {
       final box = Hive.box('authBox');
       box.put('saved_user_profile', user.toJson());
       if (user.picture != null) box.put('picture', user.picture);
@@ -313,6 +317,10 @@ class VirtualAccountNotifier extends StateNotifier<AsyncValue<VirtualAccountMode
   void _init() {
     // ── 1. Show cached data instantly (zero loading) ──────────────────────────
     try {
+      if (!Hive.isBoxOpen('authBox')) {
+        _fetchOrGenerate();
+        return;
+      }
       final box = Hive.box('authBox');
       final userId = box.get('userId', defaultValue: '') as String;
       final phone = box.get('phone', defaultValue: '') as String;

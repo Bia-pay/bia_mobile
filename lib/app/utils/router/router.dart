@@ -64,6 +64,8 @@ import '../../../feature/split_payment/presentation/split_participant_scan_scree
 import '../../../feature/split_payment/presentation/split_creator_dashboard_screen.dart';
 import '../../../feature/bia_trike/presentation/bia_trike_onboarding_screen.dart';
 import '../../../feature/bia_trike/presentation/bia_trike_success_screen.dart';
+import '../../../feature/bia_trike/presentation/bia_trike_en_route_screen.dart';
+import '../../../feature/bia_trike/presentation/bia_trike_digital_pass_screen.dart';
 
 
 export '../../../feature/settings/presentation/change_password.dart'
@@ -601,6 +603,16 @@ class AppRouter {
         path: RouteList.biaTrikeSuccess,
         name: RouteList.biaTrikeSuccess,
         builder: (context, state) => const BiaTrikeSuccessScreen(),
+      ),
+      GoRoute(
+        path: RouteList.biaTrikeEnRoute,
+        name: RouteList.biaTrikeEnRoute,
+        builder: (context, state) => const BiaTrikeEnRouteScreen(),
+      ),
+      GoRoute(
+        path: RouteList.biaTrikeDigitalPass,
+        name: RouteList.biaTrikeDigitalPass,
+        builder: (context, state) => const BiaTrikeDigitalPassScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

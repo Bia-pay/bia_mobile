@@ -52,6 +52,16 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
   }
 
   void _initWalletState() {
+    if (!Hive.isBoxOpen('authBox')) {
+      state = AsyncValue.data(ResponseBody(
+        wallet: WalletResponse(
+          balance: '0',
+          currency: 'NGN',
+          limits: {},
+        ),
+      ));
+      return;
+    }
     final box = Hive.box('authBox');
     final savedBalance = box.get('balance', defaultValue: '0');
     final savedCurrency = box.get('currency', defaultValue: 'NGN');
@@ -380,18 +390,20 @@ class DashboardController extends StateNotifier<AsyncValue<ResponseBody?>> {
 
   Future<void> loadWalletBalance() async {
     // Load saved balance immediately from Hive first
-    final box = Hive.box('authBox');
-    final savedBalance = box.get('balance', defaultValue: '0');
-    final savedCurrency = box.get('currency', defaultValue: 'NGN');
-    final savedLimits = Map<String, dynamic>.from(box.get('limits', defaultValue: {}));
+    if (Hive.isBoxOpen('authBox')) {
+      final box = Hive.box('authBox');
+      final savedBalance = box.get('balance', defaultValue: '0');
+      final savedCurrency = box.get('currency', defaultValue: 'NGN');
+      final savedLimits = Map<String, dynamic>.from(box.get('limits', defaultValue: {}));
 
-    state = AsyncValue.data(ResponseBody(
-      wallet: WalletResponse(
-        balance: savedBalance.toString(),
-        currency: savedCurrency,
-        limits: savedLimits,
-      ),
-    ));
+      state = AsyncValue.data(ResponseBody(
+        wallet: WalletResponse(
+          balance: savedBalance.toString(),
+          currency: savedCurrency,
+          limits: savedLimits,
+        ),
+      ));
+    }
 
     // Fetch fresh balance in the background
     try {

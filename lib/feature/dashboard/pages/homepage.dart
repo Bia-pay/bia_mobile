@@ -419,7 +419,10 @@ class ActionRibbon extends StatelessWidget {
                 color: primaryColor,
                 size: isTablet ? 22 : 21.sp,
               ),
-              isSoon: true,
+              onTap: () => _runProtectedAction(
+                context,
+                () => context.pushNamed(RouteList.biaTrikeOnboarding),
+              ),
             ),
           ),
           Expanded(

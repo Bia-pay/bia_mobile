@@ -1,148 +1,205 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/router/route_constant.dart';
 import '../../../app/utils/widgets/toast_helper.dart';
+import '../controller/bia_trike_controller.dart';
+import '../model/bia_trike_ride_model.dart';
 
 class BiaTrikeBookingScreen extends ConsumerStatefulWidget {
-  final String language; // 'english', 'hausa', 'pidgin'
+  final String language;
 
   const BiaTrikeBookingScreen({
     super.key,
-    required this.language,
+    this.language = 'english',
   });
 
   @override
-  ConsumerState<BiaTrikeBookingScreen> createState() =>
-      _BiaTrikeBookingScreenState();
+  ConsumerState<BiaTrikeBookingScreen> createState() => _BiaTrikeBookingScreenState();
 }
 
-class _BiaTrikeBookingScreenState
-    extends ConsumerState<BiaTrikeBookingScreen> {
-  late String _currentLanguage;
-  final _pickupCtrl = TextEditingController(text: 'Current Location');
-  final _destinationCtrl = TextEditingController();
-
-  String _selectedRideType = 'Standard';
-  double _passengerOfferFare = 500.0;
-  bool _isSearchingDriver = false;
-  bool _driverAssigned = false;
-  Timer? _searchTimer;
-  int _selectedDriverOfferIndex = 0;
+class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
+  final _pickupCtrl = TextEditingController(text: 'Kofar Ruwa Market Gate, Kano');
+  final _destCtrl = TextEditingController(text: 'Bayero University Kano New Campus');
+  final _cityCtrl = TextEditingController(text: 'Kano');
 
   @override
   void initState() {
     super.initState();
-    _currentLanguage = widget.language;
-  }
-
-  void _changeLanguage(String newLang) {
-    setState(() {
-      _currentLanguage = newLang;
-    });
-    try {
-      final box = Hive.box('authBox');
-      box.put('bia_trike_language', newLang);
-    } catch (_) {}
-  }
-
-  void _adjustFare(double delta) {
-    setState(() {
-      _passengerOfferFare = (_passengerOfferFare + delta).clamp(200.0, 10000.0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(biaTrikeStateNotifierProvider.notifier).setDialect(widget.language);
     });
   }
 
-  void _showLanguageSwitcher() {
+  @override
+  void dispose() {
+    _pickupCtrl.dispose();
+    _destCtrl.dispose();
+    _cityCtrl.dispose();
+    super.dispose();
+  }
+
+  // Localized dialect strings
+  Map<String, Map<String, String>> get _dict => {
+        'english': {
+          'title': 'Bia Trike (Keke)',
+          'subtitle': 'Set your fare offer & negotiate in real time with nearby riders.',
+          'pickup': 'Pickup Address',
+          'dest': 'Destination Address',
+          'selectCategory': 'SELECT RIDE TYPE',
+          'standard': 'Standard Keke',
+          'shared': 'Shared Keke',
+          'cargo': 'Express Cargo',
+          'sharedDiscount': 'Save 35% with Commuter Sharing',
+          'yourOffer': 'YOUR OFFER FARE',
+          'min': 'Minimum',
+          'max': 'Maximum',
+          'payment': 'Payment Method',
+          'wallet': 'Bia Pay Wallet (₦14,250)',
+          'cash': 'Cash Payment',
+          'findBtn': 'FIND TRIKE / NEMI KEKE',
+          'negotiatingTitle': 'Negotiating Fare...',
+          'radarText': '4 Riders Nearby Bidding',
+          'incomingBids': 'INCOMING BIDS',
+          'acceptBtn': 'ACCEPT',
+          'bestPrice': 'Best Price',
+          'cancelBtn': 'Cancel Negotiation',
+          'raiseTip': '💡 Tip: Raise your offer by ₦50 to get faster responses from drivers.',
+        },
+        'hausa': {
+          'title': 'Shiga Keke Trike',
+          'subtitle': 'Yi cinikin kudin tafiya kai tsaye da direbobi a Kano/Kaduna.',
+          'pickup': 'Wurin Dauka (Pickup)',
+          'dest': 'Wurin da Zaka (Destination)',
+          'selectCategory': 'ZABI SAMFURIN KEKE',
+          'standard': 'Keke Na Daya',
+          'shared': 'Keke Na Raba Kudin',
+          'cargo': 'Keke Na Kayan Sauri',
+          'sharedDiscount': 'Rage 35% na kudin tafiya',
+          'yourOffer': 'KUDIN DA KAKE SO A BIYA',
+          'min': 'Mafi Karanci',
+          'max': 'Mafi Yawa',
+          'payment': 'Hanyar Biya',
+          'wallet': 'Asusun Bia Wallet (₦14,250)',
+          'cash': 'Biyan Tsabar Kudi (Cash)',
+          'findBtn': 'NEMI KEKE YANZU',
+          'negotiatingTitle': 'Ana Ciniki da Direbobi...',
+          'radarText': 'Direbobi 4 na kusa suna kallo',
+          'incomingBids': 'TAYIN DIREBOBI DA KE KUSA',
+          'acceptBtn': 'AMINCE',
+          'bestPrice': 'Mafi Araha',
+          'cancelBtn': 'Fasa Neman Keke',
+          'raiseTip': '💡 Shawara: Kara ₦50 don samun direba da sauri.',
+        },
+        'pidgin': {
+          'title': 'Bia Trike (Keke)',
+          'subtitle': 'Set your price & drag price directly with nearby keke riders.',
+          'pickup': 'Pickup Spot',
+          'dest': 'Where you dey go?',
+          'selectCategory': 'CHOOSE RIDE OPTION',
+          'standard': 'Standard Keke',
+          'shared': 'Shared Keke',
+          'cargo': 'Express Cargo',
+          'sharedDiscount': 'Save 35% with Commuter Sharing',
+          'yourOffer': 'YOUR PRICE OFFER',
+          'min': 'Lowest',
+          'max': 'Highest',
+          'payment': 'Payment Option',
+          'wallet': 'Bia Pay Wallet (₦14,250)',
+          'cash': 'Cash Payment',
+          'findBtn': 'FIND TRIKE NOW',
+          'negotiatingTitle': 'Dey Drag Money with Drivers...',
+          'radarText': '4 Riders Nearby',
+          'incomingBids': 'INCOMING BIDS FROM DRIVERS',
+          'acceptBtn': 'ACCEPT',
+          'bestPrice': 'Best Price',
+          'cancelBtn': 'Cancel Offer',
+          'raiseTip': '💡 Tip: Add ₦50 to make driver come quick.',
+        },
+      };
+
+  String _t(String key) {
+    final state = ref.watch(biaTrikeStateNotifierProvider);
+    final lang = state.dialect.toLowerCase();
+    final d = _dict[lang] ?? _dict['english']!;
+    return d[key] ?? _dict['english']![key] ?? key;
+  }
+
+  void _showDialectPicker() {
+    final notifier = ref.read(biaTrikeStateNotifierProvider.notifier);
+    final state = ref.watch(biaTrikeStateNotifierProvider);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (modalCtx, setModalState) {
-            return Align(
-              alignment: Alignment.bottomCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Container(
-                  padding: EdgeInsets.all(24.r),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 44.w,
-                          height: 4.h,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-
-                      Text(
-                        'Select Dialect / Language',
-                        style: TextStyle(
-                          color: darkBackground,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        'Choose your preferred language for prompts and ride booking.',
-                        style: TextStyle(
-                          color: lightSecondaryText,
-                          fontSize: 12.sp,
-                        ),
-                      ),
-
-                      SizedBox(height: 20.h),
-
-                      _buildLangTile('english', 'Standard English', '🇬🇧', setModalState),
-                      SizedBox(height: 8.h),
-                      _buildLangTile('pidgin', 'Nigerian Pidgin', '🇳🇬', setModalState),
-                      SizedBox(height: 8.h),
-                      _buildLangTile('hausa', 'Hausa Dialect', '🌙', setModalState),
-
-                      SizedBox(height: 24.h),
-                    ],
-                  ),
-                ),
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Container(
+              padding: EdgeInsets.all(24.r),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
               ),
-            );
-          },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44.w,
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  Text(
+                    'Select Dialect / Language',
+                    style: TextStyle(
+                      color: darkBackground,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Choose language for fare bargaining microcopy.',
+                    style: TextStyle(color: lightSecondaryText, fontSize: 12.sp),
+                  ),
+                  SizedBox(height: 20.h),
+                  _buildLangOption('english', 'Standard English', '🇬🇧', state.dialect, notifier),
+                  SizedBox(height: 8.h),
+                  _buildLangOption('pidgin', 'Nigerian Pidgin', '🇳🇬', state.dialect, notifier),
+                  SizedBox(height: 8.h),
+                  _buildLangOption('hausa', 'Hausa Dialect', '🌙', state.dialect, notifier),
+                  SizedBox(height: 24.h),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
   }
 
-  Widget _buildLangTile(
-      String code, String label, String flag, StateSetter setModalState) {
-    final isSelected = _currentLanguage == code;
+  Widget _buildLangOption(
+      String code, String label, String flag, String current, BiaTrikeNotifier notifier) {
+    final isSelected = current == code;
     return GestureDetector(
       onTap: () {
-        setModalState(() {});
-        _changeLanguage(code);
+        notifier.setDialect(code);
         Navigator.pop(context);
-        ToastHelper.showToast(
-          context: context,
-          message: "Language set to $label",
-          icon: Icons.language_rounded,
-          iconColor: primaryColor,
-        );
       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -168,131 +225,17 @@ class _BiaTrikeBookingScreenState
                 ),
               ),
             ),
-            if (isSelected)
-              Icon(Icons.check_circle_rounded, color: primaryColor, size: 20.sp),
+            if (isSelected) Icon(Icons.check_circle_rounded, color: primaryColor, size: 20.sp),
           ],
         ),
       ),
     );
   }
 
-  // Localized dictionary
-  Map<String, Map<String, String>> get _localized => {
-        'english': {
-          'title': 'Book Your Keke Ride',
-          'subtitle': 'Negotiate fare directly with nearby trike riders.',
-          'pickup': 'Pickup Location',
-          'pickupHint': 'Where are you starting from?',
-          'destination': 'Destination',
-          'destinationHint': 'Where are you going?',
-          'rideType': 'Select Ride Option',
-          'standard': 'Standard Keke',
-          'shared': 'Shared Keke',
-          'express': 'Express Cargo',
-          'yourOffer': 'YOUR FARE OFFER',
-          'negotiateHint': 'Tap + or - to adjust your offer price',
-          'bookBtn': 'Offer Fare & Find Riders',
-          'searchingTitle': 'Negotiating with Drivers...',
-          'searchingDesc':
-              'Receiving live counter-offers from nearby Bia Trike riders.',
-          'assignedTitle': 'Fare Negotiated & Accepted!',
-          'assignedDesc': 'Driver Mallam Garba agreed to your fare (3 mins away).',
-          'plate': 'Plate No: KNC 772 YK',
-          'cancelBtn': 'Cancel Offer',
-          'homeBtn': 'Back to Dashboard',
-        },
-        'hausa': {
-          'title': 'Shiga Keke Trike',
-          'subtitle': 'Yi cinikin kudin tafiya kai tsaye da direbobi.',
-          'pickup': 'Wurin Dauka (Pickup)',
-          'pickupHint': 'Daga ina kake so a dauke ka?',
-          'destination': 'Wurin da Zaka (Destination)',
-          'destinationHint': 'Ina ne zaku tafi?',
-          'rideType': 'Zabi Samfurin Keke',
-          'standard': 'Keke Na Daya',
-          'shared': 'Keke Na Raba Kudin',
-          'express': 'Keke Na Kayan Sauri',
-          'yourOffer': 'KUDIN DA KAKE SO A BIYA',
-          'negotiateHint': 'Latsa + ko - don kara ko rage kudin',
-          'bookBtn': 'Talla Farashi & Nemi Keke',
-          'searchingTitle': 'Ana Ciniki da Direbobi...',
-          'searchingDesc':
-              'Muna karbar tayin kudi daga direbobi da ke kusa.',
-          'assignedTitle': 'An Kamala Ciniki!',
-          'assignedDesc': 'Direba Mallam Garba ya yarda da kudin (Minti 3).',
-          'plate': 'Lamba: KNC 772 YK',
-          'cancelBtn': 'Fasa Neman Keke',
-          'homeBtn': 'Koma Shafi Na Fari',
-        },
-        'pidgin': {
-          'title': 'Book Your Keke Ride',
-          'subtitle': 'Drag price directly with nearby keke riders.',
-          'pickup': 'Pickup Spot',
-          'pickupHint': 'Where you dey start from?',
-          'destination': 'Destination',
-          'destinationHint': 'Where you wan go?',
-          'rideType': 'Choose Ride Option',
-          'standard': 'Standard Keke',
-          'shared': 'Shared Keke',
-          'express': 'Express Cargo',
-          'yourOffer': 'YOUR PRICE OFFER',
-          'negotiateHint': 'Tap + or - to change money offer',
-          'bookBtn': 'Offer Price & Find Driver',
-          'searchingTitle': 'Dey Drag Money with Drivers...',
-          'searchingDesc':
-              'Receiving counter-price from nearby Bia Trike riders.',
-          'assignedTitle': 'Price Don Agreed!',
-          'assignedDesc': 'Driver Mallam Garba agree to your price (3 mins away).',
-          'plate': 'Plate No: KNC 772 YK',
-          'cancelBtn': 'Cancel Offer',
-          'homeBtn': 'Go Back Home',
-        },
-      };
-
-  String _t(String key) {
-    final lang = _currentLanguage.toLowerCase();
-    final dict = _localized[lang] ?? _localized['english']!;
-    return dict[key] ?? _localized['english']![key] ?? key;
-  }
-
-  @override
-  void dispose() {
-    _pickupCtrl.dispose();
-    _destinationCtrl.dispose();
-    _searchTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startRideSearch() {
-    if (_destinationCtrl.text.trim().isEmpty) {
-      ToastHelper.showToast(
-        context: context,
-        message: _t('destinationHint'),
-        icon: Icons.info_outline,
-        iconColor: primaryColor,
-      );
-      return;
-    }
-
-    setState(() {
-      _isSearchingDriver = true;
-      _driverAssigned = false;
-    });
-
-    _searchTimer?.cancel();
-    _searchTimer = Timer(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() {
-          _isSearchingDriver = false;
-          _driverAssigned = true;
-        });
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final state = ref.watch(biaTrikeStateNotifierProvider);
+    final notifier = ref.read(biaTrikeStateNotifierProvider.notifier);
     final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
@@ -302,12 +245,17 @@ class _BiaTrikeBookingScreenState
         elevation: 0,
         toolbarHeight: isTablet ? 60.0 : null,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: darkBackground, size: isTablet ? 18.0 : 18.sp),
-          onPressed: () => context.pop(),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: darkBackground, size: 18.sp),
+          onPressed: () {
+            if (state.isSearching) {
+              notifier.cancelActiveRide();
+            } else {
+              context.pop();
+            }
+          },
         ),
         title: Text(
-          _t('title'),
+          state.isSearching ? _t('negotiatingTitle') : _t('title'),
           style: TextStyle(
             color: darkBackground,
             fontSize: isTablet ? 16.0 : 16.sp,
@@ -317,34 +265,30 @@ class _BiaTrikeBookingScreenState
         centerTitle: true,
         actions: [
           GestureDetector(
-            onTap: _showLanguageSwitcher,
+            onTap: _showDialectPicker,
             child: Container(
-              margin: EdgeInsets.only(right: isTablet ? 16.0 : 16.w),
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 10.0 : 10.w,
-                vertical: isTablet ? 4.0 : 4.h,
-              ),
+              margin: EdgeInsets.only(right: 16.w),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(100.0),
+                borderRadius: BorderRadius.circular(100.r),
               ),
               child: Row(
                 children: [
                   Text(
-                    _currentLanguage == 'hausa'
+                    state.dialect == 'hausa'
                         ? '🌙 Hausa'
-                        : _currentLanguage == 'pidgin'
+                        : state.dialect == 'pidgin'
                             ? '🇳🇬 Pidgin'
                             : '🇬🇧 English',
                     style: TextStyle(
                       color: primaryColor,
-                      fontSize: isTablet ? 11.0 : 10.sp,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(width: isTablet ? 4.0 : 4.w),
-                  Icon(Icons.keyboard_arrow_down_rounded,
-                      color: primaryColor, size: isTablet ? 14.0 : 14.sp),
+                  SizedBox(width: 4.w),
+                  Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor, size: 14.sp),
                 ],
               ),
             ),
@@ -355,35 +299,13 @@ class _BiaTrikeBookingScreenState
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 500 : 650),
+            constraints: BoxConstraints(maxWidth: isTablet ? 540 : 650),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 24.0 : 24.w,
-                vertical: isTablet ? 12.0 : 12.h,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _t('subtitle'),
-                    style: TextStyle(
-                      color: lightSecondaryText,
-                      fontSize: isTablet ? 13.0 : 13.sp,
-                      height: 1.4,
-                    ),
-                  ),
-
-                  SizedBox(height: isTablet ? 16.0 : 20.h),
-
-                  if (_isSearchingDriver)
-                    _buildSearchingCard()
-                  else if (_driverAssigned)
-                    _buildDriverAssignedCard()
-                  else
-                    _buildBookingForm(),
-                ],
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+              child: state.isSearching
+                  ? _buildNegotiationArena(state, notifier)
+                  : _buildProposalBookingForm(state, notifier),
             ),
           ),
         ),
@@ -391,185 +313,186 @@ class _BiaTrikeBookingScreenState
     );
   }
 
-  Widget _buildBookingForm() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
+  // ── Screen 1: Booking & Fare Proposal Form ────────────────────────────────
+  Widget _buildProposalBookingForm(BiaTrikeState state, BiaTrikeNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Map Route Overview Box
         Container(
-          height: isTablet ? 120.0 : 130.h,
+          height: 130.h,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFFE2E8F0),
-            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
-            border: Border.all(color: const Color(0xFFCBD5E1)),
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(20.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Stack(
             children: [
               Center(
                 child: Icon(
                   Icons.map_rounded,
-                  color: Colors.white,
-                  size: isTablet ? 60.0 : 90.sp,
+                  color: Colors.white.withValues(alpha: 0.15),
+                  size: 90.sp,
                 ),
               ),
               Positioned(
-                top: isTablet ? 14.0 : 16.h,
-                left: isTablet ? 16.0 : 20.w,
+                top: 14.h,
+                left: 16.w,
+                right: 16.w,
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(isTablet ? 6.0 : 6.r),
+                      padding: EdgeInsets.all(6.r),
                       decoration: const BoxDecoration(
-                        color: primaryColor,
+                        color: primaryGreenColor,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.my_location_rounded,
-                          color: Colors.white, size: isTablet ? 14.0 : 14.sp),
+                      child: Icon(Icons.my_location_rounded, color: Colors.white, size: 14.sp),
                     ),
-                    SizedBox(width: isTablet ? 8.0 : 8.w),
-                    Text(
-                      'Kano City Hub',
-                      style: TextStyle(
-                        color: darkBackground,
-                        fontSize: isTablet ? 12.0 : 12.sp,
-                        fontWeight: FontWeight.bold,
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        _pickupCtrl.text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
               Positioned(
-                bottom: isTablet ? 14.0 : 16.h,
-                right: isTablet ? 16.0 : 20.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 10.0 : 10.w,
-                    vertical: isTablet ? 4.0 : 4.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: primaryGreenColor,
-                    borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
-                  ),
-                  child: Text(
-                    '14 Drivers Online',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isTablet ? 10.0 : 10.sp,
-                      fontWeight: FontWeight.bold,
+                bottom: 14.h,
+                left: 16.w,
+                right: 16.w,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(6.r),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.location_on_rounded, color: Colors.white, size: 14.sp),
                     ),
-                  ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        _destCtrl.text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
 
-        SizedBox(height: isTablet ? 16.0 : 20.h),
+        SizedBox(height: 20.h),
 
-        Container(
-          padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _t('pickup'),
-                style: TextStyle(
-                  fontSize: isTablet ? 12.0 : 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: darkBackground,
-                ),
-              ),
-              SizedBox(height: isTablet ? 6.0 : 6.h),
-              TextField(
-                controller: _pickupCtrl,
-                style: TextStyle(fontSize: isTablet ? 14.0 : null),
-                decoration: InputDecoration(
-                  prefixIcon:
-                      const Icon(Icons.trip_origin_rounded, color: primaryColor),
-                  hintText: _t('pickupHint'),
-                  filled: true,
-                  fillColor: offWhiteBackground,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: isTablet ? 14.0 : 16.h),
-
-              Text(
-                _t('destination'),
-                style: TextStyle(
-                  fontSize: isTablet ? 12.0 : 12.sp,
-                  fontWeight: FontWeight.w700,
-                  color: darkBackground,
-                ),
-              ),
-              SizedBox(height: isTablet ? 6.0 : 6.h),
-              TextField(
-                controller: _destinationCtrl,
-                onChanged: (_) => setState(() {}),
-                style: TextStyle(fontSize: isTablet ? 14.0 : null),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.location_on_rounded,
-                      color: Color(0xFFEF4444)),
-                  hintText: _t('destinationHint'),
-                  filled: true,
-                  fillColor: offWhiteBackground,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: isTablet ? 16.0 : 20.h),
-
+        // Ride Category Selector
         Text(
-          _t('rideType'),
+          _t('selectCategory'),
           style: TextStyle(
-            color: darkBackground,
-            fontSize: isTablet ? 14.0 : 14.sp,
-            fontWeight: FontWeight.bold,
+            color: primaryColor,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
           ),
         ),
-        SizedBox(height: isTablet ? 8.0 : 10.h),
+        SizedBox(height: 10.h),
 
         Row(
           children: [
             Expanded(
-                child: _buildOptionChip('Standard', _t('standard'), '🛺')),
-            SizedBox(width: isTablet ? 8.0 : 8.w),
-            Expanded(child: _buildOptionChip('Shared', _t('shared'), '👥')),
-            SizedBox(width: isTablet ? 8.0 : 8.w),
-            Expanded(child: _buildOptionChip('Express', _t('express'), '📦')),
+              child: _buildCategoryChip(
+                'STANDARD_KEKE',
+                _t('standard'),
+                '🛺',
+                '₦1,000',
+                state,
+                notifier,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: _buildCategoryChip(
+                'SHARED_KEKE',
+                _t('shared'),
+                '👥',
+                '₦650',
+                state,
+                notifier,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: _buildCategoryChip(
+                'EXPRESS_CARGO',
+                _t('cargo'),
+                '📦',
+                '₦1,400',
+                state,
+                notifier,
+              ),
+            ),
           ],
         ),
 
-        SizedBox(height: isTablet ? 16.0 : 20.h),
+        if (state.selectedRideType == 'SHARED_KEKE') ...[
+          SizedBox(height: 10.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: primaryGreenColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: primaryGreenColor.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.discount_rounded, color: primaryGreenColor, size: 16.sp),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    _t('sharedDiscount'),
+                    style: TextStyle(
+                      color: primaryGreenColor,
+                      fontSize: 11.5.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn().scale(duration: 250.ms),
+        ],
 
+        SizedBox(height: 20.h),
+
+        // Fare Stepper (`[-]` / `[+]`)
         Container(
-          padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
+          padding: EdgeInsets.all(20.r),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
+            borderRadius: BorderRadius.circular(24.r),
             border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
@@ -588,143 +511,240 @@ class _BiaTrikeBookingScreenState
                     _t('yourOffer'),
                     style: TextStyle(
                       color: primaryColor,
-                      fontSize: isTablet ? 11.0 : 11.sp,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.0,
                     ),
                   ),
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 8.0 : 10.w,
-                      vertical: isTablet ? 4.0 : 4.h,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                     decoration: BoxDecoration(
                       color: primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
+                      borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Text(
-                      'Negotiable Fare',
+                      'Interactive Stepper',
                       style: TextStyle(
                         color: primaryColor,
-                        fontSize: isTablet ? 10.0 : 10.sp,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: isTablet ? 12.0 : 14.h),
+              SizedBox(height: 16.h),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Minus Button
                   InkWell(
-                    onTap: () => _adjustFare(-50),
-                    borderRadius: BorderRadius.circular(100.0),
-                    child: Container(
-                      padding: EdgeInsets.all(isTablet ? 10.0 : 12.r),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade300),
+                    onTap: state.currentOffer <= state.minOffer
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            notifier.adjustOffer(-50);
+                          },
+                    borderRadius: BorderRadius.circular(100.r),
+                    child: Opacity(
+                      opacity: state.currentOffer <= state.minOffer ? 0.4 : 1.0,
+                      child: Container(
+                        padding: EdgeInsets.all(14.r),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Icon(Icons.remove_rounded, color: darkBackground, size: 22.sp),
                       ),
-                      child: Icon(Icons.remove_rounded,
-                          color: darkBackground, size: isTablet ? 18.0 : 20.sp),
                     ),
                   ),
 
-                  SizedBox(width: isTablet ? 20.0 : 24.w),
+                  SizedBox(width: 24.w),
 
                   Text(
-                    '₦${NumberFormat('#,##0').format(_passengerOfferFare)}',
+                    '₦${NumberFormat('#,##0').format(state.currentOffer)}',
                     style: TextStyle(
                       color: darkBackground,
-                      fontSize: isTablet ? 26.0 : 28.sp,
+                      fontSize: 30.sp,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
 
-                  SizedBox(width: isTablet ? 20.0 : 24.w),
+                  SizedBox(width: 24.w),
 
+                  // Plus Button
                   InkWell(
-                    onTap: () => _adjustFare(50),
-                    borderRadius: BorderRadius.circular(100.0),
-                    child: Container(
-                      padding: EdgeInsets.all(isTablet ? 10.0 : 12.r),
-                      decoration: const BoxDecoration(
-                        color: primaryColor,
-                        shape: BoxShape.circle,
+                    onTap: state.currentOffer >= state.maxOffer
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            notifier.adjustOffer(50);
+                          },
+                    borderRadius: BorderRadius.circular(100.r),
+                    child: Opacity(
+                      opacity: state.currentOffer >= state.maxOffer ? 0.4 : 1.0,
+                      child: Container(
+                        padding: EdgeInsets.all(14.r),
+                        decoration: const BoxDecoration(
+                          color: primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.add_rounded, color: Colors.white, size: 22.sp),
                       ),
-                      child: Icon(Icons.add_rounded,
-                          color: Colors.white, size: isTablet ? 18.0 : 20.sp),
                     ),
                   ),
                 ],
               ),
 
-              SizedBox(height: isTablet ? 8.0 : 10.h),
-              Text(
-                _t('negotiateHint'),
-                style: TextStyle(
-                  color: lightSecondaryText,
-                  fontSize: isTablet ? 11.0 : 11.sp,
-                ),
+              SizedBox(height: 12.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_t('min')}: ₦${NumberFormat('#,##0').format(state.minOffer)}',
+                    style: TextStyle(color: lightSecondaryText, fontSize: 11.sp),
+                  ),
+                  Text(
+                    '${_t('max')}: ₦${NumberFormat('#,##0').format(state.maxOffer)}',
+                    style: TextStyle(color: lightSecondaryText, fontSize: 11.sp),
+                  ),
+                ],
               ),
             ],
           ),
         ),
 
-        SizedBox(height: isTablet ? 20.0 : 24.h),
+        SizedBox(height: 20.h),
 
-        SizedBox(
-          width: double.infinity,
-          height: isTablet ? 48.0 : 52.h,
-          child: ElevatedButton(
-            onPressed: _startRideSearch,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  _t('bookBtn'),
-                  style: TextStyle(
-                    fontSize: isTablet ? 14.0 : 15.sp,
-                    fontWeight: FontWeight.bold,
+        // Payment Selection
+        Text(
+          _t('payment'),
+          style: TextStyle(
+            color: darkBackground,
+            fontSize: 12.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: state.paymentMethod,
+              isExpanded: true,
+              icon: Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor, size: 24.sp),
+              items: [
+                DropdownMenuItem(
+                  value: 'WALLET',
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_balance_wallet_rounded,
+                          color: primaryGreenColor, size: 18.sp),
+                      SizedBox(width: 10.w),
+                      Text(_t('wallet'),
+                          style: TextStyle(
+                              color: darkBackground,
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w700)),
+                    ],
                   ),
                 ),
-                SizedBox(width: isTablet ? 8.0 : 8.w),
-                Icon(Icons.arrow_forward_rounded, size: isTablet ? 18.0 : 18.sp),
+                DropdownMenuItem(
+                  value: 'CASH',
+                  child: Row(
+                    children: [
+                      Icon(Icons.payments_rounded, color: const Color(0xFFF59E0B), size: 18.sp),
+                      SizedBox(width: 10.w),
+                      Text(_t('cash'),
+                          style: TextStyle(
+                              color: darkBackground,
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
               ],
+              onChanged: (val) {
+                if (val != null) notifier.setPaymentMethod(val);
+              },
             ),
           ),
         ),
 
-        SizedBox(height: isTablet ? 20.0 : 30.h),
+        SizedBox(height: 24.h),
+
+        // CTA: Find Trike Button
+        SizedBox(
+          width: double.infinity,
+          height: 52.h,
+          child: ElevatedButton(
+            onPressed: state.isLoading
+                ? null
+                : () async {
+                    final success = await notifier.createRideRequest(
+                      pickupAddress: _pickupCtrl.text,
+                      destinationAddress: _destCtrl.text,
+                      city: _cityCtrl.text,
+                    );
+                    if (!success && mounted && state.errorMessage != null) {
+                      ToastHelper.showToast(
+                        context: context,
+                        message: state.errorMessage!,
+                        icon: Icons.error_outline_rounded,
+                        iconColor: errorColor,
+                      );
+                    }
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+            ),
+            child: state.isLoading
+                ? const CircularProgressIndicator(color: Colors.white)
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _t('findBtn'),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Icon(Icons.electric_rickshaw_rounded, color: Colors.white, size: 20.sp),
+                    ],
+                  ),
+          ),
+        ),
+
+        SizedBox(height: 30.h),
       ],
     );
   }
 
-  Widget _buildOptionChip(String key, String label, String emoji) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final isSelected = _selectedRideType == key;
+  Widget _buildCategoryChip(String type, String label, String emoji, String price,
+      BiaTrikeState state, BiaTrikeNotifier notifier) {
+    final isSelected = state.selectedRideType == type;
     return GestureDetector(
-      onTap: () => setState(() => _selectedRideType = key),
+      onTap: () => notifier.selectRideType(type),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 10.0 : 10.w,
-          vertical: isTablet ? 10.0 : 12.h,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 12.h),
         decoration: BoxDecoration(
           color: isSelected ? primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
+          borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
             color: isSelected ? primaryColor : const Color(0xFFCBD5E1),
           ),
@@ -740,395 +760,331 @@ class _BiaTrikeBookingScreenState
         ),
         child: Column(
           children: [
-            Text(emoji, style: TextStyle(fontSize: isTablet ? 18.0 : 20.sp)),
-            SizedBox(height: isTablet ? 4.0 : 6.h),
+            Text(emoji, style: TextStyle(fontSize: 22.sp)),
+            SizedBox(height: 6.h),
             Text(
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isSelected ? Colors.white : darkBackground,
-                fontSize: isTablet ? 11.0 : 11.sp,
+                fontSize: 11.sp,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            SizedBox(height: 2.h),
+            Text(
+              price,
+              style: TextStyle(
+                color: isSelected ? Colors.white.withValues(alpha: 0.9) : primaryColor,
+                fontSize: 10.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSearchingCard() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(isTablet ? 20.0 : 24.r),
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+  // ── Screen 2: Real-Time Bidding & Negotiation Arena ───────────────────────
+  Widget _buildNegotiationArena(BiaTrikeState state, BiaTrikeNotifier notifier) {
+    return Column(
+      children: [
+        SizedBox(height: 10.h),
+
+        // Pulsing Radar Indicator
+        Container(
+          padding: EdgeInsets.all(24.r),
+          decoration: BoxDecoration(
+            color: primaryColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: const CircularProgressIndicator(
+            color: primaryColor,
+            strokeWidth: 3.5,
+          ),
+        ).animate(onPlay: (ctrl) => ctrl.repeat(reverse: true)).scale(
+              begin: const Offset(0.95, 0.95),
+              end: const Offset(1.05, 1.05),
+              duration: 800.ms,
             ),
-            child: const CircularProgressIndicator(
-              color: primaryColor,
-              strokeWidth: 3.5,
-            ),
-          ).animate(onPlay: (ctrl) => ctrl.repeat(reverse: true)).scale(
-                begin: const Offset(0.95, 0.95),
-                end: const Offset(1.05, 1.05),
-                duration: 800.ms,
+
+        SizedBox(height: 16.h),
+
+        Text(
+          _t('radarText'),
+          style: TextStyle(
+            color: darkBackground,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Persistent Stepper on Negotiation Arena
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18.r),
+            border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Current Offer: ₦${NumberFormat('#,##0').format(state.currentOffer)}',
+                style: TextStyle(
+                  color: darkBackground,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-
-          SizedBox(height: isTablet ? 16.0 : 20.h),
-
-          Text(
-            _t('searchingTitle'),
-            style: TextStyle(
-              color: darkBackground,
-              fontSize: isTablet ? 18.0 : 20.sp,
-              fontWeight: FontWeight.bold,
-            ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.remove_circle_outline_rounded,
+                        color: darkBackground, size: 24.sp),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      notifier.adjustOffer(-50);
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.add_circle_rounded, color: primaryColor, size: 24.sp),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      notifier.adjustOffer(50);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
-          SizedBox(height: isTablet ? 6.0 : 6.h),
-          Text(
-            _t('searchingDesc'),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: lightSecondaryText,
-              fontSize: isTablet ? 13.0 : 13.sp,
-            ),
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Microcopy tip
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF3C7),
+            borderRadius: BorderRadius.circular(12.r),
           ),
+          child: Text(
+            _t('raiseTip'),
+            style: TextStyle(color: const Color(0xFF92400E), fontSize: 11.5.sp),
+          ),
+        ),
 
-          SizedBox(height: isTablet ? 20.0 : 24.h),
+        SizedBox(height: 24.h),
 
-          Text(
-            'LIVE DRIVER COUNTER-OFFERS',
+        // Incoming Driver Bids List Header
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '${_t('incomingBids')} (${state.bids.length})',
             style: TextStyle(
               color: primaryColor,
-              fontSize: isTablet ? 10.0 : 10.sp,
+              fontSize: 11.sp,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.0,
             ),
           ),
-          SizedBox(height: isTablet ? 10.0 : 10.h),
+        ),
+        SizedBox(height: 10.h),
 
-          _buildDriverBiddingCard(
-            0,
-            'Mallam Garba Ibrahim',
-            '₦${NumberFormat('#,##0').format(_passengerOfferFare)} (Accepted your offer!)',
-            '3 mins away',
-            '★ 4.9',
-            primaryGreenColor,
-          ),
-          SizedBox(height: isTablet ? 8.0 : 8.h),
-          _buildDriverBiddingCard(
-            1,
-            'Sani Abubakar Keke',
-            '₦${NumberFormat('#,##0').format(_passengerOfferFare + 100)} (Counter Offer)',
-            '1 min away',
-            '★ 5.0',
-            const Color(0xFFF59E0B),
-          ),
-
-          SizedBox(height: isTablet ? 24.0 : 30.h),
-
-          OutlinedButton(
-            onPressed: () {
-              _searchTimer?.cancel();
-              setState(() => _isSearchingDriver = false);
+        if (state.bids.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 24.h),
+            child: Column(
+              children: [
+                const CircularProgressIndicator(color: primaryColor),
+                SizedBox(height: 12.h),
+                Text(
+                  'Waiting for nearby drivers to respond...',
+                  style: TextStyle(color: lightSecondaryText, fontSize: 13.sp),
+                ),
+              ],
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: state.bids.length,
+            separatorBuilder: (context, index) => SizedBox(height: 10.h),
+            itemBuilder: (ctx, idx) {
+              final bid = state.bids[idx];
+              final isLowest = idx == 0 ||
+                  state.bids.every((b) => b.bidAmount >= bid.bidAmount);
+              return _buildBidCard(bid, isLowest, notifier);
             },
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.grey),
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 24.0 : 24.w,
-                vertical: isTablet ? 12.0 : 12.h,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(isTablet ? 12.0 : 14.r),
-              ),
-            ),
-            child: Text(
-              _t('cancelBtn'),
-              style: TextStyle(
-                color: darkBackground,
-                fontSize: isTablet ? 14.0 : null,
-              ),
+          ),
+
+        SizedBox(height: 24.h),
+
+        // Cancel Negotiation Button
+        OutlinedButton(
+          onPressed: () {
+            notifier.cancelActiveRide(reason: 'Cancelled by user');
+          },
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: Colors.grey.shade400),
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.r),
             ),
           ),
-        ],
-      ),
+          child: Text(
+            _t('cancelBtn'),
+            style: TextStyle(color: darkBackground, fontSize: 13.sp),
+          ),
+        ),
+
+        SizedBox(height: 30.h),
+      ],
     );
   }
 
-  Widget _buildDriverBiddingCard(int index, String name, String offerText,
-      String eta, String rating, Color badgeColor) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final isSelected = _selectedDriverOfferIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedDriverOfferIndex = index),
-      child: Container(
-        padding: EdgeInsets.all(isTablet ? 14.0 : 16.r),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(isTablet ? 14.0 : 18.r),
-          border: Border.all(
-            color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.8 : 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+  Widget _buildBidCard(DriverBid bid, bool isLowest, BiaTrikeNotifier notifier) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(
+          color: isLowest ? primaryGreenColor : const Color(0xFFE2E8F0),
+          width: isLowest ? 1.8 : 1.0,
         ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: isTablet ? 20.0 : 20.r,
-              backgroundColor: primaryColor.withValues(alpha: 0.12),
-              child: Text(
-                name.substring(0, 2).toUpperCase(),
-                style: TextStyle(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: isTablet ? 13.0 : 13.sp,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (isLowest) ...[
+            Align(
+              alignment: Alignment.topRight,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: primaryGreenColor,
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Text(
+                  _t('bestPrice'),
+                  style: TextStyle(color: Colors.white, fontSize: 9.sp, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            SizedBox(width: isTablet ? 12.0 : 12.w),
-            Expanded(
-              child: Column(
+            SizedBox(height: 4.h),
+          ],
+
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 22.r,
+                backgroundColor: primaryColor.withValues(alpha: 0.12),
+                child: Text(
+                  bid.driver.name.substring(0, 2).toUpperCase(),
+                  style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14.sp),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          bid.driver.name,
+                          style: TextStyle(
+                            color: darkBackground,
+                            fontSize: 14.5.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 6.w),
+                        Row(
+                          children: [
+                            Icon(Icons.star_rounded, color: const Color(0xFFF59E0B), size: 14.sp),
+                            Text(
+                              bid.driver.rating.toString(),
+                              style: TextStyle(
+                                color: const Color(0xFFF59E0B),
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      '${bid.driver.trikeModel} · ${bid.driver.plateNumber}',
+                      style: TextStyle(color: lightSecondaryText, fontSize: 11.5.sp),
+                    ),
+                    Text(
+                      '${bid.etaMinutes} mins away · ${bid.distanceKm} km',
+                      style: TextStyle(color: primaryColor, fontSize: 11.sp, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12.h),
+          Divider(color: Colors.grey.shade200),
+          SizedBox(height: 6.h),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('OFFERED FARE',
+                      style: TextStyle(color: lightSecondaryText, fontSize: 9.sp, fontWeight: FontWeight.w800)),
                   Text(
-                    name,
-                    style: TextStyle(
-                      color: darkBackground,
-                      fontSize: isTablet ? 14.0 : 14.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: isTablet ? 2.0 : 2.h),
-                  Text(
-                    offerText,
-                    style: TextStyle(
-                      color: badgeColor,
-                      fontSize: isTablet ? 12.0 : 12.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    '₦${NumberFormat('#,##0').format(bid.bidAmount)}',
+                    style: TextStyle(color: darkBackground, fontSize: 18.sp, fontWeight: FontWeight.w900),
                   ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  rating,
-                  style: TextStyle(
-                    color: const Color(0xFFF59E0B),
-                    fontSize: isTablet ? 11.0 : 11.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ElevatedButton(
+                onPressed: () async {
+                  HapticFeedback.mediumImpact();
+                  final ok = await notifier.acceptBid(bid);
+                  if (ok && mounted) {
+                    context.pushNamed(RouteList.biaTrikeEnRoute);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryGreenColor,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                 ),
-                SizedBox(height: isTablet ? 2.0 : 2.h),
-                Text(
-                  eta,
-                  style: TextStyle(
-                    color: lightSecondaryText,
-                    fontSize: isTablet ? 10.0 : 10.sp,
-                  ),
+                child: Text(
+                  _t('acceptBtn'),
+                  style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDriverAssignedCard() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: isTablet ? 16.0 : 20.h),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
-            decoration: BoxDecoration(
-              color: primaryGreenColor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.check_circle_rounded,
-              color: primaryGreenColor,
-              size: isTablet ? 44.0 : 54.sp,
-            ),
-          ).animate().scale(duration: 400.ms),
-
-          SizedBox(height: isTablet ? 14.0 : 16.h),
-
-          Text(
-            _t('assignedTitle'),
-            style: TextStyle(
-              color: darkBackground,
-              fontSize: isTablet ? 20.0 : 22.sp,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: isTablet ? 6.0 : 6.h),
-          Text(
-            _t('assignedDesc'),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: lightSecondaryText,
-              fontSize: isTablet ? 13.0 : 13.sp,
-            ),
-          ),
-
-          SizedBox(height: isTablet ? 20.0 : 24.h),
-
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(isTablet ? 16.0 : 20.r),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(isTablet ? 20.0 : 24.r),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: isTablet ? 22.0 : 24.r,
-                      backgroundColor: primaryColor.withValues(alpha: 0.12),
-                      child: Text(
-                        'MG',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: isTablet ? 15.0 : 16.sp,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 12.0 : 14.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Mallam Garba Ibrahim',
-                            style: TextStyle(
-                              color: darkBackground,
-                              fontSize: isTablet ? 14.0 : 15.sp,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(height: isTablet ? 2.0 : 2.h),
-                          Text(
-                            _t('plate'),
-                            style: TextStyle(
-                              color: lightSecondaryText,
-                              fontSize: isTablet ? 12.0 : 12.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 8.0 : 8.w,
-                        vertical: isTablet ? 4.0 : 4.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(isTablet ? 8.0 : 8.r),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.star_rounded,
-                              color: const Color(0xFFF59E0B), size: isTablet ? 14.0 : 14.sp),
-                          SizedBox(width: isTablet ? 3.0 : 3.w),
-                          Text(
-                            '4.9',
-                            style: TextStyle(
-                              color: const Color(0xFFF59E0B),
-                              fontSize: isTablet ? 11.0 : 11.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: isTablet ? 12.0 : 16.h),
-                Divider(color: Colors.grey.shade200),
-                SizedBox(height: isTablet ? 8.0 : 10.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Negotiated Fare Total',
-                      style: TextStyle(
-                        color: lightSecondaryText,
-                        fontSize: isTablet ? 12.0 : 12.sp,
-                      ),
-                    ),
-                    Text(
-                      '₦${NumberFormat('#,##0.00').format(_passengerOfferFare)}',
-                      style: TextStyle(
-                        color: darkBackground,
-                        fontSize: isTablet ? 16.0 : 16.sp,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: isTablet ? 24.0 : 30.h),
-
-          ElevatedButton(
-            onPressed: () {
-              context.go(RouteList.bottomNavBar);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 32.0 : 32.w,
-                vertical: isTablet ? 14.0 : 14.h,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(isTablet ? 14.0 : 16.r),
-              ),
-            ),
-            child: Text(
-              _t('homeBtn'),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 14.0 : 14.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            ],
           ),
         ],
       ),
-    );
+    ).animate().slideY(begin: 0.1, duration: 300.ms);
   }
 }

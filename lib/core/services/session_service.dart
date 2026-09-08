@@ -33,16 +33,25 @@ class SessionNotifier extends StateNotifier<SessionState> {
   SessionNotifier(this.ref) : super(SessionState.active);
 
   Future<void> _initBox() async {
-    if (!Hive.isBoxOpen('settingsBox')) {
-      await Hive.openBox('settingsBox');
+    try {
+      if (!Hive.isBoxOpen('settingsBox')) {
+        await Hive.openBox('settingsBox');
+      }
+    } catch (e) {
+      debugPrint("⚠️ _initBox error: $e");
     }
   }
 
   Future<void> init([String? currentPath]) async {
-    await _initBox();
-    final isEnabled = Hive.box('settingsBox').get('auto_logout_enabled', defaultValue: true);
-    if (isEnabled && currentPath != null) {
-      handleRouteChange(currentPath);
+    try {
+      await _initBox();
+      final box = Hive.isBoxOpen('settingsBox') ? Hive.box('settingsBox') : null;
+      final isEnabled = box?.get('auto_logout_enabled', defaultValue: true) ?? true;
+      if (isEnabled && currentPath != null) {
+        handleRouteChange(currentPath);
+      }
+    } catch (e) {
+      debugPrint("⚠️ session init error: $e");
     }
   }
 

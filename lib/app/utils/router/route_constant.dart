@@ -92,4 +92,6 @@ class RouteList {
   // ------------ BIA TRIKE
   static const String biaTrikeOnboarding = '/bia-trike-onboarding';
   static const String biaTrikeSuccess = '/bia-trike-success';
+  static const String biaTrikeEnRoute = '/bia-trike-en-route';
+  static const String biaTrikeDigitalPass = '/bia-trike-digital-pass';
 }

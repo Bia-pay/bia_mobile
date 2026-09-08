@@ -153,17 +153,29 @@ void main() async {
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
+  // Initialize Hive with robust fallback directory handling
   try {
-    // Initialize Hive and open local storage boxes before building the widget tree
-    // to prevent synchronous race conditions / HiveError.
     await Hive.initFlutter();
+  } catch (e) {
+    debugPrint("⚠️ Hive.initFlutter error: $e, using Directory.systemTemp fallback");
+    try {
+      final tempDir = Directory.systemTemp;
+      Hive.init(tempDir.path);
+    } catch (e2) {
+      debugPrint("⚠️ Hive fallback directory init error: $e2");
+    }
+  }
+
+  try {
     await Future.wait([
       Hive.openBox("authBox"),
       Hive.openBox("appBox"),
+      Hive.openBox("appPrefs"),
+      Hive.openBox("settingsBox"),
       Hive.openBox("transactionCacheBox"),
     ]);
   } catch (e) {
-    debugPrint("⚠️ Hive initialization error: $e");
+    debugPrint("⚠️ Hive openBox error: $e");
   }
 
   // ✅ Step 1 — Run the app so the splash screen renders

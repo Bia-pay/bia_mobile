@@ -16,15 +16,23 @@ class AppLocaleNotifier extends StateNotifier<Locale> {
   static const String _key = 'appLocaleCode';
 
   Future<void> _loadStoredLocale() async {
-    final box = await Hive.openBox(_boxName);
-    final code = box.get(_key, defaultValue: 'en');
-    state = Locale(code);
+    try {
+      final box = Hive.isBoxOpen(_boxName) ? Hive.box(_boxName) : await Hive.openBox(_boxName);
+      final code = box.get(_key, defaultValue: 'en');
+      state = Locale(code);
+    } catch (e) {
+      debugPrint("⚠️ locale load error: $e");
+    }
   }
 
   Future<void> setLocale(String languageCode) async {
-    final box = await Hive.openBox(_boxName);
-    await box.put(_key, languageCode);
-    state = Locale(languageCode);
+    try {
+      final box = Hive.isBoxOpen(_boxName) ? Hive.box(_boxName) : await Hive.openBox(_boxName);
+      await box.put(_key, languageCode);
+      state = Locale(languageCode);
+    } catch (e) {
+      debugPrint("⚠️ locale set error: $e");
+    }
   }
 
   /// Returns the human-readable name of the current language.
