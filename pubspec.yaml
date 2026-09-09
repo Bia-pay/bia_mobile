@@ -68,6 +68,10 @@ dependencies:
   google_generative_ai: ^0.4.7
   flutter_native_contact_picker: ^0.0.11
   qr_flutter: ^4.1.0
+  google_maps_flutter: ^2.10.0
+  geolocator: ^13.0.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   lottie: ^3.3.3
   screenshot: ^3.0.0
   gal: ^2.3.2

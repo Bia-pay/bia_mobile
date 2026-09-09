@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:latlong2/latlong.dart' as ll;
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../app/utils/colors.dart';
 import '../../../app/utils/router/route_constant.dart';
@@ -25,15 +31,21 @@ class BiaTrikeBookingScreen extends ConsumerStatefulWidget {
 }
 
 class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
-  final _pickupCtrl = TextEditingController(text: 'Kofar Ruwa Market Gate, Kano');
+  final _pickupCtrl = TextEditingController(text: 'Locating current address...');
   final _destCtrl = TextEditingController(text: 'Bayero University Kano New Campus');
   final _cityCtrl = TextEditingController(text: 'Kano');
+
+  GoogleMapController? _mapController;
+  final fm.MapController _flutterMapController = fm.MapController();
+  ll.LatLng? _userFMLocation;
+  bool _isFetchingGPS = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(biaTrikeStateNotifierProvider.notifier).setDialect(widget.language);
+      _fetchPreciseLocation();
     });
   }
 
@@ -42,7 +54,148 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
     _pickupCtrl.dispose();
     _destCtrl.dispose();
     _cityCtrl.dispose();
+    _mapController?.dispose();
     super.dispose();
+  }
+
+  Future<String> _reverseGeocode(double lat, double lng) async {
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lng',
+      );
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'BiaPayApp/1.0 (com.bia.app)',
+        'Accept-Language': 'en',
+      }).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final address = data['address'];
+        if (address != null) {
+          final road = address['road'] ?? address['pedestrian'] ?? address['suburb'] ?? address['neighbourhood'] ?? address['quarter'] ?? address['residential'];
+          final city = address['city'] ?? address['town'] ?? address['village'] ?? address['state'] ?? address['county'];
+          if (road != null && city != null) {
+            return '$road, $city';
+          } else if (road != null) {
+            return road.toString();
+          } else if (data['name'] != null && data['name'].toString().isNotEmpty) {
+            return data['name'].toString();
+          } else if (data['display_name'] != null) {
+            final parts = data['display_name'].toString().split(',');
+            if (parts.length >= 2) {
+              return '${parts[0].trim()}, ${parts[1].trim()}';
+            }
+            return parts[0].trim();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Reverse geocode error: $e');
+    }
+    return 'My Current Location (${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)})';
+  }
+
+  Future<void> _fetchPreciseLocation() async {
+    setState(() => _isFetchingGPS = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() {
+            _pickupCtrl.text = "GPS Disabled (Tap to set address)";
+          });
+          ToastHelper.showToast(
+            context: context,
+            message: "Location services disabled. Please turn on device GPS.",
+            icon: Icons.location_off_rounded,
+            iconColor: errorColor,
+          );
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() {
+            _pickupCtrl.text = "GPS Permission Denied";
+          });
+          ToastHelper.showToast(
+            context: context,
+            message: "Location permissions permanently denied. Grant in settings.",
+            icon: Icons.location_off_rounded,
+            iconColor: errorColor,
+          );
+        }
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      ).timeout(const Duration(seconds: 7));
+
+      final latLng = LatLng(position.latitude, position.longitude);
+      final fmLatLng = ll.LatLng(position.latitude, position.longitude);
+
+      final realAddress = await _reverseGeocode(position.latitude, position.longitude);
+
+      if (mounted) {
+        setState(() {
+          _userFMLocation = fmLatLng;
+          _pickupCtrl.text = realAddress;
+        });
+
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 16.0));
+        try {
+          _flutterMapController.move(fmLatLng, 16.0);
+        } catch (_) {}
+
+        ToastHelper.showToast(
+          context: context,
+          message: "Locked to your location: $realAddress",
+          icon: Icons.my_location_rounded,
+          iconColor: primaryGreenColor,
+        );
+      }
+    } catch (e) {
+      debugPrint("GPS position error: $e");
+      // Fallback to last known position or device location if current position timed out
+      try {
+        final lastPos = await Geolocator.getLastKnownPosition();
+        if (lastPos != null) {
+          final fmLatLng = ll.LatLng(lastPos.latitude, lastPos.longitude);
+          final realAddress = await _reverseGeocode(lastPos.latitude, lastPos.longitude);
+          if (mounted) {
+            setState(() {
+              _userFMLocation = fmLatLng;
+              _pickupCtrl.text = realAddress;
+            });
+            try {
+              _flutterMapController.move(fmLatLng, 15.5);
+            } catch (_) {}
+          }
+          return;
+        }
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _pickupCtrl.text = "Current Location";
+        });
+        ToastHelper.showToast(
+          context: context,
+          message: "Unable to retrieve precise GPS. Enter address manually.",
+          icon: Icons.location_off_rounded,
+          iconColor: errorColor,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isFetchingGPS = false);
+    }
   }
 
   // Localized dialect strings
@@ -236,79 +389,203 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(biaTrikeStateNotifierProvider);
     final notifier = ref.read(biaTrikeStateNotifierProvider.notifier);
-    final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        toolbarHeight: isTablet ? 60.0 : null,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: darkBackground, size: 18.sp),
-          onPressed: () {
-            if (state.isSearching) {
-              notifier.cancelActiveRide();
-            } else {
-              context.pop();
-            }
-          },
-        ),
-        title: Text(
-          state.isSearching ? _t('negotiatingTitle') : _t('title'),
-          style: TextStyle(
-            color: darkBackground,
-            fontSize: isTablet ? 16.0 : 16.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          GestureDetector(
-            onTap: _showDialectPicker,
-            child: Container(
-              margin: EdgeInsets.only(right: 16.w),
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(100.r),
+      backgroundColor: darkBackground,
+      body: Stack(
+        children: [
+          // 1. Full-Screen Interactive Live Map Layer (inDrive / Bolt Style)
+          Positioned.fill(
+            child: fm.FlutterMap(
+              mapController: _flutterMapController,
+              options: fm.MapOptions(
+                initialCenter: _userFMLocation ?? const ll.LatLng(12.0022, 8.5920),
+                initialZoom: 13.8,
               ),
-              child: Row(
-                children: [
-                  Text(
-                    state.dialect == 'hausa'
-                        ? '🌙 Hausa'
-                        : state.dialect == 'pidgin'
-                            ? '🇳🇬 Pidgin'
-                            : '🇬🇧 English',
-                    style: TextStyle(
+              children: [
+                fm.TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.bia.app',
+                ),
+                fm.PolylineLayer(
+                  polylines: [
+                    fm.Polyline(
+                      points: [
+                        _userFMLocation ?? const ll.LatLng(12.0022, 8.5920),
+                        const ll.LatLng(11.9920, 8.5710),
+                        const ll.LatLng(11.9790, 8.5410),
+                      ],
                       color: primaryColor,
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w800,
+                      strokeWidth: 5.0,
+                    ),
+                  ],
+                ),
+                fm.MarkerLayer(
+                  markers: [
+                    fm.Marker(
+                      point: _userFMLocation ?? const ll.LatLng(12.0022, 8.5920),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: primaryGreenColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.my_location_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                    fm.Marker(
+                      point: const ll.LatLng(11.9790, 8.5410),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                    // Nearby Keke Tricycle Markers on Map
+                    fm.Marker(
+                      point: const ll.LatLng(12.0080, 8.5960),
+                      child: const Icon(Icons.electric_rickshaw_rounded, color: Color(0xFFF59E0B), size: 28),
+                    ),
+                    fm.Marker(
+                      point: const ll.LatLng(11.9950, 8.5810),
+                      child: const Icon(Icons.electric_rickshaw_rounded, color: Color(0xFFF59E0B), size: 28),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // 2. Floating Top Header Navigation Bar
+          Positioned(
+            top: 48.h,
+            left: 16.w,
+            right: 16.w,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_back_ios_new_rounded, color: darkBackground, size: 18.sp),
+                    onPressed: () {
+                      if (state.isSearching) {
+                        notifier.cancelActiveRide();
+                      } else {
+                        context.pop();
+                      }
+                    },
+                  ),
+                ),
+
+                // Floating Dialect Picker
+                GestureDetector(
+                  onTap: _showDialectPicker,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(100.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          state.dialect == 'hausa'
+                              ? '🌙 Hausa'
+                              : state.dialect == 'pidgin'
+                                  ? '🇳🇬 Pidgin'
+                                  : '🇬🇧 English',
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor, size: 16.sp),
+                      ],
                     ),
                   ),
-                  SizedBox(width: 4.w),
-                  Icon(Icons.keyboard_arrow_down_rounded, color: primaryColor, size: 14.sp),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
+
+          // 3. Floating GPS Location Target Button on Map
+          Positioned(
+            right: 16.w,
+            top: 110.h,
+            child: FloatingActionButton.small(
+              heroTag: 'gps_target',
+              onPressed: _isFetchingGPS ? null : _fetchPreciseLocation,
+              backgroundColor: Colors.white,
+              child: _isFetchingGPS
+                  ? SizedBox(
+                      width: 16.r,
+                      height: 16.r,
+                      child: const CircularProgressIndicator(strokeWidth: 2, color: primaryGreenColor),
+                    )
+                  : Icon(Icons.my_location_rounded, color: primaryGreenColor, size: 20.sp),
+            ),
+          ),
+
+          // 4. Draggable Bottom Booking & Negotiation Sheet (inDrive / Bolt Floating Card)
+          DraggableScrollableSheet(
+            initialChildSize: 0.65,
+            minChildSize: 0.35,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 20,
+                      offset: const Offset(0, -6),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+                  child: Column(
+                    children: [
+                      // Sheet Handle Drag Bar
+                      Center(
+                        child: Container(
+                          width: 42.w,
+                          height: 5.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 14.h),
+
+                      state.isSearching
+                          ? _buildNegotiationArena(state, notifier)
+                          : _buildProposalBookingForm(state, notifier),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
-      ),
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isTablet ? 540 : 650),
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-              child: state.isSearching
-                  ? _buildNegotiationArena(state, notifier)
-                  : _buildProposalBookingForm(state, notifier),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -318,88 +595,159 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Map Route Overview Box
+
+        // Pickup & Destination Address Input Card with "Use My Location" Button
         Container(
-          height: 130.h,
-          width: double.infinity,
+          padding: EdgeInsets.all(16.r),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Icon(
-                  Icons.map_rounded,
-                  color: Colors.white.withValues(alpha: 0.15),
-                  size: 90.sp,
+              // Header Row: Pickup Label + "Use My Location" Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8.w,
+                        height: 8.h,
+                        decoration: const BoxDecoration(
+                          color: primaryGreenColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        _t('pickup').toUpperCase(),
+                        style: TextStyle(
+                          color: darkBackground,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Starling-Style "Use My Location" Precise GPS Chip
+                  InkWell(
+                    onTap: _isFetchingGPS ? null : _fetchPreciseLocation,
+                    borderRadius: BorderRadius.circular(20.r),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                      decoration: BoxDecoration(
+                        color: primaryGreenColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(color: primaryGreenColor.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _isFetchingGPS
+                              ? SizedBox(
+                                  width: 12.r,
+                                  height: 12.r,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: primaryGreenColor,
+                                  ),
+                                )
+                              : Icon(Icons.my_location_rounded, color: primaryGreenColor, size: 13.sp),
+                          SizedBox(width: 4.w),
+                          Text(
+                            '🎯 Use My Location',
+                            style: TextStyle(
+                              color: primaryGreenColor,
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+
+              // Pickup Text Field
+              TextField(
+                controller: _pickupCtrl,
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700, color: darkBackground),
+                decoration: InputDecoration(
+                  hintText: 'Enter Pickup Location...',
+                  prefixIcon: Icon(Icons.my_location_rounded, color: primaryGreenColor, size: 18.sp),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
                 ),
               ),
-              Positioned(
-                top: 14.h,
-                left: 16.w,
-                right: 16.w,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(6.r),
-                      decoration: const BoxDecoration(
-                        color: primaryGreenColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.my_location_rounded, color: Colors.white, size: 14.sp),
+
+              SizedBox(height: 14.h),
+
+              // Destination Header
+              Row(
+                children: [
+                  Container(
+                    width: 8.w,
+                    height: 8.h,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
                     ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        _pickupCtrl.text,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    _t('dest').toUpperCase(),
+                    style: TextStyle(
+                      color: darkBackground,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Positioned(
-                bottom: 14.h,
-                left: 16.w,
-                right: 16.w,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(6.r),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.location_on_rounded, color: Colors.white, size: 14.sp),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        _destCtrl.text,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+              SizedBox(height: 8.h),
+
+              // Destination Text Field
+              TextField(
+                controller: _destCtrl,
+                style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700, color: darkBackground),
+                decoration: InputDecoration(
+                  hintText: 'Enter Destination Address...',
+                  prefixIcon: Icon(Icons.location_on_rounded, color: const Color(0xFFEF4444), size: 18.sp),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
                 ),
               ),
             ],

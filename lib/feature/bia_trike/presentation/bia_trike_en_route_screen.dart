@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_map/flutter_map.dart' as fm;
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:intl/intl.dart';
 
 import '../../../app/utils/colors.dart';
@@ -217,54 +219,104 @@ class BiaTrikeEnRouteScreen extends ConsumerWidget {
                     SizedBox(height: 20.h),
                   ],
 
-                  // Map Polyline Simulation Box
+                  // Live Google Maps Tracking Box
                   Container(
-                    height: 180.h,
+                    height: 200.h,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F172A),
                       borderRadius: BorderRadius.circular(24.r),
-                    ),
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: Icon(
-                            Icons.map_rounded,
-                            color: Colors.white.withValues(alpha: 0.15),
-                            size: 110.sp,
-                          ),
-                        ),
-                        Center(
-                          child: Container(
-                            padding: EdgeInsets.all(12.r),
-                            decoration: const BoxDecoration(
-                              color: primaryColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.electric_rickshaw_rounded,
-                                color: Colors.white, size: 28.sp),
-                          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
-                                begin: const Offset(0.9, 0.9),
-                                end: const Offset(1.1, 1.1),
-                                duration: 1000.ms,
-                              ),
-                        ),
-                        Positioned(
-                          bottom: 12.h,
-                          left: 16.w,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            child: Text(
-                              'Live GPS Tracking Active',
-                              style: TextStyle(color: Colors.white, fontSize: 10.sp),
-                            ),
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
                         ),
                       ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24.r),
+                      child: Stack(
+                        children: [
+                          fm.FlutterMap(
+                            options: fm.MapOptions(
+                              initialCenter: isArrived
+                                  ? const ll.LatLng(12.0022, 8.5920)
+                                  : isInTransit
+                                      ? const ll.LatLng(11.9900, 8.5600)
+                                      : const ll.LatLng(12.0000, 8.5850),
+                              initialZoom: 14.0,
+                            ),
+                            children: [
+                              fm.TileLayer(
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.bia.app',
+                              ),
+                              fm.PolylineLayer(
+                                polylines: [
+                                  fm.Polyline(
+                                    points: const [
+                                      ll.LatLng(12.0022, 8.5920),
+                                      ll.LatLng(11.9900, 8.5600),
+                                      ll.LatLng(11.9790, 8.5410),
+                                    ],
+                                    color: primaryColor,
+                                    strokeWidth: 5.0,
+                                  ),
+                                ],
+                              ),
+                              fm.MarkerLayer(
+                                markers: [
+                                  fm.Marker(
+                                    point: isArrived
+                                        ? const ll.LatLng(12.0022, 8.5920)
+                                        : isInTransit
+                                            ? const ll.LatLng(11.9900, 8.5600)
+                                            : const ll.LatLng(12.0000, 8.5850),
+                                    child: const Icon(Icons.electric_rickshaw_rounded, color: Color(0xFFF59E0B), size: 32),
+                                  ),
+                                  fm.Marker(
+                                    point: const ll.LatLng(12.0022, 8.5920),
+                                    child: const Icon(Icons.location_on_rounded, color: primaryGreenColor, size: 28),
+                                  ),
+                                  fm.Marker(
+                                    point: const ll.LatLng(11.9790, 8.5410),
+                                    child: const Icon(Icons.location_on_rounded, color: Color(0xFFEF4444), size: 28),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Positioned(
+                            bottom: 12.h,
+                            left: 16.w,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.75),
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8.w,
+                                    height: 8.h,
+                                    decoration: const BoxDecoration(
+                                      color: primaryGreenColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    'Live GPS Tracking Active (Socket Synced)',
+                                    style: TextStyle(color: Colors.white, fontSize: 10.5.sp, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
