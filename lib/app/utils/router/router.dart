@@ -18,6 +18,7 @@ import '../../../feature/auth/presentation/pages/complete_profile.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password1.dart';
 import '../../../feature/auth/presentation/pages/forgot_password/forgot_password2.dart';
 import '../../../feature/bottom_nav_bar/bottom_nav.dart';
+import '../../../feature/dashboard/widgets/service_guard.dart';
 import '../../../feature/dashboard/pages/homepage.dart';
 import '../../../feature/dashboard/pages/notification.dart';
 import '../../../feature/dashboard/pages/send_money/input_transfer/amount.dart';
@@ -249,12 +250,12 @@ class AppRouter {
       GoRoute(
         path: '/airtime',
         name: RouteList.airtime,
-        builder: (context, state) => const Airtime(),
+        builder: (context, state) => const ServiceGuard(service: ServiceType.airtime, child: Airtime()),
       ),
       GoRoute(
         path: '/data',
         name: RouteList.data,
-        builder: (context, state) => const Data(),
+        builder: (context, state) => const ServiceGuard(service: ServiceType.data, child: Data()),
       ),
       GoRoute(
         path: '/notification',
@@ -264,12 +265,12 @@ class AppRouter {
       GoRoute(
         path: '/cable',
         name: RouteList.cable,
-        builder: (context, state) => const CableTv(),
+        builder: (context, state) => const ServiceGuard(service: ServiceType.cable, child: CableTv()),
       ),
       GoRoute(
         path: '/electricity',
         name: RouteList.electricity,
-        builder: (context, state) => const Electricity(),
+        builder: (context, state) => const ServiceGuard(service: ServiceType.electricity, child: Electricity()),
       ),
       GoRoute(
         path: '/top-up',
@@ -289,7 +290,7 @@ class AppRouter {
       GoRoute(
         path: '/send-to-bank',
         name: RouteList.sendMoneyToBank,
-        builder: (context, state) => const SendMoneyToBank(),
+        builder: (context, state) => const ServiceGuard(service: ServiceType.withdrawal, child: SendMoneyToBank()),
       ),  GoRoute(
         path: '/transactionDetailsScreen',
         name: RouteList.transactionDetailsScreen,
@@ -574,7 +575,10 @@ class AppRouter {
       GoRoute(
         path: RouteList.splitCreatorSetup,
         name: RouteList.splitCreatorSetup,
-        builder: (context, state) => const SplitCreatorSetupScreen(),
+        builder: (context, state) => const ServiceGuard(
+          service: ServiceType.splitPayment,
+          child: SplitCreatorSetupScreen(),
+        ),
       ),
       GoRoute(
         path: RouteList.splitScanView,
@@ -597,7 +601,10 @@ class AppRouter {
       GoRoute(
         path: RouteList.biaTrikeOnboarding,
         name: RouteList.biaTrikeOnboarding,
-        builder: (context, state) => const BiaTrikeOnboardingScreen(),
+        builder: (context, state) => const ServiceGuard(
+          service: ServiceType.biaTrike,
+          child: BiaTrikeOnboardingScreen(),
+        ),
       ),
       GoRoute(
         path: RouteList.biaTrikeSuccess,

@@ -336,7 +336,7 @@ class ApiClient {
     Future<http.Response> Function() apiCall,
   ) async {
     await _ensureTimeSynced();
-    final isPublic = url.contains('/auth/') || url.contains('/services/status');
+    final isPublic = url.contains('/auth/');
     if (!isPublic) {
       await _waitForInit();
     }

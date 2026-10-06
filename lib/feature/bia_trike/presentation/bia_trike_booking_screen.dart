@@ -6,7 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:geolocator/geolocator.dart';
@@ -35,7 +34,6 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
   final _destCtrl = TextEditingController(text: 'Bayero University Kano New Campus');
   final _cityCtrl = TextEditingController(text: 'Kano');
 
-  GoogleMapController? _mapController;
   final fm.MapController _flutterMapController = fm.MapController();
   ll.LatLng? _userFMLocation;
   bool _isFetchingGPS = false;
@@ -54,7 +52,6 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
     _pickupCtrl.dispose();
     _destCtrl.dispose();
     _cityCtrl.dispose();
-    _mapController?.dispose();
     super.dispose();
   }
 
@@ -138,7 +135,6 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       ).timeout(const Duration(seconds: 7));
 
-      final latLng = LatLng(position.latitude, position.longitude);
       final fmLatLng = ll.LatLng(position.latitude, position.longitude);
 
       final realAddress = await _reverseGeocode(position.latitude, position.longitude);
@@ -149,7 +145,6 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
           _pickupCtrl.text = realAddress;
         });
 
-        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 16.0));
         try {
           _flutterMapController.move(fmLatLng, 16.0);
         } catch (_) {}
@@ -946,6 +941,23 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
                 ],
               ),
 
+              SizedBox(height: 14.h),
+
+              // Quick Fare Boost Chips
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Quick Add: ', style: TextStyle(color: lightSecondaryText, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+                  _buildQuickBoostChip(50, notifier),
+                  SizedBox(width: 6.w),
+                  _buildQuickBoostChip(100, notifier),
+                  SizedBox(width: 6.w),
+                  _buildQuickBoostChip(200, notifier),
+                  SizedBox(width: 6.w),
+                  _buildQuickBoostChip(500, notifier),
+                ],
+              ),
+
               SizedBox(height: 12.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1040,6 +1052,8 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
                       pickupAddress: _pickupCtrl.text,
                       destinationAddress: _destCtrl.text,
                       city: _cityCtrl.text,
+                      pickupLat: _userFMLocation?.latitude,
+                      pickupLng: _userFMLocation?.longitude,
                     );
                     if (!success && mounted && state.errorMessage != null) {
                       ToastHelper.showToast(
@@ -1051,7 +1065,7 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
                     }
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
+              backgroundColor: primaryGreenColor,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
@@ -1079,6 +1093,32 @@ class _BiaTrikeBookingScreenState extends ConsumerState<BiaTrikeBookingScreen> {
 
         SizedBox(height: 30.h),
       ],
+    );
+  }
+
+  Widget _buildQuickBoostChip(double amount, BiaTrikeNotifier notifier) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        notifier.adjustOffer(amount);
+      },
+      borderRadius: BorderRadius.circular(16.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+        decoration: BoxDecoration(
+          color: primaryGreenColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: primaryGreenColor.withValues(alpha: 0.5)),
+        ),
+        child: Text(
+          '+₦${NumberFormat('#,##0').format(amount)}',
+          style: TextStyle(
+            color: primaryGreenColor,
+            fontSize: 11.5.sp,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
     );
   }
 

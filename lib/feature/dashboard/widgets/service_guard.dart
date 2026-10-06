@@ -4,7 +4,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../app/utils/colors.dart';
 import '../dashboardcontroller/provider.dart';
 
-enum ServiceType { airtime, data, utility, qr }
+enum ServiceType {
+  airtime,
+  data,
+  cable,
+  electricity,
+  utility,
+  edu,
+  qr,
+  splitPayment,
+  biaTrike,
+  withdrawal,
+}
 
 class ServiceGuard extends ConsumerWidget {
   final ServiceType service;
@@ -33,13 +44,37 @@ class ServiceGuard extends ConsumerWidget {
         isEnabled = status.data;
         serviceName = 'Data';
         break;
+      case ServiceType.cable:
+        isEnabled = status.cable;
+        serviceName = 'Cable TV';
+        break;
+      case ServiceType.electricity:
+        isEnabled = status.electricity;
+        serviceName = 'Electricity';
+        break;
       case ServiceType.utility:
         isEnabled = status.utility;
         serviceName = 'Utility';
         break;
+      case ServiceType.edu:
+        isEnabled = status.edu;
+        serviceName = 'Education';
+        break;
       case ServiceType.qr:
         isEnabled = status.qr;
         serviceName = 'QR Payment';
+        break;
+      case ServiceType.splitPayment:
+        isEnabled = status.splitPayment;
+        serviceName = 'Split Bill';
+        break;
+      case ServiceType.biaTrike:
+        isEnabled = status.biaTrike;
+        serviceName = 'Bia Trike';
+        break;
+      case ServiceType.withdrawal:
+        isEnabled = status.withdrawal;
+        serviceName = 'Withdrawal & Transfers';
         break;
     }
 

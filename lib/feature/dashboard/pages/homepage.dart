@@ -359,12 +359,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-class ActionRibbon extends StatelessWidget {
+class ActionRibbon extends ConsumerWidget {
   const ActionRibbon({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final servicesStatus = ref.watch(servicesStatusProvider);
     final isTablet = MediaQuery.of(context).size.width > 600;
     final double screenHeight = MediaQuery.of(context).size.height;
     final bool isXSmall = screenHeight < 680;
@@ -408,6 +409,7 @@ class ActionRibbon extends StatelessWidget {
                   BlendMode.srcIn,
                 ),
               ),
+              isDisabled: !servicesStatus.withdrawal,
               onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyTransfer)),
             ),
           ),
@@ -419,6 +421,7 @@ class ActionRibbon extends StatelessWidget {
                 color: primaryColor,
                 size: isTablet ? 22 : 21.sp,
               ),
+              isDisabled: !servicesStatus.biaTrike,
               onTap: () => _runProtectedAction(
                 context,
                 () => context.pushNamed(RouteList.biaTrikeOnboarding),
@@ -438,6 +441,7 @@ class ActionRibbon extends StatelessWidget {
                   size: 20,
                 ),
               ),
+              isDisabled: !servicesStatus.withdrawal,
               onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.sendMoneyToBank)),
             ),
           ),
@@ -449,6 +453,7 @@ class ActionRibbon extends StatelessWidget {
                 color: primaryColor,
                 size: isTablet ? 22 : 21.sp,
               ),
+              isDisabled: !servicesStatus.splitPayment,
               onTap: () => _runProtectedAction(context, () => context.pushNamed(RouteList.splitCreatorSetup)),
             ),
           ),
@@ -1212,6 +1217,7 @@ class ActionButton extends StatelessWidget {
   final Widget icon;
   final VoidCallback? onTap;
   final bool isSoon;
+  final bool isDisabled;
 
   const ActionButton({
     super.key,
@@ -1219,12 +1225,13 @@ class ActionButton extends StatelessWidget {
     required this.icon,
     this.onTap,
     this.isSoon = false,
+    this.isDisabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final isTablet = MediaQuery.of(context).size.width > 600;
-    final double opacity = isSoon ? 0.45 : 1.0;
+    final double opacity = (isSoon || isDisabled) ? 0.45 : 1.0;
 
     return GestureDetector(
       onTap: isSoon
@@ -1236,7 +1243,19 @@ class ActionButton extends StatelessWidget {
                 ),
               );
             }
-          : onTap,
+          : (isDisabled
+              ? () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '$label service is temporarily disabled for maintenance.',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.orange.shade800,
+                    ),
+                  );
+                }
+              : onTap),
       behavior: HitTestBehavior.opaque,
       child: Opacity(
         opacity: opacity,
@@ -1263,7 +1282,7 @@ class ActionButton extends StatelessWidget {
                   ),
                   child: Center(child: icon),
                 ),
-                if (isSoon)
+                if (isSoon || isDisabled)
                   Positioned(
                     bottom: -2,
                     right: -2,
@@ -1271,13 +1290,17 @@ class ActionButton extends StatelessWidget {
                       height: isTablet ? 14 : 12.r,
                       width: isTablet ? 14 : 12.r,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF64748B),
+                        color: isDisabled
+                            ? Colors.orange.shade800
+                            : const Color(0xFF64748B),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 1),
                       ),
                       child: Center(
                         child: Icon(
-                          Icons.lock_rounded,
+                          isDisabled
+                              ? Icons.construction_rounded
+                              : Icons.lock_rounded,
                           size: isTablet ? 8 : 7.r,
                           color: Colors.white,
                         ),
@@ -1292,7 +1315,7 @@ class ActionButton extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: isSoon ? lightSecondaryText.withOpacity(0.5) : lightText,
+                  color: (isSoon || isDisabled) ? lightSecondaryText.withOpacity(0.5) : lightText,
                   fontWeight: FontWeight.w700,
                   fontSize: isTablet ? 11.5 : 11.sp,
                 ),
@@ -1459,8 +1482,12 @@ class _QuickActionsGridState extends ConsumerState<QuickActionsGrid> {
                 isDisabled = !servicesStatus.airtime;
               } else if (label == 'Data') {
                 isDisabled = !servicesStatus.data;
-              } else if (label == 'Cable TV' || label == 'Electricity') {
-                isDisabled = !servicesStatus.utility;
+              } else if (label == 'Cable TV') {
+                isDisabled = !servicesStatus.cable;
+              } else if (label == 'Electricity') {
+                isDisabled = !servicesStatus.electricity;
+              } else if (label == 'Education') {
+                isDisabled = !servicesStatus.edu;
               }
 
               return QuickActionButton(

@@ -22,6 +22,7 @@ class _BiaTrikeOnboardingScreenState
     extends ConsumerState<BiaTrikeOnboardingScreen> {
   bool _showFormView = false;
   final _formKey = GlobalKey<FormState>();
+
   final _fullNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _plateNumberCtrl = TextEditingController();
@@ -53,190 +54,12 @@ class _BiaTrikeOnboardingScreenState
   ];
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showRoleSelectionBottomSheet();
-    });
-  }
-
-  @override
   void dispose() {
     _fullNameCtrl.dispose();
     _phoneCtrl.dispose();
     _plateNumberCtrl.dispose();
     _licenseOrNinCtrl.dispose();
     super.dispose();
-  }
-
-  void _showRoleSelectionBottomSheet() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final state = ref.watch(biaTrikeStateNotifierProvider);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (modalContext, setModalState) {
-            return Align(
-              alignment: Alignment.bottomCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isTablet ? 540 : 600),
-                child: Container(
-                  padding: EdgeInsets.all(isTablet ? 24.0 : 24.r),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(isTablet ? 28.0 : 32.r),
-                      topRight: Radius.circular(isTablet ? 28.0 : 32.r),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 48.w,
-                          height: 5.h,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20.h),
-                      Text(
-                        'Welcome to Bia Trike 🛺',
-                        style: TextStyle(
-                          color: darkBackground,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        'Commercial Tricycle / Keke Ride-Hailing & Bargaining Platform.',
-                        style: TextStyle(
-                          color: lightSecondaryText,
-                          fontSize: 12.5.sp,
-                        ),
-                      ),
-                      SizedBox(height: 20.h),
-
-                      Text(
-                        'CHOOSE YOUR SERVICE',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                      SizedBox(height: 10.h),
-
-                      _buildModalRoleCard(
-                        title: 'Book a Keke Ride (Passenger)',
-                        subtitle: 'Set your price offer & negotiate with nearby drivers',
-                        icon: Icons.hail_rounded,
-                        color: primaryColor,
-                        onTap: () {
-                          Navigator.pop(modalContext);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BiaTrikeBookingScreen(language: state.dialect),
-                            ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 12.h),
-
-                      _buildModalRoleCard(
-                        title: 'Register as Trike Rider (Driver Mode)',
-                        subtitle: 'Drive your Trike, accept counter-offers & digital pass',
-                        icon: Icons.electric_rickshaw_rounded,
-                        color: const Color(0xFFF59E0B),
-                        onTap: () {
-                          Navigator.pop(modalContext);
-                          if (state.riderPass != null) {
-                            context.pushNamed(RouteList.biaTrikeDigitalPass);
-                          } else {
-                            setState(() {
-                              _showFormView = true;
-                            });
-                          }
-                        },
-                      ),
-                      SizedBox(height: 24.h),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildModalRoleCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(16.r),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(12.r),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24.sp),
-            ),
-            SizedBox(width: 14.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: darkBackground,
-                      fontSize: 14.5.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 3.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: lightSecondaryText,
-                      fontSize: 11.5.sp,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade400, size: 16.sp),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _handleSubmitRider() async {
@@ -265,7 +88,7 @@ class _BiaTrikeOnboardingScreenState
       } else {
         ToastHelper.showToast(
           context: context,
-          message: "Registration complete (Offline Pass Saved).",
+          message: "Registration complete (Pass Saved).",
           icon: Icons.info_outline_rounded,
           iconColor: primaryColor,
         );
@@ -280,17 +103,26 @@ class _BiaTrikeOnboardingScreenState
     final isTablet = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: darkBackground, size: 18.sp),
-          onPressed: () => context.pop(),
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFF1F5F9),
+          child: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: darkBackground, size: 18.sp),
+            onPressed: () {
+              if (_showFormView) {
+                setState(() => _showFormView = false);
+              } else {
+                context.pop();
+              }
+            },
+          ),
         ),
         title: Text(
-          'Bia Trike Hub',
-          style: TextStyle(color: darkBackground, fontSize: 16.sp, fontWeight: FontWeight.bold),
+          _showFormView ? 'Trike Rider Verification' : 'Bia Trike',
+          style: TextStyle(color: darkBackground, fontSize: 18.sp, fontWeight: FontWeight.w900),
         ),
         centerTitle: true,
       ),
@@ -300,9 +132,9 @@ class _BiaTrikeOnboardingScreenState
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: isTablet ? 540 : 650),
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(24.r),
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               child: !_showFormView
-                  ? _buildHubOverview(state)
+                  ? _buildCleanEmeraldHubView(state)
                   : _buildRiderOnboardingForm(state),
             ),
           ),
@@ -311,182 +143,341 @@ class _BiaTrikeOnboardingScreenState
     );
   }
 
-  Widget _buildHubOverview(BiaTrikeState state) {
-    return Center(
+  // ── Uber / Bolt Style Clean Minimal White & Emerald Hub ──────────────────
+  Widget _buildCleanEmeraldHubView(BiaTrikeState state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 10.h),
+
+        // Clean Hero Card
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(24.r),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.all(20.r),
+                decoration: BoxDecoration(
+                  color: primaryGreenColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.electric_rickshaw_rounded, color: primaryGreenColor, size: 54.sp),
+              ).animate().scale(duration: 350.ms),
+
+              SizedBox(height: 16.h),
+
+              Text(
+                'Bia Trike Mobility',
+                style: TextStyle(color: darkBackground, fontSize: 22.sp, fontWeight: FontWeight.w900),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                'Fast, reliable Keke ride-hailing with transparent fare offer negotiation.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: lightSecondaryText, fontSize: 13.sp, height: 1.4),
+              ),
+              SizedBox(height: 14.h),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildPillTag('⚡ Real-Time Bidding'),
+                  SizedBox(width: 8.w),
+                  _buildPillTag('👥 Shared & Cargo'),
+                  SizedBox(width: 8.w),
+                  _buildPillTag('🪪 Verified Pass'),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: 28.h),
+
+        Text(
+          'SELECT SERVICE',
+          style: TextStyle(
+            color: primaryGreenColor,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.0,
+          ),
+        ),
+        SizedBox(height: 12.h),
+
+        // Service Option 1: Book Keke Ride (Passenger Mode)
+        _buildCleanServiceCard(
+          title: 'Book a Keke Ride',
+          subtitle: 'Set your price offer & negotiate with nearby drivers in real time',
+          icon: Icons.hail_rounded,
+          iconBg: primaryGreenColor.withValues(alpha: 0.12),
+          iconColor: primaryGreenColor,
+          btnText: 'Start Passenger Ride ➔',
+          btnColor: primaryGreenColor,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BiaTrikeBookingScreen(language: state.dialect),
+              ),
+            );
+          },
+        ),
+
+        SizedBox(height: 16.h),
+
+        // Service Option 2: Register as Trike Rider (Driver Mode)
+        _buildCleanServiceCard(
+          title: 'Register as Trike Rider',
+          subtitle: 'Drive your Trike, accept passenger counter-offers & get Digital Pass',
+          icon: Icons.electric_rickshaw_rounded,
+          iconBg: const Color(0xFFFEF3C7),
+          iconColor: const Color(0xFFD97706),
+          btnText: state.riderPass != null ? 'View Digital Pass ➔' : 'Onboard Rider & Pass ➔',
+          btnColor: const Color(0xFFD97706),
+          onTap: () {
+            if (state.riderPass != null) {
+              context.pushNamed(RouteList.biaTrikeDigitalPass);
+            } else {
+              setState(() => _showFormView = true);
+            }
+          },
+        ),
+
+        SizedBox(height: 30.h),
+      ],
+    );
+  }
+
+  Widget _buildPillTag(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: darkBackground, fontSize: 10.5.sp, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  Widget _buildCleanServiceCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String btnText,
+    required Color btnColor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 30.h),
-          Container(
-            padding: EdgeInsets.all(24.r),
-            decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.electric_rickshaw_rounded, color: primaryColor, size: 64.sp),
-          ).animate().scale(duration: 400.ms),
-
-          SizedBox(height: 24.h),
-          Text(
-            'Bia Trike Commercial Mobility',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: darkBackground, fontSize: 22.sp, fontWeight: FontWeight.w900),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12.r),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Icon(icon, color: iconColor, size: 24.sp),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(color: darkBackground, fontSize: 15.5.sp, fontWeight: FontWeight.w800),
+                    ),
+                    SizedBox(height: 3.h),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: lightSecondaryText, fontSize: 12.sp, height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 8.h),
-          Text(
-            'Fast, safe, commercial Keke ride-hailing and real-time negotiation.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: lightSecondaryText, fontSize: 13.sp),
-          ),
 
-          SizedBox(height: 32.h),
+          SizedBox(height: 16.h),
 
           SizedBox(
             width: double.infinity,
-            height: 52.h,
+            height: 48.h,
             child: ElevatedButton(
-              onPressed: _showRoleSelectionBottomSheet,
+              onPressed: onTap,
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                backgroundColor: btnColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
               ),
               child: Text(
-                'Open Service Menu',
-                style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.bold),
+                btnText,
+                style: TextStyle(color: Colors.white, fontSize: 13.5.sp, fontWeight: FontWeight.w800),
               ),
             ),
           ),
-
-          if (state.riderPass != null) ...[
-            SizedBox(height: 16.h),
-            OutlinedButton(
-              onPressed: () => context.pushNamed(RouteList.biaTrikeDigitalPass),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: primaryGreenColor),
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
-              ),
-              child: Text('View Digital Rider Pass',
-                  style: TextStyle(color: primaryGreenColor, fontWeight: FontWeight.bold, fontSize: 13.sp)),
-            ),
-          ],
         ],
       ),
     );
   }
 
+  // ── Clean Minimal Rider Verification Form ────────────────────────────────
   Widget _buildRiderOnboardingForm(BiaTrikeState state) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Rider Verification & Onboarding',
-            style: TextStyle(color: darkBackground, fontSize: 20.sp, fontWeight: FontWeight.w900),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            'Register your commercial tricycle to receive digital pass credentials.',
-            style: TextStyle(color: lightSecondaryText, fontSize: 12.5.sp),
-          ),
-          SizedBox(height: 20.h),
-
-          TextFormField(
-            controller: _fullNameCtrl,
-            decoration: InputDecoration(
-              labelText: 'Full Name',
-              hintText: 'Aliyu Bello',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+          Container(
+            padding: EdgeInsets.all(20.r),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Enter full name' : null,
-          ),
-          SizedBox(height: 14.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rider Verification Form',
+                  style: TextStyle(color: darkBackground, fontSize: 18.sp, fontWeight: FontWeight.w900),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Submit your commercial tricycle credentials for official Digital Pass approval.',
+                  style: TextStyle(color: lightSecondaryText, fontSize: 12.sp),
+                ),
+                SizedBox(height: 20.h),
 
-          TextFormField(
-            controller: _phoneCtrl,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-              labelText: 'Phone Number',
-              hintText: '+2348031234501',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                TextFormField(
+                  controller: _fullNameCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Full Name',
+                    hintText: 'Aliyu Bello',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                  ),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Enter full name' : null,
+                ),
+                SizedBox(height: 14.h),
+
+                TextFormField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Phone Number',
+                    hintText: '+2348031234501',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                  ),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Enter phone number' : null,
+                ),
+                SizedBox(height: 14.h),
+
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCity,
+                  decoration: InputDecoration(
+                    labelText: 'City of Operation',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                  ),
+                  items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                  onChanged: (v) => setState(() => _selectedCity = v!),
+                ),
+                SizedBox(height: 14.h),
+
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedTrikeModel,
+                  decoration: InputDecoration(
+                    labelText: 'Trike Model',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                  ),
+                  items: _trikeModels.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                  onChanged: (v) => setState(() => _selectedTrikeModel = v!),
+                ),
+                SizedBox(height: 14.h),
+
+                TextFormField(
+                  controller: _plateNumberCtrl,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: InputDecoration(
+                    labelText: 'Plate Number',
+                    hintText: 'KMC-482-XA',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                  ),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Enter plate number' : null,
+                ),
+                SizedBox(height: 14.h),
+
+                TextFormField(
+                  controller: _licenseOrNinCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'NIN / License Number',
+                    hintText: 'NIN-29481920491',
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
+                  ),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Enter NIN or license' : null,
+                ),
+
+                SizedBox(height: 24.h),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 50.h,
+                  child: ElevatedButton(
+                    onPressed: state.isLoading ? null : _handleSubmitRider,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryGreenColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                    ),
+                    child: state.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text('Submit & Generate Rider Pass',
+                            style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Enter phone number' : null,
           ),
-          SizedBox(height: 14.h),
-
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCity,
-            decoration: InputDecoration(
-              labelText: 'City of Operation',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
-            ),
-            items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (v) => setState(() => _selectedCity = v!),
-          ),
-          SizedBox(height: 14.h),
-
-          DropdownButtonFormField<String>(
-            initialValue: _selectedTrikeModel,
-            decoration: InputDecoration(
-              labelText: 'Trike Model',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
-            ),
-            items: _trikeModels.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-            onChanged: (v) => setState(() => _selectedTrikeModel = v!),
-          ),
-          SizedBox(height: 14.h),
-
-          TextFormField(
-            controller: _plateNumberCtrl,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              labelText: 'Plate Number',
-              hintText: 'KMC-482-XA',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
-            ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Enter plate number' : null,
-          ),
-          SizedBox(height: 14.h),
-
-          TextFormField(
-            controller: _licenseOrNinCtrl,
-            decoration: InputDecoration(
-              labelText: 'NIN / License Number',
-              hintText: 'NIN-29481920491',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r)),
-            ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Enter NIN or license' : null,
-          ),
-
-          SizedBox(height: 24.h),
-
-          SizedBox(
-            width: double.infinity,
-            height: 52.h,
-            child: ElevatedButton(
-              onPressed: state.isLoading ? null : _handleSubmitRider,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-              ),
-              child: state.isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text('Submit & Generate Rider Pass',
-                      style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold)),
-            ),
-          ),
+          SizedBox(height: 30.h),
         ],
       ),
     );

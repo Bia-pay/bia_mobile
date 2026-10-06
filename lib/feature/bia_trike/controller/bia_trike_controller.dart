@@ -193,17 +193,21 @@ class BiaTrikeNotifier extends StateNotifier<BiaTrikeState> {
     required String pickupAddress,
     required String destinationAddress,
     required String city,
+    double? pickupLat,
+    double? pickupLng,
+    double? destLat,
+    double? destLng,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final req = await _apiService.createRideRequest(
         pickupAddress: pickupAddress,
-        pickupLat: 11.9964,
-        pickupLng: 8.5167,
+        pickupLat: pickupLat ?? 11.9964,
+        pickupLng: pickupLng ?? 8.5167,
         destinationAddress: destinationAddress,
-        destLat: 12.0022,
-        destLng: 8.5920,
+        destLat: destLat ?? 12.0022,
+        destLng: destLng ?? 8.5920,
         city: city,
         rideType: state.selectedRideType,
         passengerOfferFare: state.currentOffer,

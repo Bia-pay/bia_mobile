@@ -408,8 +408,14 @@ class ServicesStatusNotifier extends StateNotifier<ServicesStatus> {
       : super(const ServicesStatus(
           airtime: true,
           data: true,
+          cable: true,
+          electricity: true,
           utility: true,
+          edu: true,
           qr: true,
+          splitPayment: true,
+          biaTrike: true,
+          withdrawal: true,
         )) {
     loadStatus();
   }
